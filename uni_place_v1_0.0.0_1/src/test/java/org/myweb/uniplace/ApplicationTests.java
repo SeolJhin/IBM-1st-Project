@@ -1,4 +1,4 @@
-package org.myweb.first;
+package org.myweb.uniplace;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
