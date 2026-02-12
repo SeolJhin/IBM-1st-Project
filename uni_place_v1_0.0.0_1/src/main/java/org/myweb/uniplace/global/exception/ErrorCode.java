@@ -1,5 +1,0 @@
-package org.myweb.uniplace.global.exception;
-
-public class ErrorCode {
-
-}
