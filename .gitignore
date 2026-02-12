@@ -9,3 +9,4 @@
 *.iml
 /out/
 .DS_Store
+.metadata/
