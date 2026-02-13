@@ -21,6 +21,7 @@
 *.iml
 
 # Eclipse / STS
+.metadata/
 .settings/
 .classpath
 .project
