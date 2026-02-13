@@ -2,7 +2,9 @@ package org.myweb.uniplace;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing; // @EnableJpaAuditing 임포트
 
+@EnableJpaAuditing  // auditing 기능켜서 BaseEntity 작동되게 함
 @SpringBootApplication
 public class Application {
 
