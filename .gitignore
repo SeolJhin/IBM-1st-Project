@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /target/
 /build/
 .gradle/
@@ -12,7 +11,6 @@
 .DS_Store
 .metadata/
 
-=======
 # ===============================
 #  Build 결과물
 # ===============================
@@ -60,6 +58,34 @@ Thumbs.db
 #  로그 파일
 # ===============================
 
+# ===============================
+# Build 결과물
+# ===============================
+/build/
+.gradle/
+ /target/
+/out/
+
+# ===============================
+# IDE 설정 (개인 로컬용)
+# ===============================
+.idea/
+*.iml
+.settings/
+.classpath
+.project
+.vscode/
+.metadata/
+
+# ===============================
+# OS 파일
+# ===============================
+.DS_Store
+Thumbs.db
+
+# ===============================
+# 로그 파일
+# ===============================
 *.log
 logs/
 
@@ -68,6 +94,8 @@ logs/
 # ===============================
 
 # 로컬/운영 설정
+# 민감 정보 (절대 커밋 금지)
+# ===============================
 application-local.yml
 application-local.properties
 application-dev.yml
@@ -84,6 +112,10 @@ jwt-secret.txt
 oauth-secret.json
 
 # Firebase 키 등
+.env
+.env.local
+jwt-secret.txt
+oauth-secret.json
 *.p12
 *.key
 *.pem
@@ -106,6 +138,16 @@ uploads/
 #  테스트 & 커버리지
 # ===============================
 
+# DB / 캐시 / 업로드 파일
+# ===============================
+*.mv.db
+*.trace.db
+dump.rdb
+uploads/
+
+# ===============================
+# 테스트 & 커버리지
+# ===============================
 /coverage/
 *.lcov
 
@@ -113,6 +155,8 @@ uploads/
 #  Docker (필요 시)
 # ===============================
 
+# Docker (필요 시)
+# ===============================
 docker-compose.override.yml
 .env.docker
 
@@ -122,4 +166,7 @@ docker-compose.override.yml
 
 node_modules/
 dist/
->>>>>>> dev
+# Node (프론트 같이 있을 경우 대비)
+# ===============================
+node_modules/
+dist/
