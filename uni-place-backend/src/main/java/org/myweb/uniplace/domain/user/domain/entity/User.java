@@ -1,5 +1,5 @@
 // Entity
-package org.myweb.uniplace.domain.user.entity;
+package org.myweb.uniplace.domain.user.domain.entity;
 
 import java.time.LocalDate;
 import java.util.Date;

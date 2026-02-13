@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /target/
 /build/
 .gradle/
@@ -11,3 +12,114 @@
 .DS_Store
 .metadata/
 
+=======
+# ===============================
+#  Build 결과물
+# ===============================
+
+# Gradle
+/build/
+.gradle/
+
+# Maven 대비
+/target/
+
+# IDE compile output
+/out/
+
+# ===============================
+#  IDE 설정 (개인 로컬용)
+# ===============================
+
+# IntelliJ
+.idea/
+*.iml
+
+# Eclipse / STS
+.metadata/
+.settings/
+.classpath
+.project
+
+
+
+# VSCode
+.vscode/
+
+# ===============================
+#  OS 파일
+# ===============================
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# ===============================
+#  로그 파일
+# ===============================
+
+*.log
+logs/
+
+# ===============================
+#  민감 정보 (절대 커밋 금지)
+# ===============================
+
+# 로컬/운영 설정
+application-local.yml
+application-local.properties
+application-dev.yml
+application-dev.properties
+application-prod.yml
+application-prod.properties
+
+# 환경변수 파일
+.env
+.env.local
+
+# JWT / OAuth secret 파일
+jwt-secret.txt
+oauth-secret.json
+
+# Firebase 키 등
+*.p12
+*.key
+*.pem
+
+# ===============================
+#  DB / 캐시 / 업로드 파일
+# ===============================
+
+# H2 DB 파일
+*.mv.db
+*.trace.db
+
+# Redis dump
+dump.rdb
+
+# 업로드 파일 디렉토리 (있다면)
+uploads/
+
+# ===============================
+#  테스트 & 커버리지
+# ===============================
+
+/coverage/
+*.lcov
+
+# ===============================
+#  Docker (필요 시)
+# ===============================
+
+docker-compose.override.yml
+.env.docker
+
+# ===============================
+#  Node (프론트 같이 있을 경우 대비)
+# ===============================
+
+node_modules/
+dist/
+>>>>>>> dev
