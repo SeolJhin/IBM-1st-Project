@@ -1,4 +1,3 @@
-cat << 'EOF' > .editorconfig
 root = true
 
 [*]
