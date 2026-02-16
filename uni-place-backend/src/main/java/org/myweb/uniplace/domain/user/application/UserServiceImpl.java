@@ -29,24 +29,26 @@ public class UserServiceImpl implements UserService {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 엔티티에 setter가 없으니, 필요하면 User에 변경 메서드 추가하거나 @Setter 사용
-        // 여기서는 간단히 리플렉션/세터 없이 가려면 User 엔티티에 changeName/changeTel 메서드를 추가하는 게 정석.
-        // 예시로는 update를 최소화하자:
-        if (req.getUserName() != null) {
-            // user.changeName(req.getUserName());
-            throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        if (req.getUserTel() != null && !req.getUserTel().isBlank()) {
+            // 중복 체크(실무)
+            if (userRepository.existsByUserTel(req.getUserTel())) {
+                // 자기 번호로 변경하는 경우까지 막지 않으려면 equals 체크 추가
+                if (!req.getUserTel().equals(user.getUserTel())) {
+                    throw new BusinessException(ErrorCode.DUPLICATE_TEL);
+                }
+            }
+            user.changeTel(req.getUserTel());
         }
-        if (req.getUserTel() != null) {
-            throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
-        }
+
         return UserResponse.from(user);
     }
 
     @Override
-    public void softDeleteMe(String userId) {
+    public void deleteMe(String userId) {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        // user.softDelete();  (User 엔티티에 이미 있음)
-        user.softDelete();
+        user.changeDeleteYn("Y");
+        // 상태도 같이 내리고 싶으면:
+        // user.changeStatus(UserStatus.inactive);
     }
 }

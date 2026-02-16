@@ -5,9 +5,9 @@ import org.myweb.uniplace.domain.user.api.dto.request.UserUpdateRequest;
 import org.myweb.uniplace.domain.user.api.dto.response.UserResponse;
 import org.myweb.uniplace.domain.user.application.UserService;
 import org.myweb.uniplace.global.response.ApiResponse;
+import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.myweb.uniplace.global.security.AuthUser;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,7 +31,7 @@ public class UserController {
 
     @DeleteMapping("/me")
     public ApiResponse<Void> deleteMe(@AuthenticationPrincipal AuthUser me) {
-        userService.softDeleteMe(me.getUserId());
+        userService.deleteMe(me.getUserId());
         return ApiResponse.ok();
     }
 }

@@ -23,16 +23,12 @@ public class AuthController {
 
     @PostMapping("/login")
     public ApiResponse<UserTokenResponse> login(HttpServletRequest http, @RequestBody UserLoginRequest req) {
-        String ua = http.getHeader("User-Agent");
-        String ip = extractIp(http);
-        return ApiResponse.ok(authService.login(req, ua, ip));
+        return ApiResponse.ok(authService.login(req, http.getHeader("User-Agent"), extractIp(http)));
     }
 
     @PostMapping("/refresh")
     public ApiResponse<UserTokenResponse> refresh(HttpServletRequest http, @RequestBody RefreshTokenRequest req) {
-        String ua = http.getHeader("User-Agent");
-        String ip = extractIp(http);
-        return ApiResponse.ok(authService.refresh(req, ua, ip));
+        return ApiResponse.ok(authService.refresh(req, http.getHeader("User-Agent"), extractIp(http)));
     }
 
     @PostMapping("/logout")

@@ -7,5 +7,5 @@ import lombok.Setter;
 public class UserLoginRequest {
     private String userEmail;
     private String userPwd;
-    private String deviceId; // 없으면 서버가 생성해서 내려줌
+    private String deviceId; // 없으면 서버가 생성
 }
