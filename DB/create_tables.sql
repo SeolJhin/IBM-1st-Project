@@ -12,6 +12,25 @@ CREATE TABLE users (
     delete_yn CHAR(1) DEFAULT 'N'
 ) ENGINE=InnoDB;
 
+CREATE TABLE refresh_tokens (
+    refresh_token_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL,
+
+    -- refresh token 원문 그대로 저장(간단/빠름). 보안 강화하려면 해시 저장으로 바꿔도 됨.
+    token_value VARCHAR(512) NOT NULL,
+
+    issued_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+
+    -- 강제 로그아웃/폐기 처리
+    revoked TINYINT(1) NOT NULL DEFAULT 0,
+    revoked_at DATETIME NULL,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
 CREATE TABLE building (
     building_id INT AUTO_INCREMENT PRIMARY KEY,
     building_name VARCHAR(50) NOT NULL,
