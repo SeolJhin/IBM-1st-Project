@@ -1,5 +1,14 @@
 package org.myweb.uniplace.domain.user.domain.enums;
 
+/**
+ * DB users.user_st ENUM('active','inactive','banned')
+ */
 public enum UserStatus {
-    ACTIVE, INACTIVE, SUSPENDED
+    active,
+    inactive,
+    banned;
+
+    public boolean canLogin() {
+        return this == active;
+    }
 }
