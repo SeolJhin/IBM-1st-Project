@@ -5,6 +5,5 @@ import lombok.Setter;
 
 @Getter @Setter
 public class UserUpdateRequest {
-    private String userName;
     private String userTel;
 }

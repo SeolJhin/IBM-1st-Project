@@ -15,10 +15,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
     name = "users",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uq_users_email", columnNames = "user_email"),
-        @UniqueConstraint(name = "uq_users_tel", columnNames = "user_tel")
-    }
+    uniqueConstraints = @UniqueConstraint(name = "uq_users_email", columnNames = "user_email"),
+    indexes = @Index(name = "ix_users_tel", columnList = "user_tel")
 )
 public class User {
 
@@ -26,8 +24,8 @@ public class User {
     @Column(name = "user_id", length = 50, nullable = false)
     private String userId;
 
-    @Column(name = "user_name", length = 50, nullable = false)
-    private String userName;
+    @Column(name = "user_nm", length = 50, nullable = false)
+    private String userNm;
 
     @Column(name = "user_email", length = 100, nullable = false)
     private String userEmail;
@@ -42,10 +40,9 @@ public class User {
     private String userTel;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "user_role", length = 20, nullable = false)
+    @Column(name = "user_role", nullable = false)
     private UserRole userRole;
 
-    // DB DEFAULT CURRENT_TIMESTAMP 사용
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -53,25 +50,42 @@ public class User {
     private LocalDateTime lastLoginAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "user_status", length = 20, nullable = false)
-    private UserStatus userStatus;
+    @Column(name = "user_st", nullable = false)
+    private UserStatus userSt;
 
-    // DB default 'N'
-    @Column(name = "delete_yn", length = 1)
+    @Column(name = "delete_yn", length = 1, nullable = false)
     private String deleteYn;
 
     @PrePersist
     void onCreate() {
-        if (userStatus == null) userStatus = UserStatus.active;  // DB default
-        if (deleteYn == null) deleteYn = "N";                    // DB default
-        if (userRole == null) userRole = UserRole.host;          // DB default
+        if (userRole == null) userRole = UserRole.user;
+        if (userSt == null) userSt = UserStatus.active;
+        if (deleteYn == null) deleteYn = "N";
     }
 
     public void markLoginNow() {
         this.lastLoginAt = LocalDateTime.now();
     }
 
-    public boolean isActive() {
-        return userStatus == UserStatus.active && "N".equalsIgnoreCase(deleteYn);
+    public boolean canLogin() {
+        return userSt == UserStatus.active && "N".equalsIgnoreCase(deleteYn);
+    }
+
+    // 일반유저: tel만(권장)
+    public void changeTel(String tel) {
+        this.userTel = tel;
+    }
+
+    // 관리자: 권한/상태 변경
+    public void changeRole(UserRole role) {
+        this.userRole = role;
+    }
+
+    public void changeStatus(UserStatus st) {
+        this.userSt = st;
+    }
+
+    public void changeDeleteYn(String yn) {
+        this.deleteYn = yn;
     }
 }

@@ -7,9 +7,9 @@ import java.time.LocalDate;
 
 @Getter @Setter
 public class UserSignupRequest {
-    private String userName;
+    private String userName;   // API에서는 userName, 엔티티는 userNm
     private String userEmail;
-    private String userPwd;     // 평문 입력(저장할 때 해시로 바꿔서 user_pwd에 저장)
+    private String userPwd;
     private LocalDate userBirth;
     private String userTel;
 }

@@ -1,7 +1,9 @@
 package org.myweb.uniplace.domain.user.api.admin;
 
 import lombok.RequiredArgsConstructor;
-import org.myweb.uniplace.domain.user.application.AuthService;
+import org.myweb.uniplace.domain.user.api.dto.request.AdminUserUpdateRequest;
+import org.myweb.uniplace.domain.user.api.dto.response.UserResponse;
+import org.myweb.uniplace.domain.user.application.AdminUserService;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -9,14 +11,18 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/users")
-@PreAuthorize("hasRole('admin') or hasAuthority('ROLE_admin')") // 네 SecurityConfig/GrantedAuthority 규칙에 맞춰 1개로 정리
+@PreAuthorize("hasAuthority('admin') or hasRole('admin')") // 너 SecurityConfig 규칙에 맞춰 한쪽으로 정리
 public class AdminUserController {
 
-    private final AuthService authService;
+    private final AdminUserService adminUserService;
 
-    @PostMapping("/{userId}/logout-all")
-    public ApiResponse<Void> logoutAll(@PathVariable String userId) {
-        authService.logoutAll(userId);
-        return ApiResponse.ok();
+    @GetMapping("/{userId}")
+    public ApiResponse<UserResponse> get(@PathVariable String userId) {
+        return ApiResponse.ok(adminUserService.getUser(userId));
+    }
+
+    @PatchMapping("/{userId}")
+    public ApiResponse<UserResponse> update(@PathVariable String userId, @RequestBody AdminUserUpdateRequest req) {
+        return ApiResponse.ok(adminUserService.updateUser(userId, req));
     }
 }
