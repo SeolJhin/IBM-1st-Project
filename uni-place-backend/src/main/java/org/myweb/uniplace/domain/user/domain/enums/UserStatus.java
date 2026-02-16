@@ -1,5 +1,5 @@
 package org.myweb.uniplace.domain.user.domain.enums;
 
-public class UserStatus {
-
+public enum UserStatus {
+    ACTIVE, INACTIVE, SUSPENDED
 }

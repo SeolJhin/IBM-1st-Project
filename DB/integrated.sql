@@ -3,6 +3,9 @@
  * ========================================================= */
 SET FOREIGN_KEY_CHECKS = 0;
 
+
+DROP TABLE IF EXISTS refresh_tokens;
+
 DROP TABLE IF EXISTS payment_refund;
 DROP TABLE IF EXISTS payment_attempt;
 
@@ -84,6 +87,32 @@ CREATE TABLE users (
 
     UNIQUE KEY uq_users_email (user_email),
     UNIQUE KEY uq_users_tel (user_tel)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE refresh_tokens (
+    refresh_token_id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL,
+
+    -- refresh token 원문 그대로 저장(간단/빠름). 보안 강화하려면 해시 저장으로 바꿔도 됨.
+    token_value VARCHAR(512) NOT NULL,
+
+    issued_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+
+    -- 강제 로그아웃/폐기 처리
+    revoked TINYINT(1) NOT NULL DEFAULT 0,
+    revoked_at DATETIME NULL,
+
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uq_refresh_token_value (token_value),
+    KEY ix_refresh_tokens_user (user_id),
+    KEY ix_refresh_tokens_expires (expires_at),
+
+    CONSTRAINT fk_refresh_tokens_user
+        FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE building (
