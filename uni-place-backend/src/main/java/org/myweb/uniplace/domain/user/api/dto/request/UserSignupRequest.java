@@ -5,9 +5,10 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-@Getter @Setter
+@Getter
+@Setter
 public class UserSignupRequest {
-    private String userName;   // API에서는 userName, 엔티티는 userNm
+    private String userNm;
     private String userEmail;
     private String userPwd;
     private LocalDate userBirth;

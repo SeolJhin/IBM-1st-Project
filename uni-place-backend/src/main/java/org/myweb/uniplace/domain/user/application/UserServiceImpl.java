@@ -30,12 +30,9 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (req.getUserTel() != null && !req.getUserTel().isBlank()) {
-            // 중복 체크(실무)
-            if (userRepository.existsByUserTel(req.getUserTel())) {
-                // 자기 번호로 변경하는 경우까지 막지 않으려면 equals 체크 추가
-                if (!req.getUserTel().equals(user.getUserTel())) {
-                    throw new BusinessException(ErrorCode.DUPLICATE_TEL);
-                }
+            if (userRepository.existsByUserTel(req.getUserTel())
+                    && !req.getUserTel().equals(user.getUserTel())) {
+                throw new BusinessException(ErrorCode.DUPLICATE_TEL);
             }
             user.changeTel(req.getUserTel());
         }
@@ -48,7 +45,5 @@ public class UserServiceImpl implements UserService {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         user.changeDeleteYn("Y");
-        // 상태도 같이 내리고 싶으면:
-        // user.changeStatus(UserStatus.inactive);
     }
 }

@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 public class UserResponse {
     private String userId;
-    private String userName;     // API 응답은 userName
+    private String userNm;
     private String userEmail;
     private LocalDate userBirth;
     private String userTel;
@@ -26,7 +26,7 @@ public class UserResponse {
     public static UserResponse from(User u) {
         return UserResponse.builder()
                 .userId(u.getUserId())
-                .userName(u.getUserNm())
+                .userNm(u.getUserNm())
                 .userEmail(u.getUserEmail())
                 .userBirth(u.getUserBirth())
                 .userTel(u.getUserTel())
