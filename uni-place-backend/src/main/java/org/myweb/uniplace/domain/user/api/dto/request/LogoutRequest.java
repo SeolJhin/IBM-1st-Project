@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter @Setter
-public class UserUpdateRequest {
-    private String userName;
-    private String userTel;
+public class LogoutRequest {
+    private String refreshToken;
+    private String deviceId;
 }

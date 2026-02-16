@@ -1,27 +1,15 @@
 package org.myweb.uniplace.domain.user.api.dto.request;
 
-import jakarta.validation.constraints.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
-@Getter
+@Getter @Setter
 public class UserSignupRequest {
-    @NotBlank @Size(max=50)
-    private String userId;
-
-    @NotBlank @Size(max=50)
     private String userName;
-
-    @NotBlank @Email @Size(max=100)
     private String userEmail;
-
-    @NotBlank @Size(min=8, max=60)
-    private String userPwd;
-
-    @NotNull
+    private String userPwd;     // 평문 입력(저장할 때 해시로 바꿔서 user_pwd에 저장)
     private LocalDate userBirth;
-
-    @NotBlank @Size(max=20)
     private String userTel;
 }
