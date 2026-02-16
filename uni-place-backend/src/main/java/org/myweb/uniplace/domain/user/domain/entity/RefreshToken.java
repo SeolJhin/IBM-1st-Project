@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "refresh_tokens",
+@Table(
+    name = "refresh_tokens",
     uniqueConstraints = @UniqueConstraint(name = "uq_refresh_token_hash", columnNames = "token_hash"),
     indexes = {
         @Index(name = "ix_refresh_tokens_user", columnList = "user_id"),
@@ -25,8 +26,11 @@ public class RefreshToken {
     private String refreshTokenId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false,
-        foreignKey = @ForeignKey(name = "fk_refresh_tokens_user"))
+    @JoinColumn(
+        name = "user_id",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "fk_refresh_tokens_user")
+    )
     private User user;
 
     @Column(name = "token_hash", length = 64, nullable = false)
@@ -61,6 +65,10 @@ public class RefreshToken {
 
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
+
+    public boolean isExpired(LocalDateTime now) {
+        return expiresAt.isBefore(now);
+    }
 
     public void revokeNow() {
         this.revoked = true;
