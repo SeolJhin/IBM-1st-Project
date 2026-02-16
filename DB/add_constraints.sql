@@ -2,6 +2,15 @@
 ALTER TABLE users
   ADD CONSTRAINT uq_users_email UNIQUE (user_email),
   ADD CONSTRAINT uq_users_tel   UNIQUE (user_tel);
+  
+/* refresh_tokens UNIQUE */
+ALTER TABLE refresh_tokens
+  ADD CONSTRAINT uq_refresh_token_value UNIQUE (token_value),
+  ADD KEY ix_refresh_tokens_user (user_id),
+  ADD KEY ix_refresh_tokens_expires (expires_at),
+  ADD CONSTRAINT fk_refresh_tokens_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    ON DELETE CASCADE;
 
 /* rooms: UNIQUE + FK */
 ALTER TABLE rooms

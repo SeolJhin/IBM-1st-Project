@@ -3,6 +3,8 @@
  * - FK 제약조건 기준으로 안전한 삭제 순서
  * ========================================================= */
 
+DROP TABLE IF EXISTS refresh_tokens;
+
 -- 1) payment 하위(자식)
 DROP TABLE IF EXISTS payment_refund;
 DROP TABLE IF EXISTS payment_attempt;
