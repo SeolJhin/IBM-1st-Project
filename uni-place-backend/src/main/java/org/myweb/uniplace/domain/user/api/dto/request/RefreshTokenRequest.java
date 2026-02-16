@@ -1,10 +1,10 @@
 package org.myweb.uniplace.domain.user.api.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
+import lombok.Setter;
 
-@Getter
+@Getter @Setter
 public class RefreshTokenRequest {
-    @NotBlank
     private String refreshToken;
+    private String deviceId;
 }

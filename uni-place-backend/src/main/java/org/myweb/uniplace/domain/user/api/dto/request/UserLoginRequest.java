@@ -1,13 +1,11 @@
 package org.myweb.uniplace.domain.user.api.dto.request;
 
-import jakarta.validation.constraints.*;
 import lombok.Getter;
+import lombok.Setter;
 
-@Getter
+@Getter @Setter
 public class UserLoginRequest {
-    @NotBlank @Email
     private String userEmail;
-
-    @NotBlank
     private String userPwd;
+    private String deviceId; // 없으면 서버가 생성해서 내려줌
 }
