@@ -14,9 +14,13 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(
-    name = "users",
-    uniqueConstraints = @UniqueConstraint(name = "uq_users_email", columnNames = "user_email"),
-    indexes = @Index(name = "ix_users_tel", columnList = "user_tel")
+        name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_users_email", columnNames = "user_email")
+        },
+        indexes = {
+                @Index(name = "ix_users_tel", columnList = "user_tel")
+        }
 )
 public class User {
 
@@ -24,6 +28,7 @@ public class User {
     @Column(name = "user_id", length = 50, nullable = false)
     private String userId;
 
+    // ✅ SQL: user_nm
     @Column(name = "user_nm", length = 50, nullable = false)
     private String userNm;
 
@@ -40,7 +45,7 @@ public class User {
     private String userTel;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "user_role", nullable = false)
+    @Column(name = "user_role", length = 20, nullable = false)
     private UserRole userRole;
 
     @Column(name = "created_at", insertable = false, updatable = false)
@@ -49,8 +54,9 @@ public class User {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    // ✅ SQL: user_st
     @Enumerated(EnumType.STRING)
-    @Column(name = "user_st", nullable = false)
+    @Column(name = "user_st", length = 20, nullable = false)
     private UserStatus userSt;
 
     @Column(name = "delete_yn", length = 1, nullable = false)
@@ -58,34 +64,25 @@ public class User {
 
     @PrePersist
     void onCreate() {
-        if (userRole == null) userRole = UserRole.user;
-        if (userSt == null) userSt = UserStatus.active;
-        if (deleteYn == null) deleteYn = "N";
+        if (userRole == null) userRole = UserRole.user;       // SQL default
+        if (userSt == null) userSt = UserStatus.active;       // SQL default
+        if (deleteYn == null) deleteYn = "N";                 // SQL default
+    }
+
+    public boolean canLogin() {
+        return userSt == UserStatus.active && !"Y".equalsIgnoreCase(deleteYn);
     }
 
     public void markLoginNow() {
         this.lastLoginAt = LocalDateTime.now();
     }
 
-    public boolean canLogin() {
-        return userSt == UserStatus.active && "N".equalsIgnoreCase(deleteYn);
-    }
+    // 일반회원 수정 (정책 붙이기 전에는 tel 정도만 권장)
+    public void changeTel(String newTel) { this.userTel = newTel; }
+    public void changeName(String newName) { this.userNm = newName; }
 
-    // 일반유저: tel만(권장)
-    public void changeTel(String tel) {
-        this.userTel = tel;
-    }
-
-    // 관리자: 권한/상태 변경
-    public void changeRole(UserRole role) {
-        this.userRole = role;
-    }
-
-    public void changeStatus(UserStatus st) {
-        this.userSt = st;
-    }
-
-    public void changeDeleteYn(String yn) {
-        this.deleteYn = yn;
-    }
+    // 관리자용
+    public void changeRole(UserRole role) { this.userRole = role; }
+    public void changeStatus(UserStatus st) { this.userSt = st; }
+    public void changeDeleteYn(String yn) { this.deleteYn = yn; }
 }

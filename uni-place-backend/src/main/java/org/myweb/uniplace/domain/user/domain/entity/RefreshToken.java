@@ -11,13 +11,13 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(
-    name = "refresh_tokens",
-    uniqueConstraints = @UniqueConstraint(name = "uq_refresh_token_hash", columnNames = "token_hash"),
-    indexes = {
-        @Index(name = "ix_refresh_tokens_user", columnList = "user_id"),
-        @Index(name = "ix_refresh_tokens_device", columnList = "user_id, device_id"),
-        @Index(name = "ix_refresh_tokens_expires", columnList = "expires_at")
-    }
+        name = "refresh_tokens",
+        uniqueConstraints = @UniqueConstraint(name = "uq_refresh_token_hash", columnNames = "token_hash"),
+        indexes = {
+                @Index(name = "ix_refresh_tokens_user", columnList = "user_id"),
+                @Index(name = "ix_refresh_tokens_device", columnList = "user_id, device_id"),
+                @Index(name = "ix_refresh_tokens_expires", columnList = "expires_at")
+        }
 )
 public class RefreshToken {
 
@@ -27,9 +27,9 @@ public class RefreshToken {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
-        name = "user_id",
-        nullable = false,
-        foreignKey = @ForeignKey(name = "fk_refresh_tokens_user")
+            name = "user_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_refresh_tokens_user")
     )
     private User user;
 
@@ -45,7 +45,7 @@ public class RefreshToken {
     @Column(name = "ip", length = 45)
     private String ip;
 
-    @Column(name = "issued_at", nullable = false)
+    @Column(name = "issued_at", insertable = false, updatable = false)
     private LocalDateTime issuedAt;
 
     @Column(name = "expires_at", nullable = false)
@@ -70,12 +70,12 @@ public class RefreshToken {
         return expiresAt.isBefore(now);
     }
 
-    public void revokeNow() {
+    public void revoke(LocalDateTime now) {
         this.revoked = true;
-        this.revokedAt = LocalDateTime.now();
+        this.revokedAt = now;
     }
 
-    public void markLastUsedNow() {
-        this.lastUsedAt = LocalDateTime.now();
+    public void markLastUsed(LocalDateTime now) {
+        this.lastUsedAt = now;
     }
 }

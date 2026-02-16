@@ -49,13 +49,13 @@ public class AuthServiceImpl implements AuthService {
 
         User user = User.builder()
                 .userId(userId)
-                .userNm(req.getUserName())
+                .userNm(req.getUserNm())
                 .userEmail(req.getUserEmail())
                 .userPwd(hashPwd)
                 .userBirth(req.getUserBirth())
                 .userTel(req.getUserTel())
-                .userRole(UserRole.user)               // DB default와 일치
-                .userSt(UserStatus.active)             // DB default와 일치
+                .userRole(UserRole.user)            // ✅ SQL default
+                .userSt(UserStatus.active)          // ✅ SQL default
                 .deleteYn("N")
                 .build();
 
@@ -102,21 +102,31 @@ public class AuthServiceImpl implements AuthService {
         jwtProvider.validate(req.getRefreshToken());
 
         String tokenHash = sha256Hex(req.getRefreshToken());
-        RefreshToken stored = refreshTokenRepository.findByTokenHash(tokenHash)
+        RefreshToken stored = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         LocalDateTime now = LocalDateTime.now();
 
-        if (stored.isRevoked()) throw new BusinessException(ErrorCode.REFRESH_TOKEN_REVOKED);
-        if (stored.isExpired(now)) throw new BusinessException(ErrorCode.REFRESH_TOKEN_EXPIRED);
-        if (!req.getDeviceId().equals(stored.getDeviceId())) throw new BusinessException(ErrorCode.DEVICE_MISMATCH);
+        // ✅ reuse 탐지 → 전체 로그아웃
+        if (stored.isRevoked()) {
+            refreshTokenRepository.revokeAllActiveByUserId(stored.getUser().getUserId(), now);
+            throw new BusinessException(ErrorCode.TOKEN_REUSE_DETECTED);
+        }
 
-        // Rotation
-        stored.revokeNow();
-        stored.markLastUsedNow();
+        if (stored.isExpired(now)) {
+            stored.revoke(now);
+            throw new BusinessException(ErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
+
+        if (!req.getDeviceId().equals(stored.getDeviceId())) {
+            throw new BusinessException(ErrorCode.DEVICE_MISMATCH);
+        }
 
         User user = stored.getUser();
         if (!user.canLogin()) throw new BusinessException(ErrorCode.USER_INACTIVE);
+
+        stored.revoke(now);
+        stored.markLastUsed(now);
 
         String newAccess = jwtProvider.createAccessToken(user.getUserId(), user.getUserRole().name());
         String newRefresh = jwtProvider.createRefreshToken(user.getUserId());
@@ -137,7 +147,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String tokenHash = sha256Hex(req.getRefreshToken());
-        RefreshToken stored = refreshTokenRepository.findByTokenHash(tokenHash)
+        RefreshToken stored = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         if (req.getDeviceId() != null && !req.getDeviceId().isBlank()) {
@@ -146,7 +156,7 @@ public class AuthServiceImpl implements AuthService {
             }
         }
 
-        stored.revokeNow();
+        stored.revoke(LocalDateTime.now());
     }
 
     @Override
@@ -155,7 +165,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void saveRefreshToken(User user, String refreshToken, String deviceId, String userAgent, String ip) {
-        LocalDateTime expiresAt = jwtProvider.getExpirationAsLocalDateTime(refreshToken); // 없으면 JwtProvider에 추가 필요
+        LocalDateTime expiresAt = jwtProvider.getExpirationAsLocalDateTime(refreshToken);
 
         RefreshToken rt = RefreshToken.builder()
                 .refreshTokenId(UUID.randomUUID().toString())
@@ -164,7 +174,6 @@ public class AuthServiceImpl implements AuthService {
                 .deviceId(deviceId)
                 .userAgent(userAgent)
                 .ip(ip)
-                .issuedAt(LocalDateTime.now())
                 .expiresAt(expiresAt)
                 .revoked(false)
                 .build();
