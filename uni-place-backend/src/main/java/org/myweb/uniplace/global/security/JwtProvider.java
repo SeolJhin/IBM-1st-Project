@@ -1,12 +1,9 @@
 package org.myweb.uniplace.global.security;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,8 +21,10 @@ public class JwtProvider {
 
     private final SecretKey key;
 
-    // ✅ properties 기준: ms
+    // application.properties 기준: jwt.access-exp / jwt.refresh-exp (ms)
+    @Getter
     private final long accessExpMs;
+    @Getter
     private final long refreshExpMs;
 
     public JwtProvider(
@@ -33,8 +32,7 @@ public class JwtProvider {
             @Value("${jwt.access-exp}") long accessExpMs,
             @Value("${jwt.refresh-exp}") long refreshExpMs
     ) {
-        // secret이 base64로 관리되는 경우를 대비해 decode 시도 -> 실패하면 raw bytes로 처리
-        this.key = buildHmacKey(secret);
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessExpMs = accessExpMs;
         this.refreshExpMs = refreshExpMs;
     }
@@ -47,7 +45,7 @@ public class JwtProvider {
                 .claim("typ", "access")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(accessExpMs)))
-                .signWith(key)
+                .signWith(key, Jwts.SIG.HS256) // ✅ deprecated 아님
                 .compact();
     }
 
@@ -58,19 +56,16 @@ public class JwtProvider {
                 .claim("typ", "refresh")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(refreshExpMs)))
-                .signWith(key)
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
-    /**
-     * 토큰 서명/만료/형식 검증
-     */
     public void validate(String token) {
         try {
             parseClaims(token);
-        } catch (ExpiredJwtException e) {
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
             throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (Exception e) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
     }
@@ -84,8 +79,8 @@ public class JwtProvider {
         return typ == null ? null : String.valueOf(typ);
     }
 
-    public String getRole(String accessToken) {
-        Object role = parseClaims(accessToken).get("role");
+    public String getRole(String token) {
+        Object role = parseClaims(token).get("role");
         return role == null ? null : String.valueOf(role);
     }
 
@@ -94,36 +89,12 @@ public class JwtProvider {
         return LocalDateTime.ofInstant(exp.toInstant(), ZoneId.systemDefault());
     }
 
-    /**
-     * ✅ JJWT 0.12.6 방식
-     * - parserBuilder() 없음
-     * - parser().verifyWith(key).build().parseSignedClaims(token).getPayload()
-     */
     private Claims parseClaims(String token) {
+        // ✅ 0.12.x: parserBuilder 대신 parser() + verifyWith
         return Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-
-    /**
-     * secret이 "base64 인코딩 문자열"일 수도 있고
-     * "그냥 긴 문자열"일 수도 있어서 둘 다 대응.
-     */
-    private SecretKey buildHmacKey(String secret) {
-        // 1) base64로 보이면 decode 시도
-        try {
-            byte[] decoded = Decoders.BASE64.decode(secret);
-            // 너무 짧으면(HS256은 32바이트 이상 권장) raw로 fallback
-            if (decoded.length >= 32) {
-                return Keys.hmacShaKeyFor(decoded);
-            }
-        } catch (Exception ignored) {
-            // not base64 -> fallback
-        }
-
-        // 2) 일반 문자열 처리
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 }

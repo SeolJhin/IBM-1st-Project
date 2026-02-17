@@ -1,7 +1,10 @@
 package org.myweb.uniplace.domain.user.application;
 
 import lombok.RequiredArgsConstructor;
-import org.myweb.uniplace.domain.user.api.dto.request.*;
+import org.myweb.uniplace.domain.user.api.dto.request.LogoutRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.RefreshTokenRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.UserLoginRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.UserSignupRequest;
 import org.myweb.uniplace.domain.user.api.dto.response.UserTokenResponse;
 import org.myweb.uniplace.domain.user.domain.entity.RefreshToken;
 import org.myweb.uniplace.domain.user.domain.entity.User;
@@ -13,6 +16,7 @@ import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.security.JwtProvider;
 import org.myweb.uniplace.global.util.IdGenerator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,41 +25,38 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
-
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final IdGenerator idGenerator;
 
+    @Value("${jwt.refresh-exp:86400000}")
+    private long refreshExpMillis;
+
     @Override
+    @Transactional
     public void signup(UserSignupRequest req) {
         if (userRepository.existsByUserEmail(req.getUserEmail())) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
-        if (userRepository.existsByUserTel(req.getUserTel())) {
-            throw new BusinessException(ErrorCode.DUPLICATE_TEL);
-        }
 
-        String userId = safeUserId();
-        String hashPwd = passwordEncoder.encode(req.getUserPwd());
-
+        String userId = idGenerator.generate("USR");
         User user = User.builder()
                 .userId(userId)
                 .userNm(req.getUserNm())
                 .userEmail(req.getUserEmail())
-                .userPwd(hashPwd)
+                .userPwd(passwordEncoder.encode(req.getUserPwd()))
                 .userBirth(req.getUserBirth())
                 .userTel(req.getUserTel())
-                .userRole(UserRole.user)            // ✅ SQL default
-                .userSt(UserStatus.active)          // ✅ SQL default
+                .userRole(UserRole.user)
+                .userSt(UserStatus.active)
                 .deleteYn("N")
                 .build();
 
@@ -63,25 +64,41 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public UserTokenResponse login(UserLoginRequest req, String userAgent, String ip) {
         User user = userRepository.findByUserEmail(req.getUserEmail())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
 
-        if (!user.canLogin()) throw new BusinessException(ErrorCode.USER_INACTIVE);
         if (!passwordEncoder.matches(req.getUserPwd(), user.getUserPwd())) {
-            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
-        user.markLoginNow();
-
-        String deviceId = (req.getDeviceId() == null || req.getDeviceId().isBlank())
-                ? UUID.randomUUID().toString()
-                : req.getDeviceId();
+        String deviceId = req.getDeviceId();
+        if (deviceId == null || deviceId.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
 
         String accessToken = jwtProvider.createAccessToken(user.getUserId(), user.getUserRole().name());
         String refreshToken = jwtProvider.createRefreshToken(user.getUserId());
 
-        saveRefreshToken(user, refreshToken, deviceId, userAgent, ip);
+        String tokenHash = sha256Hex(refreshToken);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiresAt = now.plusSeconds(refreshExpMillis / 1000);
+
+        RefreshToken rt = RefreshToken.builder()
+                .refreshTokenId(idGenerator.generate("RTK"))
+                .user(user)
+                .tokenHash(tokenHash)
+                .deviceId(deviceId)
+                .userAgent(userAgent)
+                .ip(ip)
+                .expiresAt(expiresAt)
+                .revoked(false)
+                .lastUsedAt(now)
+                .build();
+
+        refreshTokenRepository.save(rt);
 
         return UserTokenResponse.builder()
                 .accessToken(accessToken)
@@ -91,111 +108,117 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public UserTokenResponse refresh(RefreshTokenRequest req, String userAgent, String ip) {
-        if (req.getRefreshToken() == null || req.getRefreshToken().isBlank()) {
-            throw new BusinessException(ErrorCode.REFRESH_TOKEN_REQUIRED);
-        }
-        if (req.getDeviceId() == null || req.getDeviceId().isBlank()) {
-            throw new BusinessException(ErrorCode.DEVICE_ID_REQUIRED);
+        String refreshToken = req.getRefreshToken();
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
 
-        jwtProvider.validate(req.getRefreshToken());
+        jwtProvider.validate(refreshToken);
 
-        String tokenHash = sha256Hex(req.getRefreshToken());
-        RefreshToken stored = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
+        if (!"refresh".equals(jwtProvider.getTokenType(refreshToken))) {
+            throw new BusinessException(ErrorCode.TOKEN_TYPE_INVALID);
+        }
+
+        String userId = jwtProvider.getSubject(refreshToken);
+        String tokenHash = sha256Hex(refreshToken);
+
+        RefreshToken saved = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         LocalDateTime now = LocalDateTime.now();
 
-        // ✅ reuse 탐지 → 전체 로그아웃
-        if (stored.isRevoked()) {
-            refreshTokenRepository.revokeAllActiveByUserId(stored.getUser().getUserId(), now);
+        if (saved.isExpired(now)) {
+            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
+        }
+
+        // (선택) 요청 deviceId가 있으면 저장된 deviceId와 일치 검증
+        if (req.getDeviceId() != null && !req.getDeviceId().isBlank()
+                && !req.getDeviceId().equals(saved.getDeviceId())) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+
+        // revoked 토큰이 다시 사용됨 => 재사용 탐지 -> 전체 로그아웃
+        if (saved.isRevoked()) {
+            refreshTokenRepository.revokeAllActiveByUserId(userId, now);
             throw new BusinessException(ErrorCode.TOKEN_REUSE_DETECTED);
         }
 
-        if (stored.isExpired(now)) {
-            stored.revoke(now);
-            throw new BusinessException(ErrorCode.REFRESH_TOKEN_EXPIRED);
-        }
+        // rotation: 기존 토큰 revoke + lastUsed 갱신
+        saved.revoke(now);
+        saved.markLastUsed(now);
 
-        if (!req.getDeviceId().equals(stored.getDeviceId())) {
-            throw new BusinessException(ErrorCode.DEVICE_MISMATCH);
-        }
+        String newRefreshToken = jwtProvider.createRefreshToken(userId);
+        String newHash = sha256Hex(newRefreshToken);
 
-        User user = stored.getUser();
-        if (!user.canLogin()) throw new BusinessException(ErrorCode.USER_INACTIVE);
+        User user = saved.getUser();
+        String deviceId = saved.getDeviceId();
 
-        stored.revoke(now);
-        stored.markLastUsed(now);
+        LocalDateTime expiresAt = now.plusSeconds(refreshExpMillis / 1000);
 
-        String newAccess = jwtProvider.createAccessToken(user.getUserId(), user.getUserRole().name());
-        String newRefresh = jwtProvider.createRefreshToken(user.getUserId());
-
-        saveRefreshToken(user, newRefresh, stored.getDeviceId(), userAgent, ip);
-
-        return UserTokenResponse.builder()
-                .accessToken(newAccess)
-                .refreshToken(newRefresh)
-                .deviceId(stored.getDeviceId())
-                .build();
-    }
-
-    @Override
-    public void logout(LogoutRequest req) {
-        if (req.getRefreshToken() == null || req.getRefreshToken().isBlank()) {
-            throw new BusinessException(ErrorCode.REFRESH_TOKEN_REQUIRED);
-        }
-
-        String tokenHash = sha256Hex(req.getRefreshToken());
-        RefreshToken stored = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
-                .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
-
-        if (req.getDeviceId() != null && !req.getDeviceId().isBlank()) {
-            if (!req.getDeviceId().equals(stored.getDeviceId())) {
-                throw new BusinessException(ErrorCode.DEVICE_MISMATCH);
-            }
-        }
-
-        stored.revoke(LocalDateTime.now());
-    }
-
-    @Override
-    public void logoutAll(String userId) {
-        refreshTokenRepository.revokeAllActiveByUserId(userId, LocalDateTime.now());
-    }
-
-    private void saveRefreshToken(User user, String refreshToken, String deviceId, String userAgent, String ip) {
-        LocalDateTime expiresAt = jwtProvider.getExpirationAsLocalDateTime(refreshToken);
-
-        RefreshToken rt = RefreshToken.builder()
-                .refreshTokenId(UUID.randomUUID().toString())
+        RefreshToken newRt = RefreshToken.builder()
+                .refreshTokenId(idGenerator.generate("RTK"))
                 .user(user)
-                .tokenHash(sha256Hex(refreshToken))
+                .tokenHash(newHash)
                 .deviceId(deviceId)
-                .userAgent(userAgent)
+                .userAgent(userAgent) // 최신 userAgent/ip로 갱신 저장
                 .ip(ip)
                 .expiresAt(expiresAt)
                 .revoked(false)
+                .lastUsedAt(now)
                 .build();
 
-        refreshTokenRepository.save(rt);
+        refreshTokenRepository.save(newRt);
+
+        String newAccessToken = jwtProvider.createAccessToken(userId, user.getUserRole().name());
+
+        return UserTokenResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .deviceId(deviceId)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void logout(LogoutRequest req) {
+        if (req == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        String refreshToken = req.getRefreshToken();
+        String deviceId = req.getDeviceId();
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+        if (deviceId == null || deviceId.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        jwtProvider.validate(refreshToken);
+        if (!"refresh".equals(jwtProvider.getTokenType(refreshToken))) {
+            throw new BusinessException(ErrorCode.TOKEN_TYPE_INVALID);
+        }
+
+        String userId = jwtProvider.getSubject(refreshToken);
+        refreshTokenRepository.revokeActiveByUserIdAndDeviceId(userId, deviceId, LocalDateTime.now());
+    }
+
+    @Override
+    @Transactional
+    public void logoutAll(String userId) {
+        refreshTokenRepository.revokeAllActiveByUserId(userId, LocalDateTime.now());
     }
 
     private String sha256Hex(String raw) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] dig = md.digest(raw.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(dig);
+            byte[] digested = md.digest(raw.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digested);
         } catch (Exception e) {
-            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
-        }
-    }
-
-    private String safeUserId() {
-        try {
-            return idGenerator.generate("u_");
-        } catch (Exception ignore) {
-            return "u_" + UUID.randomUUID();
+            throw new IllegalStateException("sha256 failed", e);
         }
     }
 }
