@@ -32,7 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 인증 없이 허용
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/v4/api-docs/**").permitAll()
 
                         // admin api는 ROLE_ADMIN만
                         .requestMatchers("/admin/**").hasRole("ADMIN")
