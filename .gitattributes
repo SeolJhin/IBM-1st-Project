@@ -14,4 +14,4 @@
 *.p12 binary
 *.key binary
 *.pem binary
-EOF
+*.crt binary
