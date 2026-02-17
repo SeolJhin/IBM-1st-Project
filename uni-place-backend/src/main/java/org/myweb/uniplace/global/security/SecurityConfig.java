@@ -3,51 +3,48 @@ package org.myweb.uniplace.global.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableWebSecurity
-@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
-    private final JwtExceptionFilter jwtExceptionFilter;
-    private final RestAuthenticationEntryPoint authenticationEntryPoint;
-    private final RestAccessDeniedHandler accessDeniedHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        return http
+        JwtAuthFilter jwtAuthFilter = new JwtAuthFilter(jwtProvider);
+
+        http
                 .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(authenticationEntryPoint)
-                        .accessDeniedHandler(accessDeniedHandler)
+                .exceptionHandling(eh -> eh
+                        .authenticationEntryPoint(new RestAuthenticationEntryPoint())
+                        .accessDeniedHandler(new RestAccessDeniedHandler())
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // 인증 없이 허용
                         .requestMatchers("/auth/**").permitAll()
-                        // admin prefix를 실제로 쓰면 유지, 아니면 삭제해도 됨
-                        .requestMatchers("/admin/**").hasRole("admin")
-                        .anyRequest().authenticated()
-                )
-                // 예외 필터가 먼저
-                .addFilterBefore(jwtExceptionFilter, UsernamePasswordAuthenticationFilter.class)
-                // 인증 필터는 그 다음
-                .addFilterAfter(new JwtAuthFilter(jwtProvider), JwtExceptionFilter.class)
-                .build();
-    }
+                        .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+                        // admin api는 ROLE_ADMIN만
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+
+                        // 그 외는 인증
+                        .anyRequest().authenticated()
+                );
+
+        // JwtAuthFilter에서 BusinessException 터질 수 있으니, JwtExceptionFilter를 앞단에 둠
+        http.addFilterBefore(new JwtExceptionFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(jwtAuthFilter, JwtExceptionFilter.class);
+
+        return http.build();
     }
 }

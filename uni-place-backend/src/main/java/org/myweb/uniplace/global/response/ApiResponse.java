@@ -1,45 +1,34 @@
 package org.myweb.uniplace.global.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
+import org.myweb.uniplace.global.exception.ErrorCode;
 
 @Getter
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
     private final boolean success;
-    private final String code;
-    private final String message;
     private final T data;
+    private final String errorCode;
+    private final String message;
 
-    private ApiResponse(boolean success, String code, String message, T data) {
+    private ApiResponse(boolean success, T data, String errorCode, String message) {
         this.success = success;
-        this.code = code;
-        this.message = message;
         this.data = data;
+        this.errorCode = errorCode;
+        this.message = message;
     }
 
-    // ✅ 성공(데이터 있음)
+    // ===== success =====
     public static <T> ApiResponse<T> ok(T data) {
-        return new ApiResponse<>(true, "OK", "success", data);
+        return new ApiResponse<>(true, data, null, null);
     }
 
-    // ✅ 성공(데이터 없음)
     public static ApiResponse<Void> ok() {
-        return new ApiResponse<>(true, "OK", "success", null);
+        return new ApiResponse<>(true, null, null, null);
     }
 
-    // ✅ 생성(필요하면)
-    public static <T> ApiResponse<T> created(T data) {
-        return new ApiResponse<>(true, "CREATED", "created", data);
-    }
-
-    // ✅ 실패(필요하면)
-    public static ApiResponse<Void> fail(String code, String message) {
-        return new ApiResponse<>(false, code, message, null);
-    }
-
-    public static <T> ApiResponse<T> fail(String code, String message, T data) {
-        return new ApiResponse<>(false, code, message, data);
+    // ===== error =====
+    public static ApiResponse<Void> error(ErrorCode errorCode) {
+        return new ApiResponse<>(false, null, errorCode.getCode(), errorCode.getMessage());
     }
 }

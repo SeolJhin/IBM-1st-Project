@@ -4,15 +4,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.myweb.uniplace.domain.user.domain.enums.UserRole;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -23,14 +22,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-
         if (header == null || !header.startsWith("Bearer ")) {
-            chain.doFilter(request, response);
+            filterChain.doFilter(request, response);
             return;
         }
 
@@ -38,27 +38,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         jwtProvider.validate(token);
 
-        // access 토큰만 인증 처리
         String typ = jwtProvider.getTokenType(token);
         if (!"access".equals(typ)) {
-            chain.doFilter(request, response);
-            return;
+            throw new BusinessException(ErrorCode.TOKEN_TYPE_INVALID);
         }
 
         String userId = jwtProvider.getSubject(token);
-        String roleStr = jwtProvider.getRole(token);
-        UserRole role = UserRole.valueOf(roleStr);
+        String role = jwtProvider.getRole(token);
 
-        AuthUser principal = new AuthUser(userId, role);
+        AuthUser principal = new AuthUser(userId, role == null ? "USER" : role);
 
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
-                );
+        var auth = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                principal.getAuthorities()
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        chain.doFilter(request, response);
+        filterChain.doFilter(request, response);
     }
 }
