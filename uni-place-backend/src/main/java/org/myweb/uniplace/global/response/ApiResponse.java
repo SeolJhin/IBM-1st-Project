@@ -1,8 +1,10 @@
 package org.myweb.uniplace.global.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 
 @Getter
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
     private final boolean success;
@@ -17,11 +19,27 @@ public class ApiResponse<T> {
         this.data = data;
     }
 
-    public static <T> ApiResponse<T> success(T data) {
+    // ✅ 성공(데이터 있음)
+    public static <T> ApiResponse<T> ok(T data) {
         return new ApiResponse<>(true, "OK", "success", data);
     }
 
-    public static <T> ApiResponse<T> error(String code, String message) {
+    // ✅ 성공(데이터 없음)
+    public static ApiResponse<Void> ok() {
+        return new ApiResponse<>(true, "OK", "success", null);
+    }
+
+    // ✅ 생성(필요하면)
+    public static <T> ApiResponse<T> created(T data) {
+        return new ApiResponse<>(true, "CREATED", "created", data);
+    }
+
+    // ✅ 실패(필요하면)
+    public static ApiResponse<Void> fail(String code, String message) {
         return new ApiResponse<>(false, code, message, null);
+    }
+
+    public static <T> ApiResponse<T> fail(String code, String message, T data) {
+        return new ApiResponse<>(false, code, message, data);
     }
 }
