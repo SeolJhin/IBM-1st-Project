@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import styles from './Login.module.css';
-import { useAuth } from '../hooks/useAuth';
+import React, { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import styles from "./Login.module.css";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Login() {
   const { login, loading } = useAuth();
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -15,21 +19,25 @@ export default function Login() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     const email = form.email.trim();
     const password = form.password;
 
-    if (!email) return setError('이메일을 입력해주세요.');
-    if (!password) return setError('비밀번호를 입력해주세요.');
+    if (!email) return setError("이메일을 입력해주세요.");
+    if (!password) return setError("비밀번호를 입력해주세요.");
 
     try {
       setSubmitting(true);
+
+      //  useAuth.login에서 실제 백엔드 로그인 처리
       await login({ email, password });
-      // TODO: 프로젝트 라우팅 정책에 맞게 변경
-      window.location.assign('/');
+
+      //  로그인 후 이동: 이전 페이지가 있으면 그쪽으로, 없으면 홈
+      const from = location.state?.from || "/";
+      navigate(from, { replace: true });
     } catch (err) {
-      setError(err?.message || '로그인에 실패했습니다.');
+      setError(err?.message || "로그인에 실패했습니다.");
     } finally {
       setSubmitting(false);
     }
@@ -77,7 +85,7 @@ export default function Login() {
           type="submit"
           disabled={loading || submitting}
         >
-          {submitting ? '로그인 중…' : '로그인'}
+          {submitting ? "로그인 중…" : "로그인"}
         </button>
       </form>
     </section>
