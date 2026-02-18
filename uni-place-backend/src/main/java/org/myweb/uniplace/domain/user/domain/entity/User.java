@@ -60,17 +60,17 @@ public class User {
     private UserStatus userSt;
 
     @Column(name = "delete_yn", length = 1, nullable = false)
-    private String deleteYn;
+    private String deleteYN;
 
     @PrePersist
     void onCreate() {
         if (userRole == null) userRole = UserRole.user;       // SQL default
         if (userSt == null) userSt = UserStatus.active;       // SQL default
-        if (deleteYn == null) deleteYn = "N";                 // SQL default
+        if (deleteYN == null) deleteYN = "N";                 // SQL default
     }
 
     public boolean canLogin() {
-        return userSt == UserStatus.active && !"Y".equalsIgnoreCase(deleteYn);
+        return userSt == UserStatus.active && !"Y".equalsIgnoreCase(deleteYN);
     }
 
     public void markLoginNow() {
@@ -80,9 +80,10 @@ public class User {
     // 일반회원 수정 (정책 붙이기 전에는 tel 정도만 권장)
     public void changeTel(String newTel) { this.userTel = newTel; }
     public void changeName(String newName) { this.userNm = newName; }
+    public void changePwd(String newPwd) {this.userPwd = newPwd; }
 
     // 관리자용
     public void changeRole(UserRole role) { this.userRole = role; }
     public void changeStatus(UserStatus st) { this.userSt = st; }
-    public void changeDeleteYn(String yn) { this.deleteYn = yn; }
+    public void changeDeleteYN(String yn) { this.deleteYN = yn; }
 }

@@ -57,7 +57,7 @@ public class AuthServiceImpl implements AuthService {
                 .userTel(req.getUserTel())
                 .userRole(UserRole.user)
                 .userSt(UserStatus.active)
-                .deleteYn("N")
+                .deleteYN("N")
                 .build();
 
         userRepository.save(user);
