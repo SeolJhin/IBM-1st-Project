@@ -56,7 +56,7 @@ public class UserServiceImpl implements UserService {
     public void deleteMe(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        user.changeDeleteYn("Y");
+        user.changeDeleteYN("Y");
     }
     
     

@@ -18,7 +18,7 @@ public class UserResponse {
 
     private String userRole;
     private String userSt;
-    private String deleteYn;
+    private String deleteYN;
 
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;
@@ -31,8 +31,7 @@ public class UserResponse {
                 .userBirth(u.getUserBirth())
                 .userTel(u.getUserTel())
                 .userRole(u.getUserRole().name())
-                .userSt(u.getUserSt().name())
-                .deleteYn(u.getDeleteYn())
+                .deleteYN(u.getDeleteYN())
                 .createdAt(u.getCreatedAt())
                 .lastLoginAt(u.getLastLoginAt())
                 .build();
