@@ -1,5 +1,10 @@
 package org.myweb.uniplace.domain.user.api.dto.request;
 
-public class RefreshTokenRequest {
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter @Setter
+public class RefreshTokenRequest {
+    private String refreshToken;
+    private String deviceId;
 }
