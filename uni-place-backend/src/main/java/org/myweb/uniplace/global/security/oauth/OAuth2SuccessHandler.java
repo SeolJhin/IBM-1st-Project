@@ -33,12 +33,12 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         // CustomOAuth2UserService에서 만든 UserContext 가져오기
         UserContext userContext = (UserContext) authentication.getPrincipal();
 
-        Long userId = userContext.getUserId();
-        String email = userContext.getUserEmail();
+        String userId = userContext.getUserId();
+        String email = userContext.getEmail();
         String role = userContext.getRole();
 
         // JWT 생성
-        String accessToken = jwtProvider.createAccessToken(userId, email, role);
+        String accessToken = jwtProvider.createAccessToken(userId, role);
         String refreshToken = jwtProvider.createRefreshToken(userId);
 
         // URL encode
