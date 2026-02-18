@@ -110,7 +110,6 @@ tasks.withType(JavaCompile) {
 //build clean 시에 생성되었던 QClass 들도 모두 삭제하고자 한다면
 //만들어진 Q엔티티클래스 삭제하기 : Gradle > build > clean
 //Q엔티티클래스 만들기 : Gradle > build > compileJava
-//src/main/generated 폴더 아래에 Q엔티티클래스 만들어졌으면 QueryDSL 설정이 정상적으로 작동된 것이다.
 clean {
 	delete file(querydslSrcDir)
 }

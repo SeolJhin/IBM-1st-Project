@@ -1,5 +1,6 @@
 package org.myweb.uniplace.domain.property.domain.enums;
 
-public class RentType {
-
+public enum RentType {
+    monthly_rent,
+    stay
 }
