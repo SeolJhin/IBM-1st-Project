@@ -1,5 +1,8 @@
 package org.myweb.uniplace.domain.property.domain.enums;
 
-public class SunDirection {
-
+public enum SunDirection {
+    n,
+    s,
+    w,
+    e
 }
