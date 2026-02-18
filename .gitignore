@@ -2,7 +2,7 @@
 # Build 결과물
 # ===============================
 /build/
-.gradle/
+/.gradle/
 /target/
 /out/
 
@@ -38,11 +38,8 @@ application-dev.yml
 application-dev.properties
 application-prod.yml
 application-prod.properties
-
 .env
 .env.local
-.env.docker
-
 jwt-secret.txt
 oauth-secret.json
 *.p12
@@ -64,18 +61,13 @@ uploads/
 *.lcov
 
 # ===============================
-# Docker
+# Docker (필요 시)
 # ===============================
 docker-compose.override.yml
+.env.docker
 
 # ===============================
 # Node (프론트 같이 있을 경우 대비)
 # ===============================
 node_modules/
 dist/
-
-# ===============================
-# 압축 / 백업 파일 (실수 방지)
-# ===============================
-*.zip
-*.7z
