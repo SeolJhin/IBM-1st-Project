@@ -36,23 +36,23 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	//스프링 부트 웹 관련 기본 설정과 의존성 기능 제공, Restful 관련 어노테이션 제공
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-
+	
 	// Devtools (개발시 유용한 도구를 제공하는 라이브러리임 (자동 스타터)
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-
+	
 	// 스프링 부트와 연동되는 jpa 기술 관련 의존성 기능 제공
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	// mysql
 	runtimeOnly 'com.mysql:mysql-connector-j'
-
+	
 	// Configuration processor
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	//스프링 부트 설정과 관련된 어노테이션과 기능을 제공하는 라이브러리
-
+	
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
-
+	
 	// QueryDSL for JPA
 	implementation "com.querydsl:querydsl-jpa:${querydslVersion}:jakarta"
 	annotationProcessor "com.querydsl:querydsl-apt:${querydslVersion}:jakarta"
@@ -69,13 +69,13 @@ dependencies {
 	implementation 'com.github.scribejava:scribejava-apis:8.3.3'
 	implementation 'com.github.scribejava:scribejava-core:8.3.3'
 	implementation 'org.apache.httpcomponents:httpclient:4.5.13'
-
+	
 	//jsonObject 사용 라이브러리 의존성 추가
 	implementation 'com.googlecode.json-simple:json-simple:1.1.1'
-
+	
 	implementation 'org.springframework.boot:spring-boot-starter-tomcat'
 	//스프링 부트에 내장된 톰켓 라이브러리, 웹 애플리케이션 구동을 위한 라이브러리임
-
+	
 	// Test : 테스트를 위한 라이브러리임. 테스트 코드 작성시 이용됨, 테스트 코드는 서버 구동없이 실행함
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
@@ -93,12 +93,19 @@ sourceSets {
 	}
 }
 
-// annotationProcessorGeneratedSourcesDirectory 는 deprecated
+//annotationProcessorGeneratedSourcesDirectory 를 사용할 수도 있는데,
+//Gradle 공식 문서에 해당 기능은 deprecated 되었고, 추후 major 버전에서 삭제할 것이라고 소개되어 있음
+// generatedSourceOutputDirectory 를 사용함
+//generatedSourceOutputDirectory 는 annotation processors 에서 생성한 소스 파일을 저장할 디렉토리를 지정해 준다.
+//위에서 선언한 src/main/generated 에 annotation processors 가 만든 Q클래스들을 저장하도록 설정함
 tasks.withType(JavaCompile) {
 	options.generatedSourceOutputDirectory = file(querydslSrcDir)
 }
 
-// build clean 시에 생성되었던 QClass 들도 모두 삭제
+//build clean 시에 생성되었던 QClass 들도 모두 삭제하고자 한다면
+//만들어진 Q엔티티클래스 삭제하기 : Gradle > build > clean
+//Q엔티티클래스 만들기 : Gradle > build > compileJava
+//src/main/generated 폴더 아래에 Q엔티티클래스 만들어졌으면 QueryDSL 설정이 정상적으로 작동된 것이다.
 clean {
 	delete file(querydslSrcDir)
 }
