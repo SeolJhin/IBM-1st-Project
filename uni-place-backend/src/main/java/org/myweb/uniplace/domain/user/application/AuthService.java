@@ -1,5 +1,12 @@
 package org.myweb.uniplace.domain.user.application;
 
-public class AuthService {
+import org.myweb.uniplace.domain.user.api.dto.request.*;
+import org.myweb.uniplace.domain.user.api.dto.response.UserTokenResponse;
 
+public interface AuthService {
+    void signup(UserSignupRequest req);
+    UserTokenResponse login(UserLoginRequest req, String userAgent, String ip);
+    UserTokenResponse refresh(RefreshTokenRequest req, String userAgent, String ip);
+    void logout(LogoutRequest req);
+    void logoutAll(String userId);
 }
