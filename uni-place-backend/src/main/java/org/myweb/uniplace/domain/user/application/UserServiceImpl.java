@@ -58,4 +58,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         user.changeDeleteYn("Y");
     }
+    
+    
+    
 }
