@@ -37,6 +37,16 @@ public class AuthController {
         authService.logout(req);
         return ApiResponse.ok();
     }
+    
+    // ✅ 카카오 소셜 로그인 후 "추가정보 입력 완료" 시점에 진짜 회원 생성 + 토큰 발급
+    @PostMapping("/oauth2/kakao/complete")
+    public ApiResponse<UserTokenResponse> kakaoComplete(
+            HttpServletRequest http,
+            @Valid @RequestBody KakaoSignupCompleteRequest req
+    ) {
+        return ApiResponse.ok(authService.kakaoComplete(req, http.getHeader("User-Agent"), extractIp(http)));
+    }
+
 
     private String extractIp(HttpServletRequest request) {
         String xff = request.getHeader("X-Forwarded-For");
