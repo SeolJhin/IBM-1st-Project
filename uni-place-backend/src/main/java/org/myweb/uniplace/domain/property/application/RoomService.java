@@ -6,8 +6,8 @@ import org.myweb.uniplace.domain.property.api.dto.request.RoomSearchRequest;
 import org.myweb.uniplace.domain.property.api.dto.request.RoomUpdateRequest;
 import org.myweb.uniplace.domain.property.api.dto.response.RoomDetailResponse;
 import org.myweb.uniplace.domain.property.api.dto.response.RoomSummaryResponse;
+import org.myweb.uniplace.global.response.PageResponse;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface RoomService {
@@ -15,9 +15,10 @@ public interface RoomService {
     RoomDetailResponse getRoom(Integer roomId);
     RoomDetailResponse getRoomForAdmin(Integer roomId);
 
-    // ✅ Page 기반
-    Page<RoomSummaryResponse> searchPage(RoomSearchRequest request, Pageable pageable);
+    // ✅ 페이징 + 필터
+    PageResponse<RoomSummaryResponse> search(RoomSearchRequest request, Pageable pageable);
 
+    // ✅ 관리자 전용
     RoomDetailResponse createRoom(RoomCreateRequest request);
     RoomDetailResponse updateRoom(Integer roomId, RoomUpdateRequest request);
 }

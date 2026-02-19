@@ -1,4 +1,3 @@
-// DTO
 // 경로: org/myweb/uniplace/domain/property/api/dto/response/RoomSummaryResponse.java
 package org.myweb.uniplace.domain.property.api.dto.response;
 
@@ -20,6 +19,7 @@ public class RoomSummaryResponse {
 
     private Integer roomId;
 
+    // ✅ building 정보(요구사항)
     private Integer buildingId;
     private String buildingNm;
     private String buildingAddr;

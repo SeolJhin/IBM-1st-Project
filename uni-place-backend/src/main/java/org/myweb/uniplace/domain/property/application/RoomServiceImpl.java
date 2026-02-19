@@ -2,7 +2,6 @@
 package org.myweb.uniplace.domain.property.application;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
@@ -17,6 +16,7 @@ import org.myweb.uniplace.domain.property.domain.entity.Building;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.property.repository.BuildingRepository;
 import org.myweb.uniplace.domain.property.repository.RoomRepository;
+import org.myweb.uniplace.global.response.PageResponse;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -60,51 +60,56 @@ public class RoomServiceImpl implements RoomService {
         return RoomDetailResponse.fromEntity(room, files);
     }
 
-    // ✅ Page 기반
     @Override
     @Transactional(readOnly = true)
-    public Page<RoomSummaryResponse> searchPage(RoomSearchRequest request, Pageable pageable) {
+    public PageResponse<RoomSummaryResponse> search(RoomSearchRequest request, Pageable pageable) {
 
-        return roomRepository.searchWithFilters(
-                        request.getBuildingId(),
-                        request.getBuildingNm(),
-                        request.getBuildingAddr(),
-                        request.getMinParkingCapacity(),
-                        request.getRoomNo(),
-                        request.getFloor(),
-                        request.getMinRoomSize(),
-                        request.getMaxRoomSize(),
-                        request.getMinDeposit(),
-                        request.getMaxDeposit(),
-                        request.getMinRentPrice(),
-                        request.getMaxRentPrice(),
-                        request.getMinManageFee(),
-                        request.getMaxManageFee(),
-                        request.getRentType(),
-                        request.getRoomSt(),
-                        request.getSunDirection(),
-                        request.getMinRoomCapacity(),
-                        request.getMaxRoomCapacity(),
-                        request.getMinRentMin(),
-                        request.getMaxRentMin(),
-                        request.getRoomOptions(),
-                        pageable
-                )
-                .map(RoomSummaryResponse::fromEntity);
+        Page<Room> page = roomRepository.searchWithFilters(
+                request.getBuildingId(),
+                request.getBuildingNm(),
+                request.getBuildingAddr(),
+                request.getMinParkingCapacity(),
+
+                request.getRoomNo(),
+                request.getFloor(),
+
+                request.getMinRoomSize(),
+                request.getMaxRoomSize(),
+
+                request.getMinDeposit(),
+                request.getMaxDeposit(),
+
+                request.getMinRentPrice(),
+                request.getMaxRentPrice(),
+
+                request.getMinManageFee(),
+                request.getMaxManageFee(),
+
+                request.getRentType(),
+                request.getRoomSt(),
+                request.getSunDirection(),
+
+                request.getMinRoomCapacity(),
+                request.getMaxRoomCapacity(),
+
+                request.getMinRentMin(),
+                request.getMaxRentMin(),
+
+                request.getRoomOptions(),
+
+                pageable
+        );
+
+        Page<RoomSummaryResponse> mapped = page.map(RoomSummaryResponse::fromEntity);
+
+        // ✅ 프로젝트 공통 PageResponse에 맞춰 1줄만 조정하면 됨
+        return PageResponse.of(mapped);
     }
 
     @Override
     public RoomDetailResponse createRoom(RoomCreateRequest request) {
 
-        if (request == null) {
-            throw new IllegalArgumentException("요청 값이 비어있습니다.");
-        }
-
-        String buildingNm = request.getBuildingNm();
-        Optional<Building> buildingOpt = buildingRepository.findByBuildingNm(buildingNm);
-
-        Building building = buildingOpt
-                .orElseThrow(() -> new IllegalArgumentException("건물을 찾을 수 없습니다. buildingNm=" + buildingNm));
+        Building building = resolveBuildingByName(request.getBuildingNm());
 
         Room room = Room.builder()
                 .building(building)
@@ -134,7 +139,7 @@ public class RoomServiceImpl implements RoomService {
         }
 
         List<FileResponse> files =
-                fileService.getAllFilesForAdmin(FileRefType.ROOM.dbValue(), saved.getRoomId());
+                fileService.getActiveFiles(FileRefType.ROOM.dbValue(), saved.getRoomId());
 
         return RoomDetailResponse.fromEntity(saved, files);
     }
@@ -145,16 +150,8 @@ public class RoomServiceImpl implements RoomService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("객실을 찾을 수 없습니다. roomId=" + roomId));
 
-        if (request == null) {
-            List<FileResponse> files =
-                    fileService.getAllFilesForAdmin(FileRefType.ROOM.dbValue(), roomId);
-            return RoomDetailResponse.fromEntity(room, files);
-        }
-
         if (request.getBuildingNm() != null && !request.getBuildingNm().isBlank()) {
-            Building building = buildingRepository.findByBuildingNm(request.getBuildingNm())
-                    .orElseThrow(() -> new IllegalArgumentException("건물을 찾을 수 없습니다. buildingNm=" + request.getBuildingNm()));
-            room.setBuilding(building);
+            room.setBuilding(resolveBuildingByName(request.getBuildingNm()));
         }
 
         if (request.getRoomNo() != null) room.setRoomNo(request.getRoomNo());
@@ -191,11 +188,24 @@ public class RoomServiceImpl implements RoomService {
                     .build());
         }
 
-        Room saved = roomRepository.save(room);
-
         List<FileResponse> files =
-                fileService.getAllFilesForAdmin(FileRefType.ROOM.dbValue(), roomId);
+                fileService.getActiveFiles(FileRefType.ROOM.dbValue(), roomId);
 
-        return RoomDetailResponse.fromEntity(saved, files);
+        return RoomDetailResponse.fromEntity(room, files);
+    }
+
+    private Building resolveBuildingByName(String buildingNm) {
+
+        List<Building> buildings = buildingRepository.findByBuildingNm(buildingNm);
+
+        if (buildings == null || buildings.isEmpty()) {
+            throw new IllegalArgumentException("건물을 찾을 수 없습니다. buildingNm=" + buildingNm);
+        }
+
+        if (buildings.size() > 1) {
+            throw new IllegalArgumentException("건물명이 중복됩니다. buildingNm=" + buildingNm + " (buildingId로 지정 필요)");
+        }
+
+        return buildings.get(0);
     }
 }
