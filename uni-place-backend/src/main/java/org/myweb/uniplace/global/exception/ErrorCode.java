@@ -25,7 +25,11 @@ public enum ErrorCode {
 
     // ===== Common =====
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON_400", "잘못된 요청입니다."),
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_500", "서버 오류가 발생했습니다.");
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_500", "서버 오류가 발생했습니다."),
+	
+	// ===== Affiliate =====
+	AFFILIATE_NOT_FOUND(HttpStatus.NOT_FOUND, "AFFILIATE_404", "제휴업체를 찾을 수 없습니다."),
+	AFFILIATE_DUPLICATE(HttpStatus.CONFLICT, "AFFILIATE_409", "이미 등록된 제휴업체입니다.");
 
     private final HttpStatus status;
     private final String code;
