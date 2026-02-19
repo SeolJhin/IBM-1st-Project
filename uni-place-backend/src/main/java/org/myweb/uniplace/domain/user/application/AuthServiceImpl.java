@@ -46,6 +46,10 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByUserEmail(req.getUserEmail())) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
+        
+        if (userRepository.existsByUserTel(req.getUserTel())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_TEL);
+        }
 
         String userId = idGenerator.generate("USR");
         User user = User.builder()
@@ -72,6 +76,15 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(req.getUserPwd(), user.getUserPwd())) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
+        
+        // ✅ 1) 로그인 가능 여부 체크 (탈퇴/비활성 차단)
+        if (!user.canLogin()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+            // 나중에 에러코드 분리하고 싶으면 USER_CANNOT_LOGIN 같은 걸로 바꾸면 됨
+        }
+
+        // ✅ 2) 마지막 로그인 시간 갱신
+        user.markLoginNow();
 
         String deviceId = req.getDeviceId();
         if (deviceId == null || deviceId.isBlank()) {
@@ -126,6 +139,12 @@ public class AuthServiceImpl implements AuthService {
 
         RefreshToken saved = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
+        
+        // 토큰 subject(userId) 와 saved.user.userId가 같다는 검증
+        if (!saved.getUser().getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -137,6 +156,16 @@ public class AuthServiceImpl implements AuthService {
         if (req.getDeviceId() != null && !req.getDeviceId().isBlank()
                 && !req.getDeviceId().equals(saved.getDeviceId())) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+        
+        // ✅ 탈퇴/비활성 계정 refresh 차단 (꼭 필요한 정책)
+        User user = saved.getUser();
+        if (user == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        if (!user.canLogin()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+            // 나중에 필요하면 USER_CANNOT_LOGIN 같은 에러코드로 분리 가능
         }
 
         // revoked 토큰이 다시 사용됨 => 재사용 탐지 -> 전체 로그아웃
@@ -152,7 +181,6 @@ public class AuthServiceImpl implements AuthService {
         String newRefreshToken = jwtProvider.createRefreshToken(userId);
         String newHash = sha256Hex(newRefreshToken);
 
-        User user = saved.getUser();
         String deviceId = saved.getDeviceId();
 
         LocalDateTime expiresAt = now.plusSeconds(refreshExpMillis / 1000);

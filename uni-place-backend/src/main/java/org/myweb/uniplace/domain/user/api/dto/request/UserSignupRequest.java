@@ -1,12 +1,13 @@
 package org.myweb.uniplace.domain.user.api.dto.request;
 
-import lombok.Getter;
-import lombok.Setter;
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
-import java.time.LocalDate;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -19,6 +20,7 @@ public class UserSignupRequest {
     private String userEmail;
 	
 	@NotBlank(message = "비밀번호(userPwd)는 필수입니다.")
+	@Size(min = 8, message = "비밀번호(userPwd)는 최소 8자 이상이어야 합니다.")
     private String userPwd;
 	
 	@NotNull(message = "생년월일(userBirth)는 필수입니다.")
