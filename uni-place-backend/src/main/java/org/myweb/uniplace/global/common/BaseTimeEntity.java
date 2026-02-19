@@ -20,9 +20,9 @@ import java.time.LocalDateTime;
  * - Auditing 적용 가능 (@CreatedDate / @LastModifiedDate)
  * 
  * 예시
- * - File	단순 생성/수정 시각만 필요 → BaseTimeEntity
- * - Building	논리 삭제 + 생성/수정 시각 필요 → SoftDeleteEntity
- * - Notice	활성/비활성 + 생성/수정 시각 필요 → ActivateEntity
+ * - 단순 생성/수정 시각만 필요 → BaseTimeEntity
+ * - 논리 삭제 + 생성/수정 시각 필요 → SoftDeleteEntity
+ * - 활성/비활성 + 생성/수정 시각 필요 → ActivateEntity
  */
 @Getter
 @MappedSuperclass
