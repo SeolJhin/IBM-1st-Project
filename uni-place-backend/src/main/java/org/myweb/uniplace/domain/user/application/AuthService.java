@@ -9,4 +9,7 @@ public interface AuthService {
     UserTokenResponse refresh(RefreshTokenRequest req, String userAgent, String ip);
     void logout(LogoutRequest req);
     void logoutAll(String userId);
+    
+    // ✅ 카카오 소셜 로그인 "추가정보 입력 완료" 처리
+    UserTokenResponse kakaoComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
 }
