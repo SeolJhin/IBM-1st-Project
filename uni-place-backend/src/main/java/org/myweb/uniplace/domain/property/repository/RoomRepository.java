@@ -17,44 +17,83 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Integer> {
 
-    @Query("""
-        select r
-          from Room r
-         where
-               (:buildingId is null or r.building.buildingId = :buildingId)
-           and (:buildingNm is null or :buildingNm = '' or lower(r.building.buildingNm) like lower(concat('%', :buildingNm, '%')))
-           and (:buildingAddr is null or :buildingAddr = '' or lower(r.building.buildingAddr) like lower(concat('%', :buildingAddr, '%')))
-           and (:minParkingCapacity is null or r.building.parkingCapacity >= :minParkingCapacity)
+    // ✅ Page 기반 (value + countQuery 함께 제공)
+    @Query(
+        value = """
+            select r
+              from Room r
+              join r.building b
+             where
+                   (:buildingId is null or b.buildingId = :buildingId)
+               and (:buildingNm is null or :buildingNm = '' or lower(b.buildingNm) like lower(concat('%', :buildingNm, '%')))
+               and (:buildingAddr is null or :buildingAddr = '' or lower(b.buildingAddr) like lower(concat('%', :buildingAddr, '%')))
+               and (:minParkingCapacity is null or b.parkingCapacity >= :minParkingCapacity)
 
-           and (:roomNo is null or r.roomNo = :roomNo)
-           and (:floor is null or r.floor = :floor)
+               and (:roomNo is null or r.roomNo = :roomNo)
+               and (:floor is null or r.floor = :floor)
 
-           and (:minRoomSize is null or r.roomSize >= :minRoomSize)
-           and (:maxRoomSize is null or r.roomSize <= :maxRoomSize)
+               and (:minRoomSize is null or r.roomSize >= :minRoomSize)
+               and (:maxRoomSize is null or r.roomSize <= :maxRoomSize)
 
-           // deposit이 NULL인 경우도 검색에 포함 (필터 적용 시 의도치 않게 빠지지 않도록)
-           and (:minDeposit is null or r.deposit is null or r.deposit >= :minDeposit)
-           and (:maxDeposit is null or r.deposit is null or r.deposit <= :maxDeposit)
+               and (:minDeposit is null or r.deposit >= :minDeposit)
+               and (:maxDeposit is null or r.deposit <= :maxDeposit)
 
-           and (:minRentPrice is null or r.rentPrice >= :minRentPrice)
-           and (:maxRentPrice is null or r.rentPrice <= :maxRentPrice)
+               and (:minRentPrice is null or r.rentPrice >= :minRentPrice)
+               and (:maxRentPrice is null or r.rentPrice <= :maxRentPrice)
 
-           // manageFee가 NULL인 경우도 검색에 포함
-           and (:minManageFee is null or r.manageFee is null or r.manageFee >= :minManageFee)
-           and (:maxManageFee is null or r.manageFee is null or r.manageFee <= :maxManageFee)
+               and (:minManageFee is null or r.manageFee >= :minManageFee)
+               and (:maxManageFee is null or r.manageFee <= :maxManageFee)
 
-           and (:rentType is null or r.rentType = :rentType)
-           and (:roomSt is null or r.roomSt = :roomSt)
-           and (:sunDirection is null or r.sunDirection = :sunDirection)
+               and (:rentType is null or r.rentType = :rentType)
+               and (:roomSt is null or r.roomSt = :roomSt)
+               and (:sunDirection is null or r.sunDirection = :sunDirection)
 
-           and (:minRoomCapacity is null or r.roomCapacity >= :minRoomCapacity)
-           and (:maxRoomCapacity is null or r.roomCapacity <= :maxRoomCapacity)
+               and (:minRoomCapacity is null or r.roomCapacity >= :minRoomCapacity)
+               and (:maxRoomCapacity is null or r.roomCapacity <= :maxRoomCapacity)
 
-           and (:minRentMin is null or r.rentMin >= :minRentMin)
-           and (:maxRentMin is null or r.rentMin <= :maxRentMin)
+               and (:minRentMin is null or r.rentMin >= :minRentMin)
+               and (:maxRentMin is null or r.rentMin <= :maxRentMin)
 
-           and (:roomOptions is null or :roomOptions = '' or lower(r.roomOptions) like lower(concat('%', :roomOptions, '%')))
-    """)
+               and (:roomOptions is null or :roomOptions = '' or lower(r.roomOptions) like lower(concat('%', :roomOptions, '%')))
+            """,
+        countQuery = """
+            select count(r)
+              from Room r
+              join r.building b
+             where
+                   (:buildingId is null or b.buildingId = :buildingId)
+               and (:buildingNm is null or :buildingNm = '' or lower(b.buildingNm) like lower(concat('%', :buildingNm, '%')))
+               and (:buildingAddr is null or :buildingAddr = '' or lower(b.buildingAddr) like lower(concat('%', :buildingAddr, '%')))
+               and (:minParkingCapacity is null or b.parkingCapacity >= :minParkingCapacity)
+
+               and (:roomNo is null or r.roomNo = :roomNo)
+               and (:floor is null or r.floor = :floor)
+
+               and (:minRoomSize is null or r.roomSize >= :minRoomSize)
+               and (:maxRoomSize is null or r.roomSize <= :maxRoomSize)
+
+               and (:minDeposit is null or r.deposit >= :minDeposit)
+               and (:maxDeposit is null or r.deposit <= :maxDeposit)
+
+               and (:minRentPrice is null or r.rentPrice >= :minRentPrice)
+               and (:maxRentPrice is null or r.rentPrice <= :maxRentPrice)
+
+               and (:minManageFee is null or r.manageFee >= :minManageFee)
+               and (:maxManageFee is null or r.manageFee <= :maxManageFee)
+
+               and (:rentType is null or r.rentType = :rentType)
+               and (:roomSt is null or r.roomSt = :roomSt)
+               and (:sunDirection is null or r.sunDirection = :sunDirection)
+
+               and (:minRoomCapacity is null or r.roomCapacity >= :minRoomCapacity)
+               and (:maxRoomCapacity is null or r.roomCapacity <= :maxRoomCapacity)
+
+               and (:minRentMin is null or r.rentMin >= :minRentMin)
+               and (:maxRentMin is null or r.rentMin <= :maxRentMin)
+
+               and (:roomOptions is null or :roomOptions = '' or lower(r.roomOptions) like lower(concat('%', :roomOptions, '%')))
+            """
+    )
     Page<Room> searchWithFilters(
             @Param("buildingId") Integer buildingId,
             @Param("buildingNm") String buildingNm,
