@@ -31,15 +31,13 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
 
            and (:minRoomSize is null or r.roomSize >= :minRoomSize)
            and (:maxRoomSize is null or r.roomSize <= :maxRoomSize)
-
-           // deposit이 NULL인 경우도 검색에 포함 (필터 적용 시 의도치 않게 빠지지 않도록)
+           
            and (:minDeposit is null or r.deposit is null or r.deposit >= :minDeposit)
            and (:maxDeposit is null or r.deposit is null or r.deposit <= :maxDeposit)
 
            and (:minRentPrice is null or r.rentPrice >= :minRentPrice)
            and (:maxRentPrice is null or r.rentPrice <= :maxRentPrice)
 
-           // manageFee가 NULL인 경우도 검색에 포함
            and (:minManageFee is null or r.manageFee is null or r.manageFee >= :minManageFee)
            and (:maxManageFee is null or r.manageFee is null or r.manageFee <= :maxManageFee)
 
