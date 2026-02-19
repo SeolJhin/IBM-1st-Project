@@ -6,13 +6,11 @@ import lombok.Getter;
 import java.math.BigDecimal;
 
 @Getter
-public class BuildingCreateRequest {
+public class BuildingUpdateRequest {
 
-    @NotBlank
     @Size(max = 50)
     private String buildingNm;
 
-    @NotBlank
     @Size(max = 500)
     private String buildingAddr;
 

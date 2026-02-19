@@ -1,16 +1,19 @@
 package org.myweb.uniplace.domain.property.api.admin;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.MediaType;
-import org.springframework.validation.annotation.Validated;
-import org.myweb.uniplace.domain.property.application.BuildingService;
-
-import java.util.List;
-
 import org.myweb.uniplace.domain.property.api.dto.request.BuildingCreateRequest;
-import org.myweb.uniplace.domain.property.api.dto.response.BuildingDetailResponse;
+import org.myweb.uniplace.domain.property.api.dto.request.BuildingUpdateRequest;
+import org.myweb.uniplace.domain.property.application.BuildingService;
 import org.myweb.uniplace.global.response.ApiResponse;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,25 +23,26 @@ public class AdminBuildingController {
     private final BuildingService buildingService;
 
     @PostMapping
-    public ApiResponse<BuildingDetailResponse> create(@Validated @RequestBody BuildingCreateRequest request) {
-        return ApiResponse.ok(buildingService.createBuilding(request));
+    public ApiResponse<Integer> create(
+            @Valid @RequestBody BuildingCreateRequest request
+    ) {
+        return ApiResponse.ok(buildingService.create(request));
     }
 
     @PutMapping("/{buildingId}")
-    public ApiResponse<BuildingDetailResponse> update(
+    public ApiResponse<Void> update(
             @PathVariable Integer buildingId,
-            @Validated @RequestBody BuildingCreateRequest request
+            @Valid @RequestBody BuildingUpdateRequest request
     ) {
-        return ApiResponse.ok(buildingService.updateBuilding(buildingId, request));
+        buildingService.update(buildingId, request);
+        return ApiResponse.ok(null);
     }
 
-    @GetMapping("/{buildingId}")
-    public ApiResponse<BuildingDetailResponse> detail(@PathVariable Integer buildingId) {
-        return ApiResponse.ok(buildingService.getBuilding(buildingId));
-    }
-
-    @GetMapping
-    public ApiResponse<List<BuildingDetailResponse>> list() {
-        return ApiResponse.ok(buildingService.getAllBuildings());
+    @DeleteMapping("/{buildingId}")
+    public ApiResponse<Void> delete(
+            @PathVariable Integer buildingId
+    ) {
+        buildingService.delete(buildingId);
+        return ApiResponse.ok(null);
     }
 }
