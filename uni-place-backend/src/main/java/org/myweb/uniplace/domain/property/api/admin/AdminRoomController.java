@@ -1,4 +1,3 @@
-// Controller
 // 경로: org/myweb/uniplace/domain/property/api/admin/AdminRoomController.java
 package org.myweb.uniplace.domain.property.api.admin;
 
@@ -16,11 +15,11 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/rooms/admin")
+@RequestMapping("/admin/rooms")
 public class AdminRoomController {
 
     private final RoomService roomService;
-    
+
     @GetMapping("/{roomId}")
     public ApiResponse<RoomDetailResponse> detail(@PathVariable Integer roomId) {
         return ApiResponse.ok(roomService.getRoomForAdmin(roomId));

@@ -1,4 +1,3 @@
-// DTO
 // 경로: org/myweb/uniplace/domain/property/api/dto/response/RoomDetailResponse.java
 package org.myweb.uniplace.domain.property.api.dto.response;
 
@@ -22,6 +21,7 @@ public class RoomDetailResponse {
 
     private Integer roomId;
 
+    // ✅ building 정보(요구사항)
     private Integer buildingId;
     private String buildingNm;
     private String buildingAddr;
@@ -46,6 +46,7 @@ public class RoomDetailResponse {
 
     private String roomDesc;
 
+    // ✅ 다형성 파일(ROOM, roomId)
     private List<FileResponse> files;
 
     public static RoomDetailResponse fromEntity(Room e, List<FileResponse> files) {
