@@ -23,7 +23,7 @@ public class Building extends ActivateEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long buildingId;
+    private Integer buildingId;
 
     @Column(nullable = false, unique = true)
     private String buildingNm;
