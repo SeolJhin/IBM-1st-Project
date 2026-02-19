@@ -1,3 +1,4 @@
+// DTO
 // 경로: org/myweb/uniplace/domain/property/api/dto/request/RoomSearchRequest.java
 package org.myweb.uniplace.domain.property.api.dto.request;
 
@@ -16,36 +17,36 @@ import lombok.*;
 public class RoomSearchRequest {
 
     // ===== building =====
-    private Integer buildingId;          // 정확히
-    private String buildingNm;           // 부분검색
-    private String buildingAddr;         // 부분검색
-    private Integer minParkingCapacity;  // 이상
+    private Integer buildingId;
+    private String buildingNm;
+    private String buildingAddr;
+    private Integer minParkingCapacity;
 
     // ===== rooms =====
-    private Integer roomNo;              // 정확히
-    private Integer floor;               // 정확히
+    private Integer roomNo;
+    private Integer floor;
 
-    private BigDecimal minRoomSize;      // 이상
-    private BigDecimal maxRoomSize;      // 이하
+    private BigDecimal minRoomSize;
+    private BigDecimal maxRoomSize;
 
-    private BigDecimal minDeposit;       // 이상
-    private BigDecimal maxDeposit;       // 이하
+    private BigDecimal minDeposit;
+    private BigDecimal maxDeposit;
 
-    private BigDecimal minRentPrice;     // 이상
-    private BigDecimal maxRentPrice;     // 이하
+    private BigDecimal minRentPrice;
+    private BigDecimal maxRentPrice;
 
-    private BigDecimal minManageFee;     // 이상
-    private BigDecimal maxManageFee;     // 이하
+    private BigDecimal minManageFee;
+    private BigDecimal maxManageFee;
 
-    private RentType rentType;           // equals
-    private RoomStatus roomSt;           // equals
-    private SunDirection sunDirection;   // equals
+    private RentType rentType;
+    private RoomStatus roomSt;
+    private SunDirection sunDirection;
 
-    private Integer minRoomCapacity;     // 이상
-    private Integer maxRoomCapacity;     // 이하
+    private Integer minRoomCapacity;
+    private Integer maxRoomCapacity;
 
-    private Integer minRentMin;          // 이상
-    private Integer maxRentMin;          // 이하
+    private Integer minRentMin;
+    private Integer maxRentMin;
 
-    private String roomOptions;          // 부분검색
+    private String roomOptions;
 }

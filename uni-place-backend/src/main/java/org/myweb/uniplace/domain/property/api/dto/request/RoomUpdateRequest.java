@@ -1,3 +1,4 @@
+// DTO
 // 경로: org/myweb/uniplace/domain/property/api/dto/request/RoomUpdateRequest.java
 package org.myweb.uniplace.domain.property.api.dto.request;
 
@@ -18,7 +19,6 @@ import lombok.*;
 @Builder
 public class RoomUpdateRequest {
 
-    // 건물 변경이 필요하면 이름으로 변경(선택) List<Building> findByBuildingNm(String buildingNm);
     private String buildingNm;
 
     private Integer roomNo;

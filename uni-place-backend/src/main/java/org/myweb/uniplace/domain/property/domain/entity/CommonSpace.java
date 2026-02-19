@@ -1,3 +1,4 @@
+// Entity
 // 경로: org/myweb/uniplace/domain/property/domain/entity/CommonSpace.java
 package org.myweb.uniplace.domain.property.domain.entity;
 
@@ -21,7 +22,6 @@ public class CommonSpace {
     @Column(name = "space_nm", nullable = false, length = 50)
     private String spaceNm;
 
-    // FK: common_space.building_id -> building.building_id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "building_id", nullable = false)
     private Building building;

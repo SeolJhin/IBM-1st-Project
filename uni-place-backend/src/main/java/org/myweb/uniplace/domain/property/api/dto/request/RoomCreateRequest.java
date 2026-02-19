@@ -1,3 +1,4 @@
+// DTO
 // 경로: org/myweb/uniplace/domain/property/api/dto/request/RoomCreateRequest.java
 package org.myweb.uniplace.domain.property.api.dto.request;
 
@@ -20,7 +21,6 @@ import lombok.*;
 @Builder
 public class RoomCreateRequest {
 
-    // 건물 이름으로 받기
     @NotBlank(message = "buildingNm은 필수입니다.")
     private String buildingNm;
 
@@ -50,6 +50,5 @@ public class RoomCreateRequest {
     private SunDirection sunDirection;
     private String roomDesc;
 
-    // ✅ 사진 여러장
     private List<MultipartFile> files;
 }
