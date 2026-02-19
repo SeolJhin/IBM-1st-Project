@@ -1,58 +1,87 @@
+// 경로: org/myweb/uniplace/domain/property/application/BuildingServiceImpl.java
 package org.myweb.uniplace.domain.property.application;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.myweb.uniplace.domain.property.api.dto.request.BuildingCreateRequest;
+import org.myweb.uniplace.domain.property.api.dto.request.BuildingUpdateRequest;
+import org.myweb.uniplace.domain.property.api.dto.response.BuildingDetailResponse;
+import org.myweb.uniplace.domain.property.api.dto.response.BuildingSummaryResponse;
 import org.myweb.uniplace.domain.property.domain.entity.Building;
 import org.myweb.uniplace.domain.property.repository.BuildingRepository;
-import org.myweb.uniplace.domain.property.api.dto.request.BuildingCreateRequest;
-import org.myweb.uniplace.domain.property.api.dto.response.BuildingDetailResponse;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class BuildingServiceImpl implements BuildingService {
 
     private final BuildingRepository buildingRepository;
 
     @Override
-    public BuildingDetailResponse getBuilding(Integer buildingId) {
-        Building b = buildingRepository.findById(buildingId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 빌딩입니다."));
-        return BuildingDetailResponse.fromEntity(b);
+    public Page<BuildingSummaryResponse> search(String keyword, Pageable pageable) {
+        return buildingRepository.search(keyword, pageable)
+                .map(BuildingSummaryResponse::fromEntity);
     }
 
     @Override
-    public List<BuildingDetailResponse> getAllBuildings() {
-        return buildingRepository.findAll()
-                .stream()
-                .map(BuildingDetailResponse::fromEntity)
-                .collect(Collectors.toList());
+    public BuildingDetailResponse getDetail(Integer buildingId) {
+        Building building = buildingRepository.findById(buildingId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 건물입니다."));
+
+        return BuildingDetailResponse.fromEntity(building);
     }
 
     @Override
-    public BuildingDetailResponse createBuilding(BuildingCreateRequest request) {
-        Building b = Building.builder()
+    @Transactional
+    public Integer create(BuildingCreateRequest request) {
+
+        if (buildingRepository.existsByBuildingNm(request.getBuildingNm())) {
+            throw new IllegalArgumentException("이미 존재하는 건물명입니다.");
+        }
+
+        Building building = Building.builder()
                 .buildingNm(request.getBuildingNm())
                 .buildingAddr(request.getBuildingAddr())
                 .buildingDesc(request.getBuildingDesc())
+                .landCategory(request.getLandCategory())
+                .buildSize(request.getBuildSize())
+                .buildingUsage(request.getBuildingUsage())
+                .existElv(request.getExistElv())
                 .parkingCapacity(request.getParkingCapacity())
                 .build();
-        buildingRepository.save(b);
-        return BuildingDetailResponse.fromEntity(b);
+
+        return buildingRepository.save(building).getBuildingId();
     }
 
     @Override
-    public BuildingDetailResponse updateBuilding(Integer buildingId, BuildingCreateRequest request) {
-        Building b = buildingRepository.findById(buildingId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 빌딩입니다."));
-        b.setBuildingNm(request.getBuildingNm());
-        b.setBuildingAddr(request.getBuildingAddr());
-        b.setBuildingDesc(request.getBuildingDesc());
-        b.setParkingCapacity(request.getParkingCapacity());
-        return BuildingDetailResponse.fromEntity(b);
+    @Transactional
+    public void update(Integer buildingId, BuildingUpdateRequest request) {
+
+        Building building = buildingRepository.findById(buildingId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 건물입니다."));
+
+        building.update(
+                request.getBuildingNm(),
+                request.getBuildingAddr(),
+                request.getBuildingDesc(),
+                request.getLandCategory(),
+                request.getBuildSize(),
+                request.getBuildingUsage(),
+                request.getExistElv(),
+                request.getParkingCapacity()
+        );
+    }
+
+    @Override
+    @Transactional
+    public void delete(Integer buildingId) {
+
+        Building building = buildingRepository.findById(buildingId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 건물입니다."));
+
+        buildingRepository.delete(building);
     }
 }
