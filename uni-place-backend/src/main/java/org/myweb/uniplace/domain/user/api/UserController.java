@@ -9,6 +9,8 @@ import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
@@ -24,7 +26,7 @@ public class UserController {
     @PatchMapping("/me")
     public ApiResponse<UserResponse> updateMe(
             @AuthenticationPrincipal AuthUser me,
-            @RequestBody UserUpdateRequest req
+            @Valid @RequestBody UserUpdateRequest req
     ) {
         return ApiResponse.ok(userService.updateMe(me.getUserId(), req));
     }
