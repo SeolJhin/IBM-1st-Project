@@ -2,7 +2,7 @@ package org.myweb.uniplace.domain.property.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-<<<<<<< HEAD
+
 import java.math.BigDecimal;
 
 @Entity
