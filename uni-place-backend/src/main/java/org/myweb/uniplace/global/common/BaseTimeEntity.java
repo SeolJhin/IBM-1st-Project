@@ -48,8 +48,4 @@ public abstract class BaseTimeEntity {
     public LocalDate getUpdatedDateOnly() {
         return updatedAt != null ? updatedAt.toLocalDate() : null;
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 6cbc3d923ff3828d726500bea6261beb54147178
