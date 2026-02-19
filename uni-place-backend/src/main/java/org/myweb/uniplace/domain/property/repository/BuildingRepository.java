@@ -1,5 +1,6 @@
 package org.myweb.uniplace.domain.property.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.myweb.uniplace.domain.property.domain.entity.Building;
@@ -14,7 +15,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface BuildingRepository extends JpaRepository<Building, Long> {
 
-    Optional<Building> findByBuildingNm(String buildingNm);
+    List<Building> findByBuildingNm(String buildingNm);
 
     @Query("""
         select b
@@ -34,4 +35,6 @@ public interface BuildingRepository extends JpaRepository<Building, Long> {
             @Param("buildingStatus") BuildingStatus buildingStatus,
             Pageable pageable
     );
+    
+    
 }
