@@ -1,4 +1,6 @@
 import React from "react";
+import "./app/styles/globals.css";
+
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Home from "./shared/pages/Home";
