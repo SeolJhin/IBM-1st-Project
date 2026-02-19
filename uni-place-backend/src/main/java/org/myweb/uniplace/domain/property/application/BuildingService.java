@@ -1,20 +1,17 @@
 package org.myweb.uniplace.domain.property.application;
 
 import org.myweb.uniplace.domain.property.api.dto.request.BuildingCreateRequest;
-import org.myweb.uniplace.domain.property.api.dto.request.BuildingUpdateRequest;
-import org.myweb.uniplace.domain.property.api.dto.response.BuildingResponse;
-import org.myweb.uniplace.global.response.PageResponse;
-import org.springframework.data.domain.Pageable;
+import org.myweb.uniplace.domain.property.api.dto.response.BuildingDetailResponse;
+
+import java.util.List;
 
 public interface BuildingService {
 
-    BuildingResponse createBuilding(BuildingCreateRequest request);
+    BuildingDetailResponse getBuilding(Integer buildingId);
 
-    BuildingResponse updateBuilding(BuildingUpdateRequest request);
+    List<BuildingDetailResponse> getAllBuildings();
 
-    void deactivateBuilding(Long buildingId);
-    
-    BuildingResponse getBuilding(Long buildingId);
+    BuildingDetailResponse createBuilding(BuildingCreateRequest request);
 
-    PageResponse<BuildingResponse> search(BuildingSearchRequest request, Pageable pageable);
+    BuildingDetailResponse updateBuilding(Integer buildingId, BuildingCreateRequest request);
 }

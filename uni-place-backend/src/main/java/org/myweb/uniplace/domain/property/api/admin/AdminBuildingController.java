@@ -1,15 +1,16 @@
 package org.myweb.uniplace.domain.property.api.admin;
 
-import org.myweb.uniplace.domain.property.api.dto.request.BuildingCreateRequest;
-import org.myweb.uniplace.domain.property.api.dto.request.BuildingUpdateRequest;
-import org.myweb.uniplace.domain.property.api.dto.response.BuildingResponse;
-import org.myweb.uniplace.domain.property.application.BuildingService;
-import org.myweb.uniplace.global.response.ApiResponse;
-
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.MediaType;
+import org.springframework.validation.annotation.Validated;
+import org.myweb.uniplace.domain.property.application.BuildingService;
+
+import java.util.List;
+
+import org.myweb.uniplace.domain.property.api.dto.request.BuildingCreateRequest;
+import org.myweb.uniplace.domain.property.api.dto.response.BuildingDetailResponse;
+import org.myweb.uniplace.global.response.ApiResponse;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,22 +20,25 @@ public class AdminBuildingController {
     private final BuildingService buildingService;
 
     @PostMapping
-    public ApiResponse<BuildingResponse> create(@Validated @ModelAttribute BuildingCreateRequest request) {
+    public ApiResponse<BuildingDetailResponse> create(@Validated @RequestBody BuildingCreateRequest request) {
         return ApiResponse.ok(buildingService.createBuilding(request));
     }
 
     @PutMapping("/{buildingId}")
-    public ApiResponse<BuildingResponse> update(
-            @PathVariable Long buildingId,
-            @Validated @ModelAttribute BuildingUpdateRequest request
+    public ApiResponse<BuildingDetailResponse> update(
+            @PathVariable Integer buildingId,
+            @Validated @RequestBody BuildingCreateRequest request
     ) {
-        request.setBuildingId(buildingId); // DTO에 Id 세팅
-        return ApiResponse.ok(buildingService.updateBuilding(request));
+        return ApiResponse.ok(buildingService.updateBuilding(buildingId, request));
     }
 
-    @PatchMapping("/{buildingId}/deactivate")
-    public ApiResponse<Void> deactivate(@PathVariable Long buildingId) {
-        buildingService.deactivateBuilding(buildingId);
-        return ApiResponse.ok();
+    @GetMapping("/{buildingId}")
+    public ApiResponse<BuildingDetailResponse> detail(@PathVariable Integer buildingId) {
+        return ApiResponse.ok(buildingService.getBuilding(buildingId));
+    }
+
+    @GetMapping
+    public ApiResponse<List<BuildingDetailResponse>> list() {
+        return ApiResponse.ok(buildingService.getAllBuildings());
     }
 }
