@@ -81,4 +81,8 @@ public class Banner {
     public void changeOrder(Integer banOrder) {
         if (banOrder != null) this.banOrder = banOrder;
     }
+    
+    public void clearUrl() {
+        this.banUrl = null;
+    }
 }
