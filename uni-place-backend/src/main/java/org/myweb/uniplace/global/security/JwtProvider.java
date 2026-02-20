@@ -7,6 +7,9 @@ import lombok.Getter;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -15,6 +18,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtProvider {
@@ -41,7 +45,7 @@ public class JwtProvider {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId)
-                .claim("role", role)
+                .claim("role", role)          // 예: "admin" / "user" / "tenant"
                 .claim("typ", "access")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(accessExpMs)))
@@ -89,6 +93,40 @@ public class JwtProvider {
         return LocalDateTime.ofInstant(exp.toInstant(), ZoneId.systemDefault());
     }
 
+    /**
+     * ✅ Spring Security Authorization(/admin/** hasRole('ADMIN'))이 동작하도록
+     * JWT 안의 role("admin","user","tenant")을 GrantedAuthority("ROLE_ADMIN", ...)로 변환해서
+     * Authentication을 생성해준다.
+     *
+     * - principal: 일단 userId(String)로 넣음 (프로젝트에서 AuthUser를 쓰면 거기로 교체 가능)
+     * - authorities: ROLE_ + 대문자 규칙 적용
+     */
+    public Authentication getAuthentication(String token) {
+        String tokenType = getTokenType(token);
+        if (!"access".equals(tokenType)) {
+            // refresh/oauth-signup 토큰으로 보호 API 접근하면 차단
+            throw new BusinessException(ErrorCode.TOKEN_TYPE_INVALID);
+        }
+
+        String userId = getSubject(token);
+        String role = getRole(token); // "admin" / "user" / "tenant"
+
+        if (userId == null || userId.isBlank()) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+        if (role == null || role.isBlank()) {
+            // role이 없으면 권한 체크가 불가능하니 invalid 처리(보안상 안전)
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+
+        String authority = "ROLE_" + role.trim().toUpperCase(); // admin -> ROLE_ADMIN
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(authority));
+
+        // principal을 String userId로 두는 최소 구현
+        // (AuthUser를 쓰고 싶으면 JwtAuthFilter에서 DB 조회 후 AuthUser 만들어 넣는 구조로 확장)
+        return new UsernamePasswordAuthenticationToken(userId, null, authorities);
+    }
+
     private Claims parseClaims(String token) {
         // ✅ 0.12.x: parserBuilder 대신 parser() + verifyWith
         return Jwts.parser()
@@ -97,7 +135,7 @@ public class JwtProvider {
                 .parseSignedClaims(token)
                 .getPayload();
     }
-    
+
     // ✅ 소셜 가입용 임시 토큰 생성 (5~10분짜리 추천)
     public String createOauthSignupToken(String provider,
                                          String providerId,
@@ -117,7 +155,7 @@ public class JwtProvider {
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
-    
+
     // ✅ 소셜 가입 전용 signupToken 검증
     public Claims validateOauthSignupToken(String token) {
         try {

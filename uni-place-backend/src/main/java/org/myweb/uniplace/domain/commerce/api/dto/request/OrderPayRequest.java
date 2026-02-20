@@ -1,5 +1,8 @@
 package org.myweb.uniplace.domain.commerce.api.dto.request;
 
-public class OrderPayRequest {
+import lombok.Getter;
 
+@Getter
+public class OrderPayRequest {
+    private Long paymentId;
 }

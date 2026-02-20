@@ -1,13 +1,14 @@
 package org.myweb.uniplace.domain.system.api;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.myweb.uniplace.domain.system.api.dto.response.BannerResponse;
 import org.myweb.uniplace.domain.system.application.BannerService;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
