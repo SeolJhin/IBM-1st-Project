@@ -1,5 +1,5 @@
 // 경로: org/myweb/uniplace/domain/cart/repository/CartFileQueryRepository.java
-package org.myweb.uniplace.domain.cart.repository;
+package org.myweb.uniplace.domain.commerce.repository;
 
 import java.util.List;
 
