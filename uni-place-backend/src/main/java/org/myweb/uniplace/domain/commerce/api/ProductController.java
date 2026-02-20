@@ -25,33 +25,33 @@ public class ProductController {
 
     // 상품 상세 조회
     @GetMapping("/products/{prodId}")
-    public ApiResponse<ProductResponse> detail(@PathVariable Long prodId) {
+    public ApiResponse<ProductResponse> detail(@PathVariable Integer prodId) {
         return ApiResponse.ok(productService.detail(prodId));
     }
 
     // 상품 등록 (관리자)
     @PostMapping("/admin/products")
-    public ApiResponse<Long> create(@RequestBody ProductCreateRequest request) {
+    public ApiResponse<Integer> create(@RequestBody ProductCreateRequest request) {
         return ApiResponse.ok(productService.create(request));
     }
 
     // 상품 수정 (관리자)
     @PutMapping("/admin/products/{prodId}")
-    public ApiResponse<Void> update(@PathVariable Long prodId, @RequestBody ProductUpdateRequest request) {
+    public ApiResponse<Void> update(@PathVariable Integer prodId, @RequestBody ProductUpdateRequest request) {
         productService.update(prodId, request);
         return ApiResponse.ok();
     }
 
     // 상품 상태 변경 (관리자)
     @PatchMapping("/admin/products/{prodId}/status")
-    public ApiResponse<Void> changeStatus(@PathVariable Long prodId, @RequestBody String status) {
+    public ApiResponse<Void> changeStatus(@PathVariable Integer prodId, @RequestBody String status) {
         productService.changeStatus(prodId, status);
         return ApiResponse.ok();
     }
 
     // 상품 삭제 (관리자, 논리삭제)
     @DeleteMapping("/admin/products/{prodId}")
-    public ApiResponse<Void> delete(@PathVariable Long prodId) {
+    public ApiResponse<Void> delete(@PathVariable Integer prodId) {
         productService.delete(prodId);
         return ApiResponse.ok();
     }
