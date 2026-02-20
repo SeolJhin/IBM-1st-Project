@@ -1,6 +1,8 @@
 package org.myweb.uniplace.domain.user.application;
 
 import lombok.RequiredArgsConstructor;
+
+import org.myweb.uniplace.domain.user.api.dto.request.KakaoSignupCompleteRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.LogoutRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.RefreshTokenRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.UserLoginRequest;
@@ -36,6 +38,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final IdGenerator idGenerator;
+    // ✅ 소셜 가입완료 로직은 여기로 위임 (가장 쉬운 방식)
+    private final OAuthCompleteService oAuthCompleteService;
 
     @Value("${jwt.refresh-exp:86400000}")
     private long refreshExpMillis;
@@ -206,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(newRefreshToken)
                 .deviceId(deviceId)
                 .build();
-    }
+    }    
 
     @Override
     @Transactional
@@ -238,6 +242,13 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void logoutAll(String userId) {
         refreshTokenRepository.revokeAllActiveByUserId(userId, LocalDateTime.now());
+    }
+    
+    // ✅ 가장 쉬운 방식: AuthServiceImpl은 "소셜 가입완료"를 서비스로 위임만 한다
+    @Override
+    @Transactional
+    public UserTokenResponse kakaoComplete(KakaoSignupCompleteRequest req, String userAgent, String ip) {
+        return oAuthCompleteService.kakaoComplete(req, userAgent, ip);
     }
 
     private String sha256Hex(String raw) {
