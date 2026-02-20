@@ -5,6 +5,8 @@ import org.myweb.uniplace.domain.system.api.dto.request.CompanyInfoUpdateRequest
 import org.myweb.uniplace.domain.system.api.dto.response.CompanyInfoResponse;
 import org.myweb.uniplace.domain.system.domain.entity.CompanyInfo;
 import org.myweb.uniplace.domain.system.repository.CompanyInfoRepository;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +20,7 @@ public class CompanyInfoServiceImpl implements CompanyInfoService {
     @Override
     public CompanyInfoResponse getLatest() {
         CompanyInfo company = companyInfoRepository.findTopByOrderByCompanyIdDesc()
-                .orElseThrow(() -> new IllegalArgumentException("회사정보가 등록되어 있지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPANY_INFO_NOT_FOUND));
         return CompanyInfoResponse.from(company);
     }
 
@@ -26,7 +28,7 @@ public class CompanyInfoServiceImpl implements CompanyInfoService {
     @Transactional
     public CompanyInfoResponse update(Integer companyId, CompanyInfoUpdateRequest request) {
         CompanyInfo company = companyInfoRepository.findById(companyId)
-                .orElseThrow(() -> new IllegalArgumentException("회사정보를 찾을 수 없습니다. companyId=" + companyId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPANY_INFO_NOT_FOUND));
 
         company.update(
                 request.getCompanyNm(),
