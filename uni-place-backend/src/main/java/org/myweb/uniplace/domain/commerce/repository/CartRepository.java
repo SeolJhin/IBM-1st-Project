@@ -1,5 +1,4 @@
-// Repository
-// 경로: org/myweb/uniplace/domain/commerce/repository/CartRepository.java
+// 경로: org/myweb/uniplace/domain/cart/repository/CartRepository.java
 package org.myweb.uniplace.domain.commerce.repository;
 
 import java.util.Optional;
@@ -11,5 +10,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Integer> {
 
-    Optional<Cart> findByUserId(String userId);
+    Optional<Cart> findTop1ByUserIdOrderByCartCreatedAtDesc(String userId);
 }

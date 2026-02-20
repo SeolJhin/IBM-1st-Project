@@ -1,5 +1,4 @@
-// Entity (CartItem)
-// 경로: org/myweb/uniplace/domain/commerce/domain/entity/CartItem.java
+// 경로: org/myweb/uniplace/domain/cart/domain/entity/CartItem.java
 package org.myweb.uniplace.domain.commerce.domain.entity;
 
 import java.math.BigDecimal;
@@ -8,7 +7,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -35,6 +33,19 @@ public class CartItem {
     @Column(name = "order_quantity", nullable = false)
     private Integer orderQuantity;
 
+    // DECIMAL(10,0)
     @Column(name = "order_price", nullable = false, precision = 10, scale = 0)
     private BigDecimal orderPrice;
+
+    public void increase(int addQty) {
+        int cur = (orderQuantity == null ? 0 : orderQuantity);
+        int next = cur + addQty;
+        if (next < 1) next = 1;
+        this.orderQuantity = next;
+    }
+
+    public void changeQuantity(int qty) {
+        if (qty < 1) qty = 1;
+        this.orderQuantity = qty;
+    }
 }

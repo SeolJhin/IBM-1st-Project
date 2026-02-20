@@ -1,14 +1,14 @@
-// Entity (Cart)
-// 경로: org/myweb/uniplace/domain/commerce/domain/entity/Cart.java
+// 경로: org/myweb/uniplace/domain/cart/domain/entity/Cart.java
 package org.myweb.uniplace.domain.commerce.domain.entity;
 
 import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -24,13 +24,7 @@ public class Cart {
     @Column(name = "user_id", nullable = false, length = 50)
     private String userId;
 
-    @Column(name = "cart_created_at", nullable = false)
+    @CreationTimestamp
+    @Column(name = "cart_created_at", nullable = false, updatable = false)
     private LocalDateTime cartCreatedAt;
-
-    @PrePersist
-    private void prePersist() {
-        if (this.cartCreatedAt == null) {
-            this.cartCreatedAt = LocalDateTime.now();
-        }
-    }
 }
