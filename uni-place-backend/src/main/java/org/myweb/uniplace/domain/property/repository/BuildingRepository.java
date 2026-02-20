@@ -1,6 +1,8 @@
 // 경로: org/myweb/uniplace/domain/property/repository/BuildingRepository.java
 package org.myweb.uniplace.domain.property.repository;
 
+import java.util.List;
+
 import org.myweb.uniplace.domain.property.domain.entity.Building;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +21,9 @@ public interface BuildingRepository extends JpaRepository<Building, Integer> {
         where (:keyword is null or :keyword = ''
                or lower(b.buildingNm) like lower(concat('%', :keyword, '%'))
                or lower(b.buildingAddr) like lower(concat('%', :keyword, '%')))
+               
     """)
     Page<Building> search(@Param("keyword") String keyword, Pageable pageable);
+
+	List<Building> findByBuildingNm(String buildingNm);
 }
