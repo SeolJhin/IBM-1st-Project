@@ -11,7 +11,7 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 
-<<<<<<< HEAD
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -28,8 +28,7 @@ import java.time.LocalDateTime;
  * - 논리 삭제 + 생성/수정 시각 필요 → SoftDeleteEntity
  * - 활성/비활성 + 생성/수정 시각 필요 → ActivateEntity
  */
-=======
->>>>>>> 11e1a8e46ccb3f24a2502530affcef48cfc79284
+
 @Getter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
