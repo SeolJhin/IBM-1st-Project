@@ -1,37 +1,34 @@
 package org.myweb.uniplace.domain.property.api.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import org.myweb.uniplace.domain.property.domain.enums.BuildingStatus;
+import jakarta.validation.constraints.*;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class BuildingUpdateRequest {
 
-    @NotNull(message = "buildingId는 필수입니다.")
-    private Long buildingId;
-
-    @NotBlank(message = "buildingNm은 필수입니다.")
+    @Size(max = 50)
     private String buildingNm;
 
-    @NotBlank(message = "buildingAddr은 필수입니다.")
+    @Size(max = 500)
     private String buildingAddr;
 
+    @Size(max = 500)
     private String buildingDesc;
 
-    @NotNull(message = "totalFloor는 필수입니다.")
-    private Integer totalFloor;
+    @Size(max = 20)
+    private String landCategory;
 
+    @Digits(integer = 3, fraction = 2)
+    private BigDecimal buildSize;
+
+    @Size(max = 20)
+    private String buildingUsage;
+
+    @Pattern(regexp = "Y|N")
+    private String existElv;
+
+    @Min(0)
     private Integer parkingCapacity;
-    private BigDecimal latitude;
-    private BigDecimal longitude;
-
-    @NotNull(message = "buildingStatus는 필수입니다.")
-    private BuildingStatus buildingStatus; // Enum 타입
 }
