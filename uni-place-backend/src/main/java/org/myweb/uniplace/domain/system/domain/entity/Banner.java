@@ -73,4 +73,12 @@ public class Banner {
         if (banOrder != null) this.banOrder = banOrder;
         if (banSt != null) this.banSt = banSt;
     }
+    
+    public void changeStatus(BannerStatus banSt) {
+        if (banSt != null) this.banSt = banSt;
+    }
+
+    public void changeOrder(Integer banOrder) {
+        if (banOrder != null) this.banOrder = banOrder;
+    }
 }
