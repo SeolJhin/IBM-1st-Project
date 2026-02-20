@@ -50,3 +50,57 @@ INSERT INTO users (
   'active',
   'N'
 );
+
+
+INSERT INTO users (
+  user_id,
+  user_nm,
+  user_email,
+  user_pwd,
+  user_birth,
+  user_tel,
+  user_role,
+  created_at,
+  first_sign,
+  user_st,
+  delete_yn
+) VALUES
+(
+  'user11',
+  '사용자11',
+  'user01@test.com',
+  'test1234',
+  '1995-05-01',
+  '010-4444-1111',
+  'user',
+  NOW(),
+  'Y',
+  'active',
+  'N'
+),
+(
+  'user22',
+  '사용자22',
+  'user02@test.com',
+  'test1234',
+  '1996-06-02',
+  '010-5555-2222',
+  'user',
+  NOW(),
+  'Y',
+  'active',
+  'N'
+),
+(
+  'user33',
+  '사용자33',
+  'user03@test.com',
+  'test1234',
+  '1997-07-03',
+  '010-6666-3333',
+  'user',
+  NOW(),
+  'Y',
+  'active',
+  'N'
+);
