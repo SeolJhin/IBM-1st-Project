@@ -26,7 +26,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponse detail(Long prodId) {
+    public ProductResponse detail(Integer prodId) {
         Product product = productRepository.findById(prodId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
         return ProductResponse.fromEntity(product);
@@ -34,7 +34,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public Long create(ProductCreateRequest request) {
+    public Integer create(ProductCreateRequest request) {
         if (productRepository.existsByProdName(request.getProdName())) {
             throw new IllegalArgumentException("이미 존재하는 상품명입니다.");
         }
@@ -46,12 +46,12 @@ public class ProductServiceImpl implements ProductService {
                 .category(request.getCategory())
                 .imageUrl(request.getImageUrl())
                 .build();
-        return productRepository.save(product).getProdId();
+        return (int) productRepository.save(product).getProdId().longValue();
     }
 
     @Override
     @Transactional
-    public void update(Long prodId, ProductUpdateRequest request) {
+    public void update(Integer prodId, ProductUpdateRequest request) {
         Product product = productRepository.findById(prodId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
         product.update(request.getProdName(), request.getProdDesc(), request.getPrice(), request.getStock(), request.getCategory(), request.getImageUrl());
@@ -59,7 +59,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void changeStatus(Long prodId, String status) {
+    public void changeStatus(Integer prodId, String status) {
         Product product = productRepository.findById(prodId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
         product.updateStatus(status);
@@ -67,7 +67,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void delete(Long prodId) {
+    public void delete(Integer prodId) {
         Product product = productRepository.findById(prodId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
         product.softDelete();
