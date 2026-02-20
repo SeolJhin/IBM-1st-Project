@@ -1,0 +1,52 @@
+INSERT INTO users (
+  user_id,
+  user_nm,
+  user_email,
+  user_pwd,
+  user_birth,
+  user_tel,
+  user_role,
+  created_at,
+  first_sign,
+  user_st,
+  delete_yn
+) VALUES
+(
+  'admin11',
+  '관리자11',
+  'admin11@test.com',
+  'test1234',
+  '1990-01-01',
+  '010-1111-1111',
+  'admin',
+  NOW(),
+  'Y',
+  'active',
+  'N'
+),
+(
+  'admin22',
+  '관리자22',
+  'admin22@test.com',
+  'test1234',
+  '1992-02-02',
+  '010-2222-2222',
+  'admin',
+  NOW(),
+  'Y',
+  'active',
+  'N'
+),
+(
+  'admin33',
+  '관리자33',
+  'admin33@test.com',
+  'test1234',
+  '1993-03-03',
+  '010-3333-3333',
+  'admin',
+  NOW(),
+  'Y',
+  'active',
+  'N'
+);
