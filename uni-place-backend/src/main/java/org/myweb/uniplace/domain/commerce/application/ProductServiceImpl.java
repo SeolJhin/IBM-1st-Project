@@ -1,75 +1,83 @@
 package org.myweb.uniplace.domain.commerce.application;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.myweb.uniplace.domain.commerce.api.dto.request.ProductCreateRequest;
 import org.myweb.uniplace.domain.commerce.api.dto.request.ProductUpdateRequest;
 import org.myweb.uniplace.domain.commerce.api.dto.response.ProductResponse;
 import org.myweb.uniplace.domain.commerce.domain.entity.Product;
+import org.myweb.uniplace.domain.commerce.domain.enums.ProductStatus;
 import org.myweb.uniplace.domain.commerce.repository.ProductRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+
+/**
+ * Product Service 구현체
+ */
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-
+    
     @Override
-    public Page<ProductResponse> list(String keyword, Pageable pageable) {
-        return productRepository
-                .findByProdNameContainingIgnoreCaseAndDeleteYn(keyword == null ? "" : keyword, "N", pageable)
-                .map(ProductResponse::fromEntity);
-    }
-
-    @Override
-    public ProductResponse detail(Long prodId) {
-        Product product = productRepository.findById(prodId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
-        return ProductResponse.fromEntity(product);
+    @Transactional(readOnly = true)
+    public List<Product> getAllOnSaleProducts() {
+        return productRepository.findAll()
+                .stream()
+                .filter(p -> p.getProdSt() == ProductStatus.ON_SALE)
+                .toList();
     }
 
     @Override
     @Transactional
-    public Long create(ProductCreateRequest request) {
-        if (productRepository.existsByProdName(request.getProdName())) {
-            throw new IllegalArgumentException("이미 존재하는 상품명입니다.");
-        }
-        Product product = Product.builder()
-                .prodName(request.getProdName())
-                .prodDesc(request.getProdDesc())
-                .price(request.getPrice())
-                .stock(request.getStock())
-                .category(request.getCategory())
-                .imageUrl(request.getImageUrl())
-                .build();
-        return productRepository.save(product).getProdId();
+    public Product createProduct(ProductCreateRequest request) {
+        Product product = new Product();
+        product.setProdNm(request.getProdNm());
+        product.setProdPrice(request.getProdPrice());
+        product.setProdStock(request.getProdStock());
+        product.setCode(request.getCode());
+        product.setProdDesc(request.getProdDesc());
+        product.setAffiliateId(request.getAffiliateId());
+        return productRepository.save(product);
     }
 
     @Override
     @Transactional
-    public void update(Long prodId, ProductUpdateRequest request) {
+    public void updateProduct(Integer prodId, ProductUpdateRequest request) {
         Product product = productRepository.findById(prodId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
-        product.update(request.getProdName(), request.getProdDesc(), request.getPrice(), request.getStock(), request.getCategory(), request.getImageUrl());
+                .orElseThrow(() -> new IllegalArgumentException("상품이 존재하지 않습니다."));
+        product.setProdNm(request.getProdNm());
+        product.setProdPrice(request.getProdPrice());
+        product.setProdStock(request.getProdStock());
+        product.setCode(request.getCode());
+        product.setProdDesc(request.getProdDesc());
+        product.setAffiliateId(request.getAffiliateId());
+        productRepository.save(product);
     }
 
     @Override
     @Transactional
-    public void changeStatus(Long prodId, String status) {
+    public void changeStatus(Integer prodId, ProductStatus status) {
         Product product = productRepository.findById(prodId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
-        product.updateStatus(status);
+                .orElseThrow(() -> new IllegalArgumentException("상품이 존재하지 않습니다."));
+        product.setProdSt(status);
+        productRepository.save(product);
     }
 
     @Override
     @Transactional
-    public void delete(Long prodId) {
+    public void deleteProduct(Integer prodId) {
+        productRepository.deleteById(prodId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductResponse getProduct(Integer prodId) {
         Product product = productRepository.findById(prodId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
-        product.softDelete();
+                .orElseThrow(() -> new IllegalArgumentException("상품이 존재하지 않습니다."));
+        return new ProductResponse(product);
     }
 }
