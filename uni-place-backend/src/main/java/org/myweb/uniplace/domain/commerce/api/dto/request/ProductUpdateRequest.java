@@ -1,31 +1,31 @@
 package org.myweb.uniplace.domain.commerce.api.dto.request;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 import java.math.BigDecimal;
 
+/**
+ * 상품 수정 요청 DTO
+ */
 @Getter
 public class ProductUpdateRequest {
 
     @NotBlank
-    @Size(max = 100)
-    private String prodName;
+    private String prodNm;
 
-    @Size(max = 500)
+    @NotNull
+    private BigDecimal prodPrice;
+
+    @NotNull
+    private Integer prodStock;
+
+    @NotBlank
+    private String code;
+
+    @NotBlank
     private String prodDesc;
 
-    @NotNull
-    @DecimalMin("0.0")
-    private BigDecimal price;
-
-    @NotNull
-    @Min(0)
-    private Integer stock;
-
-    @Size(max = 50)
-    private String category;
-
-    @Size(max = 500)
-    private String imageUrl;
+    private Integer affiliateId;
 }
