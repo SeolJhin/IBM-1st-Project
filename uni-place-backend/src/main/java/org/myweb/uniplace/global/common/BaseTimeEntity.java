@@ -11,6 +11,25 @@ import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 
+<<<<<<< HEAD
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+/**
+ * BaseTimeEntity
+ *
+ * - 모든 엔티티에서 공통으로 사용하는 생성/수정 시각 관리용 추상 클래스
+ * - LocalDateTime 하나만 사용하여 날짜 + 시간 모두 관리
+ * - 날짜만 필요할 경우 getCreatedDateOnly(), getUpdatedDateOnly() 사용
+ * - Auditing 적용 가능 (@CreatedDate / @LastModifiedDate)
+ * 
+ * 예시
+ * - 단순 생성/수정 시각만 필요 → BaseTimeEntity
+ * - 논리 삭제 + 생성/수정 시각 필요 → SoftDeleteEntity
+ * - 활성/비활성 + 생성/수정 시각 필요 → ActivateEntity
+ */
+=======
+>>>>>>> 11e1a8e46ccb3f24a2502530affcef48cfc79284
 @Getter
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
