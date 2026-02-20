@@ -1,33 +1,31 @@
 package org.myweb.uniplace.domain.commerce.api.dto.request;
 
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import java.math.BigDecimal;
-import org.myweb.uniplace.domain.commerce.domain.entity.Product.ProductStatus;
+import lombok.Getter;
 
+import java.math.BigDecimal;
+
+/**
+ * 상품 수정 요청 DTO
+ */
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class ProductUpdateRequest {
 
-    @NotNull
-    private String prodName;
+    @NotBlank
+    private String prodNm;
 
     @NotNull
-    private BigDecimal price;
+    private BigDecimal prodPrice;
 
     @NotNull
-    private Integer stock;
+    private Integer prodStock;
 
-    @NotNull
-    private String category;
+    @NotBlank
+    private String code;
 
+    @NotBlank
     private String prodDesc;
-
-    @NotNull
-    private ProductStatus status;
 
     private Integer affiliateId;
 }

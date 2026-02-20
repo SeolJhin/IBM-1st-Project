@@ -1,65 +1,48 @@
 package org.myweb.uniplace.domain.commerce.domain.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import org.myweb.uniplace.global.common.SoftDeleteEntity;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.myweb.uniplace.domain.commerce.domain.enums.ProductStatus;
 
 import java.math.BigDecimal;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
+/**
+ * Product 엔티티
+ * MySQL 테이블 컬럼과 완전히 일치
+ */
 @Entity
 @Table(name = "product")
-public class Product extends SoftDeleteEntity {
+@Getter
+@Setter
+@NoArgsConstructor
+public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "prod_id")
     private Integer prodId;
 
-    @NotNull
     @Column(name = "prod_nm", nullable = false, length = 50)
-    private String prodName;
+    private String prodNm;
 
-    @NotNull
-    @Column(name = "prod_price", nullable = false)
-    private BigDecimal price;
+    @Column(name = "prod_price", nullable = false, precision = 12, scale = 0)
+    private BigDecimal prodPrice;
 
-    @NotNull
     @Column(name = "prod_stock", nullable = false)
-    private Integer stock;
+    private Integer prodStock;
 
-    @NotNull
     @Column(name = "code", nullable = false, length = 20)
-    private String category;
+    private String code;
 
-    @Column(name = "prod_desc", length = 2000)
+    @Column(name = "prod_desc", nullable = false, length = 2000)
     private String prodDesc;
 
-    @NotNull
-    @Column(name = "prod_st", nullable = false)
     @Enumerated(EnumType.STRING)
-    private ProductStatus status = ProductStatus.on_sale;
+    @Column(name = "prod_st", nullable = false, columnDefinition = "ENUM('on_sale','sold_out') DEFAULT 'on_sale'")
+    private ProductStatus prodSt = ProductStatus.ON_SALE;
 
-    @Column(name = "affiliate_id")
+    @Column(name = "affiliate_id", nullable = false)
     private Integer affiliateId;
-
-    public enum ProductStatus {
-        on_sale,
-        sold_out
-    }
-
-    /** 상품 수정 메서드 */
-    public void update(String prodName, BigDecimal price, Integer stock, String category, String prodDesc, ProductStatus status, Integer affiliateId) {
-        this.prodName = prodName;
-        this.price = price;
-        this.stock = stock;
-        this.category = category;
-        this.prodDesc = prodDesc;
-        this.status = status;
-        this.affiliateId = affiliateId;
-    }
 }
