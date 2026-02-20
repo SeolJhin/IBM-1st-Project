@@ -1,14 +1,16 @@
 package org.myweb.uniplace.domain.system.application;
 
+import org.myweb.uniplace.domain.system.api.dto.request.BannerCreateRequest;
+import org.myweb.uniplace.domain.system.api.dto.request.BannerUpdateRequest;
 import org.myweb.uniplace.domain.system.api.dto.response.BannerResponse;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface BannerService {
-    List<BannerResponse> getActive(LocalDateTime now);
+    List<BannerResponse> getActiveNow();
 
-    BannerResponse create(LocalDateTime startAt, LocalDateTime endAt, String title, String url, Integer order);
-    BannerResponse update(Integer banId, LocalDateTime startAt, LocalDateTime endAt, String title, String url, Integer order, String status);
+    BannerResponse create(BannerCreateRequest request);
+    BannerResponse update(Integer banId, BannerUpdateRequest request);
+
     void delete(Integer banId);
 }

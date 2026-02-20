@@ -1,10 +1,14 @@
 package org.myweb.uniplace.domain.system.application;
 
 import lombok.RequiredArgsConstructor;
+import org.myweb.uniplace.domain.system.api.dto.request.BannerCreateRequest;
+import org.myweb.uniplace.domain.system.api.dto.request.BannerUpdateRequest;
 import org.myweb.uniplace.domain.system.api.dto.response.BannerResponse;
 import org.myweb.uniplace.domain.system.domain.entity.Banner;
 import org.myweb.uniplace.domain.system.domain.enums.BannerStatus;
 import org.myweb.uniplace.domain.system.repository.BannerRepository;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +23,8 @@ public class BannerServiceImpl implements BannerService {
     private final BannerRepository bannerRepository;
 
     @Override
-    public List<BannerResponse> getActive(LocalDateTime now) {
+    public List<BannerResponse> getActiveNow() {
+        LocalDateTime now = LocalDateTime.now();
         return bannerRepository
                 .findByBanStAndStartAtLessThanEqualAndEndAtGreaterThanEqualOrderByBanOrderAsc(
                         BannerStatus.active, now, now
@@ -31,49 +36,59 @@ public class BannerServiceImpl implements BannerService {
 
     @Override
     @Transactional
-    public BannerResponse create(LocalDateTime startAt, LocalDateTime endAt, String title, String url, Integer order) {
-        if (startAt == null || endAt == null) {
-            throw new IllegalArgumentException("startAt/endAt은 필수입니다.");
+    public BannerResponse create(BannerCreateRequest request) {
+
+        if (request.getStartAt() == null || request.getEndAt() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
-        if (endAt.isBefore(startAt)) {
-            throw new IllegalArgumentException("endAt은 startAt 이후여야 합니다.");
+        if (request.getEndAt().isBefore(request.getStartAt())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("banTitle은 필수입니다.");
+        if (request.getBanTitle() == null || request.getBanTitle().isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
-        if (order == null) {
-            throw new IllegalArgumentException("banOrder는 필수입니다.");
+        if (request.getBanOrder() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         Banner banner = Banner.builder()
-                .startAt(startAt)
-                .endAt(endAt)
-                .banTitle(title)
-                .banUrl(url)
-                .banOrder(order)
+                .startAt(request.getStartAt())
+                .endAt(request.getEndAt())
+                .banTitle(request.getBanTitle())
+                .banUrl(request.getBanUrl())
+                .banOrder(request.getBanOrder())
                 .banSt(BannerStatus.active)
                 .build();
 
-        Banner saved = bannerRepository.save(banner);
-        return BannerResponse.from(saved);
+        return BannerResponse.from(bannerRepository.save(banner));
     }
 
     @Override
     @Transactional
-    public BannerResponse update(Integer banId, LocalDateTime startAt, LocalDateTime endAt, String title, String url, Integer order, String status) {
+    public BannerResponse update(Integer banId, BannerUpdateRequest request) {
+
         Banner banner = bannerRepository.findById(banId)
-                .orElseThrow(() -> new IllegalArgumentException("배너를 찾을 수 없습니다. banId=" + banId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BANNER_NOT_FOUND));
+
+        if (request.getStartAt() != null && request.getEndAt() != null
+                && request.getEndAt().isBefore(request.getStartAt())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
 
         BannerStatus st = null;
-        if (status != null) {
-            st = BannerStatus.valueOf(status); // "active"/"inactive"
+        if (request.getBanSt() != null) {
+            st = BannerStatus.valueOf(request.getBanSt()); // active/inactive
         }
 
-        if (startAt != null && endAt != null && endAt.isBefore(startAt)) {
-            throw new IllegalArgumentException("endAt은 startAt 이후여야 합니다.");
-        }
+        banner.update(
+                request.getStartAt(),
+                request.getEndAt(),
+                request.getBanTitle(),
+                request.getBanUrl(),
+                request.getBanOrder(),
+                st
+        );
 
-        banner.update(startAt, endAt, title, url, order, st);
         return BannerResponse.from(banner);
     }
 
@@ -81,7 +96,7 @@ public class BannerServiceImpl implements BannerService {
     @Transactional
     public void delete(Integer banId) {
         if (!bannerRepository.existsById(banId)) {
-            throw new IllegalArgumentException("배너를 찾을 수 없습니다. banId=" + banId);
+            throw new BusinessException(ErrorCode.BANNER_NOT_FOUND);
         }
         bannerRepository.deleteById(banId);
     }

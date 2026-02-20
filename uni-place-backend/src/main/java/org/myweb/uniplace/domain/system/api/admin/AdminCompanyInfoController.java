@@ -1,9 +1,9 @@
 package org.myweb.uniplace.domain.system.api.admin;
 
 import lombok.RequiredArgsConstructor;
-import org.myweb.uniplace.domain.system.application.CompanyInfoService;
 import org.myweb.uniplace.domain.system.api.dto.request.CompanyInfoUpdateRequest;
 import org.myweb.uniplace.domain.system.api.dto.response.CompanyInfoResponse;
+import org.myweb.uniplace.domain.system.application.CompanyInfoService;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.*;
 
