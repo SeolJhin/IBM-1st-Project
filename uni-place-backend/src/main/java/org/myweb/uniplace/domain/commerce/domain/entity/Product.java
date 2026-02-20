@@ -1,65 +1,48 @@
 package org.myweb.uniplace.domain.commerce.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
-import org.myweb.uniplace.global.common.ActivateEntity;
-import org.myweb.uniplace.global.common.SoftDeleteEntity;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.myweb.uniplace.domain.commerce.domain.enums.ProductStatus;
 
 import java.math.BigDecimal;
 
 /**
- * Product
- * - 상품 도메인 엔티티
- * - SoftDeleteEntity 상속: 논리삭제 지원
- * - ActivateEntity 상속 적용 가능: 활성/비활성 관리 필요 시
+ * Product 엔티티
+ * MySQL 테이블 컬럼과 완전히 일치
  */
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 @Entity
 @Table(name = "product")
-public class Product extends SoftDeleteEntity {
+@Getter
+@Setter
+@NoArgsConstructor
+public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "prod_id")
-    private Long prodId;
+    private Integer prodId;
 
-    @Column(name = "prod_name", nullable = false, length = 100, unique = true)
-    private String prodName;
+    @Column(name = "prod_nm", nullable = false, length = 50)
+    private String prodNm;
 
-    @Column(name = "prod_desc", length = 500)
+    @Column(name = "prod_price", nullable = false, precision = 12, scale = 0)
+    private BigDecimal prodPrice;
+
+    @Column(name = "prod_stock", nullable = false)
+    private Integer prodStock;
+
+    @Column(name = "code", nullable = false, length = 20)
+    private String code;
+
+    @Column(name = "prod_desc", nullable = false, length = 2000)
     private String prodDesc;
 
-    @Column(name = "price", nullable = false)
-    private BigDecimal price;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "prod_st", nullable = false, columnDefinition = "ENUM('on_sale','sold_out') DEFAULT 'on_sale'")
+    private ProductStatus prodSt = ProductStatus.ON_SALE;
 
-    @Column(name = "stock", nullable = false)
-    private Integer stock;
-
-    @Column(name = "category", length = 50)
-    private String category;
-
-    @Column(name = "image_url", length = 500)
-    private String imageUrl;
-
-    /** 상품 상태 변경 메서드 */
-    public void updateStatus(String status) {
-        if (!"AVAILABLE".equals(status) && !"UNAVAILABLE".equals(status)) {
-            throw new IllegalArgumentException("지원하지 않는 상태 값입니다.");
-        }
-        // 필요 시 isActive 또는 다른 필드 활용 가능
-        // 예: AVAILABLE -> isActive=1, UNAVAILABLE -> isActive=0
-    }
-
-    /** 상품 수정 메서드 */
-    public void update(String prodName, String prodDesc, BigDecimal price, Integer stock, String category, String imageUrl) {
-        this.prodName = prodName;
-        this.prodDesc = prodDesc;
-        this.price = price;
-        this.stock = stock;
-        this.category = category;
-        this.imageUrl = imageUrl;
-    }
+    @Column(name = "affiliate_id", nullable = false)
+    private Integer affiliateId;
 }

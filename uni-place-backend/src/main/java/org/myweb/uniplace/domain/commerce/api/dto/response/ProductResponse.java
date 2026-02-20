@@ -1,32 +1,34 @@
 package org.myweb.uniplace.domain.commerce.api.dto.response;
 
-import lombok.Builder;
 import lombok.Getter;
 import org.myweb.uniplace.domain.commerce.domain.entity.Product;
+import org.myweb.uniplace.domain.commerce.domain.enums.ProductStatus;
 
 import java.math.BigDecimal;
 
+/**
+ * 상품 응답 DTO
+ */
 @Getter
-@Builder
 public class ProductResponse {
 
-    private Long prodId;
-    private String prodName;
+    private Integer prodId;
+    private String prodNm;
+    private BigDecimal prodPrice;
+    private Integer prodStock;
+    private String code;
     private String prodDesc;
-    private BigDecimal price;
-    private Integer stock;
-    private String category;
-    private String imageUrl;
+    private ProductStatus prodSt;
+    private Integer affiliateId;
 
-    public static ProductResponse fromEntity(Product product) {
-        return ProductResponse.builder()
-                .prodId(product.getProdId())
-                .prodName(product.getProdName())
-                .prodDesc(product.getProdDesc())
-                .price(product.getPrice())
-                .stock(product.getStock())
-                .category(product.getCategory())
-                .imageUrl(product.getImageUrl())
-                .build();
+    public ProductResponse(Product product) {
+        this.prodId = product.getProdId();
+        this.prodNm = product.getProdNm();
+        this.prodPrice = product.getProdPrice();
+        this.prodStock = product.getProdStock();
+        this.code = product.getCode();
+        this.prodDesc = product.getProdDesc();
+        this.prodSt = product.getProdSt();
+        this.affiliateId = product.getAffiliateId();
     }
 }
