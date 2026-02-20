@@ -13,7 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import lombok.RequiredArgsConstructor;
@@ -26,16 +25,12 @@ public class SpaceController {
     private final SpaceService spaceService;
 
     @GetMapping("/{spaceId}")
-    public ResponseEntity<ApiResponse<SpaceDetailResponse>> detail(
-            @PathVariable Integer spaceId
-    ) {
-        return ResponseEntity.ok(
-                ApiResponse.ok(spaceService.getSpace(spaceId))
-        );
+    public ApiResponse<SpaceDetailResponse> detail(@PathVariable Integer spaceId) {
+        return ApiResponse.ok(spaceService.getSpace(spaceId));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<SpaceResponse>>> list(
+    public ApiResponse<PageResponse<SpaceResponse>> list(
             SpaceSearchRequest request,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
@@ -55,11 +50,6 @@ public class SpaceController {
         Page<SpaceResponse> result =
                 spaceService.searchPage(request, pageable);
 
-        PageResponse<SpaceResponse> body =
-                PageResponse.of(result);
-
-        return ResponseEntity.ok(
-                ApiResponse.ok(body)
-        );
+        return ApiResponse.ok(PageResponse.of(result));
     }
 }

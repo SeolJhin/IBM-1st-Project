@@ -57,6 +57,9 @@ public class UploadFile extends SoftDeleteEntity {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+    
+    @Column(name = "update_at")
+    private LocalDateTime updateAt;
 
     @PrePersist
     public void prePersist() {
