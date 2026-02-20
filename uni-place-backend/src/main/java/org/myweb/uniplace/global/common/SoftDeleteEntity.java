@@ -18,8 +18,8 @@ import lombok.Getter;
 public abstract class SoftDeleteEntity extends BaseTimeEntity {
 
     /** 논리 삭제 여부, 기본값 'N' */
-    @Column(name = "delete_yn", nullable = false, length = 1)
-    protected String deleteYn = "N";
+	@Column(name = "delete_yn", nullable = false, columnDefinition = "CHAR(1)")
+	protected String deleteYn = "N";
 
     /** 삭제 처리 메소드 */
     public void softDelete() {
