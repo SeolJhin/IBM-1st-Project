@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.system.api.admin;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.myweb.uniplace.domain.system.api.dto.request.BannerCreateRequest;
 import org.myweb.uniplace.domain.system.api.dto.request.BannerOrderRequest;
 import org.myweb.uniplace.domain.system.api.dto.request.BannerUpdateRequest;
@@ -15,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,24 +35,24 @@ public class AdminBannerController {
     }
 
     // 배너 등록
-    @PostMapping
+    @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<ApiResponse<Void>> createBanner(
             @ModelAttribute BannerCreateRequest request,
             @RequestParam(name = "file", required = false) MultipartFile file
     ) {
         bannerService.createBanner(request, file);
-        return ResponseEntity.ok(ApiResponse.ok(null));
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     // 배너 삭제
     @DeleteMapping("/{banId}")
     public ResponseEntity<ApiResponse<Void>> deleteBanner(@PathVariable int banId) {
         bannerService.deleteBanner(banId);
-        return ResponseEntity.ok(ApiResponse.ok(null));
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     // 배너 수정
-    @PutMapping("/{banId}")
+    @PutMapping(value = "/{banId}", consumes = "multipart/form-data")
     public ResponseEntity<ApiResponse<Void>> updateBanner(
             @PathVariable int banId,
             @ModelAttribute BannerUpdateRequest request,
@@ -59,7 +60,7 @@ public class AdminBannerController {
             @RequestParam(name = "file", required = false) MultipartFile file
     ) {
         bannerService.updateBanner(banId, request, deleteFlag, file);
-        return ResponseEntity.ok(ApiResponse.ok(null));
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     // 배너 상태 변경
@@ -69,13 +70,13 @@ public class AdminBannerController {
             @RequestParam String status
     ) {
         bannerService.updateBannerStatus(banId, status);
-        return ResponseEntity.ok(ApiResponse.ok(null));
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     // 배너 순서 변경
     @PatchMapping("/order")
     public ResponseEntity<ApiResponse<Void>> updateOrder(@RequestBody List<BannerOrderRequest> orders) {
         bannerService.updateOrder(orders);
-        return ResponseEntity.ok(ApiResponse.ok(null));
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 }
