@@ -1,58 +1,44 @@
 package org.myweb.uniplace.domain.commerce.api;
 
-import lombok.RequiredArgsConstructor;
-import org.myweb.uniplace.domain.commerce.api.dto.request.ProductCreateRequest;
-import org.myweb.uniplace.domain.commerce.api.dto.request.ProductUpdateRequest;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.myweb.uniplace.domain.commerce.api.dto.response.ProductResponse;
 import org.myweb.uniplace.domain.commerce.application.ProductService;
 import org.myweb.uniplace.global.response.ApiResponse;
-import org.myweb.uniplace.global.response.PageResponse;
-import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import lombok.RequiredArgsConstructor;
+
+/**
+ * 사용자용 Product Controller
+ * - 상품 조회 전용
+ */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping
+@RequestMapping("/products")
 public class ProductController {
 
     private final ProductService productService;
 
-    // 상품 목록 조회
-    @GetMapping("/products")
-    public ApiResponse<PageResponse<ProductResponse>> list(@RequestParam(required = false) String keyword, Pageable pageable) {
-        return ApiResponse.ok(PageResponse.of(productService.list(keyword, pageable)));
+    // 단일 상품 조회
+    @GetMapping("/{prodId}")
+    public ApiResponse<ProductResponse> getProduct(@PathVariable Integer prodId) {
+        return ApiResponse.ok(productService.getProduct(prodId));
     }
 
-    // 상품 상세 조회
-    @GetMapping("/products/{prodId}")
-    public ApiResponse<ProductResponse> detail(@PathVariable Integer prodId) {
-        return ApiResponse.ok(productService.detail(prodId));
-    }
-
-    // 상품 등록 (관리자)
-    @PostMapping("/admin/products")
-    public ApiResponse<Integer> create(@RequestBody ProductCreateRequest request) {
-        return ApiResponse.ok(productService.create(request));
-    }
-
-    // 상품 수정 (관리자)
-    @PutMapping("/admin/products/{prodId}")
-    public ApiResponse<Void> update(@PathVariable Integer prodId, @RequestBody ProductUpdateRequest request) {
-        productService.update(prodId, request);
-        return ApiResponse.ok();
-    }
-
-    // 상품 상태 변경 (관리자)
-    @PatchMapping("/admin/products/{prodId}/status")
-    public ApiResponse<Void> changeStatus(@PathVariable Integer prodId, @RequestBody String status) {
-        productService.changeStatus(prodId, status);
-        return ApiResponse.ok();
-    }
-
-    // 상품 삭제 (관리자, 논리삭제)
-    @DeleteMapping("/admin/products/{prodId}")
-    public ApiResponse<Void> delete(@PathVariable Integer prodId) {
-        productService.delete(prodId);
-        return ApiResponse.ok();
+    // 전체 상품 조회 (on_sale 상태만)
+    @GetMapping
+    public ApiResponse<List<ProductResponse>> getAllProducts() {
+        // Service에서 전체 조회 기능을 추가하면 좋지만,
+        // 간단히 Repository 사용해도 됨
+        List<ProductResponse> list = productService.getAllOnSaleProducts()
+                .stream()
+                .map(ProductResponse::new)
+                .collect(Collectors.toList());
+        return ApiResponse.ok(list);
     }
 }

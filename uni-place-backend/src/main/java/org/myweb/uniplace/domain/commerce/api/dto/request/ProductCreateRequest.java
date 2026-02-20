@@ -1,28 +1,30 @@
 package org.myweb.uniplace.domain.commerce.api.dto.request;
 
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+
 import java.math.BigDecimal;
 
+/**
+ * 상품 생성 요청 DTO
+ */
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class ProductCreateRequest {
 
-    @NotNull
-    private String prodName;
+    @NotBlank
+    private String prodNm;
 
     @NotNull
-    private BigDecimal price;
+    private BigDecimal prodPrice;
 
     @NotNull
-    private Integer stock;
+    private Integer prodStock;
 
-    @NotNull
-    private String category;
+    @NotBlank
+    private String code;
 
+    @NotBlank
     private String prodDesc;
 
     private Integer affiliateId;
