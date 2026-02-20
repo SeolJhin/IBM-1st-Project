@@ -79,7 +79,7 @@ public class User {
 
     // 일반회원 수정 (정책 붙이기 전에는 tel 정도만 권장)
     public void changeTel(String newTel) { this.userTel = newTel; }
-    public void changeName(String newName) { this.userNm = newName; }
+    public void changeEmail(String newEmail) { this.userEmail = newEmail; }
     public void changePwd(String newPwd) {this.userPwd = newPwd; }
 
     // 관리자용

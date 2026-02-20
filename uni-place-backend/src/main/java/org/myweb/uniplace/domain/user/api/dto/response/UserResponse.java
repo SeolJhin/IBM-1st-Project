@@ -3,6 +3,7 @@ package org.myweb.uniplace.domain.user.api.dto.response;
 import lombok.Builder;
 import lombok.Getter;
 import org.myweb.uniplace.domain.user.domain.entity.User;
+import org.myweb.uniplace.domain.user.domain.enums.UserStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,7 +18,7 @@ public class UserResponse {
     private String userTel;
 
     private String userRole;
-    private String userSt;
+    private UserStatus userSt;
     private String deleteYN;
 
     private LocalDateTime createdAt;
@@ -31,6 +32,7 @@ public class UserResponse {
                 .userBirth(u.getUserBirth())
                 .userTel(u.getUserTel())
                 .userRole(u.getUserRole().name())
+                .userSt(u.getUserSt())
                 .deleteYN(u.getDeleteYN())
                 .createdAt(u.getCreatedAt())
                 .lastLoginAt(u.getLastLoginAt())
