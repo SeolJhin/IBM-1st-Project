@@ -1,5 +1,70 @@
 package org.myweb.uniplace.domain.commerce.domain.entity;
 
+import jakarta.persistence.*;
+import lombok.*;
+import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
+import org.myweb.uniplace.domain.user.domain.entity.User;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "orders")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class Order {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "order_no")
+    private Long orderNo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_status", nullable = false, length = 20)
+    private OrderStatus orderStatus;
+
+    @Column(name = "total_price", nullable = false, precision = 12, scale = 0)
+    private BigDecimal totalPrice;
+
+    @Column(name = "payment_id")
+    private Long paymentId;
+
+    @Column(name = "order_created_at", updatable = false)
+    private LocalDateTime orderCreatedAt;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<OrderItem> orderItems = new ArrayList<>();
+
+    @PrePersist
+    void onCreate() {
+        if (orderCreatedAt == null) orderCreatedAt = LocalDateTime.now();
+        if (orderStatus == null)    orderStatus    = OrderStatus.ordered;
+    }
+
+    public void cancel() {
+        if (this.orderStatus != OrderStatus.ordered) {
+            throw new BusinessException(ErrorCode.ORDER_CANNOT_CANCEL);
+        }
+        this.orderStatus = OrderStatus.cancelled;
+    }
+
+    public void completePayment(Long paymentId) {
+        this.paymentId   = paymentId;
+        this.orderStatus = OrderStatus.paid;
+    }
+
+    public void updateTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
+    }
 }

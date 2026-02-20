@@ -1,5 +1,5 @@
 package org.myweb.uniplace.domain.commerce.domain.enums;
 
-public class OrderStatus {
-
+public enum OrderStatus {
+    ordered, paid, ended, cancelled
 }
