@@ -97,4 +97,43 @@ public class JwtProvider {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+    
+    // ✅ 소셜 가입용 임시 토큰 생성 (5~10분짜리 추천)
+    public String createOauthSignupToken(String provider,
+                                         String providerId,
+                                         String email,
+                                         String nickname) {
+
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+                .claim("provider", provider)
+                .claim("providerId", providerId)
+                .claim("email", email)
+                .claim("nickname", nickname)
+                .claim("typ", "oauth-signup")
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(10 * 60 * 1000))) // 10분
+                .signWith(key, Jwts.SIG.HS256)
+                .compact();
+    }
+    
+    // ✅ 소셜 가입 전용 signupToken 검증
+    public Claims validateOauthSignupToken(String token) {
+        try {
+            Claims claims = parseClaims(token);
+
+            String typ = String.valueOf(claims.get("typ"));
+            if (!"oauth-signup".equals(typ)) {
+                throw new BusinessException(ErrorCode.TOKEN_TYPE_INVALID);
+            }
+
+            return claims;
+
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+    }
 }
