@@ -2,7 +2,12 @@
 package org.myweb.uniplace.domain.property.application;
 
 import java.util.List;
+import java.util.Set;
 
+import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
+import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
+import org.myweb.uniplace.domain.file.application.FileService;
+import org.myweb.uniplace.domain.file.domain.enums.FileRefType;
 import org.myweb.uniplace.domain.property.api.dto.request.SpaceCreateRequest;
 import org.myweb.uniplace.domain.property.api.dto.request.SpaceSearchRequest;
 import org.myweb.uniplace.domain.property.api.dto.request.SpaceUpdateRequest;
@@ -28,6 +33,17 @@ public class SpaceServiceImpl implements SpaceService {
     private final SpaceRepository spaceRepository;
     private final BuildingRepository buildingRepository;
 
+    // ✅ 파일 서비스 추가
+    private final FileService fileService;
+
+    private static final Set<String> IMAGE_EXTS =
+            Set.of(".png", ".jpg", ".jpeg", ".gif", ".webp");
+
+    private boolean isImageExt(String ext) {
+        if (ext == null) return false;
+        return IMAGE_EXTS.contains(ext.toLowerCase());
+    }
+
     @Override
     @Transactional(readOnly = true)
     public SpaceDetailResponse getSpace(Integer spaceId) {
@@ -37,16 +53,17 @@ public class SpaceServiceImpl implements SpaceService {
                         "공용공간을 찾을 수 없습니다. spaceId=" + spaceId
                 ));
 
-        return SpaceDetailResponse.fromEntity(space);
+        // ✅ 상세 이미지들
+        List<FileResponse> files =
+                fileService.getActiveFiles(FileRefType.SPACE.dbValue(), spaceId);
+
+        return SpaceDetailResponse.fromEntity(space, files);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<SpaceResponse> searchPage(SpaceSearchRequest request, Pageable pageable) {
 
-        // ✅ 너 프로젝트 SpaceRepository에 아래 메서드가 있어야 함.
-        //    (RoomRepository.searchWithFilters(...)처럼)
-        //    메서드명/파라미터가 다르면 여기만 너 코드에 맞게 수정해줘.
         Page<CommonSpace> page = spaceRepository.searchWithFilters(
                 request.getBuildingId(),
                 request.getBuildingNm(),
@@ -62,7 +79,26 @@ public class SpaceServiceImpl implements SpaceService {
                 pageable
         );
 
-        return page.map(SpaceResponse::fromEntity);
+        // ✅ Room과 동일: 첫 번째 이미지 파일을 썸네일로
+        return page.map(space -> {
+            List<FileResponse> files =
+                    fileService.getActiveFiles(FileRefType.SPACE.dbValue(), space.getSpaceId());
+
+            FileResponse firstImage = null;
+            if (files != null) {
+                for (FileResponse f : files) {
+                    if (f != null && isImageExt(f.getFileType())) {
+                        firstImage = f;
+                        break;
+                    }
+                }
+            }
+
+            Integer thumbId = (firstImage != null ? firstImage.getFileId() : null);
+            String thumbUrl = (firstImage != null ? firstImage.getViewUrl() : null);
+
+            return SpaceResponse.fromEntity(space, thumbId, thumbUrl);
+        });
     }
 
     @Override
@@ -80,7 +116,20 @@ public class SpaceServiceImpl implements SpaceService {
                 .build();
 
         CommonSpace saved = spaceRepository.save(space);
-        return SpaceDetailResponse.fromEntity(saved);
+
+        // ✅ 파일 업로드
+        if (request.getFiles() != null && !request.getFiles().isEmpty()) {
+            fileService.uploadFiles(FileUploadRequest.builder()
+                    .fileParentType(FileRefType.SPACE.dbValue())
+                    .fileParentId(saved.getSpaceId())
+                    .files(request.getFiles())
+                    .build());
+        }
+
+        List<FileResponse> files =
+                fileService.getActiveFiles(FileRefType.SPACE.dbValue(), saved.getSpaceId());
+
+        return SpaceDetailResponse.fromEntity(saved, files);
     }
 
     @Override
@@ -92,10 +141,10 @@ public class SpaceServiceImpl implements SpaceService {
                 ));
 
         if (request == null) {
-            return SpaceDetailResponse.fromEntity(space);
+            List<FileResponse> files = fileService.getActiveFiles(FileRefType.SPACE.dbValue(), spaceId);
+            return SpaceDetailResponse.fromEntity(space, files);
         }
 
-        // ✅ 핵심: buildingRepository.findByBuildingNm()이 List 반환이므로 Optional.orElseThrow() 금지
         if (request.getBuildingNm() != null && !request.getBuildingNm().isBlank()) {
             space.setBuilding(resolveBuildingByName(request.getBuildingNm()));
         }
@@ -120,8 +169,31 @@ public class SpaceServiceImpl implements SpaceService {
             space.setSpaceDesc(request.getSpaceDesc());
         }
 
+        // ✅ 삭제 파일 처리(soft delete)
+        if (request.getDeleteFileIds() != null && !request.getDeleteFileIds().isEmpty()) {
+            fileService.softDeleteFilesByParent(
+                    FileRefType.SPACE.dbValue(),
+                    spaceId,
+                    request.getDeleteFileIds()
+            );
+        }
+
+        // ✅ 새 파일 업로드
+        if (request.getFiles() != null && !request.getFiles().isEmpty()) {
+            fileService.uploadFiles(FileUploadRequest.builder()
+                    .fileParentType(FileRefType.SPACE.dbValue())
+                    .fileParentId(spaceId)
+                    .files(request.getFiles())
+                    .build());
+        }
+
+        // ✅ 저장은 트랜잭션 더티체킹으로도 되지만, 유지해도 OK
         CommonSpace saved = spaceRepository.save(space);
-        return SpaceDetailResponse.fromEntity(saved);
+
+        List<FileResponse> files =
+                fileService.getActiveFiles(FileRefType.SPACE.dbValue(), spaceId);
+
+        return SpaceDetailResponse.fromEntity(saved, files);
     }
 
     @Override
@@ -132,12 +204,9 @@ public class SpaceServiceImpl implements SpaceService {
                         "공용공간을 찾을 수 없습니다. spaceId=" + spaceId
                 ));
 
-        // ✅ 하드 삭제(실제 row 삭제)
-        // 소프트 삭제 구조면 여기 대신 deleteYn='Y'로 업데이트하는 로직으로 바꿔야 함.
         spaceRepository.delete(space);
     }
 
-    // ✅ RoomServiceImpl과 동일한 방식: buildingNm으로 찾되 List 기반으로 안전 처리
     private Building resolveBuildingByName(String buildingNm) {
 
         List<Building> buildings = buildingRepository.findByBuildingNm(buildingNm);

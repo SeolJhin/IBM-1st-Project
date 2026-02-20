@@ -240,7 +240,7 @@ public class FileController {
     }
 
     /**
-     * [삭제(권장)] DELETE /files?parentType=ROOM&parentId=10
+     * [삭제] DELETE /files?parentType=ROOM&parentId=10
      * Body: [1,2,3]
      *
      * - "소속 검증"이 되는 soft delete
