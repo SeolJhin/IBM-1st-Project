@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -29,6 +29,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+
+        // 토큰 없으면 그냥 통과 (public API 허용 위해)
         if (header == null || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -36,24 +38,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = header.substring(7);
 
+        // 1️⃣ 토큰 유효성 검증 (만료/위조 등)
         jwtProvider.validate(token);
 
+        // 2️⃣ access 토큰인지 확인
         String typ = jwtProvider.getTokenType(token);
         if (!"access".equals(typ)) {
             throw new BusinessException(ErrorCode.TOKEN_TYPE_INVALID);
         }
 
-        String userId = jwtProvider.getSubject(token);
-        String role = jwtProvider.getRole(token);
+        // 3️⃣ 🔥 JwtProvider에서 Authentication 생성 (ROLE_ 권한 포함)
+        Authentication authentication = jwtProvider.getAuthentication(token);
 
-        AuthUser principal = new AuthUser(userId, role == null ? "USER" : role);
-
-        var auth = new UsernamePasswordAuthenticationToken(
-                principal,
-                null,
-                principal.getAuthorities()
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
+        // 4️⃣ SecurityContext에 저장
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);
     }
