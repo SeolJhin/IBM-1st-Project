@@ -1,9 +1,9 @@
+// CartQuantityUpdateRequest.java
 package org.myweb.uniplace.domain.commerce.api.dto.request;
 
 import lombok.*;
 
-@Getter
-@Setter
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

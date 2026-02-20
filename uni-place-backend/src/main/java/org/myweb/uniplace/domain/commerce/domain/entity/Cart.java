@@ -1,4 +1,4 @@
-// 경로: org/myweb/uniplace/domain/cart/domain/entity/Cart.java
+// org/myweb/uniplace/domain/commerce/domain/entity/Cart.java
 package org.myweb.uniplace.domain.commerce.domain.entity;
 
 import java.time.LocalDateTime;
@@ -18,13 +18,13 @@ public class Cart {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "cart_id", nullable = false)
+    @Column(name = "cart_id")
     private Integer cartId;
 
     @Column(name = "user_id", nullable = false, length = 50)
     private String userId;
 
     @CreationTimestamp
-    @Column(name = "cart_created_at", nullable = false, updatable = false)
+    @Column(name = "cart_created_at", updatable = false)
     private LocalDateTime cartCreatedAt;
 }
