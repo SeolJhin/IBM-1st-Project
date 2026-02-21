@@ -29,10 +29,6 @@ public class GroupCommonCode {
     @Column(name = "description", length = 100)
     private String description;
 
-    /**
-     * DB: INT NOT NULL DEFAULT 1
-     * - 1: 활성, 0: 비활성
-     */
     @Column(name = "is_active", nullable = false)
     private Integer isActive;
 
