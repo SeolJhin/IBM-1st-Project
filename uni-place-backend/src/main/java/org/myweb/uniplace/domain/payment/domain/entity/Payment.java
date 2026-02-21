@@ -20,6 +20,10 @@ import java.time.LocalDateTime;
 @Builder
 public class Payment {
 
+    private static final String ST_READY = "ready";
+    private static final String ST_PAID = "paid";
+    private static final String ST_CANCELLED = "cancelled";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "payment_id")
@@ -31,14 +35,16 @@ public class Payment {
     @Column(name = "service_goods_id", nullable = false)
     private Integer serviceGoodsId;
 
+    @Builder.Default
     @Column(name = "currency", nullable = false, columnDefinition = "CHAR(3)")
-    private String currency;
+    private String currency = "KRW";
 
     @Column(name = "total_price", nullable = false, precision = 12, scale = 0)
     private BigDecimal totalPrice;
 
+    @Builder.Default
     @Column(name = "captured_price", nullable = false, precision = 12, scale = 0)
-    private BigDecimal capturedPrice;
+    private BigDecimal capturedPrice = BigDecimal.ZERO;
 
     @Column(name = "payment_method_id")
     private Integer paymentMethodId;
@@ -58,16 +64,15 @@ public class Payment {
     @Column(name = "tax_free_price", precision = 12, scale = 0)
     private BigDecimal taxFreePrice;
 
+    @Builder.Default
     @Column(name = "payment_st", nullable = false, length = 20)
-    private String paymentSt;
+    private String paymentSt = ST_READY;
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
-    /* ===== domain methods ===== */
-
     public void markPaid(LocalDateTime paidAt, BigDecimal capturedPrice) {
-        this.paymentSt = "paid";
+        this.paymentSt = ST_PAID;
         this.paidAt = paidAt;
         if (capturedPrice != null) {
             this.capturedPrice = capturedPrice;
@@ -75,11 +80,11 @@ public class Payment {
     }
 
     public void markCanceled() {
-        this.paymentSt = "cancelled";
+        this.paymentSt = ST_CANCELLED;
     }
 
     public void markReady() {
-        this.paymentSt = "ready";
+        this.paymentSt = ST_READY;
     }
 
     public void updateProviderPaymentId(String providerPaymentId) {

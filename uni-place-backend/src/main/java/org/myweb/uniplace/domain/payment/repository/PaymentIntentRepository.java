@@ -12,9 +12,12 @@ public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, Lo
     // payment_id로 최신 인텐트 조회(prepare → approve 플로우에서 가장 많이 씀)
     Optional<PaymentIntent> findTopByPaymentIdOrderByPaymentIntentIdDesc(Integer paymentId);
 
-    // (payment_id, provider_ref_id) 유니크라서 정확히 1건 조회 가능
+    // (payment_id, provider_ref_id)로 조회 (providerRefId는 null이면 안 됨: 서비스에서 보장 권장)
     Optional<PaymentIntent> findByPaymentIdAndProviderRefId(Integer paymentId, String providerRefId);
 
-    // 상태별로 모니터링/정리할 때 사용
-    List<PaymentIntent> findAllByPaymentIdAndIntentSt(Integer paymentId, PaymentIntentStatus intentSt);
+    // 상태별 조회
+    List<PaymentIntent> findByPaymentIdAndIntentSt(Integer paymentId, PaymentIntentStatus intentSt);
+
+    // providerRefId 단독 조회: PG webhook에서 provider_ref_id만 주는 케이스 대비
+    Optional<PaymentIntent> findTopByProviderRefIdOrderByPaymentIntentIdDesc(String providerRefId);
 }

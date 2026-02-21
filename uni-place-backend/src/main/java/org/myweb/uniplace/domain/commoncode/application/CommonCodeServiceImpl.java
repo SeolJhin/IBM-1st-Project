@@ -25,7 +25,7 @@ public class CommonCodeServiceImpl implements CommonCodeService {
     private final CommonCodeRepository codeRepo;
 
     // =========================
-    // public
+    // 조회 (admin)
     // =========================
 
     @Override
@@ -38,11 +38,9 @@ public class CommonCodeServiceImpl implements CommonCodeService {
 
     @Override
     public List<CommonCodeResponse> getActiveCodes(String groupCode) {
-        if (groupCode == null || groupCode.isBlank()) {
-            throw new IllegalArgumentException("groupCode는 필수입니다.");
-        }
+        requireText(groupCode, "groupCode");
 
-        // 그룹이 존재하지 않으면 404 성격 에러
+        // 그룹 존재 확인
         groupRepo.findById(groupCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 groupCode=" + groupCode));
 
@@ -52,8 +50,21 @@ public class CommonCodeServiceImpl implements CommonCodeService {
                 .toList();
     }
 
+    @Override
+    public List<CommonCodeResponse> getAllCodes(String groupCode) {
+        requireText(groupCode, "groupCode");
+
+        groupRepo.findById(groupCode)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 groupCode=" + groupCode));
+
+        return codeRepo.findByGroup_GroupCodeOrderByDisplayOrderAscCodeAsc(groupCode)
+                .stream()
+                .map(CommonCodeResponse::fromEntity)
+                .toList();
+    }
+
     // =========================
-    // admin
+    // 생성 (admin)
     // =========================
 
     @Override
@@ -107,19 +118,29 @@ public class CommonCodeServiceImpl implements CommonCodeService {
         codeRepo.save(e);
     }
 
+    // =========================
+    // 활성/비활성 (admin)
+    // =========================
+
     @Override
     @Transactional
     public void changeGroupActive(String groupCode, boolean active) {
+        requireText(groupCode, "groupCode");
+
         GroupCommonCode group = groupRepo.findById(groupCode)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 groupCode=" + groupCode));
+
         group.changeActive(active);
     }
 
     @Override
     @Transactional
     public void changeCodeActive(String code, boolean active) {
+        requireText(code, "code");
+
         CommonCode cc = codeRepo.findById(code)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 code=" + code));
+
         cc.changeActive(active);
     }
 

@@ -7,6 +7,7 @@
 
 DROP TABLE IF EXISTS payment_refund;
 DROP TABLE IF EXISTS payment_attempt;
+DROP TABLE IF EXISTS payment_intent;
 
 DROP TABLE IF EXISTS order_items;
 
@@ -64,6 +65,7 @@ DROP TABLE IF EXISTS company_info;
 
 /* ===== 9) AUTH ===== */
 DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS social_accounts;
 DROP TABLE IF EXISTS users;
 
 /* ===== 10) COMMON CODES (parents last) ===== */
@@ -84,6 +86,7 @@ CREATE TABLE IF NOT EXISTS group_common_code (
   description VARCHAR(100),
   is_active INT NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL,
   UNIQUE KEY uq_group_code_name (group_code_name)
 ) ENGINE=InnoDB;
 
@@ -95,6 +98,7 @@ CREATE TABLE IF NOT EXISTS common_code (
   display_order INT,
   is_active INT NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL ,
   PRIMARY KEY (code),
   KEY ix_common_code_group (group_code),
   CONSTRAINT fk_common_code_group
@@ -115,10 +119,12 @@ CREATE TABLE IF NOT EXISTS users (
   user_role ENUM('admin','user','tenant') NOT NULL DEFAULT 'user',
 
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL,
   last_login_at DATETIME,
+  first_sign CHAR(1)  NOT NULL DEFAULT 'Y',
 
   user_st ENUM('active','inactive','banned') NOT NULL DEFAULT 'active',
-  delete_yn CHAR(1) NOT NULL DEFAULT 'N',
+  delete_yn VARCHAR(1) NOT NULL DEFAULT 'N',
 
   UNIQUE KEY uq_users_email (user_email),
   KEY ix_users_tel (user_tel)
@@ -128,7 +134,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   refresh_token_id VARCHAR(36) PRIMARY KEY,
   user_id VARCHAR(50) NOT NULL,
 
-  token_hash CHAR(64) NOT NULL,
+  token_hash VARCHAR(64) NOT NULL,
 
   device_id VARCHAR(100) NOT NULL,
   user_agent VARCHAR(300),
@@ -156,6 +162,40 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS social_accounts(
+  social_account_id INT AUTO_INCREMENT PRIMARY KEY,
+
+  user_id VARCHAR(50) NOT NULL,
+
+  provider VARCHAR(20) NOT NULL,
+
+  provider_user_id VARCHAR(50) 
+    NOT NULL,
+
+  provider_email VARCHAR(255),
+
+  created_at DATETIME 
+    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  updated_at DATETIME 
+    NULL DEFAULT NULL 
+    ON UPDATE CURRENT_TIMESTAMP,
+
+  -- 같은 소셜 계정이 여러 유저에 연결되는 것 방지
+  CONSTRAINT uq_oauth_provider_user 
+    UNIQUE (provider, provider_user_id),
+
+  -- FK 설정
+  CONSTRAINT fk_oauth_user
+    FOREIGN KEY (user_id)
+    REFERENCES users(user_id)
+    ON DELETE CASCADE,
+
+  -- 조회 성능용 인덱스
+  KEY ix_oauth_user (user_id)
+
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS building (
   building_id INT AUTO_INCREMENT PRIMARY KEY,
   building_nm VARCHAR(50) NOT NULL,
@@ -164,8 +204,10 @@ CREATE TABLE IF NOT EXISTS building (
   land_category VARCHAR(20),
   build_size DECIMAL(5,2),
   building_usage VARCHAR(20),
-  exist_elv CHAR(1),
-  parking_capacity INT
+  exist_elv VARCHAR(1),
+  parking_capacity INT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS rooms (
@@ -222,6 +264,10 @@ CREATE TABLE IF NOT EXISTS files (
   file_size INT NOT NULL,
   file_type VARCHAR(20) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  updated_at TIMESTAMP NULL,
+  ON  CURRENT_TIMESTAMP,
+
   delete_yn CHAR(1) NOT NULL DEFAULT 'N',
 
   KEY ix_files_parent (file_parent_type, file_parent_id),
@@ -243,6 +289,7 @@ CREATE TABLE IF NOT EXISTS room_reservation (
   tour_tel VARCHAR(20) NOT NULL,
 
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL ,
 
   tour_st ENUM('requested','confirmed','ended','cancelled') NOT NULL DEFAULT 'requested',
   tour_pwd VARCHAR(4),
@@ -540,6 +587,7 @@ CREATE TABLE IF NOT EXISTS faq (
   faq_title VARCHAR(100) NOT NULL,
   faq_ctnt VARCHAR(3000) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL,
   is_active INT NOT NULL DEFAULT 1,
   code VARCHAR(20) NOT NULL,
 
@@ -752,6 +800,7 @@ CREATE TABLE IF NOT EXISTS room_service_order (
   payment_id INT,
   room_service_desc VARCHAR(200),
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NULL ,
 
   KEY ix_rso_user (user_id),
   KEY ix_rso_room (room_id),
@@ -808,4 +857,49 @@ CREATE TABLE IF NOT EXISTS payment_refund (
     FOREIGN KEY (payment_id) REFERENCES payment(payment_id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS payment_intent (
+  payment_intent_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+  payment_id INT NOT NULL,
+
+  intent_st ENUM(
+    'CREATED',
+    'READY_OK',
+    'READY_FAIL',
+    'RETURNED',
+    'APPROVE_OK',
+    'APPROVE_FAIL',
+    'CANCELED'
+  ) NOT NULL DEFAULT 'CREATED',
+
+  provider_ref_id VARCHAR(100),
+
+  -- PAYCO 앱스위치/리다이렉트에 필요한 최소
+  app_scheme_url VARCHAR(2000),
+  return_url VARCHAR(1000),
+
+  -- 벤더별 파라미터/키/원본은 컬럼 늘리지 말고 JSON에 몰아넣기
+  returned_params_json JSON,
+  pg_ready_json JSON,
+  pg_approve_json JSON,
+
+  fail_code VARCHAR(20),
+  fail_message VARCHAR(255),
+
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  KEY ix_payment_intent_payment (payment_id),
+  KEY ix_payment_intent_ref (provider_ref_id),
+
+  -- 같은 payment 안에서 provider_ref_id 중복 방지(정상 플로우에서 중복이면 거의 오류)
+  UNIQUE KEY uq_payment_intent_payment_ref (payment_id, provider_ref_id),
+
+  CONSTRAINT fk_payment_intent_payment
+    FOREIGN KEY (payment_id) REFERENCES payment(payment_id)
+) ENGINE=InnoDB;
+
 SET FOREIGN_KEY_CHECKS = 1;
+
+
+

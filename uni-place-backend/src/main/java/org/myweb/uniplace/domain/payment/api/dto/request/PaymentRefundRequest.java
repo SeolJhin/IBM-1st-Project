@@ -10,6 +10,6 @@ import java.math.BigDecimal;
 public class PaymentRefundRequest {
 
     private Integer paymentId;
-    private BigDecimal refundAmount;
-    private String reason;
+    private BigDecimal refundPrice;
+    private String refundReason;
 }
