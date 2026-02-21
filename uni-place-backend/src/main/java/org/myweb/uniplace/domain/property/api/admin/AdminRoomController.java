@@ -2,6 +2,7 @@
 package org.myweb.uniplace.domain.property.api.admin;
 
 import org.myweb.uniplace.domain.property.api.dto.request.RoomCreateRequest;
+import org.myweb.uniplace.domain.property.api.dto.request.RoomStatusUpdateRequest;
 import org.myweb.uniplace.domain.property.api.dto.request.RoomUpdateRequest;
 import org.myweb.uniplace.domain.property.api.dto.response.RoomDetailResponse;
 import org.myweb.uniplace.domain.property.application.RoomService;
@@ -36,5 +37,14 @@ public class AdminRoomController {
             @Validated @ModelAttribute RoomUpdateRequest request
     ) {
         return ApiResponse.ok(roomService.updateRoom(roomId, request));
+    }
+    
+    @PutMapping("/{roomId}/status")
+    public ApiResponse<Void> changeStatus(
+            @PathVariable Integer roomId,
+            @Validated @RequestBody RoomStatusUpdateRequest request
+    ) {
+        roomService.changeRoomStatus(roomId, request.getRoomStatus());
+        return ApiResponse.ok();
     }
 }

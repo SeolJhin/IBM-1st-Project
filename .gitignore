@@ -71,3 +71,8 @@ docker-compose.override.yml
 # ===============================
 node_modules/
 dist/
+# application 관련 파일/폴더 무시
+.application/
+
+# gitignore 파일 자체 무시
+.gitignore

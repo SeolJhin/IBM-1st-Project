@@ -5,18 +5,21 @@ import org.myweb.uniplace.domain.property.api.dto.request.BuildingCreateRequest;
 import org.myweb.uniplace.domain.property.api.dto.request.BuildingUpdateRequest;
 import org.myweb.uniplace.domain.property.api.dto.response.BuildingDetailResponse;
 import org.myweb.uniplace.domain.property.api.dto.response.BuildingSummaryResponse;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface BuildingService {
 
-    Page<BuildingSummaryResponse> search(String keyword, Pageable pageable);
+    BuildingDetailResponse getBuilding(Integer buildingId);
 
-    BuildingDetailResponse getDetail(Integer buildingId);
+    BuildingDetailResponse getBuildingForAdmin(Integer buildingId);
 
-    Integer create(BuildingCreateRequest request);
+    Page<BuildingSummaryResponse> searchPage(Pageable pageable);
 
-    void update(Integer buildingId, BuildingUpdateRequest request);
+    BuildingDetailResponse createBuilding(BuildingCreateRequest request);
 
-    void delete(Integer buildingId);
+    BuildingDetailResponse updateBuilding(Integer buildingId, BuildingUpdateRequest request);
+
+    void deleteBuilding(Integer buildingId);
 }

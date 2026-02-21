@@ -11,7 +11,8 @@ public enum FileRefType {
     QNA("QNA"),
     COMPLAIN("COMPLAIN"),
     SPACE("SPACE"),
-    COMPANY("COMPANY");
+    COMPANY("COMPANY"), 
+    BUILDING("BUILDING");
 
     private final String value;
 
