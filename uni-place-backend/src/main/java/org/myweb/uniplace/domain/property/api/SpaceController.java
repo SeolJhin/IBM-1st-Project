@@ -1,4 +1,3 @@
-// Controller
 // 경로: org/myweb/uniplace/domain/property/api/SpaceController.java
 package org.myweb.uniplace.domain.property.api;
 
@@ -31,7 +30,7 @@ public class SpaceController {
 
     @GetMapping
     public ApiResponse<PageResponse<SpaceResponse>> list(
-            SpaceSearchRequest request,
+            @ModelAttribute SpaceSearchRequest request,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", defaultValue = "spaceId") String sort,
