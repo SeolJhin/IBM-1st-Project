@@ -7,6 +7,6 @@ import java.util.Optional;
 
 public interface ServiceGoodsRepository extends JpaRepository<ServiceGoods, Integer> {
 
-    Optional<ServiceGoods> findByServiceGoodsCode(String serviceGoodsCode);
+    Optional<ServiceGoods> findByServiceGoodsCd(String serviceGoodsCd);
 
 }

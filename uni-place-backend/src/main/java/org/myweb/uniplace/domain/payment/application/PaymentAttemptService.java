@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.payment.application;
 
+import org.myweb.uniplace.domain.payment.domain.entity.PaymentAttempt;
+
 public interface PaymentAttemptService {
-    void recordSuccess(Integer paymentId);
-    void recordFail(Integer paymentId);
+    void recordAttemptSt(Integer paymentId, PaymentAttempt.AttemptSt attemptSt);
 }

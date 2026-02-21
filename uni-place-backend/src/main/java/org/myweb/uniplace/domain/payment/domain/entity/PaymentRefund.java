@@ -2,8 +2,9 @@ package org.myweb.uniplace.domain.payment.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payment_refund")
@@ -13,6 +14,10 @@ import java.math.BigDecimal;
 @Builder
 public class PaymentRefund {
 
+    public enum RefundSt {
+        requested, done, failed
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "refund_id")
@@ -21,24 +26,26 @@ public class PaymentRefund {
     @Column(name = "payment_id", nullable = false)
     private Integer paymentId;
 
-    @Column(name = "refund_price")
+    @Column(name = "refund_price", precision = 12, scale = 0)
     private BigDecimal refundPrice;
 
-    @Column(name = "refund_st", length = 20)
-    private String refundStatus; // requested, done, failed
+    @Enumerated(EnumType.STRING)
+    @Column(name = "refund_st")
+    private RefundSt refundSt; // requested, done, failed
 
-    @Column(name = "refund_reason")
+    @Column(name = "refund_reason", length = 255)
     private String refundReason;
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
     public void markDone(LocalDateTime completedAt) {
-        this.refundStatus = "done";
+        this.refundSt = RefundSt.done;
         this.completedAt = completedAt;
     }
 
-    public void markFailed() {
-        this.refundStatus = "failed";
+    public void markFailed(LocalDateTime completedAt) {
+        this.refundSt = RefundSt.failed;
+        this.completedAt = completedAt;
     }
 }

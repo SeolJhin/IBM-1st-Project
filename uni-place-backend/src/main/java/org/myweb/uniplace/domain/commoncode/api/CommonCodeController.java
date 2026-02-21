@@ -13,13 +13,13 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/admin/common-codes") // ✅ admin 전용으로 통일
+@RequestMapping("/admin/common-codes")
 public class CommonCodeController {
 
     private final CommonCodeService commonCodeService;
 
     // =========================
-    // 조회(관리자)
+    // 조회 (admin)
     // =========================
 
     // ✅ 활성 그룹 목록
@@ -28,14 +28,20 @@ public class CommonCodeController {
         return ApiResponse.ok(commonCodeService.getActiveGroups());
     }
 
-    // ✅ 특정 그룹의 활성 코드 목록
+    // ✅ 특정 그룹의 "활성 코드" 목록
     @GetMapping("/{groupCode}")
-    public ApiResponse<List<CommonCodeResponse>> codes(@PathVariable String groupCode) {
+    public ApiResponse<List<CommonCodeResponse>> activeCodes(@PathVariable String groupCode) {
         return ApiResponse.ok(commonCodeService.getActiveCodes(groupCode));
     }
 
+    // ✅ 특정 그룹의 "전체 코드(활성/비활성 포함)" 목록
+    @GetMapping("/{groupCode}/all")
+    public ApiResponse<List<CommonCodeResponse>> allCodes(@PathVariable String groupCode) {
+        return ApiResponse.ok(commonCodeService.getAllCodes(groupCode));
+    }
+
     // =========================
-    // 생성(관리자)
+    // 생성 (admin)
     // =========================
 
     // ✅ 그룹 생성
@@ -53,7 +59,7 @@ public class CommonCodeController {
     }
 
     // =========================
-    // 활성/비활성(관리자)
+    // 활성/비활성 (admin)
     // =========================
 
     // ✅ 그룹 활성/비활성

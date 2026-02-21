@@ -11,24 +11,28 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "common_code",
-       indexes = {
-               @Index(name = "ix_common_code_group", columnList = "group_code")
-       }
+@Table(
+        name = "common_code",
+        indexes = {
+                @Index(name = "ix_common_code_group", columnList = "group_code")
+        }
 )
 public class CommonCode {
 
     /**
      * ✅ 최신 스크립트 기준: PRIMARY KEY (code)
-     * => 코드(code)는 전체 테이블에서 유니크
+     * => code는 테이블 전체에서 유니크
      */
     @Id
     @Column(name = "code", nullable = false, length = 20)
     private String code;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_code", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_common_code_group"))
+    @JoinColumn(
+            name = "group_code",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_common_code_group")
+    )
     private GroupCommonCode group;
 
     @Column(name = "code_value", nullable = false, length = 100)
@@ -40,6 +44,9 @@ public class CommonCode {
     @Column(name = "display_order")
     private Integer displayOrder;
 
+    /**
+     * DB: INT NOT NULL DEFAULT 1 (1=활성, 0=비활성)
+     */
     @Column(name = "is_active", nullable = false)
     private Integer isActive;
 

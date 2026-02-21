@@ -1,4 +1,6 @@
+// src/main/java/org/myweb/uniplace/domain/payment/domain/entity/PaymentIntentStatus.java
 package org.myweb.uniplace.domain.payment.domain.entity;
+
 
 public enum PaymentIntentStatus {
     CREATED,
