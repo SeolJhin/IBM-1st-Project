@@ -9,4 +9,5 @@ public interface PaymentAttemptRepository extends JpaRepository<PaymentAttempt, 
 
     List<PaymentAttempt> findByPaymentId(Integer paymentId);
 
+    PaymentAttempt findTopByPaymentIdOrderByAttemptIdDesc(Integer paymentId);
 }

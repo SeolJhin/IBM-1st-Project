@@ -7,6 +7,6 @@ import java.util.Optional;
 
 public interface PaymentMethodRepository extends JpaRepository<PaymentMethod, Integer> {
 
-    Optional<PaymentMethod> findByPaymentMethodCode(String paymentMethodCode);
+    Optional<PaymentMethod> findByPaymentMethodCd(String paymentMethodCd);
 
 }

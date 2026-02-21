@@ -4,10 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "service_goods",
-       uniqueConstraints = {
-           @UniqueConstraint(name = "uq_service_goods_cd", columnNames = "service_goods_cd")
-       })
+@Table(
+    name = "service_goods",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uq_service_goods_cd", columnNames = "service_goods_cd")
+    }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -19,14 +21,15 @@ public class ServiceGoods {
     @Column(name = "service_goods_id")
     private Integer serviceGoodsId;
 
-    @Column(name = "service_goods_cd", nullable = false)
-    private String serviceGoodsCode;
+    @Column(name = "service_goods_cd", nullable = false, length = 50)
+    private String serviceGoodsCd;
 
-    @Column(name = "service_goods_nm", nullable = false)
-    private String serviceGoodsName;
+    @Column(name = "service_goods_nm", nullable = false, length = 50)
+    private String serviceGoodsNm;
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
-    private Integer isActive;
+    private Integer isActive = 1;
 
     @Column(name = "display_order")
     private Integer displayOrder;
