@@ -9,5 +9,5 @@ public class PaymentRefundResponse {
 
     private Integer paymentId;
     private Integer refundId;
-    private String status;
+    private String paymentSt;
 }

@@ -30,17 +30,11 @@ public class PaymentIntent {
     @Column(name = "payment_intent_id")
     private Long paymentIntentId;
 
-    /**
-     * FK(payment.payment_id)
-     * - 실무적으로는 ManyToOne으로 잡는게 조회/조인에 편한데,
-     *   너 프로젝트가 "ID 필드 유지" 스타일이면 아래처럼 Integer로만 두는 것도 OK.
-     * - 여기서는 "중복/의존 최소"를 위해 paymentId만 들고감.
-     */
     @Column(name = "payment_id", nullable = false)
     private Integer paymentId;
 
-    @Column(name = "intent_st", nullable = false)
     @Enumerated(EnumType.STRING)
+    @Column(name = "intent_st", nullable = false)
     private PaymentIntentStatus intentSt;
 
     @Column(name = "provider_ref_id", length = 100)
@@ -52,18 +46,15 @@ public class PaymentIntent {
     @Column(name = "return_url", length = 1000)
     private String returnUrl;
 
-    /**
-     * JSON 컬럼들
-     * - MySQL 8 JSON은 JPA가 기본으로 매핑해주지 않아서
-     *   가장 실무적인 최소 구현: LONGTEXT + columnDefinition="json"
-     * - 어차피 조회/검색은 잘 안하고 "원본 저장"이 목적이라 String으로 저장하는게 흔함
-     */
+    @Lob
     @Column(name = "returned_params_json", columnDefinition = "json")
     private String returnedParamsJson;
 
+    @Lob
     @Column(name = "pg_ready_json", columnDefinition = "json")
     private String pgReadyJson;
 
+    @Lob
     @Column(name = "pg_approve_json", columnDefinition = "json")
     private String pgApproveJson;
 
@@ -73,15 +64,11 @@ public class PaymentIntent {
     @Column(name = "fail_message", length = 255)
     private String failMessage;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
-
-    /* =========================
-     * domain methods (실무 최소)
-     * ========================= */
 
     public void markReadyOk(String providerRefId, String appSchemeUrl, String pgReadyJson) {
         this.intentSt = PaymentIntentStatus.READY_OK;

@@ -1,5 +1,6 @@
 package org.myweb.uniplace.domain.payment.api.dto.request;
 
+import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,6 +9,9 @@ import lombok.Setter;
 public class PaymentApproveRequest {
 
     private Integer paymentId;
-    private String providerPaymentId;
-    private String providerTid;
+
+    // 카카오 approve 필수
+    private String pgToken;
+
+    private BigDecimal capturedPrice;
 }

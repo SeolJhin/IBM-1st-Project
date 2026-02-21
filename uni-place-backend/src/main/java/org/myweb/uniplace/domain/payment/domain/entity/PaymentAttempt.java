@@ -2,6 +2,7 @@ package org.myweb.uniplace.domain.payment.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,6 +13,10 @@ import java.time.LocalDateTime;
 @Builder
 public class PaymentAttempt {
 
+    public enum AttemptSt {
+        requested, approved, failed
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "attempt_id")
@@ -20,19 +25,20 @@ public class PaymentAttempt {
     @Column(name = "payment_id", nullable = false)
     private Integer paymentId;
 
-    @Column(name = "attempt_st", nullable = false, length = 20)
-    private String attemptStatus; // requested, approved, failed
+    @Enumerated(EnumType.STRING)
+    @Column(name = "attempt_st", nullable = false)
+    private AttemptSt attemptSt;
 
     @Column(name = "finished_at")
     private LocalDateTime finishedAt;
 
     public void approve(LocalDateTime finishedAt) {
-        this.attemptStatus = "approved";
+        this.attemptSt = AttemptSt.approved;
         this.finishedAt = finishedAt;
     }
 
     public void fail(LocalDateTime finishedAt) {
-        this.attemptStatus = "failed";
+        this.attemptSt = AttemptSt.failed;
         this.finishedAt = finishedAt;
     }
 }
