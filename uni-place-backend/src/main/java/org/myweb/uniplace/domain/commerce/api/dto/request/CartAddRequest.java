@@ -1,5 +1,13 @@
+// CartAddRequest.java
 package org.myweb.uniplace.domain.commerce.api.dto.request;
 
-public class CartAddRequest {
+import lombok.*;
 
+@Getter @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class CartAddRequest {
+    private Integer prodId;
+    private Integer quantity;
 }

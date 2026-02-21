@@ -2,6 +2,7 @@
 package org.myweb.uniplace.domain.property.application;
 
 import java.util.List;
+import java.util.Set;
 
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
@@ -16,7 +17,6 @@ import org.myweb.uniplace.domain.property.domain.entity.Building;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.property.repository.BuildingRepository;
 import org.myweb.uniplace.domain.property.repository.RoomRepository;
-import org.myweb.uniplace.global.response.PageResponse;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +33,14 @@ public class RoomServiceImpl implements RoomService {
     private final RoomRepository roomRepository;
     private final BuildingRepository buildingRepository;
     private final FileService fileService;
+
+    private static final Set<String> IMAGE_EXTS =
+            Set.of(".png", ".jpg", ".jpeg", ".gif", ".webp");
+
+    private boolean isImageExt(String ext) {
+        if (ext == null) return false;
+        return IMAGE_EXTS.contains(ext.toLowerCase());
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -60,9 +68,10 @@ public class RoomServiceImpl implements RoomService {
         return RoomDetailResponse.fromEntity(room, files);
     }
 
+    // ✅ PageResponse 제거: Page를 그대로 리턴
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<RoomSummaryResponse> search(RoomSearchRequest request, Pageable pageable) {
+    public Page<RoomSummaryResponse> searchPage(RoomSearchRequest request, Pageable pageable) {
 
         Page<Room> page = roomRepository.searchWithFilters(
                 request.getBuildingId(),
@@ -99,11 +108,27 @@ public class RoomServiceImpl implements RoomService {
 
                 pageable
         );
+        
+        //첫번째이미지 썸네일
+        return page.map(room -> {
+            List<FileResponse> files =
+                    fileService.getActiveFiles(FileRefType.ROOM.dbValue(), room.getRoomId());
 
-        Page<RoomSummaryResponse> mapped = page.map(RoomSummaryResponse::fromEntity);
+            FileResponse firstImage = null;
+            if (files != null) {
+                for (FileResponse f : files) {
+                    if (f != null && isImageExt(f.getFileType())) {
+                        firstImage = f;
+                        break; // 첫 이미지가 썸네일
+                    }
+                }
+            }
 
-        // ✅ 프로젝트 공통 PageResponse에 맞춰 1줄만 조정하면 됨
-        return PageResponse.of(mapped);
+            Integer thumbId = (firstImage != null ? firstImage.getFileId() : null);
+            String thumbUrl = (firstImage != null ? firstImage.getViewUrl() : null);
+
+            return RoomSummaryResponse.fromEntity(room, thumbId, thumbUrl);
+        });
     }
 
     @Override

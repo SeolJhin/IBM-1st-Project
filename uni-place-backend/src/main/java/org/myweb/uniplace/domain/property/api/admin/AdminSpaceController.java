@@ -1,4 +1,3 @@
-// Controller
 // 경로: org/myweb/uniplace/domain/property/api/admin/AdminSpaceController.java
 package org.myweb.uniplace.domain.property.api.admin;
 
@@ -8,6 +7,7 @@ import org.myweb.uniplace.domain.property.api.dto.response.SpaceDetailResponse;
 import org.myweb.uniplace.domain.property.application.SpaceService;
 import org.myweb.uniplace.global.response.ApiResponse;
 
+import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,29 +20,30 @@ public class AdminSpaceController {
 
     private final SpaceService spaceService;
 
-    // ✅ 체크표시(관리자 전용): 등록
-    @PostMapping
+    @GetMapping("/{spaceId}")
+    public ApiResponse<SpaceDetailResponse> detail(@PathVariable Integer spaceId) {
+        // 일반 상세와 동일(삭제 포함/관리자 분리 필요하면 서비스 메서드 추가 가능)
+        return ApiResponse.ok(spaceService.getSpace(spaceId));
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<SpaceDetailResponse> create(
-            @Validated @RequestBody SpaceCreateRequest request
+            @Validated @ModelAttribute SpaceCreateRequest request
     ) {
         return ApiResponse.ok(spaceService.createSpace(request));
     }
 
-    // ✅ 체크표시(관리자 전용): 수정
-    @PutMapping("/{spaceId}")
+    @PutMapping(value = "/{spaceId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<SpaceDetailResponse> update(
             @PathVariable Integer spaceId,
-            @Validated @RequestBody SpaceUpdateRequest request
+            @Validated @ModelAttribute SpaceUpdateRequest request
     ) {
         return ApiResponse.ok(spaceService.updateSpace(spaceId, request));
     }
 
-    // ✅ 체크표시(관리자 전용): 삭제
     @DeleteMapping("/{spaceId}")
-    public ApiResponse<Void> delete(
-            @PathVariable Integer spaceId
-    ) {
+    public ApiResponse<Void> delete(@PathVariable Integer spaceId) {
         spaceService.deleteSpace(spaceId);
-        return ApiResponse.ok(null);
+        return ApiResponse.ok();
     }
 }

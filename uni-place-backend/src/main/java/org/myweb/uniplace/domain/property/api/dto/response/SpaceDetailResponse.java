@@ -1,7 +1,9 @@
-// DTO
 // 경로: org/myweb/uniplace/domain/property/api/dto/response/SpaceDetailResponse.java
 package org.myweb.uniplace.domain.property.api.dto.response;
 
+import java.util.List;
+
+import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.property.domain.entity.Building;
 import org.myweb.uniplace.domain.property.domain.entity.CommonSpace;
 
@@ -15,21 +17,24 @@ public class SpaceDetailResponse {
 
     private Integer spaceId;
 
-    // building 정보(요구사항 패턴 동일)
+    // building
     private Integer buildingId;
     private String buildingNm;
     private String buildingAddr;
     private String buildingDesc;
     private Integer parkingCapacity;
 
+    // space
     private String spaceNm;
     private Integer spaceFloor;
     private Integer spaceCapacity;
-
     private String spaceOptions;
     private String spaceDesc;
 
-    public static SpaceDetailResponse fromEntity(CommonSpace e) {
+    // 상세 이미지들 (프론트에서 img src={viewUrl})
+    private List<FileResponse> files;
+
+    public static SpaceDetailResponse fromEntity(CommonSpace e, List<FileResponse> files) {
 
         Building b = e.getBuilding();
 
@@ -47,6 +52,8 @@ public class SpaceDetailResponse {
                 .spaceCapacity(e.getSpaceCapacity())
                 .spaceOptions(e.getSpaceOptions())
                 .spaceDesc(e.getSpaceDesc())
+
+                .files(files)
                 .build();
     }
 }

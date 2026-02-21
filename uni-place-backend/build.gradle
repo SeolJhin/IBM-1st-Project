@@ -117,3 +117,7 @@ clean {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+springBoot {
+    mainClass = 'org.myweb.uniplace.Application'
+}

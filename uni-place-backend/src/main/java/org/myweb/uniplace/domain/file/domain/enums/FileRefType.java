@@ -10,6 +10,7 @@ public enum FileRefType {
     BANNER("BANNER"),
     QNA("QNA"),
     COMPLAIN("COMPLAIN"),
+    SPACE("SPACE"),
     COMPANY("COMPANY");
 
     private final String value;
