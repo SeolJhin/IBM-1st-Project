@@ -6,7 +6,7 @@ import org.myweb.uniplace.domain.property.api.dto.request.RoomSearchRequest;
 import org.myweb.uniplace.domain.property.api.dto.request.RoomUpdateRequest;
 import org.myweb.uniplace.domain.property.api.dto.response.RoomDetailResponse;
 import org.myweb.uniplace.domain.property.api.dto.response.RoomSummaryResponse;
-
+import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -19,4 +19,5 @@ public interface RoomService {
 
     RoomDetailResponse createRoom(RoomCreateRequest request);
     RoomDetailResponse updateRoom(Integer roomId, RoomUpdateRequest request);
+    void changeRoomStatus(Integer roomId, RoomStatus roomStatus);
 }

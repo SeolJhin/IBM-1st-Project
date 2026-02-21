@@ -1,4 +1,4 @@
-// 경로: org/myweb/uniplace/domain/reservation/api/dto/request/CancelTourReservationRequest.java
+// 경로: org/myweb/uniplace/domain/reservation/api/dto/request/LookupTourReservationRequest.java
 package org.myweb.uniplace.domain.reservation.api.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class CancelTourReservationRequest {
+public class LookupTourReservationRequest {
 
     @NotBlank(message = "tourTel은 필수입니다.")
     private String tourTel;

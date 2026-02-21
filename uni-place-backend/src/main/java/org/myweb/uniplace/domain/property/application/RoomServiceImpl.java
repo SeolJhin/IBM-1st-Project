@@ -15,6 +15,7 @@ import org.myweb.uniplace.domain.property.api.dto.response.RoomDetailResponse;
 import org.myweb.uniplace.domain.property.api.dto.response.RoomSummaryResponse;
 import org.myweb.uniplace.domain.property.domain.entity.Building;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
+import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
 import org.myweb.uniplace.domain.property.repository.BuildingRepository;
 import org.myweb.uniplace.domain.property.repository.RoomRepository;
 
@@ -232,5 +233,16 @@ public class RoomServiceImpl implements RoomService {
         }
 
         return buildings.get(0);
+    }
+    
+    @Override
+    public void changeRoomStatus(Integer roomId, RoomStatus roomStatus) {
+
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("객실을 찾을 수 없습니다. roomId=" + roomId)
+                );
+
+        room.setRoomSt(roomStatus);
     }
 }

@@ -1,10 +1,13 @@
-// dto/response/BuildingDetailResponse.java
+// 경로: org/myweb/uniplace/domain/property/api/dto/response/BuildingDetailResponse.java
 package org.myweb.uniplace.domain.property.api.dto.response;
 
-import lombok.*;
+import java.math.BigDecimal;
+import java.util.List;
+
+import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.property.domain.entity.Building;
 
-import java.math.BigDecimal;
+import lombok.*;
 
 @Getter
 @NoArgsConstructor
@@ -23,7 +26,10 @@ public class BuildingDetailResponse {
     private String existElv;
     private Integer parkingCapacity;
 
-    public static BuildingDetailResponse fromEntity(Building b) {
+    // ✅ 상세 이미지들
+    private List<FileResponse> files;
+
+    public static BuildingDetailResponse fromEntity(Building b, List<FileResponse> files) {
         return BuildingDetailResponse.builder()
                 .buildingId(b.getBuildingId())
                 .buildingNm(b.getBuildingNm())
@@ -34,6 +40,7 @@ public class BuildingDetailResponse {
                 .buildingUsage(b.getBuildingUsage())
                 .existElv(b.getExistElv())
                 .parkingCapacity(b.getParkingCapacity())
+                .files(files)
                 .build();
     }
 }
