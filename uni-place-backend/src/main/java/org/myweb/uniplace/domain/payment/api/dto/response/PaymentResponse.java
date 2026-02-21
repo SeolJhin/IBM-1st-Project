@@ -10,6 +10,13 @@ import java.time.LocalDateTime;
 public class PaymentResponse {
 
     private Integer paymentId;
-    private String status;
+    private String paymentSt;
     private LocalDateTime paidAt;
+    
+    // 카카오 ready 결과
+    private String providerRefId;       // tid
+    private String redirectPcUrl;
+    private String redirectMobileUrl;
+    private String redirectAppUrl;
+    
 }
