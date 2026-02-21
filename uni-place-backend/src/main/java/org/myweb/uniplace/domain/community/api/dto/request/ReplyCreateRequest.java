@@ -1,5 +1,11 @@
 package org.myweb.uniplace.domain.community.api.dto.request;
 
-public class ReplyCreateRequest {
+import lombok.*;
 
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ReplyCreateRequest {
+    private String replyCtnt;
 }
