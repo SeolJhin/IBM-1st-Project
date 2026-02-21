@@ -9,14 +9,16 @@ import java.util.List;
 
 public interface CommonCodeService {
 
-    // public
+    // ✅ admin 전용 조회
     List<GroupCommonCodeResponse> getActiveGroups();
     List<CommonCodeResponse> getActiveCodes(String groupCode);
+    List<CommonCodeResponse> getAllCodes(String groupCode);
 
-    // admin
+    // ✅ admin 전용 생성
     void createGroup(GroupCommonCodeCreateRequest request);
     void createCode(CommonCodeCreateRequest request);
 
+    // ✅ admin 전용 활성/비활성
     void changeGroupActive(String groupCode, boolean active);
     void changeCodeActive(String code, boolean active);
 }
