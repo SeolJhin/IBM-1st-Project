@@ -14,19 +14,19 @@ import java.util.stream.Collectors;
 @Builder
 public class OrderResponse {
 
-    private Long        orderNo;
+    private Integer     orderId;     
     private String      userId;
-    private OrderStatus orderStatus;
+    private OrderStatus orderSt;      
     private BigDecimal  totalPrice;
-    private Long        paymentId;
+    private Integer     paymentId;    
     private LocalDateTime orderCreatedAt;
     private List<OrderItemResponse> orderItems;
 
     public static OrderResponse from(Order order) {
         return OrderResponse.builder()
-                .orderNo(order.getOrderNo())
+                .orderId(order.getOrderId()) 
                 .userId(order.getUser().getUserId())
-                .orderStatus(order.getOrderStatus())
+                .orderSt(order.getOrderSt())     
                 .totalPrice(order.getTotalPrice())
                 .paymentId(order.getPaymentId())
                 .orderCreatedAt(order.getOrderCreatedAt())

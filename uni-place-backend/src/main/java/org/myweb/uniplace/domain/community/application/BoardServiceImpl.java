@@ -41,12 +41,29 @@ public class BoardServiceImpl implements BoardService {
         Pageable pageReq = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<Board> page = boardRepository.findBoardListOrdered(LocalDateTime.now(), pageReq);
 
-        List<Integer> boardIds = page.getContent().stream().map(Board::getBoardId).toList();
-        Map<Integer, Long> likeCountMap = loadBoardLikeCounts(boardIds);
+        // ✅ 첫 페이지면 주간 TOP5를 상단에 추가
+        List<Board> weeklyTop = List.of();
+        if (pageReq.getPageNumber() == 0) {
+            weeklyTop = boardRepository.findWeeklyTop(
+                    LocalDateTime.now().minusDays(7),
+                    PageRequest.of(0, 5)
+            );
+        }
 
-        String me = tryCurrentUserId(); // ✅ 비로그인 null
+        // ✅ likeCount/likedByMe 계산을 위해 boardId를 합쳐서 한번에
+        List<Integer> pageIds = page.getContent().stream().map(Board::getBoardId).toList();
+        List<Integer> topIds = weeklyTop.stream().map(Board::getBoardId).toList();
 
-        List<BoardResponse> mapped = page.getContent().stream()
+        Set<Integer> unionSet = new LinkedHashSet<>();
+        unionSet.addAll(topIds);
+        unionSet.addAll(pageIds);
+        List<Integer> unionIds = new ArrayList<>(unionSet);
+
+        Map<Integer, Long> likeCountMap = loadBoardLikeCounts(unionIds);
+        String me = tryCurrentUserId();
+
+        // weeklyTop -> response
+        List<BoardResponse> topResp = weeklyTop.stream()
                 .map(b -> {
                     long cnt = likeCountMap.getOrDefault(b.getBoardId(), 0L);
                     boolean liked = (me != null) && boardLikeRepository.existsByIdUserIdAndIdBoardId(me, b.getBoardId());
@@ -54,7 +71,28 @@ public class BoardServiceImpl implements BoardService {
                 })
                 .toList();
 
-        Page<BoardResponse> mappedPage = new PageImpl<>(mapped, pageReq, page.getTotalElements());
+        // page -> response (weeklyTop에 있는 글은 중복 제거)
+        Set<Integer> topIdSet = new HashSet<>(topIds);
+
+        List<BoardResponse> pageResp = page.getContent().stream()
+                .filter(b -> !topIdSet.contains(b.getBoardId()))
+                .map(b -> {
+                    long cnt = likeCountMap.getOrDefault(b.getBoardId(), 0L);
+                    boolean liked = (me != null) && boardLikeRepository.existsByIdUserIdAndIdBoardId(me, b.getBoardId());
+                    return BoardResponse.fromEntity(b, cnt, liked);
+                })
+                .toList();
+
+        // ✅ 합치고 pageSize만큼 자르기(기존 API 스펙 유지)
+        List<BoardResponse> merged = new ArrayList<>();
+        merged.addAll(topResp);
+        merged.addAll(pageResp);
+
+        if (merged.size() > pageReq.getPageSize()) {
+            merged = merged.subList(0, pageReq.getPageSize());
+        }
+
+        Page<BoardResponse> mappedPage = new PageImpl<>(merged, pageReq, page.getTotalElements());
         return PageResponse.of(mappedPage);
     }
 

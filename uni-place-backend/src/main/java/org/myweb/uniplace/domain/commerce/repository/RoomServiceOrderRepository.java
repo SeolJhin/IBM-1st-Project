@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface RoomServiceOrderRepository extends JpaRepository<RoomServiceOrder, Long> {
+public interface RoomServiceOrderRepository extends JpaRepository<RoomServiceOrder, Integer> {  // ✅ Fix: Long → Integer
 
     @Query("SELECT r FROM RoomServiceOrder r " +
            "JOIN FETCH r.room " +

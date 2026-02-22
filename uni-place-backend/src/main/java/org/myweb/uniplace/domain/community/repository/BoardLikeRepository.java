@@ -22,4 +22,9 @@ public interface BoardLikeRepository extends JpaRepository<BoardLike, Id> {
          group by bl.id.boardId
     """)
     List<Object[]> countGroupByBoardIds(@Param("boardIds") List<Integer> boardIds);
+
+    // ✅ 관리자 삭제용: 게시글 좋아요 전체 삭제
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from BoardLike bl where bl.id.boardId = :boardId")
+    int deleteByBoardId(@Param("boardId") Integer boardId);
 }
