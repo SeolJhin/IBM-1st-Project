@@ -5,6 +5,8 @@ import org.myweb.uniplace.domain.reservation.api.dto.response.TourReservationRes
 import org.myweb.uniplace.domain.reservation.domain.entity.TourReservationEntity;
 import org.myweb.uniplace.domain.reservation.domain.enums.TourStatus;
 import org.myweb.uniplace.domain.reservation.repository.TourReservationRepository;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 
@@ -15,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/tour-reservations")
+@RequestMapping("/admin/tour-reservations") // ✅ 사용자용과 분리
 public class AdminTourReservationController {
 
     private final TourReservationRepository tourReservationRepository;
@@ -45,9 +47,10 @@ public class AdminTourReservationController {
             @RequestParam("status") TourStatus status
     ) {
         TourReservationEntity e = tourReservationRepository.findById(tourId)
-                .orElseThrow();
+                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST)); // ✅ 스타일 통일
 
         e.setTourSt(status);
+        tourReservationRepository.save(e); // ✅ DB 반영 보장
         return ApiResponse.ok();
     }
 }
