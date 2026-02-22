@@ -15,11 +15,11 @@ public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "order_item_no")
-    private Long orderItemNo;
+    @Column(name = "order_item_id")         // ✅ Fix: order_item_no → order_item_id
+    private Integer orderItemId;            // ✅ Fix: Long → Integer
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_no", nullable = false)
+    @JoinColumn(name = "order_id", nullable = false)  // ✅ Fix: order_no → order_id
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)

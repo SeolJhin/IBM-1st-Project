@@ -20,7 +20,7 @@ public class RoomServiceOrder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
-    private Long orderId;
+    private Integer orderId;                // ✅ Fix: Long → Integer
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -38,9 +38,9 @@ public class RoomServiceOrder {
     private RoomServiceOrderStatus orderSt;
 
     @Column(name = "payment_id")
-    private Long paymentId;
+    private Integer paymentId;              // ✅ Fix: Long → Integer
 
-    @Column(name = "room_service_desc", length = 1000)
+    @Column(name = "room_service_desc", length = 200)  // ✅ Fix: 1000 → 200 (스키마 기준)
     private String roomServiceDesc;
 
     @Column(name = "created_at", updatable = false)
@@ -56,7 +56,7 @@ public class RoomServiceOrder {
         this.orderSt = status;
     }
 
-    public void completePayment(Long paymentId) {
+    public void completePayment(Integer paymentId) {    // ✅ Fix: Long → Integer
         this.paymentId = paymentId;
         this.orderSt   = RoomServiceOrderStatus.paid;
     }
