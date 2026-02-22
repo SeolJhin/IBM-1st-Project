@@ -8,10 +8,6 @@ import org.myweb.uniplace.domain.commerce.domain.enums.ProductStatus;
 
 import java.math.BigDecimal;
 
-/**
- * Product 엔티티
- * MySQL 테이블 컬럼과 완전히 일치
- */
 @Entity
 @Table(name = "product")
 @Getter
@@ -36,13 +32,13 @@ public class Product {
     @Column(name = "code", nullable = false, length = 20)
     private String code;
 
-    @Column(name = "prod_desc", nullable = false, length = 2000)
+    @Column(name = "prod_desc", length = 2000)
     private String prodDesc;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "prod_st", nullable = false, columnDefinition = "ENUM('on_sale','sold_out') DEFAULT 'on_sale'")
-    private ProductStatus prodSt = ProductStatus.ON_SALE;
+    @Column(name = "prod_st", nullable = false)
+    private ProductStatus prodSt = ProductStatus.on_sale;   // ✅ Fix: ON_SALE → on_sale
 
-    @Column(name = "affiliate_id", nullable = false)
+    @Column(name = "affiliate_id")
     private Integer affiliateId;
 }

@@ -31,7 +31,7 @@ public class AdminRoomServiceOrderController {
     // PATCH /admin/room-services/{id}/status
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<RoomServiceOrderResponse>> updateStatus(
-            @PathVariable("id") Long orderId,
+            @PathVariable("id") Integer orderId,
             @RequestBody RoomServiceOrderStatusRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.ok(

@@ -22,4 +22,9 @@ public interface ReplyLikeRepository extends JpaRepository<ReplyLike, Id> {
          group by rl.id.replyId
     """)
     List<Object[]> countGroupByReplyIds(@Param("replyIds") List<Integer> replyIds);
+
+    // ✅ 관리자 삭제용: 댓글들 좋아요 전체 삭제
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from ReplyLike rl where rl.id.replyId in :replyIds")
+    int deleteByReplyIds(@Param("replyIds") List<Integer> replyIds);
 }

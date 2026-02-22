@@ -64,7 +64,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
     }
 
     @Override
-    public RoomServiceOrderResponse updateStatus(Long orderId, RoomServiceOrderStatusRequest request) {
+    public RoomServiceOrderResponse updateStatus(Integer orderId, RoomServiceOrderStatusRequest request) {
         RoomServiceOrder order = roomServiceOrderRepository.findById(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_SERVICE_ORDER_NOT_FOUND));
 

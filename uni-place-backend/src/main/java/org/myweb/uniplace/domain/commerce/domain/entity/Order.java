@@ -22,22 +22,21 @@ public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "order_no")
-    private Long orderNo;
-
+    @Column(name = "order_id")
+    private Integer orderId;    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "order_status", nullable = false, length = 20)
-    private OrderStatus orderStatus;
+    @Column(name = "order_st", nullable = false, length = 20) 
+    private OrderStatus orderSt;
 
     @Column(name = "total_price", nullable = false, precision = 12, scale = 0)
     private BigDecimal totalPrice;
 
     @Column(name = "payment_id")
-    private Long paymentId;
+    private Integer paymentId; 
 
     @Column(name = "order_created_at", updatable = false)
     private LocalDateTime orderCreatedAt;
@@ -49,19 +48,19 @@ public class Order {
     @PrePersist
     void onCreate() {
         if (orderCreatedAt == null) orderCreatedAt = LocalDateTime.now();
-        if (orderStatus == null)    orderStatus    = OrderStatus.ordered;
+        if (orderSt == null)        orderSt        = OrderStatus.ordered;
     }
 
     public void cancel() {
-        if (this.orderStatus != OrderStatus.ordered) {
+        if (this.orderSt != OrderStatus.ordered) {
             throw new BusinessException(ErrorCode.ORDER_CANNOT_CANCEL);
         }
-        this.orderStatus = OrderStatus.cancelled;
+        this.orderSt = OrderStatus.cancelled;
     }
 
-    public void completePayment(Long paymentId) {
-        this.paymentId   = paymentId;
-        this.orderStatus = OrderStatus.paid;
+    public void completePayment(Integer paymentId) {
+        this.paymentId = paymentId;
+        this.orderSt   = OrderStatus.paid;
     }
 
     public void updateTotalPrice(BigDecimal totalPrice) {
