@@ -1,4 +1,4 @@
-package org.myweb.uniplace.domain.payment.api.dto.request;
+﻿package org.myweb.uniplace.domain.payment.api.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +14,4 @@ public class PaymentPrepareRequest {
     private BigDecimal amount;
     private String provider; // KAKAO
     private Integer paymentMethodId;
-    private Integer orderId;
-    private String orderType;
 }

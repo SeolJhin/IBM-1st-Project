@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Getter;
 
 @Getter
-public class TossApproveResponse {
+public class TossCancelResponse {
 
     @JsonProperty("paymentKey")
     private String paymentKey;
@@ -15,9 +15,6 @@ public class TossApproveResponse {
 
     @JsonProperty("status")
     private String status;
-
-    @JsonProperty("totalAmount")
-    private Integer totalAmount;
 
     @JsonProperty("cancels")
     private JsonNode cancels;

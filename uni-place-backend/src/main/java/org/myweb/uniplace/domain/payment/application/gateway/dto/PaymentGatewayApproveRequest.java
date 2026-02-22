@@ -12,4 +12,9 @@ public class PaymentGatewayApproveRequest {
 
     private String providerRefId; // tid
     private String pgToken;        // kakao pg_token
+
+    // toss confirm
+    private String paymentKey;
+    private String orderId;
+    private java.math.BigDecimal amount;
 }

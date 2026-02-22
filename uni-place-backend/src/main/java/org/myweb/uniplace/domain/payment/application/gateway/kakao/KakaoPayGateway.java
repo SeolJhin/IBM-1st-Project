@@ -1,4 +1,4 @@
-package org.myweb.uniplace.domain.payment.application.gateway.kakao;
+﻿package org.myweb.uniplace.domain.payment.application.gateway.kakao;
 
 import java.math.BigDecimal;
 
@@ -15,6 +15,8 @@ import org.myweb.uniplace.domain.payment.application.gateway.dto.PaymentGatewayR
 import org.myweb.uniplace.domain.payment.application.gateway.exception.PaymentGatewayException;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoApproveRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoApproveResponse;
+import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoCancelRequest;
+import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoCancelResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoReadyRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoReadyResponse;
 import org.springframework.stereotype.Component;
@@ -35,55 +37,75 @@ public class KakaoPayGateway implements PaymentGateway {
     @Override
     public PaymentGatewayReadyResponse ready(PaymentGatewayReadyRequest request) {
 
-    	KakaoReadyRequest kakaoReq = KakaoReadyRequest.builder()
-    		    .cid(props.getCid())
-    		    .cid_secret(props.getCid_secret())
-    		    .partner_order_id(String.valueOf(request.getPaymentId()))
-    		    .partner_user_id(request.getUserId())
-    		    .item_name(nvl(request.getItemName(), "uni-place"))
-    		    .quantity(nvl(request.getQuantity(), 1))
-    		    .total_amount(toIntExact(request.getTotalPrice(), "totalPrice"))
-    		    .tax_free_amount(toIntExact(nvl(request.getTaxFreePrice(), BigDecimal.ZERO), "taxFreePrice"))
-    		    .approval_url(request.getApprovalUrl())
-    		    .cancel_url(request.getCancelUrl())
-    		    .fail_url(request.getFailUrl())
-    		    .build();
+        KakaoReadyRequest kakaoReq = KakaoReadyRequest.builder()
+            .cid(props.getCid())
+            .cid_secret(props.getCid_secret())
+            .partner_order_id(String.valueOf(request.getPaymentId()))
+            .partner_user_id(request.getUserId())
+            .item_name(nvl(request.getItemName(), "uni-place"))
+            .quantity(nvl(request.getQuantity(), 1))
+            .total_amount(toIntExact(request.getTotalPrice(), "totalPrice"))
+            .tax_free_amount(toIntExact(nvl(request.getTaxFreePrice(), BigDecimal.ZERO), "taxFreePrice"))
+            .approval_url(request.getApprovalUrl())
+            .cancel_url(request.getCancelUrl())
+            .fail_url(request.getFailUrl())
+            .build();
 
-    		KakaoReadyResponse kakaoRes = client.ready(kakaoReq);
+        KakaoReadyResponse kakaoRes = client.ready(kakaoReq);
 
-    		return PaymentGatewayReadyResponse.builder()
-    		    .providerRefId(kakaoRes.getTid())
-    		    .redirectAppUrl(kakaoRes.getNext_redirect_app_url())
-    		    .redirectMobileUrl(kakaoRes.getNext_redirect_mobile_url())
-    		    .redirectPcUrl(kakaoRes.getNext_redirect_pc_url())
-    		    .pgReadyJson(toJson(kakaoRes))
-    		    .build();
+        return PaymentGatewayReadyResponse.builder()
+            .providerRefId(kakaoRes.getTid())
+            .redirectAppUrl(kakaoRes.getNext_redirect_app_url())
+            .redirectMobileUrl(kakaoRes.getNext_redirect_mobile_url())
+            .redirectPcUrl(kakaoRes.getNext_redirect_pc_url())
+            .pgReadyJson(toJson(kakaoRes))
+            .build();
     }
 
     @Override
     public PaymentGatewayApproveResponse approve(PaymentGatewayApproveRequest request) {
 
-    	KakaoApproveRequest kakaoReq = KakaoApproveRequest.builder()
-    		    .cid(props.getCid())
-    		    .cid_secret(props.getCid_secret())
-    		    .tid(request.getProviderRefId())
-    		    .partner_order_id(String.valueOf(request.getPaymentId()))
-    		    .partner_user_id(request.getUserId())
-    		    .pg_token(request.getPgToken())
-    		    .build();
+        KakaoApproveRequest kakaoReq = KakaoApproveRequest.builder()
+            .cid(props.getCid())
+            .cid_secret(props.getCid_secret())
+            .tid(request.getProviderRefId())
+            .partner_order_id(String.valueOf(request.getPaymentId()))
+            .partner_user_id(request.getUserId())
+            .pg_token(request.getPgToken())
+            .build();
 
-    		KakaoApproveResponse kakaoRes = client.approve(kakaoReq);
+        KakaoApproveResponse kakaoRes = client.approve(kakaoReq);
 
-    		return PaymentGatewayApproveResponse.builder()
-    		    .providerPaymentId(kakaoRes.getTid())
-    		    .pgApproveJson(toJson(kakaoRes))
-    		    .build();
+        return PaymentGatewayApproveResponse.builder()
+            .providerPaymentId(kakaoRes.getTid())
+            .pgApproveJson(toJson(kakaoRes))
+            .build();
     }
 
     @Override
     public PaymentGatewayRefundResponse refund(PaymentGatewayRefundRequest request) {
-        // 카카오 cancel API 스펙이 아직 너 코드/문서에 없음 → 컴파일/구조 완성용
-        throw new UnsupportedOperationException("Kakao refund(cancel) not implemented yet");
+        int cancelAmount = toIntExact(request.getRefundPrice(), "refundPrice");
+        int cancelTaxFreeAmount = 0;
+
+        KakaoCancelResponse kakaoRes = client.cancel(
+            KakaoCancelRequest.builder()
+                .cid(props.getCid())
+                .cid_secret(props.getCid_secret())
+                .tid(request.getProviderPaymentId())
+                .cancel_amount(cancelAmount)
+                .cancel_tax_free_amount(cancelTaxFreeAmount)
+                .build()
+        );
+
+        boolean success = kakaoRes.getStatus() != null
+            && ("CANCEL_PAYMENT".equalsIgnoreCase(kakaoRes.getStatus())
+                || "PART_CANCEL_PAYMENT".equalsIgnoreCase(kakaoRes.getStatus())
+                || "CANCEL".equalsIgnoreCase(kakaoRes.getStatus()));
+
+        return PaymentGatewayRefundResponse.builder()
+            .success(success)
+            .refundResultJson(toJson(kakaoRes))
+            .build();
     }
 
     private String toJson(Object obj) {
