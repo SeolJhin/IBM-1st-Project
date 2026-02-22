@@ -1,3 +1,4 @@
+// DTO
 // 경로: org/myweb/uniplace/domain/reservation/api/dto/request/LookupTourReservationRequest.java
 package org.myweb.uniplace.domain.reservation.api.dto.request;
 

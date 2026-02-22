@@ -1,15 +1,21 @@
+// Controller (✅ 슬롯 조회 API 추가)
 // 경로: org/myweb/uniplace/domain/reservation/api/TourReservationController.java
 package org.myweb.uniplace.domain.reservation.api;
+
+import java.time.LocalDate;
 
 import org.myweb.uniplace.domain.property.api.dto.request.RoomSearchRequest;
 import org.myweb.uniplace.domain.property.api.dto.response.RoomSummaryResponse;
 import org.myweb.uniplace.domain.property.application.RoomService;
 import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
+
 import org.myweb.uniplace.domain.reservation.api.dto.request.CancelTourReservationRequest;
 import org.myweb.uniplace.domain.reservation.api.dto.request.CreateTourReservationRequest;
 import org.myweb.uniplace.domain.reservation.api.dto.request.LookupTourReservationRequest;
+import org.myweb.uniplace.domain.reservation.api.dto.response.TourReservableResponse;
 import org.myweb.uniplace.domain.reservation.api.dto.response.TourReservationResponse;
 import org.myweb.uniplace.domain.reservation.application.TourReservationService;
+
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 
@@ -54,6 +60,17 @@ public class TourReservationController {
         return ApiResponse.ok(PageResponse.of(roomService.searchPage(request, pageable)));
     }
 
+    // ✅ (추가) 특정 방 + 날짜 예약가능 슬롯만 조회 -> UI는 여기 availableSlots만 출력하면 됨
+    // 예) /tour-reservations/slots?buildingId=1&roomId=3&date=2026-02-22
+    @GetMapping("/slots")
+    public ApiResponse<TourReservableResponse> reservableSlots(
+            @RequestParam(name = "buildingId") Integer buildingId,
+            @RequestParam(name = "roomId") Integer roomId,
+            @RequestParam(name = "date") LocalDate date
+    ) {
+        return ApiResponse.ok(tourReservationService.reservableSlots(buildingId, roomId, date));
+    }
+
     @PostMapping
     public ApiResponse<TourReservationResponse> create(
             @Validated @RequestBody CreateTourReservationRequest request
@@ -61,7 +78,7 @@ public class TourReservationController {
         return ApiResponse.ok(tourReservationService.create(request));
     }
 
-    @PostMapping("/lookup") //예약조회 비번때문에 post로 해야함
+    @PostMapping("/lookup")
     public ApiResponse<PageResponse<TourReservationResponse>> lookup(
             @Validated @RequestBody LookupTourReservationRequest request,
             @RequestParam(name = "page", defaultValue = "1") int page,

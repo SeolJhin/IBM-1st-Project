@@ -1,8 +1,10 @@
+// Repository
 // 경로: org/myweb/uniplace/domain/reservation/repository/TourReservationRepository.java
 package org.myweb.uniplace.domain.reservation.repository;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
 
 import org.myweb.uniplace.domain.reservation.domain.entity.TourReservationEntity;
 import org.myweb.uniplace.domain.reservation.domain.enums.TourStatus;
@@ -30,11 +32,19 @@ public interface TourReservationRepository extends JpaRepository<TourReservation
             @Param("endAt") LocalDateTime endAt
     );
 
-    boolean existsByTourTelAndTourStartAtAndTourEndAtAndTourStNotIn(
-            String tourTel,
-            LocalDateTime tourStartAt,
-            LocalDateTime tourEndAt,
-            Collection<TourStatus> inactive
+    @Query("""
+        select t
+          from TourReservationEntity t
+         where t.room.roomId = :roomId
+           and t.tourSt not in :inactive
+           and t.tourStartAt < :dayEnd
+           and t.tourEndAt   > :dayStart
+    """)
+    List<TourReservationEntity> findActiveInDayRange(
+            @Param("roomId") Integer roomId,
+            @Param("inactive") Collection<TourStatus> inactive,
+            @Param("dayStart") LocalDateTime dayStart,
+            @Param("dayEnd") LocalDateTime dayEnd
     );
 
     Page<TourReservationEntity> findByTourTelAndTourPwdAndTourStNotIn(
@@ -45,4 +55,12 @@ public interface TourReservationRepository extends JpaRepository<TourReservation
     );
 
     TourReservationEntity findByTourIdAndTourTelAndTourPwd(Integer tourId, String tourTel, String tourPwd);
+    
+    boolean existsByTourTelAndTourStartAtAndTourEndAtAndTourStNotIn(
+            String tourTel,
+            LocalDateTime tourStartAt,
+            LocalDateTime tourEndAt,
+            Collection<TourStatus> inactive
+    );
+    
 }

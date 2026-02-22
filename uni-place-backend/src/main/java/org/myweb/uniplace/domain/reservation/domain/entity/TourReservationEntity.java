@@ -1,3 +1,4 @@
+// Entity
 // 경로: org/myweb/uniplace/domain/reservation/domain/entity/TourReservationEntity.java
 package org.myweb.uniplace.domain.reservation.domain.entity;
 
@@ -25,10 +26,10 @@ import lombok.*;
                 @Index(name = "ix_room_reservation_tel_pwd", columnList = "tour_tel,tour_pwd")
         },
         uniqueConstraints = {
-        		//같은 시간대 중복 예약 방지
+                // SQL 그대로: (room_id, tour_start_at, tour_end_at)
                 @UniqueConstraint(
-                        name = "uq_room_reservation_tel_time",
-                        columnNames = { "tour_tel", "tour_start_at", "tour_end_at" }
+                        name = "uq_room_reservation_room_time",
+                        columnNames = { "room_id", "tour_start_at", "tour_end_at" }
                 )
         }
 )
