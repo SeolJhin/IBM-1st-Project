@@ -1,9 +1,10 @@
 package org.myweb.uniplace.domain.commerce.domain.enums;
 
 /**
- * Product 상태
+ * product.prod_st ENUM 값과 정확히 일치
+ * ENUM('on_sale','sold_out')
  */
 public enum ProductStatus {
-    ON_SALE,
-    SOLD_OUT
+    on_sale,    // ✅ Fix: ON_SALE → on_sale
+    sold_out    // ✅ Fix: SOLD_OUT → sold_out
 }

@@ -44,10 +44,10 @@ public class OrderController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<OrderResponse>> getOrder(
             @AuthenticationPrincipal AuthUser authUser,
-            @PathVariable("id") Long orderNo
+            @PathVariable("id") Integer orderId   
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                orderService.getOrder(authUser.getUserId(), orderNo)
+                orderService.getOrder(authUser.getUserId(), orderId)
         ));
     }
 
@@ -55,10 +55,10 @@ public class OrderController {
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(
             @AuthenticationPrincipal AuthUser authUser,
-            @PathVariable("id") Long orderNo
+            @PathVariable("id") Integer orderId 
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                orderService.cancelOrder(authUser.getUserId(), orderNo)
+                orderService.cancelOrder(authUser.getUserId(), orderId)
         ));
     }
 }

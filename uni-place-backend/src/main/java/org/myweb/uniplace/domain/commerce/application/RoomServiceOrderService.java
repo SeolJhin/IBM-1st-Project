@@ -12,5 +12,5 @@ public interface RoomServiceOrderService {
     RoomServiceOrderResponse       createOrder(String userId, RoomServiceOrderCreateRequest request);
     List<RoomServiceOrderResponse> getMyOrders(String userId);
     Page<RoomServiceOrderResponse> getAllOrders(Pageable pageable);
-    RoomServiceOrderResponse       updateStatus(Long orderId, RoomServiceOrderStatusRequest request);
+    RoomServiceOrderResponse       updateStatus(Integer orderId, RoomServiceOrderStatusRequest request);
 }

@@ -27,7 +27,7 @@ public class ProductServiceImpl implements ProductService {
     public List<Product> getAllOnSaleProducts() {
         return productRepository.findAll()
                 .stream()
-                .filter(p -> p.getProdSt() == ProductStatus.ON_SALE)
+                .filter(p -> p.getProdSt() == ProductStatus.on_sale)
                 .toList();
     }
 
