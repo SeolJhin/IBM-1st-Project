@@ -14,4 +14,6 @@ public class PaymentPrepareRequest {
     private BigDecimal amount;
     private String provider; // KAKAO
     private Integer paymentMethodId;
+    private Integer orderId;
+    private String orderType;
 }
