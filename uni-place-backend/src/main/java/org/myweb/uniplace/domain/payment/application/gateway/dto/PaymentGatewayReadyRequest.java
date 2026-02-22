@@ -11,6 +11,7 @@ public class PaymentGatewayReadyRequest {
 
     private Integer paymentId;   // DB: payment_id
     private String userId;       // DB: user_id
+    private String orderId;      // merchant order id (use paymentId string if none)
 
     private String itemName;     // kakao: item_name
     private Integer quantity;    // kakao: quantity (보통 1)

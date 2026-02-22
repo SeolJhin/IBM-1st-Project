@@ -1,8 +1,10 @@
-package org.myweb.uniplace.domain.payment.application.gateway.kakao;
+﻿package org.myweb.uniplace.domain.payment.application.gateway.kakao;
 
 import org.myweb.uniplace.domain.payment.application.gateway.exception.PaymentGatewayException;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoApproveRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoApproveResponse;
+import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoCancelRequest;
+import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoCancelResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoReadyRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoReadyResponse;
 import org.springframework.http.HttpHeaders;
@@ -19,7 +21,7 @@ public class KakaoPayClient {
     private final WebClient webClient;
 
     @SuppressWarnings("null")
-	public KakaoPayClient(KakaoPayProperties props) {
+    public KakaoPayClient(KakaoPayProperties props) {
         this.props = props;
         this.webClient = WebClient.builder()
             .baseUrl(props.getBase_url())
@@ -73,6 +75,30 @@ public class KakaoPayClient {
             throw e;
         } catch (Exception e) {
             throw new PaymentGatewayException("KAKAO", "kakao approve failed", e);
+        }
+    }
+
+    public KakaoCancelResponse cancel(@NonNull KakaoCancelRequest request) {
+        try {
+            return webClient.post()
+                .uri("/online/v1/payment/cancel")
+                .bodyValue(request)
+                .retrieve()
+                .onStatus(
+                    status -> status.isError(),
+                    res -> res.bodyToMono(String.class)
+                        .defaultIfEmpty("")
+                        .flatMap(body -> Mono.error(
+                            new PaymentGatewayException("KAKAO", String.valueOf(res.statusCode().value()),
+                                "kakao cancel http error", body)
+                        ))
+                )
+                .bodyToMono(KakaoCancelResponse.class)
+                .block();
+        } catch (PaymentGatewayException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new PaymentGatewayException("KAKAO", "kakao cancel failed", e);
         }
     }
 }

@@ -1,8 +1,12 @@
-package org.myweb.uniplace.domain.payment.application;
+﻿package org.myweb.uniplace.domain.payment.application;
 
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentRefundRequest;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentRefundResponse;
+import org.myweb.uniplace.domain.payment.application.gateway.PaymentGateway;
+import org.myweb.uniplace.domain.payment.application.gateway.PaymentGatewayFactory;
+import org.myweb.uniplace.domain.payment.application.gateway.dto.PaymentGatewayRefundRequest;
+import org.myweb.uniplace.domain.payment.application.gateway.dto.PaymentGatewayRefundResponse;
 import org.myweb.uniplace.domain.payment.domain.entity.Payment;
 import org.myweb.uniplace.domain.payment.domain.entity.PaymentRefund;
 import org.myweb.uniplace.domain.payment.repository.PaymentRefundRepository;
@@ -19,6 +23,7 @@ public class RefundServiceImpl implements RefundService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentRefundRepository paymentRefundRepository;
+    private final PaymentGatewayFactory paymentGatewayFactory;
 
     private static final String ST_DONE = "done";
 
@@ -28,22 +33,44 @@ public class RefundServiceImpl implements RefundService {
         Payment payment = paymentRepository.findById(request.getPaymentId())
             .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
 
-        // 1) 환불 레코드 생성 (requested)
+        // 1) create refund record (requested)
         PaymentRefund refund = PaymentRefund.builder()
             .paymentId(payment.getPaymentId())
-            .refundPrice(request.getRefundPrice())   
+            .refundPrice(request.getRefundPrice())
             .refundSt(PaymentRefund.RefundSt.requested)
             .refundReason(request.getRefundReason())
             .build();
 
         paymentRefundRepository.save(refund);
 
-        // 2) 실제 환불 성공 처리(현재는 즉시 done 처리)
+        // 2) gateway refund (KAKAO/NAVER/TOSS)
+        // 승인 실패 등으로 providerPaymentId가 없으면 내부 취소만 진행
+        if (payment.getProvider() != null && !payment.getProvider().isBlank()
+            && payment.getProviderPaymentId() != null && !payment.getProviderPaymentId().isBlank()) {
+
+            PaymentGateway gateway = paymentGatewayFactory.get(payment.getProvider());
+
+            PaymentGatewayRefundResponse gwRes = gateway.refund(
+                PaymentGatewayRefundRequest.builder()
+                    .paymentId(payment.getPaymentId())
+                    .userId(payment.getUserId())
+                    .providerPaymentId(payment.getProviderPaymentId())
+                    .refundPrice(request.getRefundPrice())
+                    .refundReason(request.getRefundReason())
+                    .build()
+            );
+
+            if (!gwRes.isSuccess()) {
+                throw new IllegalStateException(payment.getProvider() + " refund failed");
+            }
+        }
+
+        // 3) mark refund done
         refund.markDone(LocalDateTime.now());
         paymentRefundRepository.save(refund);
 
-        // 3) 결제 상태 취소로 변경
-        payment.markCanceled(); // ✅ 파라미터 없음
+        // 4) mark payment canceled
+        payment.markCanceled();
         paymentRepository.save(payment);
 
         return PaymentRefundResponse.builder()
