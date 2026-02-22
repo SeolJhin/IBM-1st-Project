@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @Builder
 public class OrderItemResponse {
 
-    private Long       orderItemNo;
+    private Integer    orderItemId; 
     private Integer    prodId;
     private String     prodNm;
     private Integer    orderQuantity;
@@ -18,7 +18,7 @@ public class OrderItemResponse {
 
     public static OrderItemResponse from(OrderItem item) {
         return OrderItemResponse.builder()
-                .orderItemNo(item.getOrderItemNo())
+                .orderItemId(item.getOrderItemId()) 
                 .prodId(item.getProduct().getProdId())
                 .prodNm(item.getProduct().getProdNm())
                 .orderQuantity(item.getOrderQuantity())

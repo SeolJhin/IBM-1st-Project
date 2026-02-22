@@ -12,13 +12,13 @@ import java.time.LocalDateTime;
 @Builder
 public class RoomServiceOrderResponse {
 
-    private Long      orderId;
+    private Integer      orderId;
     private String    userId;
     private Integer   roomId;
     private Integer   roomNo;
     private BigDecimal totalPrice;
     private RoomServiceOrderStatus orderSt;
-    private Long      paymentId;
+    private Integer      paymentId;
     private String    roomServiceDesc;
     private LocalDateTime createdAt;
 
