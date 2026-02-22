@@ -17,7 +17,6 @@ public class AffiliateUpdateRequest {
     private String businessNo;
     private String affiliateFax;
 
-    @Email
     private String affiliateEmail;
 
     private String affiliateAddr;
