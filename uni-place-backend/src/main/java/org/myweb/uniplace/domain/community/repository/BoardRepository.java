@@ -2,6 +2,7 @@
 package org.myweb.uniplace.domain.community.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.myweb.uniplace.domain.community.domain.entity.Board;
 import org.springframework.data.domain.Page;
@@ -33,4 +34,13 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
               b.boardId desc
     """)
     Page<Board> findBoardListOrdered(@Param("now") LocalDateTime now, Pageable pageable);
+    
+ // BoardRepository.java에 추가
+    @Query("""
+        select b
+          from Board b
+         where b.createdAt >= :from
+         order by b.readCount desc, b.boardId desc
+    """)
+    List<Board> findWeeklyTop(@Param("from") LocalDateTime from, Pageable pageable);
 }
