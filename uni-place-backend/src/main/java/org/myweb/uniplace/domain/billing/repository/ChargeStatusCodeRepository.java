@@ -1,5 +1,8 @@
 package org.myweb.uniplace.domain.billing.repository;
 
-public class ChargeStatusCodeRepository {
+import org.myweb.uniplace.domain.billing.domain.entity.ChargeStatusCode;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ChargeStatusCodeRepository extends JpaRepository<ChargeStatusCode, String> {
 
 }

@@ -49,6 +49,12 @@ public class Payment {
     @Column(name = "payment_method_id")
     private Integer paymentMethodId;
 
+    @Column(name = "order_id")
+    private Integer orderId;
+
+    @Column(name = "order_type", length = 20)
+    private String orderType;
+
     @Column(name = "provider", nullable = false, length = 20)
     private String provider;
 

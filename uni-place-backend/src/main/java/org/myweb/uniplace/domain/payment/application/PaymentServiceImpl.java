@@ -9,6 +9,7 @@ import org.myweb.uniplace.domain.payment.api.dto.response.PaymentPrepareResponse
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentResponse;
 import org.myweb.uniplace.domain.payment.domain.entity.Payment;
 import org.myweb.uniplace.domain.payment.repository.PaymentRepository;
+import org.myweb.uniplace.domain.billing.application.BillingOrderService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,12 +34,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static final String ST_READY = "ready";
     private static final String ST_PAID = "paid";
+    private static final String ORDER_TYPE_BILLING = "BILLING";
 
     private final PaymentRepository paymentRepository;
     
 
     private final PaymentIntentRepository paymentIntentRepository;
 
+    private final BillingOrderService billingOrderService;
 
     private final PaymentGatewayFactory paymentGatewayFactory;
 
@@ -57,6 +60,8 @@ public class PaymentServiceImpl implements PaymentService {
             .totalPrice(totalPrice)
             .capturedPrice(BigDecimal.ZERO)
             .paymentMethodId(request.getPaymentMethodId())
+            .orderId(request.getOrderId())
+            .orderType(request.getOrderType())
             .provider(request.getProvider())
             .paymentSt(ST_READY)
             .build();
@@ -146,6 +151,11 @@ public class PaymentServiceImpl implements PaymentService {
         //  paid 처리
         payment.markPaid(LocalDateTime.now(), payment.getTotalPrice());
         paymentRepository.save(payment);
+
+        if (ORDER_TYPE_BILLING.equalsIgnoreCase(payment.getOrderType())
+                && payment.getOrderId() != null) {
+            billingOrderService.markPaid(payment.getOrderId(), payment.getPaymentId());
+        }
 
         return PaymentResponse.builder()
             .paymentId(payment.getPaymentId())
