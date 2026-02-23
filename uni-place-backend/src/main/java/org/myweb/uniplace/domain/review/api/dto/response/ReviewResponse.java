@@ -51,8 +51,20 @@ public class ReviewResponse {
     private String buildingNm;
     private Integer roomNo;
 
-    /** 파일 없는 버전 (목록에서 파일 따로 로드할 때 사용) */
-    public static ReviewResponse fromEntity(Review e, List<FileResponse> files) {
+    /** 방 정보까지 채우는 버전 */
+    public static ReviewResponse fromEntity(Review e, List<FileResponse> files, Room room) {
+        Integer buildingId = null;
+        String buildingNm  = null;
+        Integer roomNo     = null;
+
+        if (room != null) {
+            roomNo = room.getRoomNo();
+            if (room.getBuilding() != null) {
+                buildingId = room.getBuilding().getBuildingId();
+                buildingNm = room.getBuilding().getBuildingNm();
+            }
+        }
+
         return ReviewResponse.builder()
                 .reviewId(e.getReviewId())
                 .userId(e.getUserId())
@@ -67,25 +79,20 @@ public class ReviewResponse {
                 .updatedAt(e.getUpdatedAt())
                 .files(files)
                 .thumbnailUrl(resolveThumbnail(files))
+                .buildingId(buildingId)
+                .buildingNm(buildingNm)
+                .roomNo(roomNo)
                 .build();
     }
 
-    /** 방 정보까지 채우는 버전 */
-    public static ReviewResponse fromEntity(Review e, List<FileResponse> files, Room room) {
-        ReviewResponse base = fromEntity(e, files);
-
-        if (room == null) return base;
-
-        return base.toBuilder()
-                .buildingId(room.getBuilding() != null ? room.getBuilding().getBuildingId() : null)
-                .buildingNm(room.getBuilding() != null ? room.getBuilding().getBuildingNm() : null)
-                .roomNo(room.getRoomNo())
-                .build();
+    /** 파일 없는 버전 */
+    public static ReviewResponse fromEntity(Review e, List<FileResponse> files) {
+        return fromEntity(e, files, null);
     }
 
     /** 파일 없이 (엔티티만) */
     public static ReviewResponse fromEntity(Review e) {
-        return fromEntity(e, null);
+        return fromEntity(e, null, null);
     }
 
     /** 이미지 확장자인 첫 번째 파일의 viewUrl 반환 */
