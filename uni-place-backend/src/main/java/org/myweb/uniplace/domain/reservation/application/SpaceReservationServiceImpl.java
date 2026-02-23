@@ -30,6 +30,10 @@ import org.myweb.uniplace.domain.user.domain.enums.UserRole;
 import org.myweb.uniplace.domain.user.domain.enums.UserStatus;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
+
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.security.AuthUser;
@@ -55,6 +59,9 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
     private final ReservationValidator reservationValidator;
     private final SpaceReservationConflictPolicy spaceReservationConflictPolicy;
 
+    // ✅ 알림
+    private final NotificationService notificationService;
+
     private static final List<SpaceReservationStatus> INACTIVE =
             List.of(SpaceReservationStatus.cancelled, SpaceReservationStatus.ended);
 
@@ -71,7 +78,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         }
 
         buildingRepository.findById(buildingId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST)); // BUILDING_NOT_FOUND 분리 가능
+                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
 
         SpaceSearchRequest request = SpaceSearchRequest.builder()
                 .buildingId(buildingId)
@@ -82,7 +89,6 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         LocalDateTime dayStart = date.atStartOfDay();
         LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
 
-        // ✅ 반드시 Page 반환
         return spaces.map(s -> {
             Integer spaceId = s.getSpaceId();
 
@@ -153,22 +159,19 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         }
 
         Building building = buildingRepository.findById(request.getBuildingId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST)); // BUILDING_NOT_FOUND 분리 가능
+                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
 
         CommonSpace space = spaceRepository.findById(request.getSpaceId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST)); // SPACE_NOT_FOUND 분리 가능
+                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
 
-        // ✅ 같은 building 소속인지 검증
         if (space.getBuilding() == null || !building.getBuildingId().equals(space.getBuilding().getBuildingId())) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST); // SPACE_RESERVATION_INVALID_TARGET 분리 가능
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        // ✅ 수용 인원 초과 방지
         if (space.getSpaceCapacity() != null && request.getSrNoPeople() > space.getSpaceCapacity()) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST); // SPACE_RESERVATION_OVER_CAPACITY 분리 가능
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        // ✅ 시간 겹침 방지
         spaceReservationConflictPolicy.validateSpaceConflict(
                 space.getSpaceId(),
                 request.getSrStartAt(),
@@ -187,11 +190,40 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
                         .build()
         );
 
+        // =========================
+        // 알림(여기 라인에 넣기) - 예약 생성 직후
+        // =========================
+        String timeMsg = saved.getSrStartAt() + " ~ " + saved.getSrEndAt();
+
+        // 1) 사용자 알림
+        notificationService.notifyUser(
+                user.getUserId(),
+                NotificationType.SP_REQ,
+                "공간 예약 요청이 접수되었습니다. (" + timeMsg + ")",
+                null,
+                TargetType.space,
+                saved.getReservationId(),
+                "/space-reservations/my"
+        );
+
+        // 2) 관리자 알림
+        notificationService.notifyAdmins(
+                NotificationType.SP_REQ,
+                "공간 예약 요청이 생성되었습니다. userId=" + user.getUserId()
+                        + ", buildingId=" + building.getBuildingId()
+                        + ", spaceId=" + space.getSpaceId()
+                        + ", time=" + timeMsg,
+                user.getUserId(),
+                TargetType.space,
+                saved.getReservationId(),
+                "/admin/space-reservations"
+        );
+
         return SpaceReservationResponse.fromEntity(saved);
     }
 
     /* =========================
-       ✅ USER CANCEL
+        USER CANCEL
        ========================= */
 
     @Override
@@ -205,19 +237,45 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         }
 
         SpaceReservationEntity e = spaceReservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST)); // SPACE_RESERVATION_NOT_FOUND 분리 가능
+                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
 
-        // ✅ 본인 예약만 취소 가능
         if (e.getUser() == null || !me.getUserId().equals(e.getUser().getUserId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
-        // 멱등 처리
         if (e.getSrSt() == SpaceReservationStatus.cancelled || e.getSrSt() == SpaceReservationStatus.ended) {
             return SpaceReservationResponse.fromEntity(e);
         }
 
         e.setSrSt(SpaceReservationStatus.cancelled);
+
+        // =========================
+        // ✅ 알림(여기 라인에 넣기) - 사용자 취소 직후
+        // =========================
+        String timeMsg = e.getSrStartAt() + " ~ " + e.getSrEndAt();
+
+        // 1) 사용자 알림(자기 취소 확인)
+        notificationService.notifyUser(
+                e.getUser().getUserId(),
+                NotificationType.SP_CAN,
+                "공간 예약이 취소되었습니다. (" + timeMsg + ")",
+                null,
+                TargetType.space,
+                e.getReservationId(),
+                "/space-reservations/my"
+        );
+
+        // 2) 관리자 알림
+        notificationService.notifyAdmins(
+                NotificationType.SP_CAN,
+                "사용자가 공간 예약을 취소했습니다. userId=" + e.getUser().getUserId()
+                        + ", reservationId=" + e.getReservationId()
+                        + ", time=" + timeMsg,
+                e.getUser().getUserId(),
+                TargetType.space,
+                e.getReservationId(),
+                "/admin/space-reservations"
+        );
 
         return SpaceReservationResponse.fromEntity(e);
     }
@@ -298,16 +356,30 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         SpaceReservationEntity e = spaceReservationRepository.findById(reservationId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
 
-        // 멱등
         if (e.getSrSt() == SpaceReservationStatus.confirmed) {
             return SpaceReservationResponse.fromEntity(e);
         }
-        // 이미 종료/취소된 건 확정 불가
         if (e.getSrSt() == SpaceReservationStatus.cancelled || e.getSrSt() == SpaceReservationStatus.ended) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         e.setSrSt(SpaceReservationStatus.confirmed);
+
+        // =========================
+        // 알림 - 관리자 확정 직후
+        // =========================
+        String timeMsg = e.getSrStartAt() + " ~ " + e.getSrEndAt();
+
+        notificationService.notifyUser(
+                e.getUser().getUserId(),
+                NotificationType.SP_CFM,
+                "공간 예약이 확정되었습니다. (" + timeMsg + ")",
+                me.getUserId(), // sender=admin
+                TargetType.space,
+                e.getReservationId(),
+                "/space-reservations/my"
+        );
+
         return SpaceReservationResponse.fromEntity(e);
     }
 
@@ -319,16 +391,17 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         SpaceReservationEntity e = spaceReservationRepository.findById(reservationId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
 
-        // 멱등
         if (e.getSrSt() == SpaceReservationStatus.ended) {
             return SpaceReservationResponse.fromEntity(e);
         }
-        // 취소된 예약은 종료 처리 의미 없음
         if (e.getSrSt() == SpaceReservationStatus.cancelled) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         e.setSrSt(SpaceReservationStatus.ended);
+
+        // 종료 알림을 원하면 여기서 NotificationType 하나 더 추가해서 보내면 됨
+
         return SpaceReservationResponse.fromEntity(e);
     }
 
@@ -340,17 +413,33 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         SpaceReservationEntity e = spaceReservationRepository.findById(reservationId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
 
-        // 멱등
         if (e.getSrSt() == SpaceReservationStatus.cancelled) {
             return SpaceReservationResponse.fromEntity(e);
         }
-        // 종료된 예약은 취소 불가(정책에 따라 바꿀 수 있음)
         if (e.getSrSt() == SpaceReservationStatus.ended) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        // request.getCancelReason()는 로그용으로만 사용 가능(저장 컬럼 없으니)
         e.setSrSt(SpaceReservationStatus.cancelled);
+
+        // =========================
+        // 알람 -관리자 취소 직후
+        // =========================
+        String timeMsg = e.getSrStartAt() + " ~ " + e.getSrEndAt();
+        String reason = (request != null && request.getCancelReason() != null && !request.getCancelReason().isBlank())
+                ? " 사유: " + request.getCancelReason()
+                : "";
+
+        notificationService.notifyUser(
+                e.getUser().getUserId(),
+                NotificationType.SP_CAN,
+                "관리자에 의해 공간 예약이 취소되었습니다. (" + timeMsg + ")" + reason,
+                me.getUserId(),
+                TargetType.space,
+                e.getReservationId(),
+                "/space-reservations/my"
+        );
+
         return SpaceReservationResponse.fromEntity(e);
     }
 

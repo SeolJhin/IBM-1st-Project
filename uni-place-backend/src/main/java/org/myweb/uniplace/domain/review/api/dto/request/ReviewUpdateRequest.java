@@ -1,4 +1,4 @@
-// 경로: org/myweb/uniplace/domain/review/api/dto/request/ReviewCreateRequest.java
+// 경로: org/myweb/uniplace/domain/review/api/dto/request/ReviewUpdateRequest.java
 package org.myweb.uniplace.domain.review.api.dto.request;
 
 import jakarta.validation.constraints.*;
@@ -8,13 +8,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ReviewCreateRequest {
+public class ReviewUpdateRequest {
 
-    @NotNull(message = "roomId는 필수입니다.")
-    private Integer roomId;
-
-    /** 별점 1~5 */
-    @NotNull(message = "rating은 필수입니다.")
     @Min(value = 1, message = "별점은 최소 1점입니다.")
     @Max(value = 5, message = "별점은 최대 5점입니다.")
     private Integer rating;
@@ -25,7 +20,5 @@ public class ReviewCreateRequest {
     @Size(max = 3000, message = "내용은 3000자 이내로 작성해 주세요.")
     private String reviewCtnt;
 
-    /** FK: common_code.code (리뷰 유형 분류) */
-    @NotBlank(message = "code는 필수입니다.")
     private String code;
 }

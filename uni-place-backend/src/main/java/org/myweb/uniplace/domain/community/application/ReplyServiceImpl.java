@@ -1,3 +1,4 @@
+// 경로: org/myweb/uniplace/domain/community/application/ReplyServiceImpl.java
 package org.myweb.uniplace.domain.community.application;
 
 import java.util.*;
@@ -10,6 +11,9 @@ import org.myweb.uniplace.domain.community.domain.entity.Reply;
 import org.myweb.uniplace.domain.community.repository.BoardRepository;
 import org.myweb.uniplace.domain.community.repository.ReplyLikeRepository;
 import org.myweb.uniplace.domain.community.repository.ReplyRepository;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.global.security.AuthUser;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +30,9 @@ public class ReplyServiceImpl implements ReplyService {
     private final ReplyRepository replyRepository;
     private final BoardRepository boardRepository;
     private final ReplyLikeRepository replyLikeRepository;
+
+    // ✅ 알림
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -64,6 +71,7 @@ public class ReplyServiceImpl implements ReplyService {
     @Override
     public void createReply(int boardId, ReplyCreateRequest request) {
         String userId = requireCurrentUserId();
+
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
 
@@ -76,13 +84,28 @@ public class ReplyServiceImpl implements ReplyService {
                 .replySeq(1)
                 .build();
 
-        replyRepository.save(reply);
+        Reply saved = replyRepository.save(reply);
         board.markReply(true);
+
+        // ✅ 알림: "내 글에 댓글"
+        if (!userId.equals(board.getUserId())) {
+            String msg = "내 게시글에 댓글이 달렸습니다.";
+            notificationService.notifyUser(
+                    board.getUserId(),
+                    NotificationType.BRD_REPLY,
+                    msg,
+                    userId,
+                    TargetType.reply,
+                    saved.getReplyId(),
+                    "/boards/" + boardId
+            );
+        }
     }
 
     @Override
     public void createChildReply(int boardId, int parentId, ReplyCreateRequest request) {
         String userId = requireCurrentUserId();
+
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
 
@@ -102,8 +125,23 @@ public class ReplyServiceImpl implements ReplyService {
                 .replySeq(1)
                 .build();
 
-        replyRepository.save(child);
+        Reply saved = replyRepository.save(child);
         board.markReply(true);
+
+        // ✅ 알림: "내 댓글에 대댓글"
+        // - 내 댓글에 내가 대댓글 다는건 스킵
+        if (!userId.equals(parent.getUserId())) {
+            String msg = "내 댓글에 대댓글이 달렸습니다.";
+            notificationService.notifyUser(
+                    parent.getUserId(),
+                    NotificationType.BRD_REREPLY,
+                    msg,
+                    userId,
+                    TargetType.reply,
+                    saved.getReplyId(),
+                    "/boards/" + boardId
+            );
+        }
     }
 
     @Override
@@ -132,6 +170,8 @@ public class ReplyServiceImpl implements ReplyService {
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
 
         board.markReply(replyRepository.countByBoardId(boardId) > 0);
+
+        // ✅ 사용자 자가삭제는 알림 보통 안 함
     }
 
     // ========= helpers =========
