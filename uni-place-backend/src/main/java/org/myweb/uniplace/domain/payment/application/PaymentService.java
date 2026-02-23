@@ -13,5 +13,9 @@ public interface PaymentService {
 
     PaymentResponse approveFromCallback(PaymentApproveRequest request);
 
+    void cancelFromCallback(Integer paymentId, String merchantUid);
+
+    void failFromCallback(Integer paymentId, String merchantUid, String failCode, String failMessage);
+
     PaymentResponse retry(String userId, Integer paymentId);
 }

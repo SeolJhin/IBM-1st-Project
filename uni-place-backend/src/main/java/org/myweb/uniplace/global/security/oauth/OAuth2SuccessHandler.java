@@ -34,7 +34,6 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         UserContext userContext = (UserContext) authentication.getPrincipal();
 
         String userId = userContext.getUserId();
-        String email = userContext.getEmail();
         String role = userContext.getRole();
 
         // JWT 생성
@@ -45,10 +44,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         String encodedAccessToken = URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
         String encodedRefreshToken = URLEncoder.encode(refreshToken, StandardCharsets.UTF_8);
 
-        // React로 redirect (토큰 포함)
+        // React로 redirect (fragment 사용: 서버 로그/query string 노출 최소화)
         String redirectUrl =
                 REDIRECT_URI
-                        + "?accessToken=" + encodedAccessToken
+                        + "#accessToken=" + encodedAccessToken
                         + "&refreshToken=" + encodedRefreshToken;
 
         response.sendRedirect(redirectUrl);

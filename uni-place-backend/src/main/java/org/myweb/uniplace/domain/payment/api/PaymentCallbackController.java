@@ -19,6 +19,7 @@ public class PaymentCallbackController {
     public PaymentResponse approval(
         @PathVariable String provider,
         @RequestParam("pid") Integer paymentId,
+        @RequestParam("mu") String merchantUid,
         @RequestParam(value = "pg_token", required = false) String pgToken,
         @RequestParam(value = "paymentId", required = false) String naverPaymentId,
         @RequestParam(value = "paymentKey", required = false) String paymentKey,
@@ -27,6 +28,7 @@ public class PaymentCallbackController {
     ) {
         PaymentApproveRequest req = new PaymentApproveRequest();
         req.setPaymentId(paymentId);
+        req.setMerchantUid(merchantUid);
 
         if ("naver".equalsIgnoreCase(provider)) {
             req.setPgToken(naverPaymentId);
@@ -44,8 +46,10 @@ public class PaymentCallbackController {
     @GetMapping("/{provider}/cancel")
     public String cancel(
         @PathVariable String provider,
-        @RequestParam("pid") Integer paymentId
+        @RequestParam("pid") Integer paymentId,
+        @RequestParam("mu") String merchantUid
     ) {
+        paymentService.cancelFromCallback(paymentId, merchantUid);
         return "cancel callback received";
     }
 
@@ -53,9 +57,11 @@ public class PaymentCallbackController {
     public String fail(
         @PathVariable String provider,
         @RequestParam("pid") Integer paymentId,
+        @RequestParam("mu") String merchantUid,
         @RequestParam(value = "resultCode", required = false) String resultCode,
         @RequestParam(value = "resultMessage", required = false) String resultMessage
     ) {
+        paymentService.failFromCallback(paymentId, merchantUid, resultCode, resultMessage);
         return "fail callback received";
     }
 }

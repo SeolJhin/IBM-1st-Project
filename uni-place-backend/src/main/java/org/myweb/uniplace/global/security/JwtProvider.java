@@ -98,7 +98,7 @@ public class JwtProvider {
      * JWT 안의 role("admin","user","tenant")을 GrantedAuthority("ROLE_ADMIN", ...)로 변환해서
      * Authentication을 생성해준다.
      *
-     * - principal: 일단 userId(String)로 넣음 (프로젝트에서 AuthUser를 쓰면 거기로 교체 가능)
+     * - principal: AuthUser
      * - authorities: ROLE_ + 대문자 규칙 적용
      */
     public Authentication getAuthentication(String token) {
@@ -121,10 +121,8 @@ public class JwtProvider {
 
         String authority = "ROLE_" + role.trim().toUpperCase(); // admin -> ROLE_ADMIN
         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(authority));
-
-        // principal을 String userId로 두는 최소 구현
-        // (AuthUser를 쓰고 싶으면 JwtAuthFilter에서 DB 조회 후 AuthUser 만들어 넣는 구조로 확장)
-        return new UsernamePasswordAuthenticationToken(userId, null, authorities);
+        AuthUser authUser = new AuthUser(userId, role);
+        return new UsernamePasswordAuthenticationToken(authUser, null, authorities);
     }
 
     private Claims parseClaims(String token) {

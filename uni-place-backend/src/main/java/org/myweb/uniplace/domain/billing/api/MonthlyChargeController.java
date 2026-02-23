@@ -1,12 +1,13 @@
 package org.myweb.uniplace.domain.billing.api;
 
 import lombok.RequiredArgsConstructor;
-import org.myweb.uniplace.domain.billing.api.dto.response.BillingOrderResponse;
 import org.myweb.uniplace.domain.billing.api.dto.response.MonthlyChargeDetailResponse;
 import org.myweb.uniplace.domain.billing.api.dto.response.MonthlyChargeResponse;
 import org.myweb.uniplace.domain.billing.application.MonthlyChargeService;
 import org.myweb.uniplace.global.response.ApiResponse;
+import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,28 +21,21 @@ public class MonthlyChargeController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<MonthlyChargeResponse>>> listByContract(
+            @AuthenticationPrincipal AuthUser authUser,
             @RequestParam("contractId") Integer contractId
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                monthlyChargeService.getByContract(contractId)
+                monthlyChargeService.getByContract(authUser.getUserId(), contractId)
         ));
     }
 
     @GetMapping("/{chargeId}")
     public ResponseEntity<ApiResponse<MonthlyChargeDetailResponse>> detail(
+            @AuthenticationPrincipal AuthUser authUser,
             @PathVariable Integer chargeId
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                monthlyChargeService.getDetail(chargeId)
-        ));
-    }
-
-    @PostMapping("/{chargeId}/orders")
-    public ResponseEntity<ApiResponse<BillingOrderResponse>> createOrder(
-            @PathVariable Integer chargeId
-    ) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                monthlyChargeService.createOrder(chargeId)
+                monthlyChargeService.getDetail(authUser.getUserId(), chargeId)
         ));
     }
 }
