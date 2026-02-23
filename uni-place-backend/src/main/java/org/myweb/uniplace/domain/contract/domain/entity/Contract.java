@@ -85,10 +85,10 @@ public class Contract {
     private String lessorRrn;
 
     // ===== ✅ 대표 파일 포인터(files.file_id) =====
-    @Column(name = "lessor_sign_file_id", nullable = false)
+    @Column(name = "lessor_sign_file_id")
     private Integer lessorSignFileId;
 
-    @Column(name = "contract_pdf_file_id", nullable = false)
+    @Column(name = "contract_pdf_file_id")
     private Integer contractPdfFileId;
 
     @PrePersist
