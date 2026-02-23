@@ -2,8 +2,7 @@ package org.myweb.uniplace.domain.commoncode.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
+import org.myweb.uniplace.global.common.BaseTimeEntity;
 
 @Getter
 @Setter
@@ -17,11 +16,10 @@ import java.time.LocalDateTime;
                 @Index(name = "ix_common_code_group", columnList = "group_code")
         }
 )
-public class CommonCode {
+public class CommonCode extends BaseTimeEntity {
 
     /**
      * ✅ 최신 스크립트 기준: PRIMARY KEY (code)
-     * => code는 테이블 전체에서 유니크
      */
     @Id
     @Column(name = "code", nullable = false, length = 20)
@@ -50,13 +48,10 @@ public class CommonCode {
     @Column(name = "is_active", nullable = false)
     private Integer isActive;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
     @PrePersist
     public void prePersist() {
         if (isActive == null) isActive = 1;
-        if (createdAt == null) createdAt = LocalDateTime.now();
+        // createdAt/updatedAt은 Auditing이 처리
     }
 
     public void changeActive(boolean active) {

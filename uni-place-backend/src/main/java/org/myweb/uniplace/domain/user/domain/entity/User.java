@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.myweb.uniplace.domain.user.domain.enums.UserRole;
 import org.myweb.uniplace.domain.user.domain.enums.UserStatus;
+import org.myweb.uniplace.global.common.BaseTimeEntity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,13 +23,12 @@ import java.time.LocalDateTime;
                 @Index(name = "ix_users_tel", columnList = "user_tel")
         }
 )
-public class User {
+public class User extends BaseTimeEntity {
 
     @Id
     @Column(name = "user_id", length = 50, nullable = false)
     private String userId;
 
-    // ✅ SQL: user_nm
     @Column(name = "user_nm", length = 50, nullable = false)
     private String userNm;
 
@@ -48,13 +48,9 @@ public class User {
     @Column(name = "user_role", length = 20, nullable = false)
     private UserRole userRole;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
-    private LocalDateTime createdAt;
-
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
-    // ✅ SQL: user_st
     @Enumerated(EnumType.STRING)
     @Column(name = "user_st", length = 20, nullable = false)
     private UserStatus userSt;
@@ -62,11 +58,19 @@ public class User {
     @Column(name = "delete_yn", length = 1, nullable = false)
     private String deleteYN;
 
+    /**
+     * ✅ first_sign: NULL(가입 직후/미처리) → Y(추가정보 필요) → N(추가정보 완료)
+     * nullable OK
+     */
+    @Column(name = "first_sign", length = 1)
+    private String firstSign;
+
     @PrePersist
     void onCreate() {
-        if (userRole == null) userRole = UserRole.user;       // SQL default
-        if (userSt == null) userSt = UserStatus.active;       // SQL default
-        if (deleteYN == null) deleteYN = "N";                 // SQL default
+        if (userRole == null) userRole = UserRole.user;
+        if (userSt == null) userSt = UserStatus.active;
+        if (deleteYN == null) deleteYN = "N";
+        // firstSign은 "가입 직후 NULL 유지"가 목적이므로 여기서 세팅하지 않음
     }
 
     public boolean canLogin() {
@@ -77,13 +81,26 @@ public class User {
         this.lastLoginAt = LocalDateTime.now();
     }
 
-    // 일반회원 수정 (정책 붙이기 전에는 tel 정도만 권장)
+    /** 추가정보 입력이 필요한 상태인지 */
+    public boolean isAdditionalInfoRequired() {
+        return firstSign == null || "Y".equalsIgnoreCase(firstSign);
+    }
+
+    // 일반회원 수정
     public void changeTel(String newTel) { this.userTel = newTel; }
     public void changeEmail(String newEmail) { this.userEmail = newEmail; }
-    public void changePwd(String newPwd) {this.userPwd = newPwd; }
+    public void changePwd(String newPwd) { this.userPwd = newPwd; }
 
     // 관리자용
     public void changeRole(UserRole role) { this.userRole = role; }
     public void changeStatus(UserStatus st) { this.userSt = st; }
     public void changeDeleteYN(String yn) { this.deleteYN = yn; }
+
+    public void markFirstLoginFlagIfNeeded() {
+        if (this.firstSign == null) this.firstSign = "Y";
+    }
+
+    public void markAdditionalInfoCompleted() {
+        this.firstSign = "N";
+    }
 }
