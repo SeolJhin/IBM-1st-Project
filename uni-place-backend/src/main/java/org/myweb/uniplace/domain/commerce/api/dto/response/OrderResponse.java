@@ -14,24 +14,26 @@ import java.util.stream.Collectors;
 @Builder
 public class OrderResponse {
 
-    private Integer     orderId;     
-    private String      userId;
-    private OrderStatus orderSt;      
-    private BigDecimal  totalPrice;
-    private Integer     paymentId;    
+    private Integer orderId;
+    private String userId;
+    private OrderStatus orderSt;
+    private BigDecimal totalPrice;
     private LocalDateTime orderCreatedAt;
     private List<OrderItemResponse> orderItems;
+    private List<RoomServiceOrderResponse> roomServiceOrders;
 
     public static OrderResponse from(Order order) {
         return OrderResponse.builder()
-                .orderId(order.getOrderId()) 
+                .orderId(order.getOrderId())
                 .userId(order.getUser().getUserId())
-                .orderSt(order.getOrderSt())     
+                .orderSt(order.getOrderSt())
                 .totalPrice(order.getTotalPrice())
-                .paymentId(order.getPaymentId())
                 .orderCreatedAt(order.getOrderCreatedAt())
                 .orderItems(order.getOrderItems().stream()
                         .map(OrderItemResponse::from)
+                        .collect(Collectors.toList()))
+                .roomServiceOrders(order.getRoomServiceOrders().stream()
+                        .map(RoomServiceOrderResponse::from)
                         .collect(Collectors.toList()))
                 .build();
     }

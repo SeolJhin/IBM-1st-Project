@@ -1,72 +1,58 @@
 package org.myweb.uniplace.domain.commerce.domain.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
-import org.myweb.uniplace.domain.user.domain.entity.User;
-import org.myweb.uniplace.global.exception.BusinessException;
-import org.myweb.uniplace.global.exception.ErrorCode;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
+import org.myweb.uniplace.domain.user.domain.entity.User;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 @Entity
-@Table(name = "orders")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "order_id")
-    private Integer orderId;    
+    private Integer orderId;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "order_st", nullable = false, length = 20) 
     private OrderStatus orderSt;
 
-    @Column(name = "total_price", nullable = false, precision = 12, scale = 0)
     private BigDecimal totalPrice;
 
-    @Column(name = "payment_id")
-    private Integer paymentId; 
+    private LocalDateTime orderCreatedAt = LocalDateTime.now(); // ✅ 추가
 
-    @Column(name = "order_created_at", updatable = false)
-    private LocalDateTime orderCreatedAt;
+    @OneToMany(mappedBy = "parentOrder", cascade = CascadeType.ALL)
+    private List<OrderItem> orderItems = new ArrayList<>(); // ✅ 추가
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<OrderItem> orderItems = new ArrayList<>();
+    @OneToMany(mappedBy = "parentOrder", cascade = CascadeType.ALL)
+    private List<RoomServiceOrder> roomServiceOrders = new ArrayList<>();
 
-    @PrePersist
-    void onCreate() {
-        if (orderCreatedAt == null) orderCreatedAt = LocalDateTime.now();
-        if (orderSt == null)        orderSt        = OrderStatus.ordered;
-    }
-
-    public void cancel() {
-        if (this.orderSt != OrderStatus.ordered) {
-            throw new BusinessException(ErrorCode.ORDER_CANNOT_CANCEL);
-        }
-        this.orderSt = OrderStatus.cancelled;
-    }
-
-    public void completePayment(Integer paymentId) {
-        this.paymentId = paymentId;
-        this.orderSt   = OrderStatus.paid;
-    }
-
-    public void markRefunded(Integer paymentId) {
-        if (paymentId != null) {
-            this.paymentId = paymentId;
-        }
+    public void cancel() { // ✅ cancel 메서드 추가
         this.orderSt = OrderStatus.cancelled;
     }
 
