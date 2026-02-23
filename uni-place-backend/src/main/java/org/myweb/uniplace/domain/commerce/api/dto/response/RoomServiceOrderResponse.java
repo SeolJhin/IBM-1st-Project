@@ -18,7 +18,6 @@ public class RoomServiceOrderResponse {
     private Integer   roomNo;
     private BigDecimal totalPrice;
     private RoomServiceOrderStatus orderSt;
-    private Integer      paymentId;
     private String    roomServiceDesc;
     private LocalDateTime createdAt;
 
@@ -30,7 +29,6 @@ public class RoomServiceOrderResponse {
                 .roomNo(order.getRoom().getRoomNo())
                 .totalPrice(order.getTotalPrice())
                 .orderSt(order.getOrderSt())
-                .paymentId(order.getPaymentId())
                 .roomServiceDesc(order.getRoomServiceDesc())
                 .createdAt(order.getCreatedAt())
                 .build();
