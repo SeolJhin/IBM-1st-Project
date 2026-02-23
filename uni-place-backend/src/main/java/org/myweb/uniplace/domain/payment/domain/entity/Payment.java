@@ -9,9 +9,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
     name = "payment",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uq_payment_merchant_uid", columnNames = "merchant_uid")
+    },
     indexes = {
         @Index(name = "ix_payment_user", columnList = "user_id"),
-        @Index(name = "ix_payment_provider", columnList = "provider, provider_payment_id")
+        @Index(name = "ix_payment_provider", columnList = "provider, provider_payment_id"),
+        @Index(name = "ix_payment_idempotency", columnList = "idempotency_key"),
+        @Index(name = "ix_payment_target", columnList = "target_id")
     }
 )
 @Getter
@@ -54,6 +59,18 @@ public class Payment {
 
     @Column(name = "provider_payment_id", length = 100)
     private String providerPaymentId;
+
+    @Column(name = "merchant_uid", nullable = false, length = 100)
+    private String merchantUid;
+
+    @Column(name = "idempotency_key", length = 100)
+    private String idempotencyKey;
+
+    @Column(name = "target_id")
+    private Integer targetId;
+
+    @Column(name = "target_type", length = 20)
+    private String targetType;
 
     @Column(name = "tax_scope_price", precision = 12, scale = 0)
     private BigDecimal taxScopePrice;

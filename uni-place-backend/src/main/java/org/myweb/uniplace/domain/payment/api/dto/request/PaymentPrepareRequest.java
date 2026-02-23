@@ -3,15 +3,17 @@
 import lombok.Getter;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-
 @Getter
 @Setter
 public class PaymentPrepareRequest {
 
-    private String userId;
     private Integer serviceGoodsId;
-    private BigDecimal amount;
+
+    // Exactly one target must be provided.
+    private Integer orderId;
+    private Integer chargeId;
+
     private String provider; // KAKAO
     private Integer paymentMethodId;
+    private String idempotencyKey;
 }

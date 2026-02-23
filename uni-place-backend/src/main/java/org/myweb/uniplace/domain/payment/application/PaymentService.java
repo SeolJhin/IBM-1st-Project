@@ -7,7 +7,7 @@ import org.myweb.uniplace.domain.payment.api.dto.response.PaymentResponse;
 
 public interface PaymentService {
 
-    PaymentPrepareResponse prepare(PaymentPrepareRequest request);
+    PaymentPrepareResponse prepare(String userId, PaymentPrepareRequest request);
 
     PaymentResponse approve(PaymentApproveRequest request);
 

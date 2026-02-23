@@ -40,7 +40,7 @@ public class KakaoPayGateway implements PaymentGateway {
         KakaoReadyRequest kakaoReq = KakaoReadyRequest.builder()
             .cid(props.getCid())
             .cid_secret(props.getCid_secret())
-            .partner_order_id(String.valueOf(request.getPaymentId()))
+            .partner_order_id(request.getOrderId())
             .partner_user_id(request.getUserId())
             .item_name(nvl(request.getItemName(), "uni-place"))
             .quantity(nvl(request.getQuantity(), 1))
@@ -69,7 +69,7 @@ public class KakaoPayGateway implements PaymentGateway {
             .cid(props.getCid())
             .cid_secret(props.getCid_secret())
             .tid(request.getProviderRefId())
-            .partner_order_id(String.valueOf(request.getPaymentId()))
+            .partner_order_id(request.getOrderId())
             .partner_user_id(request.getUserId())
             .pg_token(request.getPgToken())
             .build();

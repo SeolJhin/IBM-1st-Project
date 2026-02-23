@@ -45,7 +45,7 @@ public class NaverPayGateway implements PaymentGateway {
         }
 
         NaverReadyRequest naverReq = NaverReadyRequest.builder()
-            .merchantPayKey(String.valueOf(request.getPaymentId()))
+            .merchantPayKey(request.getOrderId())
             .merchantUserKey(request.getUserId())
             .productName(nvl(request.getItemName(), "uni-place"))
             .productCount(nvl(request.getQuantity(), 1))
