@@ -47,7 +47,7 @@ public class AdminTourReservationController {
             @RequestParam("status") TourStatus status
     ) {
         TourReservationEntity e = tourReservationRepository.findById(tourId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST)); // ✅ 스타일 통일
+                .orElseThrow(() -> new BusinessException(ErrorCode.TOUR_STATUS_NOT_FOUND)); // ✅ 스타일 통일
 
         e.setTourSt(status);
         tourReservationRepository.save(e); // ✅ DB 반영 보장

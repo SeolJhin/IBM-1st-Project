@@ -24,7 +24,7 @@ public class TourReservationConflictPolicyImpl implements TourReservationConflic
     public void validateRoomConflict(Integer roomId, LocalDateTime startAt, LocalDateTime endAt) {
         boolean exists = tourReservationRepository.existsRoomTimeConflict(roomId, INACTIVE, startAt, endAt);
         if (exists) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST); // TOUR_RESERVATION_TIME_CONFLICT 등으로 분리 가능
+            throw new BusinessException(ErrorCode.TOUR_RESERVATION_BUILDING_ROOM_MISMATCH); // TOUR_RESERVATION_TIME_CONFLICT 등으로 분리 가능
         }
     }
 
@@ -34,7 +34,7 @@ public class TourReservationConflictPolicyImpl implements TourReservationConflic
                 tourTel, startAt, endAt, INACTIVE
         );
         if (exists) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST); // TOUR_RESERVATION_DUPLICATE 등으로 분리 가능
+            throw new BusinessException(ErrorCode.TOUR_RESERVATION_DUPLICATE); // TOUR_RESERVATION_DUPLICATE 등으로 분리 가능
         }
     }
 }

@@ -42,7 +42,7 @@ public class ReviewController {
     ) {
         // roomId 누락 시 명확한 400 반환
         if (roomId == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         return ResponseEntity.ok(
                 ApiResponse.ok(reviewService.getReviewListByRoom(roomId, pageable))

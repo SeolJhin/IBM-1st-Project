@@ -85,7 +85,7 @@ public class CartServiceImpl implements CartService {
 
         Cart cart = getOrCreateCart(userId);
         CartItem item = cartItemRepository.findById(cartItemId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST)); //BAD_REQUEST CART_ITEM_NOT_FOUND
+            .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND)); //BAD_REQUEST CART_ITEM_NOT_FOUND
 
         if (!item.getCartId().equals(cart.getCartId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
@@ -100,10 +100,10 @@ public class CartServiceImpl implements CartService {
 
         Cart cart = getOrCreateCart(userId);
         CartItem item = cartItemRepository.findById(cartItemId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+            .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
 
         if (!item.getCartId().equals(cart.getCartId())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
         }
 
         cartItemRepository.delete(item);

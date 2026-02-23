@@ -53,10 +53,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void markRead(String userId, Integer notificationId) {
         Notification n = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
         if (!userId.equals(n.getReceiverId())) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+            throw new BusinessException(ErrorCode.NOTIFICATION_ACCESS_DENIED);
         }
 
         n.markRead();

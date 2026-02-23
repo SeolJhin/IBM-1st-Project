@@ -78,7 +78,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         }
 
         buildingRepository.findById(buildingId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
 
         SpaceSearchRequest request = SpaceSearchRequest.builder()
                 .buildingId(buildingId)
@@ -141,10 +141,10 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
 
         // ✅ tenant만 예약 가능
         if (user.getUserRole() != UserRole.tenant) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_TENANT_ONLY);
         }
         if (user.getUserSt() != UserStatus.active || "Y".equalsIgnoreCase(user.getDeleteYN())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_USER_INACTIVE);
         }
 
         if (request == null) {
@@ -155,21 +155,21 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         reservationValidator.validateSpaceFixedSlot(request.getSrStartAt(), request.getSrEndAt());
 
         if (request.getSrNoPeople() == null || request.getSrNoPeople() < 1) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_PEOPLE_INVALID);
         }
 
         Building building = buildingRepository.findById(request.getBuildingId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
 
         CommonSpace space = spaceRepository.findById(request.getSpaceId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SPACE_NOT_FOUND));
 
         if (space.getBuilding() == null || !building.getBuildingId().equals(space.getBuilding().getBuildingId())) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.SPACE_BUILDING_MISMATCH);
         }
 
         if (space.getSpaceCapacity() != null && request.getSrNoPeople() > space.getSpaceCapacity()) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.SPACE_CAPACITY_EXCEEDED);
         }
 
         spaceReservationConflictPolicy.validateSpaceConflict(
@@ -240,7 +240,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
 
         if (e.getUser() == null || !me.getUserId().equals(e.getUser().getUserId())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_ACCESS_DENIED);
         }
 
         if (e.getSrSt() == SpaceReservationStatus.cancelled || e.getSrSt() == SpaceReservationStatus.ended) {
@@ -343,7 +343,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         if (reservationId == null) throw new BusinessException(ErrorCode.BAD_REQUEST);
 
         SpaceReservationEntity e = spaceReservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SPACE_RESERVATION_NOT_FOUND));
 
         return SpaceReservationResponse.fromEntity(e);
     }
@@ -354,13 +354,13 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         if (reservationId == null) throw new BusinessException(ErrorCode.BAD_REQUEST);
 
         SpaceReservationEntity e = spaceReservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SPACE_RESERVATION_NOT_FOUND));
 
         if (e.getSrSt() == SpaceReservationStatus.confirmed) {
             return SpaceReservationResponse.fromEntity(e);
         }
         if (e.getSrSt() == SpaceReservationStatus.cancelled || e.getSrSt() == SpaceReservationStatus.ended) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_CANNOT_CANCEL);
         }
 
         e.setSrSt(SpaceReservationStatus.confirmed);
@@ -389,13 +389,13 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         if (reservationId == null) throw new BusinessException(ErrorCode.BAD_REQUEST);
 
         SpaceReservationEntity e = spaceReservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SPACE_RESERVATION_NOT_FOUND));
 
         if (e.getSrSt() == SpaceReservationStatus.ended) {
             return SpaceReservationResponse.fromEntity(e);
         }
         if (e.getSrSt() == SpaceReservationStatus.cancelled) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_CANNOT_CANCEL);
         }
 
         e.setSrSt(SpaceReservationStatus.ended);
@@ -411,13 +411,13 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         if (reservationId == null) throw new BusinessException(ErrorCode.BAD_REQUEST);
 
         SpaceReservationEntity e = spaceReservationRepository.findById(reservationId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.SPACE_RESERVATION_NOT_FOUND));
 
         if (e.getSrSt() == SpaceReservationStatus.cancelled) {
             return SpaceReservationResponse.fromEntity(e);
         }
         if (e.getSrSt() == SpaceReservationStatus.ended) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_CANNOT_CANCEL);
         }
 
         e.setSrSt(SpaceReservationStatus.cancelled);
@@ -452,10 +452,10 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (user.getUserRole() != UserRole.admin) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_TENANT_ONLY);
         }
         if (user.getUserSt() != UserStatus.active || "Y".equalsIgnoreCase(user.getDeleteYN())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_USER_INACTIVE);
         }
     }
 
