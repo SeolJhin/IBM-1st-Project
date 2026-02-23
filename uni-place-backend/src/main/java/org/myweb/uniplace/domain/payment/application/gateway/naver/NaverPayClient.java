@@ -12,6 +12,7 @@ import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverRead
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverReadyResponse;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -21,6 +22,7 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 @Component
+@Lazy
 public class NaverPayClient {
 
     private final NaverPayProperties props;

@@ -22,6 +22,8 @@ import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.property.repository.RoomRepository;
 import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.security.AuthUser;
 
 import org.springframework.data.domain.Page;
@@ -46,11 +48,16 @@ public class ContractServiceImpl implements ContractService {
     // 공통: 현재 로그인 userId
     // ===========================
     private String currentUserId() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Object principal = authentication.getPrincipal();
         if (principal instanceof AuthUser authUser) {
             return authUser.getUserId();
         }
-        throw new IllegalStateException("인증 정보가 없습니다.");
+        throw new BusinessException(ErrorCode.UNAUTHORIZED);
     }
 
     // ===========================

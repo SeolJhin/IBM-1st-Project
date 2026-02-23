@@ -25,13 +25,15 @@ public class UserResponse {
     private LocalDateTime lastLoginAt;
 
     public static UserResponse from(User u) {
+        String roleName = u.getUserRole() == null ? null : u.getUserRole().name();
+
         return UserResponse.builder()
                 .userId(u.getUserId())
                 .userNm(u.getUserNm())
                 .userEmail(u.getUserEmail())
                 .userBirth(u.getUserBirth())
                 .userTel(u.getUserTel())
-                .userRole(u.getUserRole().name())
+                .userRole(roleName)
                 .userSt(u.getUserSt())
                 .deleteYN(u.getDeleteYN())
                 .createdAt(u.getCreatedAt())

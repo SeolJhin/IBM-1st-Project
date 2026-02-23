@@ -40,6 +40,9 @@ public class RefundServiceImpl implements RefundService {
 
     @Override
     public PaymentRefundResponse refund(String userId, PaymentRefundRequest request) {
+        if (userId == null || userId.isBlank()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         if (request == null || request.getPaymentId() == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }

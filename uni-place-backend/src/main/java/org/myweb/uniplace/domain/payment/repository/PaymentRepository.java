@@ -17,4 +17,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     Optional<Payment> findByMerchantUid(String merchantUid);
 
     Optional<Payment> findTopByUserIdAndIdempotencyKeyOrderByPaymentIdDesc(String userId, String idempotencyKey);
+
+    List<Payment> findTop200ByPaymentStInOrderByPaymentIdAsc(List<String> paymentSt);
 }

@@ -36,7 +36,6 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
     private final SocialAccountRepository socialAccountRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final IdGenerator idGenerator;
 
     @Value("${jwt.refresh-exp:86400000}")
     private long refreshExpMillis;
@@ -44,72 +43,70 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
     @Override
     @Transactional
     public UserTokenResponse kakaoComplete(KakaoSignupCompleteRequest req, String userAgent, String ip) {
-
-        // 1) signupToken 검증 + 클레임 추출
         Claims claims = jwtProvider.validateOauthSignupToken(req.getSignupToken());
 
-        String provider = String.valueOf(claims.get("provider"));         // "kakao"
-        String providerId = String.valueOf(claims.get("providerId"));     // kakao id
-        String providerEmail = (String) claims.get("email");
-        String nickname = (String) claims.get("nickname");
+        String provider = asText(claims.get("provider"));
+        String providerId = asText(claims.get("providerId"));
+        String providerEmail = normalizeEmail(asText(claims.get("email")));
+        String nickname = asText(claims.get("nickname"));
 
-        // 2) provider/providerId 로 이미 연동된 계정인지 체크
-        if (socialAccountRepository.existsByProviderAndProviderUserId(provider.toUpperCase(), providerId)) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST); // 이미 가입된 소셜계정
+        if (!hasText(provider) || !hasText(providerId)) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
 
-        // 3) 추가정보 검증(필수값)
-        if (req.getUserTel() == null || req.getUserTel().isBlank()) {
+        String providerUpper = provider.toUpperCase();
+        String providerLower = provider.toLowerCase();
+
+        if (socialAccountRepository.existsByProviderAndProviderUserId(providerUpper, providerId)) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
-        if (req.getUserBirth() == null) {
+
+        if (!hasText(req.getUserTel()) || req.getUserBirth() == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
-        if (userRepository.existsByUserTel(req.getUserTel())) {
+
+        String userTel = req.getUserTel().trim();
+        if (userRepository.existsByUserTel(userTel)) {
             throw new BusinessException(ErrorCode.DUPLICATE_TEL);
         }
 
-        // 4) User 생성
-        String userId = idGenerator.generate("USR");
-        String name = (req.getUserNm() != null && !req.getUserNm().isBlank())
-                ? req.getUserNm()
-                : (nickname != null ? nickname : "사용자");
+        String userId = IdGenerator.generate("USR");
+        String name = hasText(req.getUserNm()) ? req.getUserNm().trim() : (nickname != null ? nickname : "user");
 
-        String dummyPwd = passwordEncoder.encode(idGenerator.generate("PWD"));
+        String fallbackEmail = providerLower + "_" + providerId + "@social.local";
+        String resolvedEmail = hasText(providerEmail) ? providerEmail : fallbackEmail;
+        if (userRepository.existsByUserEmail(resolvedEmail)) {
+            resolvedEmail = fallbackEmail;
+        }
+
+        String dummyPwd = passwordEncoder.encode(IdGenerator.generate("PWD"));
 
         User user = User.builder()
-                .userId(userId)
-                .userNm(name)
-                .userEmail(providerEmail != null ? providerEmail : ("kakao_" + providerId + "@social.local"))
-                .userPwd(dummyPwd)
-                .userBirth(req.getUserBirth())
-                .userTel(req.getUserTel())
-                .userRole(UserRole.user)
-                .userSt(UserStatus.active)
-                .deleteYN("N")
-                // ✅ kakaoComplete는 "추가정보 입력 완료" 요청이므로 완료 상태로 저장
-                // (User 엔티티에 markAdditionalInfoCompleted()가 있으면 그걸 쓰는 게 더 깔끔하지만,
-                //  builder 단계에선 setter가 없을 수 있으니 아래처럼 저장 후 메소드로 처리)
-                .build();
+            .userId(userId)
+            .userNm(name)
+            .userEmail(resolvedEmail)
+            .userPwd(dummyPwd)
+            .userBirth(req.getUserBirth())
+            .userTel(userTel)
+            .userRole(UserRole.user)
+            .userSt(UserStatus.active)
+            .deleteYN("N")
+            .build();
 
         userRepository.save(user);
 
-        // ✅ 추가정보 완료 플래그: N
-        // (User 엔티티에 markAdditionalInfoCompleted() 메소드가 있어야 함)
         user.markAdditionalInfoCompleted();
         userRepository.save(user);
 
-        // 5) social_accounts 저장
         SocialAccount sa = SocialAccount.builder()
-                .user(user)
-                .provider(provider.toUpperCase())     // "KAKAO"
-                .providerUserId(providerId)
-                .providerEmail(providerEmail)
-                .build();
+            .user(user)
+            .provider(providerUpper)
+            .providerUserId(providerId)
+            .providerEmail(providerEmail)
+            .build();
 
         socialAccountRepository.save(sa);
 
-        // 6) JWT 발급 + refresh_tokens 저장
         String accessToken = jwtProvider.createAccessToken(userId, user.getUserRole().name());
         String refreshToken = jwtProvider.createRefreshToken(userId);
 
@@ -119,25 +116,44 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
         LocalDateTime expiresAt = now.plusSeconds(refreshExpMillis / 1000);
 
         RefreshToken rt = RefreshToken.builder()
-                .refreshTokenId(idGenerator.generate("RTK"))
-                .user(user)
-                .tokenHash(tokenHash)
-                .deviceId("KAKAO") // 소셜 로그인은 고정값
-                .userAgent(userAgent)
-                .ip(ip)
-                .expiresAt(expiresAt)
-                .revoked(false)
-                .lastUsedAt(now)
-                .build();
+            .refreshTokenId(IdGenerator.generate("RTK"))
+            .user(user)
+            .tokenHash(tokenHash)
+            .deviceId(providerUpper)
+            .userAgent(userAgent)
+            .ip(ip)
+            .expiresAt(expiresAt)
+            .revoked(false)
+            .lastUsedAt(now)
+            .build();
 
         refreshTokenRepository.save(rt);
 
         return UserTokenResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .deviceId("KAKAO")
-                .additionalInfoRequired(false)
-                .build();
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .deviceId(providerUpper)
+            .additionalInfoRequired(false)
+            .build();
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private static String asText(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String text = String.valueOf(value);
+        return text.isBlank() ? null : text;
+    }
+
+    private static String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
     }
 
     private String sha256Hex(String raw) {

@@ -22,11 +22,14 @@ public class QCommonCode extends EntityPathBase<CommonCode> {
 
     public static final QCommonCode commonCode = new QCommonCode("commonCode");
 
+    public final org.myweb.uniplace.global.common.QBaseTimeEntity _super = new org.myweb.uniplace.global.common.QBaseTimeEntity(this);
+
     public final StringPath code = createString("code");
 
     public final StringPath codeValue = createString("codeValue");
 
-    public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt", java.time.LocalDateTime.class);
+    //inherited
+    public final DateTimePath<java.time.LocalDateTime> createdAt = _super.createdAt;
 
     public final StringPath description = createString("description");
 
@@ -35,6 +38,9 @@ public class QCommonCode extends EntityPathBase<CommonCode> {
     public final QGroupCommonCode group;
 
     public final NumberPath<Integer> isActive = createNumber("isActive", Integer.class);
+
+    //inherited
+    public final DateTimePath<java.time.LocalDateTime> updatedAt = _super.updatedAt;
 
     public QCommonCode(String variable) {
         this(CommonCode.class, forVariable(variable), INITS);

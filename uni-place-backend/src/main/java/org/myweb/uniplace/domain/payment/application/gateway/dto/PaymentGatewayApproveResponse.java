@@ -1,5 +1,6 @@
 package org.myweb.uniplace.domain.payment.application.gateway.dto;
 
+import java.math.BigDecimal;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -7,6 +8,10 @@ import lombok.Getter;
 @Builder
 public class PaymentGatewayApproveResponse {
 
-    private String providerPaymentId; // 보통 tid 저장 (payment.provider_payment_id)
-    private String pgApproveJson;     // payment_intent.pg_approve_json
+    private String providerPaymentId;
+    private String gatewayStatus;
+    private String merchantUid;
+    private String currency;
+    private BigDecimal capturedPrice;
+    private String pgApproveJson;
 }

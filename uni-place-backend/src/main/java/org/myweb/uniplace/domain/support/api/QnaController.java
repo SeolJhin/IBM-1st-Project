@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.support.api.dto.request.*;
 import org.myweb.uniplace.domain.support.api.dto.response.QnaResponse;
 import org.myweb.uniplace.domain.support.application.QnaService;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
@@ -61,7 +63,7 @@ public class QnaController {
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody QnaCreateRequest request
     ) {
-        return ApiResponse.ok(qnaService.create(authUser.getUserId(), request));
+        return ApiResponse.ok(qnaService.create(requireUserId(authUser), request));
     }
 
     /** QNA 수정 */
@@ -88,7 +90,7 @@ public class QnaController {
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody QnaAnswerRequest request
     ) {
-        return ApiResponse.ok(qnaService.createAnswer(qnaId, authUser.getUserId(), request));
+        return ApiResponse.ok(qnaService.createAnswer(qnaId, requireUserId(authUser), request));
     }
 
     /** 관리자 답변 수정 */
@@ -110,5 +112,11 @@ public class QnaController {
     ) {
         return ApiResponse.ok(qnaService.updateStatus(qnaId, request));
     }
-}
 
+    private String requireUserId(AuthUser authUser) {
+        if (authUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return authUser.getUserId();
+    }
+}

@@ -35,6 +35,9 @@ public class OrderServiceImpl implements OrderService {
     /* 주문 생성 */
     @Override
     public OrderResponse createOrder(String userId, OrderCreateRequest request) {
+        if (request == null || request.getItems() == null || request.getItems().isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -48,6 +51,9 @@ public class OrderServiceImpl implements OrderService {
 
         List<OrderItem> items = new ArrayList<>();
         for (OrderCreateRequest.OrderItemDto dto : request.getItems()) {
+            if (dto == null || dto.getProdId() == null || dto.getOrderQuantity() == null || dto.getOrderQuantity() <= 0) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST);
+            }
             Product product = productRepository.findById(dto.getProdId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
             items.add(OrderItem.of(order, product, dto.getOrderQuantity()));

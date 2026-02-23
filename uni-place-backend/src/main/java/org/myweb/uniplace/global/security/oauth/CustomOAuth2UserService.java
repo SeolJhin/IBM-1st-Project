@@ -1,78 +1,132 @@
 package org.myweb.uniplace.global.security.oauth;
 
-import lombok.RequiredArgsConstructor;
+import java.util.Map;
+import org.myweb.uniplace.domain.user.domain.entity.SocialAccount;
 import org.myweb.uniplace.domain.user.domain.entity.User;
-import org.myweb.uniplace.domain.user.domain.enums.UserRole;
-import org.myweb.uniplace.domain.user.domain.enums.UserStatus;
+import org.myweb.uniplace.domain.user.repository.SocialAccountRepository;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
+    private final SocialAccountRepository socialAccountRepository;
 
     @Override
-    public OAuth2User loadUser(OAuth2UserRequest request)
-            throws OAuth2AuthenticationException {
-
+    public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(request);
 
         String provider = request.getClientRegistration().getRegistrationId();
-
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
-        String email;
-        String nickname;
+        ParsedOAuth parsed = parse(provider, attributes);
 
-        if ("google".equals(provider)) {
-
-            email = (String) attributes.get("email");
-            nickname = (String) attributes.get("name");
-
-        } else if ("kakao".equals(provider)) {
-
-            Map<String, Object> kakaoAccount =
-                    (Map<String, Object>) attributes.get("kakao_account");
-
-            Map<String, Object> profile =
-                    (Map<String, Object>) kakaoAccount.get("profile");
-
-            email = (String) kakaoAccount.get("email");
-            nickname = (String) profile.get("nickname");
-
-        } else {
-            throw new OAuthTypeMatchNotFoundException(provider);
+        SocialAccount linked = socialAccountRepository
+            .findByProviderAndProviderUserId(parsed.provider().toUpperCase(), parsed.providerId())
+            .orElse(null);
+        if (linked != null) {
+            return UserContext.registered(requireLoginable(linked.getUser()), attributes);
         }
 
-        User user = saveOrGet(email, nickname);
+        String normalizedEmail = normalizeEmail(parsed.email());
+        if (normalizedEmail != null && !normalizedEmail.isBlank()) {
+            User existingByEmail = userRepository.findByUserEmail(normalizedEmail).orElse(null);
+            if (existingByEmail != null) {
+                requireLoginable(existingByEmail);
+                linkSocialAccountIfPossible(existingByEmail, parsed);
+                return UserContext.registered(existingByEmail, attributes);
+            }
+        }
 
-        return new UserContext(user, attributes);
+        return UserContext.signupPending(
+            parsed.provider().toUpperCase(),
+            parsed.providerId(),
+            parsed.email(),
+            parsed.nickname(),
+            attributes
+        );
     }
 
-    private User saveOrGet(String email, String name) {
-
-        Optional<User> optionalUser = userRepository.findByUserEmail(email);
-
-        if (optionalUser.isPresent()) {
-            return optionalUser.get();
+    @SuppressWarnings("unchecked")
+    private ParsedOAuth parse(String provider, Map<String, Object> attributes) {
+        if ("google".equals(provider)) {
+            String providerId = asText(attributes.get("sub"));
+            String email = asText(attributes.get("email"));
+            String nickname = asText(attributes.get("name"));
+            return new ParsedOAuth(provider, providerId, email, nickname);
         }
 
-        User user = User.builder()
-                .userEmail(email)
-                .userNm(name)
-                .userRole(UserRole.user)
-                .userSt(UserStatus.active)
-                .build();
+        if ("kakao".equals(provider)) {
+            String providerId = asText(attributes.get("id"));
+            Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+            Map<String, Object> profile = kakaoAccount == null ? null : (Map<String, Object>) kakaoAccount.get("profile");
 
-        return userRepository.save(user);
+            String email = kakaoAccount == null ? null : asText(kakaoAccount.get("email"));
+            String nickname = profile == null ? null : asText(profile.get("nickname"));
+
+            return new ParsedOAuth(provider, providerId, email, nickname);
+        }
+
+        throw new OAuthTypeMatchNotFoundException(provider);
+    }
+
+    private static String asText(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private static String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
+    }
+
+    private void linkSocialAccountIfPossible(User user, ParsedOAuth parsed) {
+        if (user == null || parsed == null) {
+            return;
+        }
+        if (parsed.provider() == null || parsed.provider().isBlank()) {
+            return;
+        }
+        if (parsed.providerId() == null || parsed.providerId().isBlank()) {
+            return;
+        }
+        if (socialAccountRepository.existsByProviderAndProviderUserId(parsed.provider().toUpperCase(), parsed.providerId())) {
+            return;
+        }
+
+        SocialAccount linked = SocialAccount.builder()
+            .user(user)
+            .provider(parsed.provider().toUpperCase())
+            .providerUserId(parsed.providerId())
+            .providerEmail(parsed.email())
+            .build();
+        socialAccountRepository.save(linked);
+    }
+
+    private static User requireLoginable(User user) {
+        if (user == null || !user.canLogin()) {
+            throw new OAuth2AuthenticationException(
+                new OAuth2Error("access_denied"),
+                "blocked_user"
+            );
+        }
+        return user;
+    }
+
+    private record ParsedOAuth(
+        String provider,
+        String providerId,
+        String email,
+        String nickname
+    ) {
     }
 }

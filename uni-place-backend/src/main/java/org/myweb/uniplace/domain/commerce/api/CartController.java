@@ -5,6 +5,8 @@ import org.myweb.uniplace.domain.commerce.api.dto.request.*;
 import org.myweb.uniplace.domain.commerce.api.dto.response.CartResponse;
 import org.myweb.uniplace.domain.commerce.application.CartService;
 
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.security.AuthUser;
 
@@ -22,7 +24,7 @@ public class CartController {
 
     @GetMapping
     public ApiResponse<CartResponse> myCart(@AuthenticationPrincipal AuthUser authUser) {
-        return ApiResponse.ok(cartService.getMyCart(authUser.getUserId()));
+        return ApiResponse.ok(cartService.getMyCart(requireUserId(authUser)));
     }
 
     @PostMapping("/items")
@@ -30,7 +32,7 @@ public class CartController {
         @AuthenticationPrincipal AuthUser authUser,
         @RequestBody CartAddRequest request
     ) {
-        return ApiResponse.ok(cartService.addItem(authUser.getUserId(), request));
+        return ApiResponse.ok(cartService.addItem(requireUserId(authUser), request));
     }
 
     @PatchMapping("/items/{cartItemId}")
@@ -39,7 +41,7 @@ public class CartController {
         @PathVariable Integer cartItemId,
         @RequestBody CartQuantityUpdateRequest request
     ) {
-        return ApiResponse.ok(cartService.updateQuantity(authUser.getUserId(), cartItemId, request));
+        return ApiResponse.ok(cartService.updateQuantity(requireUserId(authUser), cartItemId, request));
     }
 
     @DeleteMapping("/items/{cartItemId}")
@@ -47,12 +49,19 @@ public class CartController {
         @AuthenticationPrincipal AuthUser authUser,
         @PathVariable Integer cartItemId
     ) {
-        return ApiResponse.ok(cartService.removeItem(authUser.getUserId(), cartItemId));
+        return ApiResponse.ok(cartService.removeItem(requireUserId(authUser), cartItemId));
     }
 
     @DeleteMapping("/clear")
     public ApiResponse<Void> clear(@AuthenticationPrincipal AuthUser authUser) {
-        cartService.clear(authUser.getUserId());
+        cartService.clear(requireUserId(authUser));
         return ApiResponse.ok();
+    }
+
+    private String requireUserId(AuthUser authUser) {
+        if (authUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return authUser.getUserId();
     }
 }

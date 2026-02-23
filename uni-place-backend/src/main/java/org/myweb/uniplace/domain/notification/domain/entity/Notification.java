@@ -46,7 +46,7 @@ public class Notification {
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "is_read", length = 1, nullable = false)
+    @Column(name = "is_read", length = 1, nullable = false, columnDefinition = "CHAR(1)")
     private String isRead; // 'N'/'Y'
 
     @Column(name = "is_read_at")

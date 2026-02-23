@@ -22,8 +22,8 @@ public class ChargeStatusCode {
     @Column(name = "status_cd", length = 20)
     private String statusCd;
 
-    @Column(name = "`desc`", length = 255)
-    private String desc;
+    @Column(name = "description", length = 255)
+    private String description;
 
     @Column(name = "is_terminal", nullable = false)
     private Integer isTerminal;

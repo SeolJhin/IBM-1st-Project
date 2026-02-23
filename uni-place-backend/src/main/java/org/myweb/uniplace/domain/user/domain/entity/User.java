@@ -59,10 +59,10 @@ public class User extends BaseTimeEntity {
     private String deleteYN;
 
     /**
-     * ✅ first_sign: NULL(가입 직후/미처리) → Y(추가정보 필요) → N(추가정보 완료)
-     * nullable OK
+     * DB: CHAR(1) NOT NULL DEFAULT 'Y'
+     * Y(추가정보 필요), N(추가정보 완료)
      */
-    @Column(name = "first_sign", length = 1)
+    @Column(name = "first_sign", length = 1, nullable = false, columnDefinition = "CHAR(1)")
     private String firstSign;
 
     @PrePersist
@@ -70,7 +70,8 @@ public class User extends BaseTimeEntity {
         if (userRole == null) userRole = UserRole.user;
         if (userSt == null) userSt = UserStatus.active;
         if (deleteYN == null) deleteYN = "N";
-        // firstSign은 "가입 직후 NULL 유지"가 목적이므로 여기서 세팅하지 않음
+        if (firstSign == null) firstSign = "Y";
+        // DB 기본값과 동일하게 엔티티 생성 시점에도 Y를 보장
     }
 
     public boolean canLogin() {
@@ -83,7 +84,7 @@ public class User extends BaseTimeEntity {
 
     /** 추가정보 입력이 필요한 상태인지 */
     public boolean isAdditionalInfoRequired() {
-        return firstSign == null || "Y".equalsIgnoreCase(firstSign);
+        return "Y".equalsIgnoreCase(firstSign);
     }
 
     // 일반회원 수정

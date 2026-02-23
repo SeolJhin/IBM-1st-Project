@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.billing.api.dto.response.MonthlyChargeDetailResponse;
 import org.myweb.uniplace.domain.billing.api.dto.response.MonthlyChargeResponse;
 import org.myweb.uniplace.domain.billing.application.MonthlyChargeService;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,9 @@ public class MonthlyChargeController {
             @AuthenticationPrincipal AuthUser authUser,
             @RequestParam("contractId") Integer contractId
     ) {
+        if (authUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         return ResponseEntity.ok(ApiResponse.ok(
                 monthlyChargeService.getByContract(authUser.getUserId(), contractId)
         ));
@@ -34,6 +39,9 @@ public class MonthlyChargeController {
             @AuthenticationPrincipal AuthUser authUser,
             @PathVariable Integer chargeId
     ) {
+        if (authUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         return ResponseEntity.ok(ApiResponse.ok(
                 monthlyChargeService.getDetail(authUser.getUserId(), chargeId)
         ));

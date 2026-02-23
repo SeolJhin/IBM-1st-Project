@@ -89,6 +89,10 @@ public class PaymentIntent {
         this.returnedParamsJson = returnedParamsJson;
     }
 
+    public void recordReturnedParams(String returnedParamsJson) {
+        this.returnedParamsJson = returnedParamsJson;
+    }
+
     public void markApproveOk(String pgApproveJson) {
         this.intentSt = PaymentIntentStatus.APPROVE_OK;
         this.pgApproveJson = pgApproveJson;

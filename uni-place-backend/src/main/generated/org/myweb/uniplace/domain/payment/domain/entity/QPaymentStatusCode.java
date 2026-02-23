@@ -19,7 +19,7 @@ public class QPaymentStatusCode extends EntityPathBase<PaymentStatusCode> {
 
     public static final QPaymentStatusCode paymentStatusCode = new QPaymentStatusCode("paymentStatusCode");
 
-    public final StringPath desc = createString("desc");
+    public final StringPath description = createString("description");
 
     public final NumberPath<Integer> displayOrder = createNumber("displayOrder", Integer.class);
 

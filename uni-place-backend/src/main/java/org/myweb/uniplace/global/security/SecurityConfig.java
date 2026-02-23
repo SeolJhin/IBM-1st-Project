@@ -1,6 +1,7 @@
 package org.myweb.uniplace.global.security;
 
 import lombok.RequiredArgsConstructor;
+import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.security.oauth.CustomOAuth2UserService;
 import org.myweb.uniplace.global.security.oauth.OAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
@@ -9,6 +10,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -22,12 +25,13 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
+    private final UserRepository userRepository;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        JwtAuthFilter jwtAuthFilter = new JwtAuthFilter(jwtProvider);
+        JwtAuthFilter jwtAuthFilter = new JwtAuthFilter(jwtProvider, userRepository);
 
         http
             .csrf(csrf -> csrf.disable())
@@ -38,7 +42,11 @@ public class SecurityConfig {
                 .accessDeniedHandler(new RestAccessDeniedHandler())
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/auth/signup").permitAll()
+                .requestMatchers("/auth/login").permitAll()
+                .requestMatchers("/auth/refresh").permitAll()
+                .requestMatchers("/auth/logout").permitAll()
+                .requestMatchers("/auth/oauth2/kakao/complete").permitAll()
                 .requestMatchers("/login/**").permitAll()
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/v4/api-docs/**").permitAll()
@@ -79,5 +87,10 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

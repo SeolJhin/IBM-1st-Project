@@ -28,8 +28,6 @@ public class JwtExceptionFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } catch (BusinessException e) {
             write(response, e.getErrorCode());
-        } catch (Exception e) {
-            write(response, ErrorCode.TOKEN_INVALID);
         }
     }
 
