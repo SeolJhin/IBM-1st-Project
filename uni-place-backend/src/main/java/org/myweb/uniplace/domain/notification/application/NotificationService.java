@@ -1,5 +1,33 @@
+// 경로: org/myweb/uniplace/domain/notification/application/NotificationService.java
 package org.myweb.uniplace.domain.notification.application;
 
-public class NotificationService {
+import org.myweb.uniplace.domain.notification.api.dto.response.NotificationListResponse;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
+import org.springframework.data.domain.Pageable;
 
+public interface NotificationService {
+
+    NotificationListResponse my(String userId, Pageable pageable);
+
+    NotificationListResponse myUnread(String userId, Pageable pageable);
+
+    void markRead(String userId, Integer notificationId);
+
+    int markAllRead(String userId);
+
+    void notifyUser(String receiverId,
+                    NotificationType code,
+                    String message,
+                    String senderId,
+                    TargetType target,
+                    Integer targetId,
+                    String urlPath);
+
+    void notifyAdmins(NotificationType code,
+                      String message,
+                      String senderId,
+                      TargetType target,
+                      Integer targetId,
+                      String urlPath);
 }

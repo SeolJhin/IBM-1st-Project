@@ -1,4 +1,3 @@
-// ServiceImpl (✅ 고정슬롯 적용)
 // 경로: org/myweb/uniplace/domain/reservation/application/TourReservationServiceImpl.java
 package org.myweb.uniplace.domain.reservation.application;
 
@@ -25,6 +24,10 @@ import org.myweb.uniplace.domain.reservation.domain.policy.ReservationValidator;
 import org.myweb.uniplace.domain.reservation.domain.policy.TourReservationConflictPolicy;
 import org.myweb.uniplace.domain.reservation.repository.TourReservationRepository;
 
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
+
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 
@@ -47,6 +50,9 @@ public class TourReservationServiceImpl implements TourReservationService {
     private final ReservationValidator reservationValidator;
     private final TourReservationConflictPolicy reservationConflictPolicy;
 
+    // ✅ 알림
+    private final NotificationService notificationService;
+
     private static final List<TourStatus> INACTIVE = List.of(TourStatus.cancelled, TourStatus.ended);
 
     @Override
@@ -56,7 +62,6 @@ public class TourReservationServiceImpl implements TourReservationService {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        //  시간 기본 검증 +  고정 슬롯 검증
         reservationValidator.validateTourTime(request.getTourStartAt(), request.getTourEndAt());
         reservationValidator.validateTourFixedSlot(request.getTourStartAt(), request.getTourEndAt());
 
@@ -66,23 +71,20 @@ public class TourReservationServiceImpl implements TourReservationService {
         Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // room이 building 소속인지 체크
         if (room.getBuilding() == null || !building.getBuildingId().equals(room.getBuilding().getBuildingId())) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        // 빈방(available)만 투어예약 허용
         if (room.getRoomSt() != RoomStatus.available) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
-        // 같은 전화번호가 같은 시간(슬롯) 중복 예약 방지
+
         reservationConflictPolicy.validateDuplicateTelTime(
                 request.getTourTel(),
                 request.getTourStartAt(),
                 request.getTourEndAt()
         );
 
-        // 같은 방 시간 겹침 방지
         reservationConflictPolicy.validateRoomConflict(
                 room.getRoomId(),
                 request.getTourStartAt(),
@@ -100,6 +102,24 @@ public class TourReservationServiceImpl implements TourReservationService {
                         .tourPwd(request.getTourPwd())
                         .tourSt(TourStatus.requested)
                         .build()
+        );
+
+        // =========================
+        // ✅ 알림(여기 라인에 넣기) - 투어 예약 생성 직후 (관리자용)
+        // =========================
+        String timeMsg = saved.getTourStartAt() + " ~ " + saved.getTourEndAt();
+
+        notificationService.notifyAdmins(
+                NotificationType.TOUR_REQ,
+                "투어 예약 요청이 생성되었습니다. buildingId=" + building.getBuildingId()
+                        + ", roomId=" + room.getRoomId()
+                        + ", tel=" + saved.getTourTel()
+                        + ", name=" + saved.getTourNm()
+                        + ", time=" + timeMsg,
+                null,
+                TargetType.tour,
+                saved.getTourId(),
+                "/admin/tour-reservations"
         );
 
         return TourReservationResponse.fromEntity(saved);
@@ -144,6 +164,24 @@ public class TourReservationServiceImpl implements TourReservationService {
         }
 
         resv.setTourSt(TourStatus.cancelled);
+
+        // =========================
+        // ✅ 알림(여기 라인에 넣기) - 투어 예약 취소 직후 (관리자용)
+        // =========================
+        String timeMsg = resv.getTourStartAt() + " ~ " + resv.getTourEndAt();
+
+        notificationService.notifyAdmins(
+                NotificationType.TOUR_CAN,
+                "투어 예약이 취소되었습니다. tourId=" + resv.getTourId()
+                        + ", tel=" + resv.getTourTel()
+                        + ", name=" + resv.getTourNm()
+                        + ", time=" + timeMsg,
+                null,
+                TargetType.tour,
+                resv.getTourId(),
+                "/admin/tour-reservations"
+        );
+
         return TourReservationResponse.fromEntity(resv);
     }
 

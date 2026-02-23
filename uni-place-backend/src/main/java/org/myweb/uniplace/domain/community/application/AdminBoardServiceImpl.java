@@ -12,6 +12,9 @@ import org.myweb.uniplace.domain.community.repository.ReplyLikeRepository;
 import org.myweb.uniplace.domain.community.repository.ReplyRepository;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.file.application.FileService;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,11 +32,16 @@ public class AdminBoardServiceImpl implements AdminBoardService {
     private final ReplyLikeRepository replyLikeRepository;
     private final FileService fileService;
 
+    // ✅ 알림
+    private final NotificationService notificationService;
+
     @Override
     public void deleteBoardAsAdmin(int boardId) {
 
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
+
+        String writerId = board.getUserId();
 
         // 1) 파일 soft delete (BOARD, boardId)
         List<FileResponse> files = fileService.getActiveFiles("BOARD", boardId);
@@ -58,6 +66,27 @@ public class AdminBoardServiceImpl implements AdminBoardService {
 
         // 6) 게시글 삭제
         boardRepository.delete(board);
+
+        // ✅ 알림: 작성자에게 "관리자 삭제"
+        notificationService.notifyUser(
+                writerId,
+                NotificationType.ADM_BRD_DEL,
+                "관리자 정책에 의해 게시글이 삭제되었습니다.",
+                null,
+                TargetType.board,
+                boardId,
+                "/boards"
+        );
+
+        // ✅ 관리자들에게도 로그성 알림(선택)
+        notificationService.notifyAdmins(
+                NotificationType.ADM_BRD_DEL,
+                "관리자 게시글 삭제 처리(boardId=" + boardId + ")",
+                null,
+                TargetType.board,
+                boardId,
+                "/admin"
+        );
     }
 
     @Override
@@ -66,20 +95,39 @@ public class AdminBoardServiceImpl implements AdminBoardService {
                 .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. replyId=" + replyId));
 
         int boardId = reply.getBoardId();
+        String writerId = reply.getUserId();
 
-        // 댓글 좋아요 먼저 삭제
-        replyLikeRepository.deleteById(new org.myweb.uniplace.domain.community.domain.entity.ReplyLike.Id(reply.getUserId(), replyId));
-        // ↑ 위 한 줄은 "해당 댓글 좋아요 전체" 삭제가 아니야.
-        // 그래서 아래 deleteByReplyIds(리플ID 단위)로 삭제하는 쪽이 더 안전함:
+        // ✅ 댓글 좋아요 전체 삭제(ReplyId 단위)
         replyLikeRepository.deleteByReplyIds(List.of(replyId));
 
-        // 댓글 삭제
+        // ✅ 댓글 삭제
         replyRepository.delete(reply);
 
-        // replyCk 재계산
+        // ✅ replyCk 재계산
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
         board.markReply(replyRepository.countByBoardId(boardId) > 0);
+
+        // ✅ 알림: 댓글 작성자에게
+        notificationService.notifyUser(
+                writerId,
+                NotificationType.ADM_RPL_DEL,
+                "관리자 정책에 의해 댓글이 삭제되었습니다.",
+                null,
+                TargetType.reply,
+                replyId,
+                "/boards/" + boardId
+        );
+
+        // ✅ 관리자들에게도 로그성 알림(선택)
+        notificationService.notifyAdmins(
+                NotificationType.ADM_RPL_DEL,
+                "관리자 댓글 삭제 처리(replyId=" + replyId + ", boardId=" + boardId + ")",
+                null,
+                TargetType.reply,
+                replyId,
+                "/admin"
+        );
     }
 
     @Override
@@ -90,6 +138,31 @@ public class AdminBoardServiceImpl implements AdminBoardService {
         String imp = normalizeYn(request != null ? request.getImportance() : null, "N");
         board.setImportance(imp);
         board.setImpEndAt(request != null ? request.getImpEndAt() : null);
+
+        // ✅ 알림: 작성자에게 중요공지 지정/해제 알림
+        String msg = "Y".equalsIgnoreCase(imp)
+                ? "관리자가 게시글을 중요공지로 설정했습니다."
+                : "관리자가 중요공지 설정을 해제했습니다.";
+
+        notificationService.notifyUser(
+                board.getUserId(),
+                NotificationType.ADM_BRD_IMP,
+                msg,
+                null,
+                TargetType.board,
+                boardId,
+                "/boards/" + boardId
+        );
+
+        // ✅ 관리자들에게도 로그성 알림(선택)
+        notificationService.notifyAdmins(
+                NotificationType.ADM_BRD_IMP,
+                "중요공지 변경(boardId=" + boardId + ", importance=" + imp + ")",
+                null,
+                TargetType.board,
+                boardId,
+                "/admin"
+        );
     }
 
     private String normalizeYn(String v, String def) {
