@@ -9,6 +9,8 @@ import org.myweb.uniplace.domain.payment.api.dto.request.PaymentApproveRequest;
 import org.myweb.uniplace.domain.payment.api.dto.request.RetryPaymentRequest;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentPrepareResponse;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentResponse;
+import org.myweb.uniplace.global.security.AuthUser;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -18,8 +20,11 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/prepare")
-    public PaymentPrepareResponse prepare(@RequestBody PaymentPrepareRequest request) {
-        return paymentService.prepare(request);
+    public PaymentPrepareResponse prepare(
+        @AuthenticationPrincipal AuthUser authUser,
+        @RequestBody PaymentPrepareRequest request
+    ) {
+        return paymentService.prepare(authUser.getUserId(), request);
     }
 
     @PostMapping("/approve")

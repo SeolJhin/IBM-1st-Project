@@ -8,6 +8,7 @@ import lombok.Getter;
 public class PaymentPrepareResponse {
 
     private Integer paymentId;
+    private String merchantUid;
     private String paymentSt;
     
     
