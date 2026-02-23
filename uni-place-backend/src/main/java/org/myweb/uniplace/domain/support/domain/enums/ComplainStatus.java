@@ -1,7 +1,6 @@
 package org.myweb.uniplace.domain.support.domain.enums;
 
-public enum QnaStatus {
-    waiting,
-    complete
+public enum ComplainStatus {
+    in_progress,
+    resolved
 }
-
