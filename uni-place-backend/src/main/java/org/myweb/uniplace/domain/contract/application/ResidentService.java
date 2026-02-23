@@ -1,5 +1,9 @@
 package org.myweb.uniplace.domain.contract.application;
 
-public class ResidentService {
+import java.util.List;
 
+import org.myweb.uniplace.domain.contract.api.dto.response.ResidentResponse;
+
+public interface ResidentService {
+    List<ResidentResponse> getResidentList();
 }

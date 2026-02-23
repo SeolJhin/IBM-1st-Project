@@ -5,6 +5,7 @@ public enum FileRefType {
 
     ROOM("ROOM"),
     BOARD("BOARD"),
+    CONTRACT("CONTRACT"),
     NOTICE("NOTICE"),
     REVIEW("REVIEW"),
     BANNER("BANNER"),
