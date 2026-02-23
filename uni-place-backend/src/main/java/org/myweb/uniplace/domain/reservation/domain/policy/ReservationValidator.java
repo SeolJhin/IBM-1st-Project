@@ -23,12 +23,12 @@ public class ReservationValidator {
     // 기본 시간 검증
     public void validateTourTime(LocalDateTime startAt, LocalDateTime endAt) {
         if (startAt == null || endAt == null || !endAt.isAfter(startAt)) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.TOUR_RESERVATION_INVALID_TIME);
         }
 
         long minutes = Duration.between(startAt, endAt).toMinutes();
         if (minutes < MIN_TOUR_MINUTES) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.TOUR_RESERVATION_INVALID_TIME);
         }
     }
 
@@ -38,7 +38,7 @@ public class ReservationValidator {
         LocalTime e = endAt.toLocalTime();
 
         if (!TourFixedSlot.matches(s, e)) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.TOUR_RESERVATION_INVALID_SLOT);
         }
     }
 
@@ -49,7 +49,7 @@ public class ReservationValidator {
     // 같은 날짜 + start < end 검증
     public void validateSpaceTime(LocalDateTime startAt, LocalDateTime endAt) {
         if (startAt == null || endAt == null || !endAt.isAfter(startAt)) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_INVALID_TIME);
         }
 
         if (!startAt.toLocalDate().equals(endAt.toLocalDate())) {
@@ -63,7 +63,7 @@ public class ReservationValidator {
         LocalTime e = endAt.toLocalTime();
 
         if (!SpaceFixedSlot.matches(s, e)) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_INVALID_SLOT);
         }
     }
 }
