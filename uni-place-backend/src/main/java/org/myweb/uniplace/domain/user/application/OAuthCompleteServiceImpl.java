@@ -30,8 +30,7 @@ import java.util.HexFormat;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class OAuthCompleteServiceImpl implements OAuthCompleteService {
-	// signupToken에서 provider/providerUserId/email/nickname 추출 →
-	// 유저 생성 → social_accounts 저장 → access/refresh 발급 → refresh_tokens 저장
+
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
     private final SocialAccountRepository socialAccountRepository;
@@ -70,13 +69,12 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
             throw new BusinessException(ErrorCode.DUPLICATE_TEL);
         }
 
-        // 4) User 생성 (DB not null 컬럼들 모두 채움)
+        // 4) User 생성
         String userId = idGenerator.generate("USR");
         String name = (req.getUserNm() != null && !req.getUserNm().isBlank())
                 ? req.getUserNm()
                 : (nickname != null ? nickname : "사용자");
 
-        // 소셜유저는 비밀번호 로그인을 안 쓰더라도 DB 제약 때문에 더미 비번을 넣어둠
         String dummyPwd = passwordEncoder.encode(idGenerator.generate("PWD"));
 
         User user = User.builder()
@@ -89,11 +87,19 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
                 .userRole(UserRole.user)
                 .userSt(UserStatus.active)
                 .deleteYN("N")
+                // ✅ kakaoComplete는 "추가정보 입력 완료" 요청이므로 완료 상태로 저장
+                // (User 엔티티에 markAdditionalInfoCompleted()가 있으면 그걸 쓰는 게 더 깔끔하지만,
+                //  builder 단계에선 setter가 없을 수 있으니 아래처럼 저장 후 메소드로 처리)
                 .build();
 
         userRepository.save(user);
 
-        // 5) social_accounts 저장 (provider는 DB ENUM에 맞게 대문자로)
+        // ✅ 추가정보 완료 플래그: N
+        // (User 엔티티에 markAdditionalInfoCompleted() 메소드가 있어야 함)
+        user.markAdditionalInfoCompleted();
+        userRepository.save(user);
+
+        // 5) social_accounts 저장
         SocialAccount sa = SocialAccount.builder()
                 .user(user)
                 .provider(provider.toUpperCase())     // "KAKAO"
@@ -103,7 +109,7 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
 
         socialAccountRepository.save(sa);
 
-        // 6) JWT 발급 + refresh_tokens 저장(너 기존 구조 유지)
+        // 6) JWT 발급 + refresh_tokens 저장
         String accessToken = jwtProvider.createAccessToken(userId, user.getUserRole().name());
         String refreshToken = jwtProvider.createRefreshToken(userId);
 
@@ -116,7 +122,7 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
                 .refreshTokenId(idGenerator.generate("RTK"))
                 .user(user)
                 .tokenHash(tokenHash)
-                .deviceId("KAKAO") // 소셜 로그인은 deviceId 개념이 애매하니 고정값 (원하면 프론트에서 받아도 됨)
+                .deviceId("KAKAO") // 소셜 로그인은 고정값
                 .userAgent(userAgent)
                 .ip(ip)
                 .expiresAt(expiresAt)
@@ -130,6 +136,7 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .deviceId("KAKAO")
+                .additionalInfoRequired(false)
                 .build();
     }
 
