@@ -98,9 +98,10 @@ public class ContractServiceImpl implements ContractService {
                 .lessorName(request.getLessorName())
                 .build();
 
+        // 1) 계약 먼저 저장(계약ID 필요)
         Contract saved = contractRepository.save(contract);
 
-        // ✅ 서명/날인 파일 업로드 (FileUploadResponse 반영)
+        // 2) 서명/날인 파일 업로드 후 file_id를 계약에 세팅
         if (request.getSignFile() != null && !request.getSignFile().isEmpty()) {
 
             FileUploadResponse uploadResp = fileService.uploadFiles(
@@ -115,6 +116,9 @@ public class ContractServiceImpl implements ContractService {
 
             if (files != null && !files.isEmpty() && files.get(0) != null) {
                 saved.setLessorSignFileId(files.get(0).getFileId());
+
+                // ✅ dirty-check로도 반영되지만, 응답/동작 일관성 위해 명시적으로 save
+                saved = contractRepository.save(saved);
             }
         }
 
@@ -178,6 +182,9 @@ public class ContractServiceImpl implements ContractService {
 
             if (files != null && !files.isEmpty() && files.get(0) != null) {
                 c.setContractPdfFileId(files.get(0).getFileId());
+
+                // ✅ 응답/동작 일관성 위해 명시적으로 save
+                c = contractRepository.save(c);
             }
         }
 
