@@ -7,14 +7,16 @@ import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ContractRepository extends JpaRepository<Contract, Integer> {
 
-    // 기존: 내 계약 조회
+    boolean existsByContractIdAndUser_UserId(Integer contractId, String userId);
+
     @Query("""
         select c
           from Contract c
@@ -23,7 +25,6 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
     """)
     java.util.List<Contract> findMyContracts(@Param("userId") String userId);
 
-    // 기존: 기간 겹침 체크
     @Query("""
         select count(c) > 0
           from Contract c
@@ -40,7 +41,6 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
             @Param("st2") ContractStatus st2
     );
 
-    // ✅ 신규: 관리자 계약 목록(검색 + 페이징)
     @Query("""
         select c
           from Contract c

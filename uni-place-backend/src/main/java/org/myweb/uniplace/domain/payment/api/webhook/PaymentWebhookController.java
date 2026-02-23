@@ -10,6 +10,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import lombok.RequiredArgsConstructor;
+import org.myweb.uniplace.domain.payment.application.PaymentWebhookService;
 import org.myweb.uniplace.domain.payment.application.gateway.toss.TossProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,10 +24,12 @@ public class PaymentWebhookController {
     private static final String HMAC_SHA256 = "HmacSHA256";
 
     private final TossProperties tossProperties;
+    private final PaymentWebhookService paymentWebhookService;
 
     @PostMapping("/kakao")
-    public void kakaoWebhook(@RequestBody String payload) {
-        // TODO: add kakao webhook validation and update status
+    public ResponseEntity<String> kakaoWebhook(@RequestBody String payload) {
+        paymentWebhookService.handleKakaoWebhook(payload);
+        return ResponseEntity.ok("OK");
     }
 
     @PostMapping("/toss")
@@ -35,9 +38,9 @@ public class PaymentWebhookController {
         @RequestHeader(value = "tosspayments-webhook-transmission-time", required = false) String transmissionTime,
         @RequestHeader(value = "tosspayments-webhook-signature", required = false) String signature
     ) {
-        // 서명이 없는 이벤트는 통과 (payment/deposit/cancel 상태 웹훅)
+        // 서명 없는 요청은 신뢰할 수 없으므로 거부
         if (signature == null || signature.isBlank()) {
-            return ResponseEntity.ok("OK");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("missing signature");
         }
 
         if (transmissionTime == null || transmissionTime.isBlank()) {
@@ -54,6 +57,7 @@ public class PaymentWebhookController {
 
         for (byte[] sig : parseSignatures(signature)) {
             if (MessageDigest.isEqual(digest, sig)) {
+                paymentWebhookService.handleTossWebhook(payload);
                 return ResponseEntity.ok("OK");
             }
         }

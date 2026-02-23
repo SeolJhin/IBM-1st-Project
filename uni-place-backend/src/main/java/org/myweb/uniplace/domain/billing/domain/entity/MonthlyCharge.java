@@ -34,7 +34,7 @@ public class MonthlyCharge {
     @Column(name = "charge_type", nullable = false, length = 30)
     private String chargeType;
 
-    @Column(name = "billing_dt", nullable = false, length = 7)
+    @Column(name = "billing_dt", nullable = false, length = 7, columnDefinition = "CHAR(7)")
     private String billingDt;
 
     @Column(name = "price", nullable = false, precision = 12, scale = 0)

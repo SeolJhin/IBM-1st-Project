@@ -9,6 +9,7 @@ import lombok.Setter;
 public class PaymentApproveRequest {
 
     private Integer paymentId;
+    private String merchantUid;
 
     // kakao approve
     private String pgToken;

@@ -8,6 +8,7 @@ import org.myweb.uniplace.domain.billing.repository.MonthlyChargeRepository;
 import org.myweb.uniplace.domain.commerce.domain.entity.Order;
 import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
 import org.myweb.uniplace.domain.commerce.repository.OrderRepository;
+import org.myweb.uniplace.domain.contract.repository.ContractRepository;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentApproveRequest;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentPrepareRequest;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentPrepareResponse;
@@ -22,8 +23,10 @@ import org.myweb.uniplace.domain.payment.domain.entity.Payment;
 import org.myweb.uniplace.domain.payment.domain.entity.PaymentAttempt;
 import org.myweb.uniplace.domain.payment.domain.entity.PaymentIntent;
 import org.myweb.uniplace.domain.payment.domain.entity.PaymentIntentStatus;
+import org.myweb.uniplace.domain.payment.domain.entity.ServiceGoods;
 import org.myweb.uniplace.domain.payment.repository.PaymentIntentRepository;
 import org.myweb.uniplace.domain.payment.repository.PaymentRepository;
+import org.myweb.uniplace.domain.payment.repository.ServiceGoodsRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.util.IdGenerator;
@@ -33,7 +36,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -53,6 +59,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentAttemptService paymentAttemptService;
     private final OrderRepository orderRepository;
     private final MonthlyChargeRepository monthlyChargeRepository;
+    private final ContractRepository contractRepository;
+    private final ServiceGoodsRepository serviceGoodsRepository;
     private final ObjectMapper objectMapper;
 
     @Value("${app.baseUrl:http://localhost:8080}")
@@ -62,6 +70,7 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentPrepareResponse prepare(String userId, PaymentPrepareRequest request) {
         validatePrepareRequest(request);
         PreparedTarget target = resolveTarget(userId, request);
+        validateServiceGoodsMapping(request.getServiceGoodsId(), target.targetType());
         String idempotencyKey = blankToNull(request.getIdempotencyKey());
 
         if (idempotencyKey != null) {
@@ -103,9 +112,11 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         String providerSlug = payment.getProvider() == null ? "kakao" : payment.getProvider().toLowerCase();
-        String approvalUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/approval?pid=" + payment.getPaymentId();
-        String cancelUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/cancel?pid=" + payment.getPaymentId();
-        String failUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/fail?pid=" + payment.getPaymentId();
+        String callbackQuery = "?pid=" + payment.getPaymentId()
+            + "&mu=" + URLEncoder.encode(payment.getMerchantUid(), StandardCharsets.UTF_8);
+        String approvalUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/approval" + callbackQuery;
+        String cancelUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/cancel" + callbackQuery;
+        String failUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/fail" + callbackQuery;
 
         PaymentGateway gateway = paymentGatewayFactory.get(payment.getProvider());
 
@@ -160,6 +171,43 @@ public class PaymentServiceImpl implements PaymentService {
         return approveInternal(null, request);
     }
 
+    @Override
+    public void cancelFromCallback(Integer paymentId, String merchantUid) {
+        Payment payment = getPaymentForCallback(paymentId, merchantUid);
+
+        if (ST_PAID.equalsIgnoreCase(payment.getPaymentSt())) {
+            return;
+        }
+
+        paymentIntentRepository
+            .findTopByPaymentIdOrderByPaymentIntentIdDesc(payment.getPaymentId())
+            .ifPresent(intent -> intent.markCanceled());
+
+        payment.markCanceled();
+        paymentRepository.save(payment);
+    }
+
+    @Override
+    public void failFromCallback(Integer paymentId, String merchantUid, String failCode, String failMessage) {
+        Payment payment = getPaymentForCallback(paymentId, merchantUid);
+
+        if (ST_PAID.equalsIgnoreCase(payment.getPaymentSt())) {
+            return;
+        }
+
+        paymentIntentRepository
+            .findTopByPaymentIdOrderByPaymentIntentIdDesc(payment.getPaymentId())
+            .ifPresent(intent -> intent.markApproveFail(
+                blankToNull(failCode),
+                trimMessage(failMessage),
+                null
+            ));
+
+        payment.markCanceled();
+        paymentRepository.save(payment);
+        paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
+    }
+
     private PaymentResponse approveInternal(String requesterUserId, PaymentApproveRequest request) {
         if (request == null || request.getPaymentId() == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
@@ -168,6 +216,9 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findById(request.getPaymentId())
             .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
+        if (!hasText(requesterUserId)) {
+            validateCallbackRequest(payment, request.getMerchantUid());
+        }
         assertOwnership(requesterUserId, payment);
 
         if (ST_PAID.equalsIgnoreCase(payment.getPaymentSt())) {
@@ -181,6 +232,8 @@ public class PaymentServiceImpl implements PaymentService {
         if (ST_CANCELLED.equalsIgnoreCase(payment.getPaymentSt())) {
             throw new BusinessException(ErrorCode.PAYMENT_ALREADY_CANCELED);
         }
+
+        validateTargetBeforeApprove(payment);
 
         PaymentIntent intent = paymentIntentRepository
             .findTopByPaymentIdOrderByPaymentIntentIdDesc(payment.getPaymentId())
@@ -256,6 +309,10 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private void validatePrepareRequest(PaymentPrepareRequest request) {
+        if (request == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
         if (request.getServiceGoodsId() == null || !hasText(request.getProvider())) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
@@ -291,6 +348,10 @@ public class PaymentServiceImpl implements PaymentService {
         MonthlyCharge charge = monthlyChargeRepository.findById(request.getChargeId())
             .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
 
+        if (!contractRepository.existsByContractIdAndUser_UserId(charge.getContractId(), userId)) {
+            throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+
         if (!MonthlyCharge.ST_UNPAID.equalsIgnoreCase(charge.getChargeSt())) {
             throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
         }
@@ -311,6 +372,9 @@ public class PaymentServiceImpl implements PaymentService {
         if (TARGET_TYPE_ORDER.equals(payment.getTargetType())) {
             Order order = orderRepository.findById(payment.getTargetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+            if (order.getPaymentId() != null && !Objects.equals(order.getPaymentId(), payment.getPaymentId())) {
+                return;
+            }
             order.completePayment(payment.getPaymentId());
             return;
         }
@@ -318,8 +382,53 @@ public class PaymentServiceImpl implements PaymentService {
         if (TARGET_TYPE_MONTHLY_CHARGE.equals(payment.getTargetType())) {
             MonthlyCharge charge = monthlyChargeRepository.findById(payment.getTargetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
+            if (charge.getPaymentId() != null && !Objects.equals(charge.getPaymentId(), payment.getPaymentId())) {
+                return;
+            }
             charge.markPaid(payment.getPaymentId());
         }
+    }
+
+    private void validateTargetBeforeApprove(Payment payment) {
+        if (payment.getTargetId() == null || !hasText(payment.getTargetType())) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+
+        if (TARGET_TYPE_ORDER.equals(payment.getTargetType())) {
+            Order order = orderRepository.findById(payment.getTargetId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+
+            if (order.getOrderSt() != OrderStatus.ordered) {
+                throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PAID);
+            }
+            if (order.getPaymentId() != null && !Objects.equals(order.getPaymentId(), payment.getPaymentId())) {
+                throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PAID);
+            }
+            if (order.getTotalPrice() == null || payment.getTotalPrice() == null
+                || order.getTotalPrice().compareTo(payment.getTotalPrice()) != 0) {
+                throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+            }
+            return;
+        }
+
+        if (TARGET_TYPE_MONTHLY_CHARGE.equals(payment.getTargetType())) {
+            MonthlyCharge charge = monthlyChargeRepository.findById(payment.getTargetId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
+
+            if (!MonthlyCharge.ST_UNPAID.equalsIgnoreCase(charge.getChargeSt())) {
+                throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
+            }
+            if (charge.getPaymentId() != null && !Objects.equals(charge.getPaymentId(), payment.getPaymentId())) {
+                throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
+            }
+            if (charge.getPrice() == null || payment.getTotalPrice() == null
+                || charge.getPrice().compareTo(payment.getTotalPrice()) != 0) {
+                throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+            }
+            return;
+        }
+
+        throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
     }
 
     private static String trimMessage(String message) {
@@ -360,12 +469,51 @@ public class PaymentServiceImpl implements PaymentService {
             .build();
     }
 
+    private Payment getPaymentForCallback(Integer paymentId, String merchantUid) {
+        if (paymentId == null || !hasText(merchantUid)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        Payment payment = paymentRepository.findById(paymentId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+        validateCallbackRequest(payment, merchantUid);
+        return payment;
+    }
+
+    private void validateCallbackRequest(Payment payment, String merchantUid) {
+        if (!hasText(merchantUid) || !merchantUid.equals(payment.getMerchantUid())) {
+            throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+    }
+
     private void assertOwnership(String requesterUserId, Payment payment) {
         if (!hasText(requesterUserId)) {
             return;
         }
         if (!requesterUserId.equals(payment.getUserId())) {
             throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+    }
+
+    private void validateServiceGoodsMapping(Integer serviceGoodsId, String targetType) {
+        ServiceGoods serviceGoods = serviceGoodsRepository.findById(serviceGoodsId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET));
+
+        if (serviceGoods.getIsActive() != null && serviceGoods.getIsActive() == 0) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+
+        String goodsCd = blankToNull(serviceGoods.getServiceGoodsCd());
+        if (!hasText(goodsCd)) {
+            return;
+        }
+
+        String normalizedCd = goodsCd.toLowerCase();
+        if (TARGET_TYPE_ORDER.equals(targetType) && TARGET_TYPE_MONTHLY_CHARGE.equals(normalizedCd)) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+        if (TARGET_TYPE_MONTHLY_CHARGE.equals(targetType) && TARGET_TYPE_ORDER.equals(normalizedCd)) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
     }
 

@@ -2,6 +2,7 @@ package org.myweb.uniplace.global.security;
 
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.global.security.oauth.CustomOAuth2UserService;
+import org.myweb.uniplace.global.security.oauth.OAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -22,6 +23,7 @@ public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -50,7 +52,7 @@ public class SecurityConfig {
             )
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/member/login")
-                .defaultSuccessUrl("/member/loginsuccess")
+                .successHandler(oAuth2SuccessHandler)
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .permitAll()
             )
