@@ -1,4 +1,4 @@
-﻿package org.myweb.uniplace.domain.payment.application.gateway.toss.dto;
+package org.myweb.uniplace.domain.payment.application.gateway.toss.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;

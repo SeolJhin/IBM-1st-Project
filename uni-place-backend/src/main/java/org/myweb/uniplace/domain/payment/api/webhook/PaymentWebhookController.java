@@ -1,4 +1,4 @@
-﻿package org.myweb.uniplace.domain.payment.api.webhook;
+package org.myweb.uniplace.domain.payment.api.webhook;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

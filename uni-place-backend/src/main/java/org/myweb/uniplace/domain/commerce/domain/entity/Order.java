@@ -63,6 +63,13 @@ public class Order {
         this.orderSt   = OrderStatus.paid;
     }
 
+    public void markRefunded(Integer paymentId) {
+        if (paymentId != null) {
+            this.paymentId = paymentId;
+        }
+        this.orderSt = OrderStatus.cancelled;
+    }
+
     public void updateTotalPrice(BigDecimal totalPrice) {
         this.totalPrice = totalPrice;
     }
