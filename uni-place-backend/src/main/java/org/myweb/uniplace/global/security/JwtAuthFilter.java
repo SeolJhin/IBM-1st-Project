@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.myweb.uniplace.domain.user.domain.entity.User;
+import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.http.HttpHeaders;
@@ -16,21 +18,23 @@ import java.io.IOException;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
+    private final UserRepository userRepository;
 
-    public JwtAuthFilter(JwtProvider jwtProvider) {
+    public JwtAuthFilter(JwtProvider jwtProvider, UserRepository userRepository) {
         this.jwtProvider = jwtProvider;
+        this.userRepository = userRepository;
     }
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+        HttpServletRequest request,
+        HttpServletResponse response,
+        FilterChain filterChain
     ) throws ServletException, IOException {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        // 토큰 없으면 그냥 통과 (public API 허용 위해)
+        // No token: continue for public endpoints.
         if (header == null || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -38,19 +42,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = header.substring(7);
 
-        // 1️⃣ 토큰 유효성 검증 (만료/위조 등)
+        // 1) Signature/expiration validation.
         jwtProvider.validate(token);
 
-        // 2️⃣ access 토큰인지 확인
+        // 2) Access token type validation.
         String typ = jwtProvider.getTokenType(token);
         if (!"access".equals(typ)) {
             throw new BusinessException(ErrorCode.TOKEN_TYPE_INVALID);
         }
 
-        // 3️⃣ 🔥 JwtProvider에서 Authentication 생성 (ROLE_ 권한 포함)
-        Authentication authentication = jwtProvider.getAuthentication(token);
+        // 3) User state validation (active + not deleted).
+        String userId = jwtProvider.getSubject(token);
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+        if (!user.canLogin()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
 
-        // 4️⃣ SecurityContext에 저장
+        // 4) Build authentication and set security context.
+        Authentication authentication = jwtProvider.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);

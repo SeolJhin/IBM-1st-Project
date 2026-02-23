@@ -12,5 +12,6 @@ public class KakaoPayProperties {
     private String base_url;     // ex) https://open-api.kakaopay.com
     private String secret_key;   // SECRET KEY
     private String cid;          // ex) TC0ONETIME
-    private String cid_secret;   
+    private String cid_secret;
+    private String webhook_admin_key;
 }

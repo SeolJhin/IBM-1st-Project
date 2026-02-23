@@ -16,8 +16,8 @@ public class PaymentStatusCode {
     private String statusCd;
 
     // DB 컬럼명: `desc`
-    @Column(name = "`desc`", length = 255)
-    private String desc;
+    @Column(name = "description", length = 255)
+    private String description;
 
     @Column(name = "is_terminal", nullable = false)
     private Integer isTerminal;

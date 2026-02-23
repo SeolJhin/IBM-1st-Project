@@ -29,6 +29,8 @@ public class Payment {
     private static final String ST_READY = "ready";
     private static final String ST_PAID = "paid";
     private static final String ST_CANCELLED = "cancelled";
+    private static final String ST_PENDING = "pending";
+    private static final String ST_DISPUTED = "disputed";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -103,6 +105,14 @@ public class Payment {
 
     public void markReady() {
         this.paymentSt = ST_READY;
+    }
+
+    public void markPending() {
+        this.paymentSt = ST_PENDING;
+    }
+
+    public void markDisputed() {
+        this.paymentSt = ST_DISPUTED;
     }
 
     public void updateProviderPaymentId(String providerPaymentId) {

@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.commerce.api.dto.request.OrderCreateRequest;
 import org.myweb.uniplace.domain.commerce.api.dto.response.OrderResponse;
 import org.myweb.uniplace.domain.commerce.application.OrderService;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +28,7 @@ public class OrderController {
             @RequestBody OrderCreateRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                orderService.createOrder(authUser.getUserId(), request)
+                orderService.createOrder(requireUserId(authUser), request)
         ));
     }
 
@@ -36,7 +38,7 @@ public class OrderController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                orderService.getMyOrders(authUser.getUserId())
+                orderService.getMyOrders(requireUserId(authUser))
         ));
     }
 
@@ -47,7 +49,7 @@ public class OrderController {
             @PathVariable("id") Integer orderId   
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                orderService.getOrder(authUser.getUserId(), orderId)
+                orderService.getOrder(requireUserId(authUser), orderId)
         ));
     }
 
@@ -58,7 +60,14 @@ public class OrderController {
             @PathVariable("id") Integer orderId 
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                orderService.cancelOrder(authUser.getUserId(), orderId)
+                orderService.cancelOrder(requireUserId(authUser), orderId)
         ));
+    }
+
+    private String requireUserId(AuthUser authUser) {
+        if (authUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return authUser.getUserId();
     }
 }

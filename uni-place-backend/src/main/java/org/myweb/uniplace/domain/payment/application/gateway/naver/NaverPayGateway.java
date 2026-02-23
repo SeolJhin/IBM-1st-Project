@@ -19,9 +19,11 @@ import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverCanc
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverCancelResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverReadyRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverReadyResponse;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 @Component
+@Lazy
 @RequiredArgsConstructor
 public class NaverPayGateway implements PaymentGateway {
 
@@ -90,6 +92,10 @@ public class NaverPayGateway implements PaymentGateway {
 
         return PaymentGatewayApproveResponse.builder()
             .providerPaymentId(providerPaymentId)
+            .gatewayStatus(naverRes.getCode())
+            .merchantUid(request.getOrderId())
+            .currency("KRW")
+            .capturedPrice(request.getAmount())
             .pgApproveJson(toJson(naverRes))
             .build();
     }

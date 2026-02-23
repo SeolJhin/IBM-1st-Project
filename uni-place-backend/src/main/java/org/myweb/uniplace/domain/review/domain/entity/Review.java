@@ -52,11 +52,11 @@ public class Review {
     private String code;
 
     /** 파일(썸네일/이미지) 존재 여부: 'Y'/'N' */
-    @Column(name = "file_ck", nullable = false, length = 1)
+    @Column(name = "file_ck", nullable = false, columnDefinition = "CHAR(1)")
     private String fileCk;
 
     /** 답글 존재 여부: 'Y'/'N' */
-    @Column(name = "reply_ck", nullable = false, length = 1)
+    @Column(name = "reply_ck", nullable = false, columnDefinition = "CHAR(1)")
     private String replyCk;
 
     @PrePersist

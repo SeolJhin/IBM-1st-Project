@@ -1,7 +1,6 @@
 package org.myweb.uniplace.domain.user.application;
 
 import lombok.RequiredArgsConstructor;
-
 import org.myweb.uniplace.domain.user.api.dto.request.KakaoSignupCompleteRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.LogoutRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.RefreshTokenRequest;
@@ -27,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,9 +37,6 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
-    private final IdGenerator idGenerator;
-
-    // ✅ 소셜 가입완료 로직은 여기로 위임
     private final OAuthCompleteService oAuthCompleteService;
 
     @Value("${jwt.refresh-exp:86400000}")
@@ -48,26 +45,32 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void signup(UserSignupRequest req) {
-        if (userRepository.existsByUserEmail(req.getUserEmail())) {
+        if (req == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        String userEmail = normalizeEmail(req.getUserEmail());
+        String userTel = req.getUserTel() == null ? null : req.getUserTel().trim();
+
+        if (userRepository.existsByUserEmail(userEmail)) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
-        if (userRepository.existsByUserTel(req.getUserTel())) {
+        if (userRepository.existsByUserTel(userTel)) {
             throw new BusinessException(ErrorCode.DUPLICATE_TEL);
         }
 
-        String userId = idGenerator.generate("USR");
+        String userId = IdGenerator.generate("USR");
         User user = User.builder()
-                .userId(userId)
-                .userNm(req.getUserNm())
-                .userEmail(req.getUserEmail())
-                .userPwd(passwordEncoder.encode(req.getUserPwd()))
-                .userBirth(req.getUserBirth())
-                .userTel(req.getUserTel())
-                .userRole(UserRole.user)
-                .userSt(UserStatus.active)
-                .deleteYN("N")
-                // firstSign은 "가입 직후 NULL 유지"가 목적이므로 여기서 세팅하지 않음
-                .build();
+            .userId(userId)
+            .userNm(req.getUserNm())
+            .userEmail(userEmail)
+            .userPwd(passwordEncoder.encode(req.getUserPwd()))
+            .userBirth(req.getUserBirth())
+            .userTel(userTel)
+            .userRole(UserRole.user)
+            .userSt(UserStatus.active)
+            .deleteYN("N")
+            .firstSign("N")
+            .build();
 
         userRepository.save(user);
     }
@@ -75,35 +78,31 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public UserTokenResponse login(UserLoginRequest req, String userAgent, String ip) {
-        User user = userRepository.findByUserEmail(req.getUserEmail())
-                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+        if (req == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        String userEmail = normalizeEmail(req.getUserEmail());
+
+        User user = userRepository.findByUserEmail(userEmail)
+            .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
 
         if (!passwordEncoder.matches(req.getUserPwd(), user.getUserPwd())) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
-        // ✅ 1) 로그인 가능 여부 체크
         if (!user.canLogin()) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
-        // ✅ 2) 마지막 로그인 시간 갱신
         user.markLoginNow();
 
-        // ✅ 3) deviceId 필수
-        String deviceId = req.getDeviceId();
-        if (deviceId == null || deviceId.isBlank()) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
-        }
+        String deviceId = resolveDeviceId(req.getDeviceId());
 
-        // ✅ 4) first_sign 처리:
-        // - 가입 직후 NULL이면, "첫 로그인 발생"으로 보고 Y로 마킹
-        // - 프론트는 additionalInfoRequired=true면 추가정보 입력 화면으로 보내면 됨
         if (user.getFirstSign() == null) {
-            user.markFirstLoginFlagIfNeeded(); // null -> Y
+            user.markFirstLoginFlagIfNeeded();
         }
 
-        String accessToken = jwtProvider.createAccessToken(user.getUserId(), user.getUserRole().name());
+        String accessToken = jwtProvider.createAccessToken(user.getUserId(), requireRoleName(user));
         String refreshToken = jwtProvider.createRefreshToken(user.getUserId());
 
         String tokenHash = sha256Hex(refreshToken);
@@ -112,33 +111,35 @@ public class AuthServiceImpl implements AuthService {
         LocalDateTime expiresAt = now.plusSeconds(refreshExpMillis / 1000);
 
         RefreshToken rt = RefreshToken.builder()
-                .refreshTokenId(idGenerator.generate("RTK"))
-                .user(user)
-                .tokenHash(tokenHash)
-                .deviceId(deviceId)
-                .userAgent(userAgent)
-                .ip(ip)
-                .expiresAt(expiresAt)
-                .revoked(false)
-                .lastUsedAt(now)
-                .build();
+            .refreshTokenId(IdGenerator.generate("RTK"))
+            .user(user)
+            .tokenHash(tokenHash)
+            .deviceId(deviceId)
+            .userAgent(userAgent)
+            .ip(ip)
+            .expiresAt(expiresAt)
+            .revoked(false)
+            .lastUsedAt(now)
+            .build();
 
         refreshTokenRepository.save(rt);
 
-        // ✅ first_sign이 null/Y면 추가정보 필요로 응답
         boolean additionalInfoRequired = user.isAdditionalInfoRequired();
 
         return UserTokenResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .deviceId(deviceId)
-                .additionalInfoRequired(additionalInfoRequired)
-                .build();
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .deviceId(deviceId)
+            .additionalInfoRequired(additionalInfoRequired)
+            .build();
     }
 
     @Override
     @Transactional
     public UserTokenResponse refresh(RefreshTokenRequest req, String userAgent, String ip) {
+        if (req == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
         String refreshToken = req.getRefreshToken();
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
@@ -154,7 +155,7 @@ public class AuthServiceImpl implements AuthService {
         String tokenHash = sha256Hex(refreshToken);
 
         RefreshToken saved = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
-                .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
 
         if (!saved.getUser().getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
@@ -166,28 +167,21 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
         }
 
-        // (선택) 요청 deviceId가 있으면 저장된 deviceId와 일치 검증
         if (req.getDeviceId() != null && !req.getDeviceId().isBlank()
-                && !req.getDeviceId().equals(saved.getDeviceId())) {
+            && !req.getDeviceId().equals(saved.getDeviceId())) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
 
-        // ✅ 탈퇴/비활성 계정 refresh 차단
         User user = saved.getUser();
-        if (user == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
-        }
-        if (!user.canLogin()) {
+        if (user == null || !user.canLogin()) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
-        // revoked 토큰 재사용 탐지 -> 전체 로그아웃
         if (saved.isRevoked()) {
             refreshTokenRepository.revokeAllActiveByUserId(userId, now);
             throw new BusinessException(ErrorCode.TOKEN_REUSE_DETECTED);
         }
 
-        // rotation: 기존 토큰 revoke + lastUsed 갱신
         saved.revoke(now);
         saved.markLastUsed(now);
 
@@ -198,30 +192,27 @@ public class AuthServiceImpl implements AuthService {
         LocalDateTime expiresAt = now.plusSeconds(refreshExpMillis / 1000);
 
         RefreshToken newRt = RefreshToken.builder()
-                .refreshTokenId(idGenerator.generate("RTK"))
-                .user(user)
-                .tokenHash(newHash)
-                .deviceId(deviceId)
-                .userAgent(userAgent)
-                .ip(ip)
-                .expiresAt(expiresAt)
-                .revoked(false)
-                .lastUsedAt(now)
-                .build();
+            .refreshTokenId(IdGenerator.generate("RTK"))
+            .user(user)
+            .tokenHash(newHash)
+            .deviceId(deviceId)
+            .userAgent(userAgent)
+            .ip(ip)
+            .expiresAt(expiresAt)
+            .revoked(false)
+            .lastUsedAt(now)
+            .build();
 
         refreshTokenRepository.save(newRt);
 
-        String newAccessToken = jwtProvider.createAccessToken(userId, user.getUserRole().name());
-
-        // ✅ refresh 응답에도 additionalInfoRequired 내려주면 프론트가 상태 유지하기 쉬움
-        boolean additionalInfoRequired = user.isAdditionalInfoRequired();
+        String newAccessToken = jwtProvider.createAccessToken(userId, requireRoleName(user));
 
         return UserTokenResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
-                .deviceId(deviceId)
-                .additionalInfoRequired(additionalInfoRequired)
-                .build();
+            .accessToken(newAccessToken)
+            .refreshToken(newRefreshToken)
+            .deviceId(deviceId)
+            .additionalInfoRequired(user.isAdditionalInfoRequired())
+            .build();
     }
 
     @Override
@@ -232,13 +223,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String refreshToken = req.getRefreshToken();
-        String deviceId = req.getDeviceId();
-
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
-        }
-        if (deviceId == null || deviceId.isBlank()) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         jwtProvider.validate(refreshToken);
@@ -247,7 +233,16 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String userId = jwtProvider.getSubject(refreshToken);
-        refreshTokenRepository.revokeActiveByUserIdAndDeviceId(userId, deviceId, LocalDateTime.now());
+        String tokenHash = sha256Hex(refreshToken);
+
+        RefreshToken saved = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
+            .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
+
+        if (!saved.getUser().getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+
+        saved.revoke(LocalDateTime.now());
     }
 
     @Override
@@ -256,10 +251,12 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.revokeAllActiveByUserId(userId, LocalDateTime.now());
     }
 
-    // ✅ 위임
     @Override
     @Transactional
     public UserTokenResponse kakaoComplete(KakaoSignupCompleteRequest req, String userAgent, String ip) {
+        if (req == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
         return oAuthCompleteService.kakaoComplete(req, userAgent, ip);
     }
 
@@ -271,5 +268,26 @@ public class AuthServiceImpl implements AuthService {
         } catch (Exception e) {
             throw new IllegalStateException("sha256 failed", e);
         }
+    }
+
+    private static String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
+    }
+
+    private static String requireRoleName(User user) {
+        if (user == null || user.getUserRole() == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return user.getUserRole().name();
+    }
+
+    private static String resolveDeviceId(String deviceId) {
+        if (deviceId != null && !deviceId.isBlank()) {
+            return deviceId.trim();
+        }
+        return "WEB-" + UUID.randomUUID();
     }
 }

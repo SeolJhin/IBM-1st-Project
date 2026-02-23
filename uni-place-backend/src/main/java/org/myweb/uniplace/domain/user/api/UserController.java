@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.user.api.dto.request.UserUpdateRequest;
 import org.myweb.uniplace.domain.user.api.dto.response.UserResponse;
 import org.myweb.uniplace.domain.user.application.UserService;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,6 +22,9 @@ public class UserController {
 
     @GetMapping("/me")
     public ApiResponse<UserResponse> me(@AuthenticationPrincipal AuthUser me) {
+        if (me == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         return ApiResponse.ok(userService.me(me.getUserId()));
     }
 
@@ -28,11 +33,17 @@ public class UserController {
             @AuthenticationPrincipal AuthUser me,
             @Valid @RequestBody UserUpdateRequest req
     ) {
+        if (me == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         return ApiResponse.ok(userService.updateMe(me.getUserId(), req));
     }
 
     @DeleteMapping("/me")
     public ApiResponse<Void> deleteMe(@AuthenticationPrincipal AuthUser me) {
+        if (me == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         userService.deleteMe(me.getUserId());
         return ApiResponse.ok();
     }

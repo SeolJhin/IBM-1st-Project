@@ -28,13 +28,15 @@ public class QRoomServiceOrder extends EntityPathBase<RoomServiceOrder> {
 
     public final EnumPath<org.myweb.uniplace.domain.commerce.domain.enums.RoomServiceOrderStatus> orderSt = createEnum("orderSt", org.myweb.uniplace.domain.commerce.domain.enums.RoomServiceOrderStatus.class);
 
-    public final NumberPath<Integer> paymentId = createNumber("paymentId", Integer.class);
+    public final QOrder parentOrder;
 
     public final org.myweb.uniplace.domain.property.domain.entity.QRoom room;
 
     public final StringPath roomServiceDesc = createString("roomServiceDesc");
 
     public final NumberPath<java.math.BigDecimal> totalPrice = createNumber("totalPrice", java.math.BigDecimal.class);
+
+    public final DateTimePath<java.time.LocalDateTime> updatedAt = createDateTime("updatedAt", java.time.LocalDateTime.class);
 
     public final org.myweb.uniplace.domain.user.domain.entity.QUser user;
 
@@ -56,6 +58,7 @@ public class QRoomServiceOrder extends EntityPathBase<RoomServiceOrder> {
 
     public QRoomServiceOrder(Class<? extends RoomServiceOrder> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
+        this.parentOrder = inits.isInitialized("parentOrder") ? new QOrder(forProperty("parentOrder"), inits.get("parentOrder")) : null;
         this.room = inits.isInitialized("room") ? new org.myweb.uniplace.domain.property.domain.entity.QRoom(forProperty("room"), inits.get("room")) : null;
         this.user = inits.isInitialized("user") ? new org.myweb.uniplace.domain.user.domain.entity.QUser(forProperty("user")) : null;
     }

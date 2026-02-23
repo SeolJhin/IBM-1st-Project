@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.commerce.api.dto.request.RoomServiceOrderCreateRequest;
 import org.myweb.uniplace.domain.commerce.api.dto.response.RoomServiceOrderResponse;
 import org.myweb.uniplace.domain.commerce.application.RoomServiceOrderService;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +28,7 @@ public class RoomServiceOrderController {
             @RequestBody RoomServiceOrderCreateRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                roomServiceOrderService.createOrder(authUser.getUserId(), request)
+                roomServiceOrderService.createOrder(requireUserId(authUser), request)
         ));
     }
 
@@ -36,7 +38,14 @@ public class RoomServiceOrderController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                roomServiceOrderService.getMyOrders(authUser.getUserId())
+                roomServiceOrderService.getMyOrders(requireUserId(authUser))
         ));
+    }
+
+    private String requireUserId(AuthUser authUser) {
+        if (authUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return authUser.getUserId();
     }
 }

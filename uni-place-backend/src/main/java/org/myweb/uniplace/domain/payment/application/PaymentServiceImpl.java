@@ -134,6 +134,9 @@ public class PaymentServiceImpl implements PaymentService {
                 .failUrl(failUrl)
                 .build()
         );
+        if (gwRes == null) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
 
         PaymentIntent intent = PaymentIntent.builder()
             .paymentId(payment.getPaymentId())
@@ -256,6 +259,8 @@ public class PaymentServiceImpl implements PaymentService {
                     .build()
             );
 
+            verifyApproveResult(payment, gwRes);
+
             intent.markApproveOk(gwRes.getPgApproveJson());
             paymentIntentRepository.save(intent);
 
@@ -264,8 +269,12 @@ public class PaymentServiceImpl implements PaymentService {
                     ? gwRes.getProviderPaymentId()
                     : intent.getProviderRefId();
 
+            validateProviderPaymentId(payment, providerPaymentId);
             payment.updateProviderPaymentId(providerPaymentId);
-            payment.markPaid(LocalDateTime.now(), payment.getTotalPrice());
+            payment.markPaid(
+                LocalDateTime.now(),
+                gwRes.getCapturedPrice() == null ? payment.getTotalPrice() : gwRes.getCapturedPrice()
+            );
             paymentRepository.save(payment);
 
             syncTargetPaid(payment);
@@ -515,6 +524,57 @@ public class PaymentServiceImpl implements PaymentService {
         if (TARGET_TYPE_MONTHLY_CHARGE.equals(targetType) && TARGET_TYPE_ORDER.equals(normalizedCd)) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
+    }
+
+    private void verifyApproveResult(Payment payment, PaymentGatewayApproveResponse gwRes) {
+        if (gwRes == null || !isApprovedStatus(gwRes.getGatewayStatus())) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+        if (!hasText(gwRes.getProviderPaymentId())) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+        if (hasText(gwRes.getMerchantUid()) && !payment.getMerchantUid().equals(gwRes.getMerchantUid())) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+        if (gwRes.getCapturedPrice() != null
+            && payment.getTotalPrice() != null
+            && payment.getTotalPrice().compareTo(gwRes.getCapturedPrice()) != 0) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+        if (hasText(gwRes.getCurrency())
+            && hasText(payment.getCurrency())
+            && !payment.getCurrency().equalsIgnoreCase(gwRes.getCurrency())) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+    }
+
+    private void validateProviderPaymentId(Payment payment, String providerPaymentId) {
+        if (!hasText(providerPaymentId)) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+        if (hasText(payment.getProviderPaymentId()) && !payment.getProviderPaymentId().equals(providerPaymentId)) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+
+        Payment existing = paymentRepository
+            .findByProviderAndProviderPaymentId(payment.getProvider(), providerPaymentId)
+            .orElse(null);
+
+        if (existing != null && !Objects.equals(existing.getPaymentId(), payment.getPaymentId())) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+    }
+
+    private static boolean isApprovedStatus(String status) {
+        if (!hasText(status)) {
+            return false;
+        }
+        String normalized = status.trim().toUpperCase();
+        return "APPROVED".equals(normalized)
+            || "DONE".equals(normalized)
+            || "PAID".equals(normalized)
+            || "SUCCESS".equals(normalized)
+            || "COMPLETED".equals(normalized);
     }
 
     private RedirectUrls parseRedirectUrls(PaymentIntent intent) {

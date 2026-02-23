@@ -8,6 +8,8 @@ import org.myweb.uniplace.domain.support.api.dto.request.ComplainSearchRequest;
 import org.myweb.uniplace.domain.support.api.dto.request.ComplainUpdateRequest;
 import org.myweb.uniplace.domain.support.api.dto.response.ComplainResponse;
 import org.myweb.uniplace.domain.support.application.ComplainService;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
@@ -41,7 +43,7 @@ public class ComplainController {
             @AuthenticationPrincipal AuthUser authUser,
             @PageableDefault(size = 10, sort = "compId", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ApiResponse.ok(complainService.getMyList(authUser.getUserId(), pageable));
+        return ApiResponse.ok(complainService.getMyList(requireUserId(authUser), pageable));
     }
 
     /** 민원 상세 */
@@ -56,7 +58,7 @@ public class ComplainController {
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody ComplainCreateRequest request
     ) {
-        return ApiResponse.ok(complainService.create(authUser.getUserId(), request));
+        return ApiResponse.ok(complainService.create(requireUserId(authUser), request));
     }
 
     /** 민원 수정 */
@@ -93,5 +95,12 @@ public class ComplainController {
     public ApiResponse<Void> delete(@PathVariable Integer compId) {
         complainService.delete(compId);
         return ApiResponse.ok();
+    }
+
+    private String requireUserId(AuthUser authUser) {
+        if (authUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return authUser.getUserId();
     }
 }

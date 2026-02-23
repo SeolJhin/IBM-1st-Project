@@ -82,6 +82,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartResponse updateQuantity(String userId, Integer cartItemId, CartQuantityUpdateRequest request) {
+        if (cartItemId == null || request == null || request.getQuantity() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
 
         Cart cart = getOrCreateCart(userId);
         CartItem item = cartItemRepository.findById(cartItemId)
@@ -97,6 +100,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartResponse removeItem(String userId, Integer cartItemId) {
+        if (cartItemId == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
 
         Cart cart = getOrCreateCart(userId);
         CartItem item = cartItemRepository.findById(cartItemId)
@@ -119,6 +125,9 @@ public class CartServiceImpl implements CartService {
     // ===================== private =====================
 
     private Cart getOrCreateCart(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
         return cartRepository.findTop1ByUserIdOrderByCartCreatedAtDesc(userId)
             .orElseGet(() -> cartRepository.save(Cart.builder().userId(userId).build()));
     }
@@ -142,7 +151,7 @@ public class CartServiceImpl implements CartService {
             .stream().collect(Collectors.toMap(Product::getProdId, p -> p));
 
         Map<Integer, String> thumbMap =
-            cartFileQueryRepository.findLatestThumbs(FILE_PARENT_TYPE_PRODUCT, prodIds)
+            cartFileQueryRepository.findProductThumbs(prodIds)
                 .stream()
                 .collect(Collectors.toMap(
                     CartFileQueryRepository.ProductThumbRow::getFileParentId,

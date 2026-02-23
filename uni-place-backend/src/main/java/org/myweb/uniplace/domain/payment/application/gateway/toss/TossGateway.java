@@ -62,6 +62,10 @@ public class TossGateway implements PaymentGateway {
 
         return PaymentGatewayApproveResponse.builder()
             .providerPaymentId(tossRes.getPaymentKey())
+            .gatewayStatus(tossRes.getStatus())
+            .merchantUid(tossRes.getOrderId())
+            .currency("KRW")
+            .capturedPrice(tossRes.getTotalAmount() == null ? null : BigDecimal.valueOf(tossRes.getTotalAmount()))
             .pgApproveJson(toJson(tossRes))
             .build();
     }

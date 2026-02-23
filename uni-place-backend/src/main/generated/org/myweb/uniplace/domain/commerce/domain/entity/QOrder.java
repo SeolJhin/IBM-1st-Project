@@ -32,6 +32,8 @@ public class QOrder extends EntityPathBase<Order> {
 
     public final NumberPath<Integer> paymentId = createNumber("paymentId", Integer.class);
 
+    public final ListPath<RoomServiceOrder, QRoomServiceOrder> roomServiceOrders = this.<RoomServiceOrder, QRoomServiceOrder>createList("roomServiceOrders", RoomServiceOrder.class, QRoomServiceOrder.class, PathInits.DIRECT2);
+
     public final NumberPath<java.math.BigDecimal> totalPrice = createNumber("totalPrice", java.math.BigDecimal.class);
 
     public final org.myweb.uniplace.domain.user.domain.entity.QUser user;

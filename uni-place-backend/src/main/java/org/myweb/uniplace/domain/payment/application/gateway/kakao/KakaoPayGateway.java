@@ -78,6 +78,10 @@ public class KakaoPayGateway implements PaymentGateway {
 
         return PaymentGatewayApproveResponse.builder()
             .providerPaymentId(kakaoRes.getTid())
+            .gatewayStatus("APPROVED")
+            .merchantUid(kakaoRes.getPartner_order_id())
+            .currency("KRW")
+            .capturedPrice(request.getAmount())
             .pgApproveJson(toJson(kakaoRes))
             .build();
     }

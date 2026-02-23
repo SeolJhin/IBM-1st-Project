@@ -5,13 +5,17 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.time.Instant;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.payment.application.PaymentWebhookService;
+import org.myweb.uniplace.domain.payment.application.gateway.kakao.KakaoPayProperties;
 import org.myweb.uniplace.domain.payment.application.gateway.toss.TossProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +26,24 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentWebhookController {
 
     private static final String HMAC_SHA256 = "HmacSHA256";
+    private static final long MAX_SKEW_MILLIS = 300_000L;
+    private static final Logger log = LoggerFactory.getLogger(PaymentWebhookController.class);
 
+    private final KakaoPayProperties kakaoPayProperties;
     private final TossProperties tossProperties;
     private final PaymentWebhookService paymentWebhookService;
 
     @PostMapping("/kakao")
-    public ResponseEntity<String> kakaoWebhook(@RequestBody String payload) {
+    public ResponseEntity<String> kakaoWebhook(
+        @RequestBody String payload,
+        @RequestHeader(value = "Authorization", required = false) String authorization,
+        @RequestHeader(value = "X-Kakao-Resource-ID", required = false) String resourceId,
+        @RequestHeader(value = "User-Agent", required = false) String userAgent
+    ) {
+        if (!isValidKakaoWebhook(authorization, resourceId, userAgent)) {
+            log.warn("[SECURITY][ALERT][WEBHOOK] kakao webhook rejected resourceId={}", mask(resourceId));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("invalid kakao webhook");
+        }
         paymentWebhookService.handleKakaoWebhook(payload);
         return ResponseEntity.ok("OK");
     }
@@ -46,6 +62,10 @@ public class PaymentWebhookController {
         if (transmissionTime == null || transmissionTime.isBlank()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("missing transmission time");
         }
+        if (!isFreshTransmissionTime(transmissionTime)) {
+            log.warn("[SECURITY][ALERT][WEBHOOK] toss timestamp rejected transmissionTime={}", transmissionTime);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("stale transmission time");
+        }
 
         String secret = tossProperties.getWebhook_secret();
         if (secret == null || secret.isBlank()) {
@@ -62,7 +82,51 @@ public class PaymentWebhookController {
             }
         }
 
+        log.warn("[SECURITY][ALERT][WEBHOOK] toss signature rejected transmissionTime={}", transmissionTime);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("invalid signature");
+    }
+
+    private boolean isValidKakaoWebhook(String authorization, String resourceId, String userAgent) {
+        String adminKey = kakaoPayProperties.getWebhook_admin_key();
+        if (adminKey == null || adminKey.isBlank()) {
+            return false;
+        }
+        if (authorization == null || authorization.isBlank()) {
+            return false;
+        }
+        if (resourceId == null || resourceId.isBlank()) {
+            return false;
+        }
+        if (userAgent == null || !userAgent.startsWith("KakaoOpenAPI/")) {
+            return false;
+        }
+
+        String expected = "KakaoAK " + adminKey;
+        return MessageDigest.isEqual(
+            expected.getBytes(StandardCharsets.UTF_8),
+            authorization.getBytes(StandardCharsets.UTF_8)
+        );
+    }
+
+    private static boolean isFreshTransmissionTime(String transmissionTime) {
+        Long timestamp = parseEpochMillis(transmissionTime);
+        if (timestamp == null) {
+            return false;
+        }
+        long now = Instant.now().toEpochMilli();
+        return Math.abs(now - timestamp) <= MAX_SKEW_MILLIS;
+    }
+
+    private static Long parseEpochMillis(String raw) {
+        try {
+            long parsed = Long.parseLong(raw.trim());
+            if (raw.trim().length() <= 10) {
+                return parsed * 1000L;
+            }
+            return parsed;
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private static byte[] hmacSha256(String secret, String message) {
@@ -91,5 +155,15 @@ public class PaymentWebhookController {
             }
         }
         return result;
+    }
+
+    private static String mask(String value) {
+        if (value == null || value.isBlank()) {
+            return "-";
+        }
+        if (value.length() <= 4) {
+            return "****";
+        }
+        return value.substring(0, 2) + "****" + value.substring(value.length() - 2);
     }
 }

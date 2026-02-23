@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class RoomServiceOrderResponse {
 
     private Integer      orderId;
+    private Integer   parentOrderId;
     private String    userId;
     private Integer   roomId;
     private Integer   roomNo;
@@ -20,10 +21,12 @@ public class RoomServiceOrderResponse {
     private RoomServiceOrderStatus orderSt;
     private String    roomServiceDesc;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public static RoomServiceOrderResponse from(RoomServiceOrder order) {
         return RoomServiceOrderResponse.builder()
                 .orderId(order.getOrderId())
+                .parentOrderId(order.getParentOrder().getOrderId())
                 .userId(order.getUser().getUserId())
                 .roomId(order.getRoom().getRoomId())
                 .roomNo(order.getRoom().getRoomNo())
@@ -31,6 +34,7 @@ public class RoomServiceOrderResponse {
                 .orderSt(order.getOrderSt())
                 .roomServiceDesc(order.getRoomServiceDesc())
                 .createdAt(order.getCreatedAt())
+                .updatedAt(order.getUpdatedAt())
                 .build();
     }
 }

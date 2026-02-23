@@ -1,5 +1,6 @@
 package org.myweb.uniplace.domain.user.application;
 
+import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.user.api.admin.dto.request.AdminUserRoleUpdateRequest;
 import org.myweb.uniplace.domain.user.api.admin.dto.request.AdminUserStatusUpdateRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.UserUpdateRequest;
@@ -11,8 +12,6 @@ import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -26,33 +25,32 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserResponse me(String userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         return UserResponse.from(user);
     }
 
     @Override
     public UserResponse updateMe(String userId, UserUpdateRequest req) {
+        if (req == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // ✅ 이메일 변경
-        String newEmail = req.getUserEmail();
-        if (newEmail != null && !newEmail.isBlank()) {
-            String currentEmail = user.getUserEmail();
+        String newEmail = normalizeEmail(req.getUserEmail());
+        if (hasText(newEmail)) {
+            String currentEmail = normalizeEmail(user.getUserEmail());
             if (currentEmail == null || !newEmail.equals(currentEmail)) {
-
-                // 다른 계정이 이미 쓰는 이메일인지 체크
                 if (userRepository.existsByUserEmail(newEmail)) {
                     throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
                 }
-
-                user.changeEmail(newEmail); // ✅ 엔티티 메서드 필요(아래 참고)
+                user.changeEmail(newEmail);
             }
         }
-        
-        String newTel = req.getUserTel();
-        if (newTel != null && !newTel.isBlank()) {
-            String currentTel = user.getUserTel();
+
+        String newTel = normalizeTel(req.getUserTel());
+        if (hasText(newTel)) {
+            String currentTel = normalizeTel(user.getUserTel());
             if (currentTel == null || !newTel.equals(currentTel)) {
                 if (userRepository.existsByUserTel(newTel)) {
                     throw new BusinessException(ErrorCode.DUPLICATE_TEL);
@@ -60,10 +58,16 @@ public class UserServiceImpl implements UserService {
                 user.changeTel(newTel);
             }
         }
-        
-        // ✅ 비밀번호 변경
+
         String newPwd = req.getUserPwd();
-        if (newPwd != null && !newPwd.isBlank()) {
+        if (hasText(newPwd)) {
+            String currentPwd = req.getCurrentUserPwd();
+            if (!hasText(currentPwd)) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST);
+            }
+            if (!passwordEncoder.matches(currentPwd, user.getUserPwd())) {
+                throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+            }
             user.changePwd(passwordEncoder.encode(newPwd));
         }
 
@@ -74,40 +78,56 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserResponse getByIdForAdmin(String userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         return UserResponse.from(user);
     }
-    
-    // ✅ 관리자 - 상태 변경
+
     @Override
     public UserResponse updateStatus(String userId, AdminUserStatusUpdateRequest req) {
+        if (req == null || req.getUserSt() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        user.changeStatus(req.getUserSt());  // ← 엔티티 메서드명에 맞춰서 조정
-
+        user.changeStatus(req.getUserSt());
         return UserResponse.from(user);
     }
 
-    // ✅ 관리자 - 권한 변경
     @Override
     public UserResponse updateRole(String userId, AdminUserRoleUpdateRequest req) {
+        if (req == null || req.getUserRole() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        user.changeRole(req.getUserRole()); // ← 엔티티 메서드명에 맞춰서 조정
-
+        user.changeRole(req.getUserRole());
         return UserResponse.from(user);
     }
-    
 
     @Override
     public void deleteMe(String userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         user.changeDeleteYN("Y");
     }
-    
-    
-    
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private static String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        return email.trim().toLowerCase();
+    }
+
+    private static String normalizeTel(String tel) {
+        if (tel == null) {
+            return null;
+        }
+        return tel.trim();
+    }
 }

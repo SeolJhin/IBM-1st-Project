@@ -3,38 +3,26 @@ package org.myweb.uniplace.domain.payment.application;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.myweb.uniplace.domain.billing.domain.entity.MonthlyCharge;
-import org.myweb.uniplace.domain.billing.repository.MonthlyChargeRepository;
-import org.myweb.uniplace.domain.commerce.domain.entity.Order;
-import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
-import org.myweb.uniplace.domain.commerce.repository.OrderRepository;
 import org.myweb.uniplace.domain.payment.domain.entity.Payment;
-import org.myweb.uniplace.domain.payment.domain.entity.PaymentAttempt;
 import org.myweb.uniplace.domain.payment.domain.entity.PaymentIntent;
+import org.myweb.uniplace.domain.payment.domain.entity.PaymentIntentStatus;
 import org.myweb.uniplace.domain.payment.repository.PaymentIntentRepository;
 import org.myweb.uniplace.domain.payment.repository.PaymentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class PaymentWebhookServiceImpl implements PaymentWebhookService {
 
-    private static final String ST_PAID = "paid";
-    private static final String ST_CANCELLED = "cancelled";
-
-    private static final String TARGET_TYPE_ORDER = "order";
-    private static final String TARGET_TYPE_MONTHLY_CHARGE = "monthly_charge";
+    private static final Logger log = LoggerFactory.getLogger(PaymentWebhookServiceImpl.class);
 
     private final PaymentRepository paymentRepository;
     private final PaymentIntentRepository paymentIntentRepository;
-    private final PaymentAttemptService paymentAttemptService;
-    private final OrderRepository orderRepository;
-    private final MonthlyChargeRepository monthlyChargeRepository;
+    private final PaymentReconcileService paymentReconcileService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -45,22 +33,9 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
         }
 
         JsonNode data = root.path("data").isMissingNode() ? root : root.path("data");
-        String status = normalizeStatus(firstText(
-            data,
-            "status",
-            "payment_status",
-            "eventType",
-            "event_type"
-        ));
         String merchantUid = firstText(data, "partner_order_id", "orderId", "merchant_uid");
         String providerRefId = firstText(data, "tid", "transaction_id", "providerRefId");
-
-        Payment payment = findPayment("KAKAO", merchantUid, providerRefId);
-        if (payment == null) {
-            return;
-        }
-
-        applyStatus(payment, status, providerRefId, root.toString());
+        ingestWebhook("KAKAO", payload, merchantUid, providerRefId);
     }
 
     @Override
@@ -71,17 +46,61 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
         }
 
         JsonNode data = root.path("data").isMissingNode() ? root : root.path("data");
-        String status = normalizeStatus(firstText(data, "status"));
         String merchantUid = firstText(data, "orderId", "order_id", "merchantUid");
-        String providerPaymentId = firstText(data, "paymentKey", "payment_key", "paymentId");
         String providerRefId = firstText(data, "checkoutPaymentId", "checkout_payment_id", "providerRefId");
+        ingestWebhook("TOSS", payload, merchantUid, providerRefId);
+    }
 
-        Payment payment = findPayment("TOSS", merchantUid, providerRefId);
+    private void ingestWebhook(String provider, String payload, String merchantUid, String providerRefId) {
+        Payment payment = findPayment(provider, merchantUid, providerRefId);
         if (payment == null) {
             return;
         }
 
-        applyStatus(payment, status, providerPaymentId, root.toString());
+        PaymentIntent intent = resolveIntent(payment.getPaymentId(), providerRefId);
+        if (intent.getPaymentIntentId() == null) {
+            intent.recordReturnedParams(payload);
+            paymentIntentRepository.save(intent);
+            return;
+        }
+
+        if (canTransitionToReturned(intent.getIntentSt())) {
+            intent.markReturned(payload);
+        } else {
+            intent.recordReturnedParams(payload);
+        }
+        paymentIntentRepository.save(intent);
+        try {
+            paymentReconcileService.triggerFromWebhook(payment.getPaymentId());
+        } catch (Exception e) {
+            log.warn("[ALERT][WEBHOOK][RECONCILE] deferred reconcile failed paymentId={} reason={}",
+                payment.getPaymentId(), trimMessage(e.getMessage()));
+        }
+    }
+
+    private PaymentIntent resolveIntent(Integer paymentId, String providerRefId) {
+        if (hasText(providerRefId)) {
+            PaymentIntent existing = paymentIntentRepository
+                .findByPaymentIdAndProviderRefId(paymentId, providerRefId)
+                .orElse(null);
+            if (existing != null) {
+                return existing;
+            }
+        }
+
+        PaymentIntent latest = paymentIntentRepository
+            .findTopByPaymentIdOrderByPaymentIntentIdDesc(paymentId)
+            .orElse(null);
+        if (latest != null && !hasText(providerRefId)) {
+            return latest;
+        }
+
+        return PaymentIntent.builder()
+            .paymentId(paymentId)
+            .intentSt(PaymentIntentStatus.RETURNED)
+            .providerRefId(blankToNull(providerRefId))
+            .returnedParamsJson(null)
+            .build();
     }
 
     private Payment findPayment(String provider, String merchantUid, String providerRefId) {
@@ -109,118 +128,6 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
         return payment;
     }
 
-    private void applyStatus(Payment payment, String status, String providerPaymentId, String rawPayload) {
-        if (isPaidStatus(status)) {
-            if (ST_PAID.equalsIgnoreCase(payment.getPaymentSt())) {
-                return;
-            }
-            if (hasText(providerPaymentId)) {
-                payment.updateProviderPaymentId(providerPaymentId);
-            }
-            payment.markPaid(LocalDateTime.now(), payment.getTotalPrice());
-            paymentRepository.save(payment);
-            markIntentApproveOk(payment.getPaymentId(), rawPayload);
-            syncTargetPaid(payment);
-            paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.approved);
-            return;
-        }
-
-        if (isCanceledStatus(status)) {
-            boolean wasPaid = ST_PAID.equalsIgnoreCase(payment.getPaymentSt());
-            if (ST_CANCELLED.equalsIgnoreCase(payment.getPaymentSt())) {
-                return;
-            }
-
-            payment.markCanceled();
-            paymentRepository.save(payment);
-            markIntentCanceled(payment.getPaymentId());
-
-            if (wasPaid) {
-                syncTargetCanceled(payment);
-            } else {
-                paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
-            }
-            return;
-        }
-
-        if (isFailedStatus(status)) {
-            if (ST_PAID.equalsIgnoreCase(payment.getPaymentSt())) {
-                return;
-            }
-            payment.markCanceled();
-            paymentRepository.save(payment);
-            markIntentApproveFail(payment.getPaymentId(), status, "webhook failed status", rawPayload);
-            paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
-        }
-    }
-
-    private void markIntentApproveOk(Integer paymentId, String rawPayload) {
-        paymentIntentRepository.findTopByPaymentIdOrderByPaymentIntentIdDesc(paymentId)
-            .ifPresent(intent -> intent.markApproveOk(rawPayload));
-    }
-
-    private void markIntentCanceled(Integer paymentId) {
-        paymentIntentRepository.findTopByPaymentIdOrderByPaymentIntentIdDesc(paymentId)
-            .ifPresent(PaymentIntent::markCanceled);
-    }
-
-    private void markIntentApproveFail(Integer paymentId, String failCode, String failMessage, String rawPayload) {
-        paymentIntentRepository.findTopByPaymentIdOrderByPaymentIntentIdDesc(paymentId)
-            .ifPresent(intent -> intent.markApproveFail(failCode, trimMessage(failMessage), rawPayload));
-    }
-
-    private void syncTargetPaid(Payment payment) {
-        if (payment.getTargetId() == null || !hasText(payment.getTargetType())) {
-            return;
-        }
-
-        if (TARGET_TYPE_ORDER.equals(payment.getTargetType())) {
-            Order order = orderRepository.findById(payment.getTargetId()).orElse(null);
-            if (order == null || order.getOrderSt() != OrderStatus.ordered) {
-                return;
-            }
-            if (order.getPaymentId() != null && !Objects.equals(order.getPaymentId(), payment.getPaymentId())) {
-                return;
-            }
-            order.completePayment(payment.getPaymentId());
-            return;
-        }
-
-        if (TARGET_TYPE_MONTHLY_CHARGE.equals(payment.getTargetType())) {
-            MonthlyCharge charge = monthlyChargeRepository.findById(payment.getTargetId()).orElse(null);
-            if (charge == null || !MonthlyCharge.ST_UNPAID.equalsIgnoreCase(charge.getChargeSt())) {
-                return;
-            }
-            if (charge.getPaymentId() != null && !Objects.equals(charge.getPaymentId(), payment.getPaymentId())) {
-                return;
-            }
-            charge.markPaid(payment.getPaymentId());
-        }
-    }
-
-    private void syncTargetCanceled(Payment payment) {
-        if (payment.getTargetId() == null || !hasText(payment.getTargetType())) {
-            return;
-        }
-
-        if (TARGET_TYPE_ORDER.equals(payment.getTargetType())) {
-            Order order = orderRepository.findById(payment.getTargetId()).orElse(null);
-            if (order == null) {
-                return;
-            }
-            order.markRefunded(payment.getPaymentId());
-            return;
-        }
-
-        if (TARGET_TYPE_MONTHLY_CHARGE.equals(payment.getTargetType())) {
-            MonthlyCharge charge = monthlyChargeRepository.findById(payment.getTargetId()).orElse(null);
-            if (charge == null) {
-                return;
-            }
-            charge.markUnpaid();
-        }
-    }
-
     private JsonNode readJson(String payload) {
         if (!hasText(payload)) {
             return null;
@@ -245,46 +152,27 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
         return null;
     }
 
-    private static String normalizeStatus(String status) {
-        return hasText(status) ? status.trim().toUpperCase() : "";
-    }
-
-    private static boolean isPaidStatus(String status) {
-        return "DONE".equals(status)
-            || "PAID".equals(status)
-            || "SUCCESS".equals(status)
-            || "APPROVED".equals(status)
-            || "COMPLETED".equals(status)
-            || "SUCCESS_PAYMENT".equals(status);
-    }
-
-    private static boolean isCanceledStatus(String status) {
-        return "CANCELED".equals(status)
-            || "CANCELLED".equals(status)
-            || "PARTIAL_CANCELED".equals(status)
-            || "PART_CANCEL_PAYMENT".equals(status)
-            || "CANCEL_PAYMENT".equals(status)
-            || "CANCEL".equals(status);
-    }
-
-    private static boolean isFailedStatus(String status) {
-        return "FAILED".equals(status)
-            || "ABORTED".equals(status)
-            || "EXPIRED".equals(status)
-            || "FAIL".equals(status)
-            || "DENIED".equals(status)
-            || "APPROVE_FAIL".equals(status)
-            || "READY_FAIL".equals(status);
-    }
-
-    private static String trimMessage(String message) {
-        if (!hasText(message)) {
-            return "payment webhook failed";
+    private static boolean canTransitionToReturned(PaymentIntentStatus status) {
+        if (status == null) {
+            return true;
         }
-        return message.length() > 255 ? message.substring(0, 255) : message;
+        return status != PaymentIntentStatus.APPROVE_OK
+            && status != PaymentIntentStatus.APPROVE_FAIL
+            && status != PaymentIntentStatus.CANCELED;
+    }
+
+    private static String blankToNull(String value) {
+        return hasText(value) ? value : null;
     }
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private static String trimMessage(String message) {
+        if (!hasText(message)) {
+            return "unknown";
+        }
+        return message.length() > 255 ? message.substring(0, 255) : message;
     }
 }

@@ -14,6 +14,8 @@ import org.myweb.uniplace.domain.community.repository.ReplyRepository;
 import org.myweb.uniplace.domain.notification.application.NotificationService;
 import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.security.AuthUser;
 
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -150,7 +152,7 @@ public class ReplyServiceImpl implements ReplyService {
                 .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. replyId=" + replyId));
 
         String me = requireCurrentUserId();
-        if (!me.equals(reply.getUserId())) throw new IllegalStateException("작성자만 수정할 수 있습니다.");
+        if (!me.equals(reply.getUserId())) throw new BusinessException(ErrorCode.FORBIDDEN);
 
         if (request.getReplyCtnt() != null) reply.setReplyCtnt(request.getReplyCtnt());
     }
@@ -161,7 +163,7 @@ public class ReplyServiceImpl implements ReplyService {
                 .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. replyId=" + replyId));
 
         String me = requireCurrentUserId();
-        if (!me.equals(reply.getUserId())) throw new IllegalStateException("작성자만 삭제할 수 있습니다.");
+        if (!me.equals(reply.getUserId())) throw new BusinessException(ErrorCode.FORBIDDEN);
 
         Integer boardId = reply.getBoardId();
         replyRepository.deleteById(replyId);
@@ -198,10 +200,10 @@ public class ReplyServiceImpl implements ReplyService {
 
     private String requireCurrentUserId() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) throw new IllegalStateException("로그인이 필요합니다.");
+        if (auth == null) throw new BusinessException(ErrorCode.UNAUTHORIZED);
 
         Object p = auth.getPrincipal();
         if (p instanceof AuthUser au) return au.getUserId();
-        throw new IllegalStateException("로그인이 필요합니다.");
+        throw new BusinessException(ErrorCode.UNAUTHORIZED);
     }
 }

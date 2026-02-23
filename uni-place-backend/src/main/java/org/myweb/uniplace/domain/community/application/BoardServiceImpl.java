@@ -13,6 +13,8 @@ import org.myweb.uniplace.domain.community.repository.ReplyRepository;
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.file.application.FileService;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
 
@@ -153,7 +155,7 @@ public class BoardServiceImpl implements BoardService {
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
 
         String me = requireCurrentUserId();
-        if (!me.equals(board.getUserId())) throw new IllegalStateException("작성자만 수정할 수 있습니다.");
+        if (!me.equals(board.getUserId())) throw new BusinessException(ErrorCode.FORBIDDEN);
 
         if (request.getBoardTitle() != null) board.setBoardTitle(request.getBoardTitle());
         if (request.getBoardCtnt() != null) board.setBoardCtnt(request.getBoardCtnt());
@@ -197,7 +199,7 @@ public class BoardServiceImpl implements BoardService {
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
 
         String me = requireCurrentUserId();
-        if (!me.equals(board.getUserId())) throw new IllegalStateException("작성자만 삭제할 수 있습니다.");
+        if (!me.equals(board.getUserId())) throw new BusinessException(ErrorCode.FORBIDDEN);
 
         boardRepository.deleteById(boardId);
     }
@@ -224,11 +226,11 @@ public class BoardServiceImpl implements BoardService {
 
     private String requireCurrentUserId() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) throw new IllegalStateException("로그인이 필요합니다.");
+        if (auth == null) throw new BusinessException(ErrorCode.UNAUTHORIZED);
 
         Object p = auth.getPrincipal();
         if (p instanceof AuthUser au) return au.getUserId();
-        throw new IllegalStateException("로그인이 필요합니다.");
+        throw new BusinessException(ErrorCode.UNAUTHORIZED);
     }
 
     private String nvlYn(String v, String def) {

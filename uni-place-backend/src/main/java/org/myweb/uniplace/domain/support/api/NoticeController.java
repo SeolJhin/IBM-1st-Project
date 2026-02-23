@@ -7,6 +7,8 @@ import org.myweb.uniplace.domain.support.api.dto.request.NoticeSearchRequest;
 import org.myweb.uniplace.domain.support.api.dto.request.NoticeUpdateRequest;
 import org.myweb.uniplace.domain.support.api.dto.response.NoticeResponse;
 import org.myweb.uniplace.domain.support.application.NoticeService;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
@@ -45,7 +47,7 @@ public class NoticeController {
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody NoticeCreateRequest request
     ) {
-        return ApiResponse.ok(noticeService.create(authUser.getUserId(), request));
+        return ApiResponse.ok(noticeService.create(requireUserId(authUser), request));
     }
 
     /** 공지 수정 (관리자) */
@@ -65,5 +67,11 @@ public class NoticeController {
         noticeService.delete(noticeId);
         return ApiResponse.ok();
     }
-}
 
+    private String requireUserId(AuthUser authUser) {
+        if (authUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return authUser.getUserId();
+    }
+}
