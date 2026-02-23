@@ -5,5 +5,5 @@ import org.myweb.uniplace.domain.payment.api.dto.response.PaymentRefundResponse;
 
 public interface RefundService {
 
-    PaymentRefundResponse refund(PaymentRefundRequest request);
+    PaymentRefundResponse refund(String userId, PaymentRefundRequest request);
 }

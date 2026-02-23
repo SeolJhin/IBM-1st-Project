@@ -1,4 +1,4 @@
-﻿package org.myweb.uniplace.domain.payment.application.gateway.kakao;
+package org.myweb.uniplace.domain.payment.application.gateway.kakao;
 
 import java.math.BigDecimal;
 

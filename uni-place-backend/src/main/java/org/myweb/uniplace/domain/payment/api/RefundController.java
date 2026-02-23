@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import org.myweb.uniplace.domain.payment.application.RefundService;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentRefundRequest;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentRefundResponse;
+import org.myweb.uniplace.global.security.AuthUser;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -15,7 +17,10 @@ public class RefundController {
     private final RefundService refundService;
 
     @PostMapping("/refund")
-    public PaymentRefundResponse refund(@RequestBody PaymentRefundRequest request) {
-        return refundService.refund(request);
+    public PaymentRefundResponse refund(
+        @AuthenticationPrincipal AuthUser authUser,
+        @RequestBody PaymentRefundRequest request
+    ) {
+        return refundService.refund(authUser.getUserId(), request);
     }
 }

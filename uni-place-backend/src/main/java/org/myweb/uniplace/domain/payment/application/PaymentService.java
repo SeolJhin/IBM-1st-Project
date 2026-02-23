@@ -9,7 +9,9 @@ public interface PaymentService {
 
     PaymentPrepareResponse prepare(String userId, PaymentPrepareRequest request);
 
-    PaymentResponse approve(PaymentApproveRequest request);
+    PaymentResponse approve(String userId, PaymentApproveRequest request);
 
-    PaymentResponse retry(Integer paymentId);
+    PaymentResponse approveFromCallback(PaymentApproveRequest request);
+
+    PaymentResponse retry(String userId, Integer paymentId);
 }

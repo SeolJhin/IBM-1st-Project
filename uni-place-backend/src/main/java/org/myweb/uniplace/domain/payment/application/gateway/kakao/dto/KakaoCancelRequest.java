@@ -1,4 +1,4 @@
-﻿package org.myweb.uniplace.domain.payment.application.gateway.kakao.dto;
+package org.myweb.uniplace.domain.payment.application.gateway.kakao.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
