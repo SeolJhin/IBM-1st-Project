@@ -38,7 +38,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final IdGenerator idGenerator;
-    // ✅ 소셜 가입완료 로직은 여기로 위임 (가장 쉬운 방식)
+
+    // ✅ 소셜 가입완료 로직은 여기로 위임
     private final OAuthCompleteService oAuthCompleteService;
 
     @Value("${jwt.refresh-exp:86400000}")
@@ -50,7 +51,6 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByUserEmail(req.getUserEmail())) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
-        
         if (userRepository.existsByUserTel(req.getUserTel())) {
             throw new BusinessException(ErrorCode.DUPLICATE_TEL);
         }
@@ -66,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
                 .userRole(UserRole.user)
                 .userSt(UserStatus.active)
                 .deleteYN("N")
+                // firstSign은 "가입 직후 NULL 유지"가 목적이므로 여기서 세팅하지 않음
                 .build();
 
         userRepository.save(user);
@@ -80,19 +81,26 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(req.getUserPwd(), user.getUserPwd())) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        
-        // ✅ 1) 로그인 가능 여부 체크 (탈퇴/비활성 차단)
+
+        // ✅ 1) 로그인 가능 여부 체크
         if (!user.canLogin()) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
-            // 나중에 에러코드 분리하고 싶으면 USER_CANNOT_LOGIN 같은 걸로 바꾸면 됨
         }
 
         // ✅ 2) 마지막 로그인 시간 갱신
         user.markLoginNow();
 
+        // ✅ 3) deviceId 필수
         String deviceId = req.getDeviceId();
         if (deviceId == null || deviceId.isBlank()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        // ✅ 4) first_sign 처리:
+        // - 가입 직후 NULL이면, "첫 로그인 발생"으로 보고 Y로 마킹
+        // - 프론트는 additionalInfoRequired=true면 추가정보 입력 화면으로 보내면 됨
+        if (user.getFirstSign() == null) {
+            user.markFirstLoginFlagIfNeeded(); // null -> Y
         }
 
         String accessToken = jwtProvider.createAccessToken(user.getUserId(), user.getUserRole().name());
@@ -117,10 +125,14 @@ public class AuthServiceImpl implements AuthService {
 
         refreshTokenRepository.save(rt);
 
+        // ✅ first_sign이 null/Y면 추가정보 필요로 응답
+        boolean additionalInfoRequired = user.isAdditionalInfoRequired();
+
         return UserTokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .deviceId(deviceId)
+                .additionalInfoRequired(additionalInfoRequired)
                 .build();
     }
 
@@ -143,12 +155,10 @@ public class AuthServiceImpl implements AuthService {
 
         RefreshToken saved = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
-        
-        // 토큰 subject(userId) 와 saved.user.userId가 같다는 검증
+
         if (!saved.getUser().getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
-
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -161,18 +171,17 @@ public class AuthServiceImpl implements AuthService {
                 && !req.getDeviceId().equals(saved.getDeviceId())) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
-        
-        // ✅ 탈퇴/비활성 계정 refresh 차단 (꼭 필요한 정책)
+
+        // ✅ 탈퇴/비활성 계정 refresh 차단
         User user = saved.getUser();
         if (user == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         if (!user.canLogin()) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
-            // 나중에 필요하면 USER_CANNOT_LOGIN 같은 에러코드로 분리 가능
         }
 
-        // revoked 토큰이 다시 사용됨 => 재사용 탐지 -> 전체 로그아웃
+        // revoked 토큰 재사용 탐지 -> 전체 로그아웃
         if (saved.isRevoked()) {
             refreshTokenRepository.revokeAllActiveByUserId(userId, now);
             throw new BusinessException(ErrorCode.TOKEN_REUSE_DETECTED);
@@ -186,7 +195,6 @@ public class AuthServiceImpl implements AuthService {
         String newHash = sha256Hex(newRefreshToken);
 
         String deviceId = saved.getDeviceId();
-
         LocalDateTime expiresAt = now.plusSeconds(refreshExpMillis / 1000);
 
         RefreshToken newRt = RefreshToken.builder()
@@ -194,7 +202,7 @@ public class AuthServiceImpl implements AuthService {
                 .user(user)
                 .tokenHash(newHash)
                 .deviceId(deviceId)
-                .userAgent(userAgent) // 최신 userAgent/ip로 갱신 저장
+                .userAgent(userAgent)
                 .ip(ip)
                 .expiresAt(expiresAt)
                 .revoked(false)
@@ -205,12 +213,16 @@ public class AuthServiceImpl implements AuthService {
 
         String newAccessToken = jwtProvider.createAccessToken(userId, user.getUserRole().name());
 
+        // ✅ refresh 응답에도 additionalInfoRequired 내려주면 프론트가 상태 유지하기 쉬움
+        boolean additionalInfoRequired = user.isAdditionalInfoRequired();
+
         return UserTokenResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .deviceId(deviceId)
+                .additionalInfoRequired(additionalInfoRequired)
                 .build();
-    }    
+    }
 
     @Override
     @Transactional
@@ -243,8 +255,8 @@ public class AuthServiceImpl implements AuthService {
     public void logoutAll(String userId) {
         refreshTokenRepository.revokeAllActiveByUserId(userId, LocalDateTime.now());
     }
-    
-    // ✅ 가장 쉬운 방식: AuthServiceImpl은 "소셜 가입완료"를 서비스로 위임만 한다
+
+    // ✅ 위임
     @Override
     @Transactional
     public UserTokenResponse kakaoComplete(KakaoSignupCompleteRequest req, String userAgent, String ip) {
