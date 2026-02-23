@@ -1,4 +1,4 @@
-﻿package org.myweb.uniplace.domain.payment.application.gateway.toss;
+package org.myweb.uniplace.domain.payment.application.gateway.toss;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;

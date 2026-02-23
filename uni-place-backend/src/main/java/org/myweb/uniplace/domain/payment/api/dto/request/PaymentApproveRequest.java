@@ -1,4 +1,4 @@
-﻿package org.myweb.uniplace.domain.payment.api.dto.request;
+package org.myweb.uniplace.domain.payment.api.dto.request;
 
 import java.math.BigDecimal;
 import lombok.Getter;

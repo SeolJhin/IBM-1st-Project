@@ -1,5 +1,7 @@
 package org.myweb.uniplace.domain.payment.application;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.billing.domain.entity.MonthlyCharge;
 import org.myweb.uniplace.domain.billing.repository.MonthlyChargeRepository;
@@ -26,6 +28,7 @@ import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.util.IdGenerator;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +42,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static final String ST_READY = "ready";
     private static final String ST_PAID = "paid";
+    private static final String ST_CANCELLED = "cancelled";
 
     private static final String TARGET_TYPE_ORDER = "order";
     private static final String TARGET_TYPE_MONTHLY_CHARGE = "monthly_charge";
@@ -49,6 +53,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentAttemptService paymentAttemptService;
     private final OrderRepository orderRepository;
     private final MonthlyChargeRepository monthlyChargeRepository;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.baseUrl:http://localhost:8080}")
     private String appBaseUrl;
@@ -57,6 +62,16 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentPrepareResponse prepare(String userId, PaymentPrepareRequest request) {
         validatePrepareRequest(request);
         PreparedTarget target = resolveTarget(userId, request);
+        String idempotencyKey = blankToNull(request.getIdempotencyKey());
+
+        if (idempotencyKey != null) {
+            Payment existing = paymentRepository
+                .findTopByUserIdAndIdempotencyKeyOrderByPaymentIdDesc(userId, idempotencyKey)
+                .orElse(null);
+            if (existing != null) {
+                return buildPrepareResponse(existing);
+            }
+        }
 
         Payment payment = Payment.builder()
             .userId(userId)
@@ -67,13 +82,25 @@ public class PaymentServiceImpl implements PaymentService {
             .paymentMethodId(request.getPaymentMethodId())
             .provider(request.getProvider())
             .merchantUid(IdGenerator.generate("PAY"))
-            .idempotencyKey(blankToNull(request.getIdempotencyKey()))
+            .idempotencyKey(idempotencyKey)
             .targetId(target.targetId())
             .targetType(target.targetType())
             .paymentSt(ST_READY)
             .build();
 
-        paymentRepository.save(payment);
+        try {
+            paymentRepository.save(payment);
+        } catch (DataIntegrityViolationException e) {
+            if (idempotencyKey != null) {
+                Payment existing = paymentRepository
+                    .findTopByUserIdAndIdempotencyKeyOrderByPaymentIdDesc(userId, idempotencyKey)
+                    .orElse(null);
+                if (existing != null) {
+                    return buildPrepareResponse(existing);
+                }
+            }
+            throw e;
+        }
 
         String providerSlug = payment.getProvider() == null ? "kakao" : payment.getProvider().toLowerCase();
         String approvalUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/approval?pid=" + payment.getPaymentId();
@@ -101,7 +128,11 @@ public class PaymentServiceImpl implements PaymentService {
             .paymentId(payment.getPaymentId())
             .intentSt(PaymentIntentStatus.READY_OK)
             .providerRefId(gwRes.getProviderRefId())
-            .appSchemeUrl(gwRes.getRedirectAppUrl())
+            .appSchemeUrl(firstNonBlank(
+                gwRes.getRedirectAppUrl(),
+                gwRes.getRedirectMobileUrl(),
+                gwRes.getRedirectPcUrl()
+            ))
             .returnUrl(approvalUrl)
             .pgReadyJson(gwRes.getPgReadyJson())
             .build();
@@ -120,13 +151,40 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public PaymentResponse approve(PaymentApproveRequest request) {
+    public PaymentResponse approve(String userId, PaymentApproveRequest request) {
+        return approveInternal(userId, request);
+    }
+
+    @Override
+    public PaymentResponse approveFromCallback(PaymentApproveRequest request) {
+        return approveInternal(null, request);
+    }
+
+    private PaymentResponse approveInternal(String requesterUserId, PaymentApproveRequest request) {
+        if (request == null || request.getPaymentId() == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
         Payment payment = paymentRepository.findById(request.getPaymentId())
-            .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+            .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        assertOwnership(requesterUserId, payment);
+
+        if (ST_PAID.equalsIgnoreCase(payment.getPaymentSt())) {
+            return PaymentResponse.builder()
+                .paymentId(payment.getPaymentId())
+                .paymentSt(ST_PAID)
+                .paidAt(payment.getPaidAt())
+                .build();
+        }
+
+        if (ST_CANCELLED.equalsIgnoreCase(payment.getPaymentSt())) {
+            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_CANCELED);
+        }
 
         PaymentIntent intent = paymentIntentRepository
             .findTopByPaymentIdOrderByPaymentIntentIdDesc(payment.getPaymentId())
-            .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+            .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET));
 
         paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.requested);
 
@@ -174,9 +232,19 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public PaymentResponse retry(Integer paymentId) {
+    public PaymentResponse retry(String userId, Integer paymentId) {
+        if (paymentId == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
         Payment payment = paymentRepository.findById(paymentId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+            .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        assertOwnership(userId, payment);
+
+        if (ST_PAID.equalsIgnoreCase(payment.getPaymentSt())) {
+            throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PAID);
+        }
 
         payment.markReady();
         paymentRepository.save(payment);
@@ -209,7 +277,7 @@ public class PaymentServiceImpl implements PaymentService {
             }
 
             if (order.getOrderSt() != OrderStatus.ordered) {
-                throw new BusinessException(ErrorCode.BAD_REQUEST);
+                throw new BusinessException(ErrorCode.PAYMENT_ALREADY_PAID);
             }
 
             return new PreparedTarget(
@@ -224,7 +292,7 @@ public class PaymentServiceImpl implements PaymentService {
             .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
 
         if (!MonthlyCharge.ST_UNPAID.equalsIgnoreCase(charge.getChargeSt())) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
         }
 
         return new PreparedTarget(
@@ -265,6 +333,100 @@ public class PaymentServiceImpl implements PaymentService {
         return hasText(value) ? value : null;
     }
 
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (hasText(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private PaymentPrepareResponse buildPrepareResponse(Payment payment) {
+        PaymentIntent intent = paymentIntentRepository
+            .findTopByPaymentIdOrderByPaymentIntentIdDesc(payment.getPaymentId())
+            .orElse(null);
+
+        RedirectUrls redirectUrls = parseRedirectUrls(intent);
+
+        return PaymentPrepareResponse.builder()
+            .paymentId(payment.getPaymentId())
+            .merchantUid(payment.getMerchantUid())
+            .paymentSt(payment.getPaymentSt())
+            .providerRefId(intent != null ? intent.getProviderRefId() : null)
+            .redirectPcUrl(redirectUrls.redirectPcUrl())
+            .redirectMobileUrl(redirectUrls.redirectMobileUrl())
+            .redirectAppUrl(redirectUrls.redirectAppUrl())
+            .build();
+    }
+
+    private void assertOwnership(String requesterUserId, Payment payment) {
+        if (!hasText(requesterUserId)) {
+            return;
+        }
+        if (!requesterUserId.equals(payment.getUserId())) {
+            throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+    }
+
+    private RedirectUrls parseRedirectUrls(PaymentIntent intent) {
+        if (intent == null) {
+            return new RedirectUrls(null, null, null);
+        }
+
+        String fallbackApp = intent.getAppSchemeUrl();
+        String redirectPcUrl = null;
+        String redirectMobileUrl = null;
+        String redirectAppUrl = fallbackApp;
+
+        if (hasText(intent.getPgReadyJson())) {
+            try {
+                JsonNode json = objectMapper.readTree(intent.getPgReadyJson());
+                redirectPcUrl = firstText(json,
+                    "redirectPcUrl",
+                    "next_redirect_pc_url",
+                    "nextRedirectPcUrl",
+                    "paymentPageUrl");
+                redirectMobileUrl = firstText(json,
+                    "redirectMobileUrl",
+                    "next_redirect_mobile_url",
+                    "nextRedirectMobileUrl",
+                    "mobileAppUrl");
+                String parsedApp = firstText(json,
+                    "redirectAppUrl",
+                    "next_redirect_app_url",
+                    "nextRedirectAppUrl",
+                    "appSchemeUrl",
+                    "android_app_scheme",
+                    "ios_app_scheme");
+                if (hasText(parsedApp)) {
+                    redirectAppUrl = parsedApp;
+                }
+            } catch (Exception ignored) {
+                // fallback to app_scheme_url only
+            }
+        }
+
+        if (!hasText(redirectPcUrl) && hasText(redirectAppUrl)) {
+            redirectPcUrl = redirectAppUrl;
+        }
+        if (!hasText(redirectMobileUrl) && hasText(redirectAppUrl)) {
+            redirectMobileUrl = redirectAppUrl;
+        }
+
+        return new RedirectUrls(redirectPcUrl, redirectMobileUrl, redirectAppUrl);
+    }
+
+    private static String firstText(JsonNode node, String... candidates) {
+        for (String candidate : candidates) {
+            JsonNode value = node.get(candidate);
+            if (value != null && value.isTextual() && hasText(value.asText())) {
+                return value.asText();
+            }
+        }
+        return null;
+    }
+
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
     }
@@ -274,6 +436,13 @@ public class PaymentServiceImpl implements PaymentService {
         Integer targetId,
         BigDecimal totalPrice,
         String itemName
+    ) {
+    }
+
+    private record RedirectUrls(
+        String redirectPcUrl,
+        String redirectMobileUrl,
+        String redirectAppUrl
     ) {
     }
 }

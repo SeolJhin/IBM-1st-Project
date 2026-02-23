@@ -1,4 +1,4 @@
-﻿package org.myweb.uniplace.domain.payment.domain.entity;
+package org.myweb.uniplace.domain.payment.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,13 +10,14 @@ import java.time.LocalDateTime;
 @Table(
     name = "payment",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uq_payment_merchant_uid", columnNames = "merchant_uid")
+        @UniqueConstraint(name = "uq_payment_merchant_uid", columnNames = "merchant_uid"),
+        @UniqueConstraint(name = "uq_payment_user_idempotency", columnNames = {"user_id", "idempotency_key"})
     },
     indexes = {
         @Index(name = "ix_payment_user", columnList = "user_id"),
         @Index(name = "ix_payment_provider", columnList = "provider, provider_payment_id"),
         @Index(name = "ix_payment_idempotency", columnList = "idempotency_key"),
-        @Index(name = "ix_payment_target", columnList = "target_id")
+        @Index(name = "ix_payment_target", columnList = "target_type, target_id")
     }
 )
 @Getter
@@ -66,10 +67,10 @@ public class Payment {
     @Column(name = "idempotency_key", length = 100)
     private String idempotencyKey;
 
-    @Column(name = "target_id")
+    @Column(name = "target_id", nullable = false)
     private Integer targetId;
 
-    @Column(name = "target_type", length = 20)
+    @Column(name = "target_type", nullable = false, length = 20)
     private String targetType;
 
     @Column(name = "tax_scope_price", precision = 12, scale = 0)
