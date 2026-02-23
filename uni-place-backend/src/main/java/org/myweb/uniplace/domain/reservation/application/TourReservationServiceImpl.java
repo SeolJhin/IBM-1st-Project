@@ -66,17 +66,17 @@ public class TourReservationServiceImpl implements TourReservationService {
         reservationValidator.validateTourFixedSlot(request.getTourStartAt(), request.getTourEndAt());
 
         Building building = buildingRepository.findById(request.getBuildingId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
 
         Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         if (room.getBuilding() == null || !building.getBuildingId().equals(room.getBuilding().getBuildingId())) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.TOUR_RESERVATION_BUILDING_ROOM_MISMATCH);
         }
 
         if (room.getRoomSt() != RoomStatus.available) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.TOUR_RESERVATION_ROOM_UNAVAILABLE);
         }
 
         reservationConflictPolicy.validateDuplicateTelTime(
@@ -153,14 +153,14 @@ public class TourReservationServiceImpl implements TourReservationService {
         );
 
         if (resv == null) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.TOUR_RESERVATION_ALREADY_CANCELLED);
         }
 
         if (resv.getTourSt() == TourStatus.cancelled) {
             return TourReservationResponse.fromEntity(resv);
         }
         if (resv.getTourSt() == TourStatus.ended) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.TOUR_RESERVATION_CANNOT_CANCEL);
         }
 
         resv.setTourSt(TourStatus.cancelled);
@@ -194,13 +194,13 @@ public class TourReservationServiceImpl implements TourReservationService {
         }
 
         Building building = buildingRepository.findById(buildingId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
 
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         if (room.getBuilding() == null || !building.getBuildingId().equals(room.getBuilding().getBuildingId())) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.TOUR_RESERVATION_BUILDING_ROOM_MISMATCH);
         }
 
         LocalDateTime dayStart = date.atStartOfDay();

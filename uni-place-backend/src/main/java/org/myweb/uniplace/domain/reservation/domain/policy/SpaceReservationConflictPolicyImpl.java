@@ -26,7 +26,7 @@ public class SpaceReservationConflictPolicyImpl implements SpaceReservationConfl
     public void validateSpaceConflict(Integer spaceId, LocalDateTime startAt, LocalDateTime endAt) {
         boolean exists = spaceReservationRepository.existsSpaceTimeConflict(spaceId, INACTIVE, startAt, endAt);
         if (exists) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST); // SPACE_RESERVATION_TIME_CONFLICT 등 분리 가능
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_TIME_CONFLICT); // SPACE_RESERVATION_TIME_CONFLICT 등 분리 가능
         }
     }
 }

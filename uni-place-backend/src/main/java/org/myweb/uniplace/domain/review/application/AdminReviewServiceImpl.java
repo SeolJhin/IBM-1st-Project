@@ -58,7 +58,7 @@ public class AdminReviewServiceImpl implements AdminReviewService {
     @Override
     public void deleteReviewAsAdmin(int reviewId) {
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
 
         String writerId = review.getUserId();
 

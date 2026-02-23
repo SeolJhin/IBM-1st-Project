@@ -122,12 +122,12 @@ public class ReviewServiceImpl implements ReviewService {
 
         // 방 존재 여부 확인
         if (!roomRepository.existsById(request.getRoomId())) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
         }
 
         // 중복 작성 체크 → 409
         if (reviewRepository.existsByUserIdAndRoomId(userId, request.getRoomId())) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.REVIEW_DUPLICATE);
         }
 
         Review review = Review.builder()
@@ -166,7 +166,7 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = findReviewOrThrow(reviewId);
 
         if (!me.equals(review.getUserId())) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.REVIEW_ACCESS_DENIED);
         }
 
         review.update(request.getRating(), request.getReviewTitle(), request.getReviewCtnt(), request.getCode());
@@ -193,7 +193,7 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = findReviewOrThrow(reviewId);
 
         if (!me.equals(review.getUserId())) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+            throw new BusinessException(ErrorCode.REVIEW_ACCESS_DENIED);
         }
 
         softDeleteAllFiles(reviewId);
@@ -245,7 +245,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     private Review findReviewOrThrow(int reviewId) {
         return reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+                .orElseThrow(() -> new BusinessException(ErrorCode.REVIEW_NOT_FOUND));
     }
 
     private String requireCurrentUserId() {
