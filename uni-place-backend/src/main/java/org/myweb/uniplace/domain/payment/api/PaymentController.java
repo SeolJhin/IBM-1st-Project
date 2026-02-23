@@ -28,12 +28,18 @@ public class PaymentController {
     }
 
     @PostMapping("/approve")
-    public PaymentResponse approve(@RequestBody PaymentApproveRequest request) {
-        return paymentService.approve(request);
+    public PaymentResponse approve(
+        @AuthenticationPrincipal AuthUser authUser,
+        @RequestBody PaymentApproveRequest request
+    ) {
+        return paymentService.approve(authUser.getUserId(), request);
     }
 
     @PostMapping("/retry")
-    public PaymentResponse retry(@RequestBody RetryPaymentRequest request) {
-        return paymentService.retry(request.getPaymentId());
+    public PaymentResponse retry(
+        @AuthenticationPrincipal AuthUser authUser,
+        @RequestBody RetryPaymentRequest request
+    ) {
+        return paymentService.retry(authUser.getUserId(), request.getPaymentId());
     }
 }

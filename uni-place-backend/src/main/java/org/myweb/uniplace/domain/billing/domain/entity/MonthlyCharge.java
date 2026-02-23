@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 public class MonthlyCharge {
 
     public static final String ST_UNPAID = "unpaid";
+    public static final String ST_PAID = "paid";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,7 +57,12 @@ public class MonthlyCharge {
     }
 
     public void markPaid(Integer paymentId) {
-        this.chargeSt = "paid";
+        this.chargeSt = ST_PAID;
         if (paymentId != null) this.paymentId = paymentId;
+    }
+
+    public void markUnpaid() {
+        this.chargeSt = ST_UNPAID;
+        this.paymentId = null;
     }
 }
