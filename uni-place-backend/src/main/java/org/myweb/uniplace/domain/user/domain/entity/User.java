@@ -62,7 +62,7 @@ public class User extends BaseTimeEntity {
      * DB: CHAR(1) NOT NULL DEFAULT 'Y'
      * Y(추가정보 필요), N(추가정보 완료)
      */
-    @Column(name = "first_sign", length = 1, nullable = false, columnDefinition = "CHAR(1)")
+    @Column(name = "first_sign", length = 1, nullable = false)
     private String firstSign;
 
     @PrePersist

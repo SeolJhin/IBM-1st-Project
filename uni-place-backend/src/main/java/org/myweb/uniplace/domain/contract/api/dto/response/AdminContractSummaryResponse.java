@@ -30,7 +30,7 @@ public class AdminContractSummaryResponse {
     private LocalDate contractStart;
     private LocalDate contractEnd;
 
-    private String lessorName;             // 임대인(회원 입력)
+    private String lessorNm;             // 임대인(회원 입력)
     private String tenantUserId;           // 임차인(계약 신청자 userId)
 
     private ContractStatus contractStatus;
@@ -65,7 +65,7 @@ public class AdminContractSummaryResponse {
                 .contractStart(c.getContractStart())
                 .contractEnd(c.getContractEnd())
 
-                .lessorName(c.getLessorName())
+                .lessorNm(c.getLessorNm())
                 .tenantUserId(c.getUser() != null ? c.getUser().getUserId() : null)
 
                 .contractStatus(c.getContractSt())

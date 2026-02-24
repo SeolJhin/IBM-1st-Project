@@ -72,8 +72,8 @@ public class Contract {
     private RentType rentType;
 
     // ===== ✅ 회원이 입력하는 임대인 정보 =====
-    @Column(name = "lessor_name", length = 50, nullable = false)
-    private String lessorName;
+    @Column(name = "lessor_nm", length = 50, nullable = false)
+    private String lessorNm;
 
     @Column(name = "lessor_tel", length = 20, nullable = false)
     private String lessorTel;
