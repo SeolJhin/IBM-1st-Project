@@ -1,99 +1,527 @@
-import React, { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./Home.module.css";
 import Header from "../../app/layouts/components/Header";
+import Footer from "../../app/layouts/components/Footer";
+import { useNavigate } from "react-router-dom";
+
+function IntroActionSection() {
+  return (
+    <section className={styles.introSection}>
+      <div className={styles.contentWide}>
+        <div className={styles.introCard}>
+          <p className={styles.introKicker}>UNI-PLACE</p>
+          <h2 className={styles.introTitle}>
+            한 번에
+            <br />
+            지역, 예산, 생활 스타일에 맞춘 코리빙 공간을 찾아보세요.
+          </h2>
+          <button type="button" className={styles.introBtn}>
+            매물 둘러보기
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function EventCard({ event, isHovered, onHover, onLeave }) {
+  return (
+    <div className={styles.eventCardWrap} onMouseEnter={onHover} onMouseLeave={onLeave}>
+      <div className={`${styles.eventCard} ${isHovered ? styles.eventCardHover : ""}`}>
+        <div className={styles.eventCardBody}>
+          <h3 className={styles.eventTitle}>{event.title}</h3>
+          <p className={styles.eventMeta}>{event.time}</p>
+          <p className={styles.eventMeta}>{event.location}</p>
+          <div className={`${styles.eventActionArea} ${isHovered ? styles.eventActionVisible : ""}`}>
+            <button className={styles.eventActionBtn} type="button">자세히 보기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EventSection() {
+  const [hoveredCard, setHoveredCard] = useState(null);
+
+  const events = {
+    left: {
+      date: "2026.03.12(목)",
+      items: [
+        { title: "입주 설명회 & 하우스 투어", time: "08:00 ~ 17:10", location: "강남 코리빙 라운지" },
+        { title: "공용공간 운영 정책 안내", time: "09:00 ~ 11:30", location: "강남 코리빙 라운지" },
+        { title: "신규 입주민 네트워킹", time: "10:00 ~ 16:00", location: "강남 코리빙 라운지" },
+      ],
+    },
+    right: {
+      date: "2026.03.13(금)",
+      items: [
+        { title: "커뮤니티 매니저 Q&A", time: "08:00 ~ 17:10", location: "성수 코리빙 허브" },
+        { title: "룸메이트 매칭 세션", time: "09:00 ~ 11:30", location: "성수 코리빙 허브" },
+        { title: "입주 가이드 워크숍", time: "10:00 ~ 16:00", location: "성수 코리빙 허브" },
+      ],
+    },
+  };
+
+  return (
+    <section className={styles.sectionSoft}>
+      <div className={styles.contentWide}>
+        <div className={styles.sectionHeadCenter}>
+          <p className={styles.sectionEyebrow}>2026 유니플레이스 프로그램 안내</p>
+          <h2 className={styles.sectionTitle}>현재 진행 중인 공유주거 프로그램</h2>
+          <button className={styles.primaryPill} type="button">자세히 보기</button>
+        </div>
+
+        <div className={styles.eventGrid}>
+          <div className={styles.eventCol}>
+            <div className={`${styles.eventDate} ${styles.eventDateLeft}`}>{events.left.date}</div>
+            <div className={styles.eventList}>
+              {events.left.items.map((event, idx) => (
+                <EventCard
+                  key={`left-${idx}`}
+                  event={event}
+                  isHovered={hoveredCard === `left-${idx}`}
+                  onHover={() => setHoveredCard(`left-${idx}`)}
+                  onLeave={() => setHoveredCard(null)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.eventDivider} aria-hidden="true" />
+
+          <div className={styles.eventCol}>
+            <div className={`${styles.eventDate} ${styles.eventDateRight}`}>{events.right.date}</div>
+            <div className={styles.eventList}>
+              {events.right.items.map((event, idx) => (
+                <EventCard
+                  key={`right-${idx}`}
+                  event={event}
+                  isHovered={hoveredCard === `right-${idx}`}
+                  onHover={() => setHoveredCard(`right-${idx}`)}
+                  onLeave={() => setHoveredCard(null)}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function RecommendCarousel() {
+  const items = [
+    {
+      title: "강남역 10분 프리미엄 코리빙",
+      desc: "프라이빗룸과 라운지, 피트니스가 결합된 시그니처 하우스",
+      tag: "서울시 강남구",
+      img: "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80",
+    },
+    {
+      title: "홍대 여성 전용 하우스",
+      desc: "보안 강화 출입 시스템과 조용한 스터디 라운지 제공",
+      tag: "서울시 마포구",
+      img: "https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80",
+    },
+    {
+      title: "성수 반려동물 가능 하우스",
+      desc: "산책 동선과 펫 케어존을 갖춘 코리빙 공간",
+      tag: "서울시 성동구",
+      img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80",
+    },
+    {
+      title: "잠실 장기거주 특화 하우스",
+      desc: "장기 계약 입주자 대상 수납/업무 공간 최적화",
+      tag: "서울시 송파구",
+      img: "https://images.unsplash.com/photo-1560185007-cde436f6a4d0?auto=format&fit=crop&w=1200&q=80",
+    },
+  ];
+
+  const cardWidth = 320;
+  const gap = 24;
+  const slideSize = cardWidth + gap;
+  const extended = [...items, ...items, ...items];
+
+  const [index, setIndex] = useState(items.length);
+  const [transition, setTransition] = useState(true);
+
+  const next = () => setIndex((p) => p + 1);
+  const prev = () => setIndex((p) => p - 1);
+
+  const handleTransitionEnd = () => {
+    if (index >= items.length * 2) {
+      setTransition(false);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIndex(items.length));
+      });
+      return;
+    }
+
+    if (index < items.length) {
+      setTransition(false);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIndex(items.length * 2 - 1));
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!transition) {
+      const timer = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setTransition(true));
+      });
+      return () => cancelAnimationFrame(timer);
+    }
+  }, [transition]);
+
+  const realIndex = ((index % items.length) + items.length) % items.length;
+
+  return (
+    <div className={styles.recoWrap}>
+      <div
+        className={styles.recoTrack}
+        style={{
+          gap: `${gap}px`,
+          transform: `translate3d(-${index * slideSize}px, 0, 0)`,
+          transition: transition ? "transform 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94)" : "none",
+        }}
+        onTransitionEnd={handleTransitionEnd}
+      >
+        {extended.map((item, i) => (
+          <article key={i} className={styles.recoCard}>
+            <img src={item.img} alt={item.title} className={styles.recoImage} />
+            <div className={styles.recoBody}>
+              <div className={styles.recoTitle}>{item.title}</div>
+              <div className={styles.recoDesc}>{item.desc}</div>
+              <div className={styles.recoTag}>{item.tag}</div>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className={styles.recoBottomUi}>
+        <div className={styles.recoProgressWrap}>
+          <div className={styles.recoIndex}>{realIndex + 1} / {items.length}</div>
+          <div className={styles.recoProgressBar}>
+            <div className={styles.recoProgressFill} style={{ width: `${((realIndex + 1) / items.length) * 100}%` }} />
+          </div>
+        </div>
+
+        <div className={styles.recoNavWrap}>
+          <button onClick={prev} className={styles.circleBtn} type="button" aria-label="prev">&#8249;</button>
+          <button onClick={next} className={styles.circleBtn} type="button" aria-label="next">&#8250;</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const lineupItems = [
+  {
+    id: 1,
+    tag: "추천 하우스 1",
+    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=500&fit=crop",
+    name: "강남역 10분 프리미엄 코리빙",
+  },
+  {
+    id: 2,
+    tag: "추천 하우스 2",
+    image: "https://images.unsplash.com/photo-1560185008-b033106af5c3?w=400&h=500&fit=crop",
+    name: "홍대 여성 전용 하우스",
+  },
+  {
+    id: 3,
+    tag: "추천 하우스 3",
+    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400&h=500&fit=crop",
+    name: "성수 반려동물 가능 쉐어하우스",
+  },
+  {
+    id: 4,
+    tag: "추천",
+    image: "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=400&h=500&fit=crop",
+    name: "잠실 워케이션 하우스",
+  },
+  {
+    id: 5,
+    tag: "인기",
+    image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&h=500&fit=crop",
+    name: "합정 커뮤니티 하우스",
+  },
+  {
+    id: 6,
+    tag: "패널",
+    image: "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=400&h=500&fit=crop",
+    name: "광화문 비즈니스 하우스",
+  },
+];
+
+function HouseLineup() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const visibleCount = 4;
+  const maxIndex = lineupItems.length - visibleCount;
+
+  const handleNext = () => setCurrentIndex((p) => (p >= maxIndex ? 0 : p + 1));
+  const handlePrev = () => setCurrentIndex((p) => (p <= 0 ? maxIndex : p - 1));
+
+  return (
+    <section className={styles.sectionWhite}>
+      <div className={styles.contentWide}>
+        <div className={styles.sectionHeadCenter}>
+          <p className={styles.sectionEyebrow}>UNI-PLACE LINEUP</p>
+          <h2 className={styles.sectionTitle}>이달의 PICK</h2>
+          <button className={styles.primaryPill} type="button">상세 보기</button>
+        </div>
+
+        <div className={styles.lineupFrame}>
+          <div
+            className={styles.lineupTrack}
+            style={{ transform: `translateX(-${currentIndex * 25}%)` }}
+          >
+            {lineupItems.map((item) => (
+              <article key={item.id} className={styles.lineupCard}>
+                <span className={styles.lineupTag}>{item.tag}</span>
+                <div className={styles.lineupImageWrap}>
+                  <img src={item.image} alt={item.name} className={styles.lineupImage} draggable={false} />
+                </div>
+                <p className={styles.lineupName}>{item.name}</p>
+              </article>
+            ))}
+          </div>
+
+          <button className={`${styles.lineBtn} ${styles.lineBtnLeft}`} onClick={handlePrev} type="button">&#8249;</button>
+          <button className={`${styles.lineBtn} ${styles.lineBtnRight}`} onClick={handleNext} type="button">&#8250;</button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function NoticeSection() {
+  const navigate = useNavigate();
+
+  const notices = [
+    "신규 하우스 오픈 일정 안내",
+    "3월 입주 프로모션 사전 공지",
+    "커뮤니티 라운지 운영시간 변경",
+    "서비스 점검 및 배포 안내",
+  ];
+
+  const faqs = [
+    { id: "FAQ01", q: "계약 기간은 어떻게 선택하나요?", a: "단기/중기/장기 옵션을 선택할 수 있습니다." },
+    { id: "FAQ02", q: "관리비는 어떤 항목이 포함되나요?", a: "공용시설, 청소, 인터넷 항목이 기본 포함됩니다." },
+    { id: "FAQ03", q: "반려동물 동반 입주가 가능한가요?", a: "반려동물 가능 하우스에서만 신청 가능합니다." },
+    { id: "FAQ04", q: "입주 전 투어 예약은 필수인가요?", a: "온라인 상담 후 현장 투어 예약을 권장합니다." },
+  ];
+
+  return (
+    <section className={styles.noticeSection}>
+      <div className={styles.nfWrap}>
+        <article className={styles.nfNoticeCard}>
+          <div className={styles.nfNoticeHeader}>
+            <span className={styles.nfNoticeTag}>공지사항</span>
+            <h3 className={styles.nfNoticeTitle}>미리안내</h3>
+          </div>
+
+          <ul className={styles.nfNoticeList}>
+            {notices.map((t, i) => (
+              <li key={i} className={styles.nfNoticeItem}>
+                {t}
+              </li>
+            ))}
+          </ul>
+
+          <button
+            type="button"
+            className={styles.nfNoticeCta}
+            onClick={() => navigate("/news")}
+          >
+            <span>공지사항 바로가기</span>
+            <span className={styles.nfArrow}>→</span>
+          </button>
+        </article>
+
+        <article className={styles.nfFaqPanel}>
+          <div className={styles.nfGrid}>
+            {faqs.map((f) => (
+              <article key={f.id} className={styles.nfFaqCard}>
+                <div className={styles.nfFaqId}>{f.id}</div>
+
+                <div className={styles.nfFaqLine}>
+                  <span className={styles.nfFaqLabel}>Q.</span>
+                  <span className={styles.nfFaqText}>{f.q}</span>
+                </div>
+
+                <div className={styles.nfFaqLine}>
+                  <span className={styles.nfFaqLabel}>A.</span>
+                  <span className={styles.nfFaqText}>{f.a}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function LivingTypeSection() {
+  const types = [
+    "원룸형",
+    "쉐어하우스",
+    "여성전용",
+    "단기거주",
+    "반려동물",
+    "역세권",
+  ];
+
+  return (
+    <section className={styles.livingSection}>
+      <div className={styles.contentWide}>
+        <div className={styles.livingGrid}>
+          <article className={styles.livingPanel}>
+            <h3 className={styles.livingTitle}>커뮤니티 프로그램</h3>
+            <p className={styles.livingDesc}>
+              입주민 네트워킹, 취미 모임, 지역 이벤트를 확인해보세요.
+            </p>
+            <button type="button" className={styles.livingBtn}>
+              프로그램 보기
+            </button>
+          </article>
+
+          <article className={styles.livingPanel}>
+            <h3 className={styles.livingTitle}>입주 가이드</h3>
+            <p className={styles.livingDesc}>
+              계약부터 입주까지 필요한 절차를 한눈에 안내합니다.
+            </p>
+            <button type="button" className={styles.livingBtnAlt}>
+              가이드 보기
+            </button>
+          </article>
+        </div>
+
+        <div className={styles.typeWrap}>
+          <h3 className={styles.typeTitle}>주거 유형 살펴보기</h3>
+          <div className={styles.typeList}>
+            {types.map((type) => (
+              <span key={type} className={styles.typeChip}>
+                {type}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
-  const slides = ["메인배너 이미지 1", "메인배너 이미지 2", "메인배너 이미지 3"];
-  const [active, setActive] = useState(0);
+  const heroVideos = [
+    "https://cdn.coverr.co/videos/coverr-modern-apartment-interior-3984/1080p.mp4",
+    "https://cdn.coverr.co/videos/coverr-morning-in-a-modern-kitchen-1560/1080p.mp4",
+    "https://cdn.coverr.co/videos/coverr-a-modern-living-room-4479/1080p.mp4",
+  ];
+
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [fade, setFade] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const updateProgress = () => {
+      if (!video.duration) return;
+      setProgress((video.currentTime / video.duration) * 100);
+    };
+
+    const handleEnded = () => {
+      setFade(false);
+      setProgress(0);
+
+      setTimeout(() => {
+        setCurrentVideoIndex((prev) => (prev === heroVideos.length - 1 ? 0 : prev + 1));
+        setFade(true);
+      }, 450);
+    };
+
+    video.addEventListener("timeupdate", updateProgress);
+    video.addEventListener("ended", handleEnded);
+
+    return () => {
+      video.removeEventListener("timeupdate", updateProgress);
+      video.removeEventListener("ended", handleEnded);
+    };
+  }, [currentVideoIndex, heroVideos.length]);
+
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (isPlaying) video.pause();
+    else video.play();
+    setIsPlaying(!isPlaying);
+  };
 
   return (
     <div className={styles.page}>
       <Header />
 
-      <section className={styles.hero}>
-        <div className={styles.heroRow}>
-          <div className={`${styles.heroCard} ${styles.heroCardActive}`}>
-            <div className={styles.heroImg}>{slides[active]}</div>
+      <section className={styles.heroSection}>
+        <video
+          ref={videoRef}
+          key={currentVideoIndex}
+          src={heroVideos[currentVideoIndex]}
+          autoPlay
+          muted
+          playsInline
+          className={`${styles.heroVideo} ${fade ? styles.heroVideoVisible : styles.heroVideoHidden}`}
+        />
+        <div className={styles.heroOverlay} />
+
+        <div className={styles.heroContentWrap}>
+          <div className={styles.heroInner}>
+            <h1 className={styles.heroMainTitle}>
+              원하는 공유주거를
+              <br />
+              한 번에 찾는 방법
+            </h1>
+            <p className={styles.heroSubTitle}>지역, 예산, 생활 스타일에 맞춘 코리빙 플랫폼 UNI-PLACE</p>
           </div>
-          <div className={styles.heroCard}><div className={styles.heroImg}>메인배너 이미지</div></div>
-          <div className={styles.heroCard}><div className={styles.heroImg}>메인배너 이미지</div></div>
         </div>
 
-        <div className={styles.dots}>
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              className={`${styles.dot} ${i === active ? styles.dotActive : ""}`}
-              onClick={() => setActive(i)}
-              aria-label={`slide-${i + 1}`}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.category}>
-        <div className={styles.categoryTitle}>게시판페이지</div>
-        <div className={styles.categoryBtns}>
-          <button className={styles.pill}>Live</button>
-          <button className={styles.pill}>Stay</button>
-          <button className={styles.pill}>Tour</button>
-        </div>
-      </section>
-
-      <section className={styles.section}>
-        <div className={styles.sliderWrap}>
-          <button className={styles.arrow} aria-label="prev">‹</button>
-
-          <div className={styles.grid3}>
-            {["장소(숙소)", "장소(숙소)", "장소(숙소)"].map((t, idx) => (
-              <div key={idx} className={styles.placeCard}>
-                <div className={styles.placeImg}>{t}</div>
-              </div>
-            ))}
+        <div className={styles.heroControlWrap}>
+          <div className={styles.heroProgressRail}>
+            <div className={styles.heroProgressFill} style={{ width: `${progress}%` }} />
           </div>
 
-          <button className={styles.arrow} aria-label="next">›</button>
-        </div>
-
-        <div className={styles.twoCol}>
-          <div className={styles.communityCard}>
-            <div className={styles.communityTitle}>Community</div>
-            <div className={styles.line} />
-            <div className={styles.lineShort} />
-            <button className={styles.communityBtn}>커뮤니티 보러가기</button>
-          </div>
-
-          <div className={styles.bigBanner}>
-            <div className={styles.muted}>커뮤니티/홍보 배너 이미지</div>
+          <div className={styles.heroControlRow}>
+            <span>{String(currentVideoIndex + 1).padStart(2, "0")} / {String(heroVideos.length).padStart(2, "0")}</span>
+            <button type="button" onClick={togglePlay} className={styles.heroPlayBtn}>
+              {isPlaying ? "❚❚" : "▶"}
+            </button>
           </div>
         </div>
       </section>
 
-      <section className={styles.section}>
-        <div className={styles.faqWrap}>
-          <div>
-            <div className={styles.blockTitle}>공지사항 / 이벤트</div>
-            <div className={styles.noticeBox}>
-              {["공지사항 제목", "이벤트 안내", "입주 관련 공지", "서비스 업데이트"].map((t, i) => (
-                <div key={i} className={styles.noticeItem}>{t}</div>
-              ))}
-              <button className={styles.moreBtn}>공지사항 보러가기 →</button>
-            </div>
-          </div>
+      <IntroActionSection />
+      <HouseLineup />
+      <EventSection />
+      <LivingTypeSection />
 
-          <div className={styles.faqGrid}>
-            {["FAQ 1", "FAQ 2", "FAQ 3", "FAQ 4"].map((t, i) => (
-              <div key={i} className={styles.faqCard}>
-                <div className={styles.faqTitle}>{t}</div>
-                <div className={styles.faqText}>Q. 질문</div>
-                <div className={styles.faqText}>A. 답변</div>
-              </div>
-            ))}
-          </div>
+      <section className={styles.recoSection}>
+        <div className={styles.contentWide}>
+          <h2 className={styles.recoHeading}><span>당신이</span> 좋아할 만한 추천 하우스</h2>
+          <div className={styles.recoBanner}>나의 성향에 따른 맞춤형 하우스가 추천되고 있습니다.</div>
+          <RecommendCarousel />
         </div>
       </section>
 
-      <div style={{ height: 80 }} />
+      <NoticeSection />
+
+      <Footer />
     </div>
   );
 }
