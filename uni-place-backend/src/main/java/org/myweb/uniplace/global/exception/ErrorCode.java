@@ -38,6 +38,8 @@ public enum ErrorCode {
 
     // ===== Product =====
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_404", "상품을 찾을 수 없습니다."),
+    PRODUCT_SOLD_OUT(HttpStatus.CONFLICT, "PRODUCT_409_1", "품절된 상품입니다."),
+    PRODUCT_OUT_OF_STOCK(HttpStatus.CONFLICT, "PRODUCT_409_2", "상품 재고가 부족합니다."),
 
     // ===== Room =====
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "ROOM_404", "방을 찾을 수 없습니다."),
