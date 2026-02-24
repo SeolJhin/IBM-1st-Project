@@ -27,11 +27,17 @@ public class AdminReviewController {
     // ─────────────────────────────────────────────────────────────────────
     @GetMapping("/reviews")
     public ResponseEntity<ApiResponse<PageResponse<ReviewResponse>>> adminReviewList(
-            @PageableDefault(size = 20, sort = "reviewId", direction = Sort.Direction.DESC)
+            @PageableDefault(
+                    size = 20,
+                    sort = "reviewId",
+                    direction = Sort.Direction.DESC
+            )
             Pageable pageable
     ) {
         return ResponseEntity.ok(
-                ApiResponse.ok(adminReviewService.getAllReviews(pageable))
+                ApiResponse.ok(
+                        adminReviewService.getAllReviews(pageable)
+                )
         );
     }
 
@@ -41,7 +47,7 @@ public class AdminReviewController {
     // ─────────────────────────────────────────────────────────────────────
     @DeleteMapping("/reviews/{reviewId}")
     public ResponseEntity<ApiResponse<Void>> adminDeleteReview(
-            @PathVariable int reviewId
+            @PathVariable("reviewId") Integer reviewId
     ) {
         adminReviewService.deleteReviewAsAdmin(reviewId);
         return ResponseEntity.ok(ApiResponse.ok());
