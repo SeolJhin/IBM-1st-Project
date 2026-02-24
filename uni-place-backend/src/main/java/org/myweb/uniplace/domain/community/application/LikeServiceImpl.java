@@ -4,7 +4,6 @@ package org.myweb.uniplace.domain.community.application;
 import org.myweb.uniplace.domain.community.domain.entity.*;
 import org.myweb.uniplace.domain.community.repository.*;
 import org.myweb.uniplace.domain.notification.application.NotificationService;
-import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +39,7 @@ public class LikeServiceImpl implements LikeService {
             String msg = "작성하신 게시글에 좋아요가 눌렸습니다.";
             notificationService.notifyUser(
                     board.getUserId(),
-                    NotificationType.BRD_LIKE,
+                    "BRD_LIKE",
                     msg,
                     userId,
                     TargetType.board,
@@ -74,7 +73,7 @@ public class LikeServiceImpl implements LikeService {
             String msg = "작성하신 댓글에 좋아요가 눌렸습니다.";
             notificationService.notifyUser(
                     reply.getUserId(),
-                    NotificationType.RPL_LIKE,
+                    "RPL_LIKE",
                     msg,
                     userId,
                     TargetType.reply,

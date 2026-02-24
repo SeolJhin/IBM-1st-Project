@@ -191,14 +191,14 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         );
 
         // =========================
-        // 알림(여기 라인에 넣기) - 예약 생성 직후
+        // 알림 - 예약 생성 직후
         // =========================
         String timeMsg = saved.getSrStartAt() + " ~ " + saved.getSrEndAt();
 
         // 1) 사용자 알림
         notificationService.notifyUser(
                 user.getUserId(),
-                NotificationType.SP_REQ,
+                NotificationType.SP_REQ.name(),
                 "공간 예약 요청이 접수되었습니다. (" + timeMsg + ")",
                 null,
                 TargetType.space,
@@ -208,7 +208,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
 
         // 2) 관리자 알림
         notificationService.notifyAdmins(
-                NotificationType.SP_REQ,
+                NotificationType.SP_REQ.name(),
                 "공간 예약 요청이 생성되었습니다. userId=" + user.getUserId()
                         + ", buildingId=" + building.getBuildingId()
                         + ", spaceId=" + space.getSpaceId()
@@ -250,14 +250,14 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         e.setSrSt(SpaceReservationStatus.cancelled);
 
         // =========================
-        // ✅ 알림(여기 라인에 넣기) - 사용자 취소 직후
+        // ✅ 알림 - 사용자 취소 직후
         // =========================
         String timeMsg = e.getSrStartAt() + " ~ " + e.getSrEndAt();
 
         // 1) 사용자 알림(자기 취소 확인)
         notificationService.notifyUser(
                 e.getUser().getUserId(),
-                NotificationType.SP_CAN,
+                NotificationType.SP_CAN.name(),
                 "공간 예약이 취소되었습니다. (" + timeMsg + ")",
                 null,
                 TargetType.space,
@@ -267,7 +267,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
 
         // 2) 관리자 알림
         notificationService.notifyAdmins(
-                NotificationType.SP_CAN,
+                NotificationType.SP_CAN.name(),
                 "사용자가 공간 예약을 취소했습니다. userId=" + e.getUser().getUserId()
                         + ", reservationId=" + e.getReservationId()
                         + ", time=" + timeMsg,
@@ -372,7 +372,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
 
         notificationService.notifyUser(
                 e.getUser().getUserId(),
-                NotificationType.SP_CFM,
+                NotificationType.SP_CFM.name(),
                 "공간 예약이 확정되었습니다. (" + timeMsg + ")",
                 me.getUserId(), // sender=admin
                 TargetType.space,
@@ -399,8 +399,6 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         }
 
         e.setSrSt(SpaceReservationStatus.ended);
-
-        // 종료 알림을 원하면 여기서 NotificationType 하나 더 추가해서 보내면 됨
 
         return SpaceReservationResponse.fromEntity(e);
     }
@@ -432,7 +430,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
 
         notificationService.notifyUser(
                 e.getUser().getUserId(),
-                NotificationType.SP_CAN,
+                NotificationType.SP_CAN.name(),
                 "관리자에 의해 공간 예약이 취소되었습니다. (" + timeMsg + ")" + reason,
                 me.getUserId(),
                 TargetType.space,

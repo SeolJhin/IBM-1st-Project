@@ -15,7 +15,7 @@ public class NotificationResponse {
     private Integer notificationId;
     private String receiverId;
 
-    private String code;      // string code
+    private String code;      // String code
     private String senderId;
 
     private String message;

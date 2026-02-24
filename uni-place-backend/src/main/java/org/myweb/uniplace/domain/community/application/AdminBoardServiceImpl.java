@@ -13,7 +13,6 @@ import org.myweb.uniplace.domain.community.repository.ReplyRepository;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.file.application.FileService;
 import org.myweb.uniplace.domain.notification.application.NotificationService;
-import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 
 import org.springframework.stereotype.Service;
@@ -70,7 +69,7 @@ public class AdminBoardServiceImpl implements AdminBoardService {
         // ✅ 알림: 작성자에게 "관리자 삭제"
         notificationService.notifyUser(
                 writerId,
-                NotificationType.ADM_BRD_DEL,
+                "ADM_BRD_DEL",
                 "관리자 정책에 의해 게시글이 삭제되었습니다.",
                 null,
                 TargetType.board,
@@ -80,7 +79,7 @@ public class AdminBoardServiceImpl implements AdminBoardService {
 
         // ✅ 관리자들에게도 로그성 알림(선택)
         notificationService.notifyAdmins(
-                NotificationType.ADM_BRD_DEL,
+                "ADM_BRD_DEL",
                 "관리자 게시글 삭제 처리(boardId=" + boardId + ")",
                 null,
                 TargetType.board,
@@ -111,7 +110,7 @@ public class AdminBoardServiceImpl implements AdminBoardService {
         // ✅ 알림: 댓글 작성자에게
         notificationService.notifyUser(
                 writerId,
-                NotificationType.ADM_RPL_DEL,
+                "ADM_RPL_DEL",
                 "관리자 정책에 의해 댓글이 삭제되었습니다.",
                 null,
                 TargetType.reply,
@@ -121,7 +120,7 @@ public class AdminBoardServiceImpl implements AdminBoardService {
 
         // ✅ 관리자들에게도 로그성 알림(선택)
         notificationService.notifyAdmins(
-                NotificationType.ADM_RPL_DEL,
+                "ADM_RPL_DEL",
                 "관리자 댓글 삭제 처리(replyId=" + replyId + ", boardId=" + boardId + ")",
                 null,
                 TargetType.reply,
@@ -146,7 +145,7 @@ public class AdminBoardServiceImpl implements AdminBoardService {
 
         notificationService.notifyUser(
                 board.getUserId(),
-                NotificationType.ADM_BRD_IMP,
+                "ADM_BRD_IMP",
                 msg,
                 null,
                 TargetType.board,
@@ -156,7 +155,7 @@ public class AdminBoardServiceImpl implements AdminBoardService {
 
         // ✅ 관리자들에게도 로그성 알림(선택)
         notificationService.notifyAdmins(
-                NotificationType.ADM_BRD_IMP,
+                "ADM_BRD_IMP",
                 "중요공지 변경(boardId=" + boardId + ", importance=" + imp + ")",
                 null,
                 TargetType.board,

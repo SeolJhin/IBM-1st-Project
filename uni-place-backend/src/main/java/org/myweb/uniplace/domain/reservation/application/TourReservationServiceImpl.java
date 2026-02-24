@@ -105,12 +105,12 @@ public class TourReservationServiceImpl implements TourReservationService {
         );
 
         // =========================
-        // ✅ 알림(여기 라인에 넣기) - 투어 예약 생성 직후 (관리자용)
+        // ✅ 알림 - 투어 예약 생성 직후 (관리자용)
         // =========================
         String timeMsg = saved.getTourStartAt() + " ~ " + saved.getTourEndAt();
 
         notificationService.notifyAdmins(
-                NotificationType.TOUR_REQ,
+                NotificationType.TOUR_REQ.name(),
                 "투어 예약 요청이 생성되었습니다. buildingId=" + building.getBuildingId()
                         + ", roomId=" + room.getRoomId()
                         + ", tel=" + saved.getTourTel()
@@ -166,12 +166,12 @@ public class TourReservationServiceImpl implements TourReservationService {
         resv.setTourSt(TourStatus.cancelled);
 
         // =========================
-        // ✅ 알림(여기 라인에 넣기) - 투어 예약 취소 직후 (관리자용)
+        // ✅ 알림 - 투어 예약 취소 직후 (관리자용)
         // =========================
         String timeMsg = resv.getTourStartAt() + " ~ " + resv.getTourEndAt();
 
         notificationService.notifyAdmins(
-                NotificationType.TOUR_CAN,
+                NotificationType.TOUR_CAN.name(),
                 "투어 예약이 취소되었습니다. tourId=" + resv.getTourId()
                         + ", tel=" + resv.getTourTel()
                         + ", name=" + resv.getTourNm()
