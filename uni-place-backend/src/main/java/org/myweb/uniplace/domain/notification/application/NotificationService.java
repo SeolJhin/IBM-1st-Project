@@ -2,7 +2,6 @@
 package org.myweb.uniplace.domain.notification.application;
 
 import org.myweb.uniplace.domain.notification.api.dto.response.NotificationListResponse;
-import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.springframework.data.domain.Pageable;
 
@@ -17,14 +16,14 @@ public interface NotificationService {
     int markAllRead(String userId);
 
     void notifyUser(String receiverId,
-                    NotificationType code,
+                    String code,
                     String message,
                     String senderId,
                     TargetType target,
                     Integer targetId,
                     String urlPath);
 
-    void notifyAdmins(NotificationType code,
+    void notifyAdmins(String code,
                       String message,
                       String senderId,
                       TargetType target,
