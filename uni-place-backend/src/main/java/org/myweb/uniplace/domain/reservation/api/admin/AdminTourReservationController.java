@@ -10,7 +10,10 @@ import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import lombok.RequiredArgsConstructor;
@@ -43,14 +46,14 @@ public class AdminTourReservationController {
 
     @PutMapping("/status/{tourId}")
     public ApiResponse<Void> changeStatus(
-            @PathVariable Integer tourId,
+            @PathVariable("tourId") Integer tourId,
             @RequestParam("status") TourStatus status
     ) {
         TourReservationEntity e = tourReservationRepository.findById(tourId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.TOUR_STATUS_NOT_FOUND)); // ✅ 스타일 통일
+                .orElseThrow(() -> new BusinessException(ErrorCode.TOUR_STATUS_NOT_FOUND));
 
         e.setTourSt(status);
-        tourReservationRepository.save(e); // ✅ DB 반영 보장
+        tourReservationRepository.save(e);
         return ApiResponse.ok();
     }
 }

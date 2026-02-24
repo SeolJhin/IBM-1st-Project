@@ -24,7 +24,9 @@ public class RoomController {
     private final RoomService roomService;
 
     @GetMapping("/{roomId}")
-    public ApiResponse<RoomDetailResponse> detail(@PathVariable Integer roomId) {
+    public ApiResponse<RoomDetailResponse> detail(
+            @PathVariable("roomId") Integer roomId
+    ) {
         return ApiResponse.ok(roomService.getRoom(roomId));
     }
 
@@ -40,15 +42,11 @@ public class RoomController {
         if (size < 1) size = 10;
 
         Sort.Direction direction =
-                "ASC".equalsIgnoreCase(direct)
-                        ? Sort.Direction.ASC
-                        : Sort.Direction.DESC;
+                "ASC".equalsIgnoreCase(direct) ? Sort.Direction.ASC : Sort.Direction.DESC;
 
         Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
 
-        Page<RoomSummaryResponse> result =
-                roomService.searchPage(request, pageable);
-
+        Page<RoomSummaryResponse> result = roomService.searchPage(request, pageable);
         return ApiResponse.ok(PageResponse.of(result));
     }
 }

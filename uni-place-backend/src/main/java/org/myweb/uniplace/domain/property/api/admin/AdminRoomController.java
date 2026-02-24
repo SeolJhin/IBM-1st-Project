@@ -22,26 +22,30 @@ public class AdminRoomController {
     private final RoomService roomService;
 
     @GetMapping("/{roomId}")
-    public ApiResponse<RoomDetailResponse> detail(@PathVariable Integer roomId) {
+    public ApiResponse<RoomDetailResponse> detail(
+            @PathVariable("roomId") Integer roomId
+    ) {
         return ApiResponse.ok(roomService.getRoomForAdmin(roomId));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<RoomDetailResponse> create(@Validated @ModelAttribute RoomCreateRequest request) {
+    public ApiResponse<RoomDetailResponse> create(
+            @Validated @ModelAttribute RoomCreateRequest request
+    ) {
         return ApiResponse.ok(roomService.createRoom(request));
     }
 
     @PutMapping(value = "/{roomId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<RoomDetailResponse> update(
-            @PathVariable Integer roomId,
+            @PathVariable("roomId") Integer roomId,
             @Validated @ModelAttribute RoomUpdateRequest request
     ) {
         return ApiResponse.ok(roomService.updateRoom(roomId, request));
     }
-    
+
     @PutMapping("/{roomId}/status")
     public ApiResponse<Void> changeStatus(
-            @PathVariable Integer roomId,
+            @PathVariable("roomId") Integer roomId,
             @Validated @RequestBody RoomStatusUpdateRequest request
     ) {
         roomService.changeRoomStatus(roomId, request.getRoomStatus());
