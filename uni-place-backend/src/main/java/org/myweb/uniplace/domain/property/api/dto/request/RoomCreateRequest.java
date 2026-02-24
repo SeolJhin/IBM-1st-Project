@@ -1,4 +1,3 @@
-// DTO
 // 경로: org/myweb/uniplace/domain/property/api/dto/request/RoomCreateRequest.java
 package org.myweb.uniplace.domain.property.api.dto.request;
 
@@ -16,6 +15,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

@@ -21,7 +21,9 @@ public class AdminBuildingController {
     private final BuildingService buildingService;
 
     @GetMapping("/{buildingId}")
-    public ApiResponse<BuildingDetailResponse> detail(@PathVariable Integer buildingId) {
+    public ApiResponse<BuildingDetailResponse> detail(
+            @PathVariable("buildingId") Integer buildingId
+    ) {
         return ApiResponse.ok(buildingService.getBuildingForAdmin(buildingId));
     }
 
@@ -34,14 +36,16 @@ public class AdminBuildingController {
 
     @PutMapping(value = "/{buildingId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<BuildingDetailResponse> update(
-            @PathVariable Integer buildingId,
+            @PathVariable("buildingId") Integer buildingId,
             @Validated @ModelAttribute BuildingUpdateRequest request
     ) {
         return ApiResponse.ok(buildingService.updateBuilding(buildingId, request));
     }
 
     @DeleteMapping("/{buildingId}")
-    public ApiResponse<Void> delete(@PathVariable Integer buildingId) {
+    public ApiResponse<Void> delete(
+            @PathVariable("buildingId") Integer buildingId
+    ) {
         buildingService.deleteBuilding(buildingId);
         return ApiResponse.ok();
     }

@@ -24,7 +24,9 @@ public class SpaceController {
     private final SpaceService spaceService;
 
     @GetMapping("/{spaceId}")
-    public ApiResponse<SpaceDetailResponse> detail(@PathVariable Integer spaceId) {
+    public ApiResponse<SpaceDetailResponse> detail(
+            @PathVariable("spaceId") Integer spaceId
+    ) {
         return ApiResponse.ok(spaceService.getSpace(spaceId));
     }
 
