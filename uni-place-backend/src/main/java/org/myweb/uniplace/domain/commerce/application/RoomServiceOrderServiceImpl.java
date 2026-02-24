@@ -49,6 +49,11 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
         Room room = roomRepository.findById(request.getRoomId())
             .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
+        // ✅ 삭제된 방으로 룸서비스 주문 불가
+        if (room.isDeleted()) {
+            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+        }
+
         Order parentOrder = resolveParentOrder(user, request);
 
         RoomServiceOrder roomServiceOrder = RoomServiceOrder.builder()

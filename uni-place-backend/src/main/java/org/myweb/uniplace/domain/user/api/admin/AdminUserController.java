@@ -24,14 +24,14 @@ public class AdminUserController {
 
     // 예: 관리자 - 단건 조회(필요하면 UserService에 메서드 추가)
     @GetMapping("/{userId}")
-    public ApiResponse<UserResponse> get(@PathVariable String userId) {
+    public ApiResponse<UserResponse> get(@PathVariable("userId") String userId) {
         return ApiResponse.ok(userService.getByIdForAdmin(userId));
     }
     
     // 🔥 관리자 - 회원 상태 변경
     @PatchMapping("/{userId}/status")
     public ApiResponse<UserResponse> updateStatus(
-            @PathVariable String userId,
+            @PathVariable("userId") String userId,
             @Valid @RequestBody AdminUserStatusUpdateRequest req
     ) {
         return ApiResponse.ok(userService.updateStatus(userId, req));
@@ -40,7 +40,7 @@ public class AdminUserController {
     // 🔥 관리자 - 회원 권한 변경
     @PatchMapping("/{userId}/role")
     public ApiResponse<UserResponse> updateRole(
-            @PathVariable String userId,
+            @PathVariable("userId") String userId,
             @Valid @RequestBody AdminUserRoleUpdateRequest req
     ) {
         return ApiResponse.ok(userService.updateRole(userId, req));

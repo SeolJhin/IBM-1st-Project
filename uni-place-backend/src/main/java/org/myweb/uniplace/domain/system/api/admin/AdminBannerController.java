@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/banners")
@@ -46,7 +48,7 @@ public class AdminBannerController {
 
     // 배너 삭제
     @DeleteMapping("/{banId}")
-    public ResponseEntity<ApiResponse<Void>> deleteBanner(@PathVariable int banId) {
+    public ResponseEntity<ApiResponse<Void>> deleteBanner(@PathVariable("banId") int banId) {
         bannerService.deleteBanner(banId);
         return ResponseEntity.ok(ApiResponse.ok());
     }
@@ -54,11 +56,14 @@ public class AdminBannerController {
     // 배너 수정
     @PutMapping(value = "/{banId}", consumes = "multipart/form-data")
     public ResponseEntity<ApiResponse<Void>> updateBanner(
-            @PathVariable int banId,
+            @PathVariable("banId") int banId,
             @ModelAttribute BannerUpdateRequest request,
-            @RequestParam(defaultValue = "false") boolean deleteFlag,
+            @RequestParam(name = "deleteFlag", defaultValue = "false") boolean deleteFlag,
             @RequestParam(name = "file", required = false) MultipartFile file
     ) {
+    	log.info("startAt={}, endAt={}, title={}, order={}, url={}",
+    	        request.getStartAt(), request.getEndAt(),
+    	        request.getBanTitle(), request.getBanOrder(), request.getBanUrl());
         bannerService.updateBanner(banId, request, deleteFlag, file);
         return ResponseEntity.ok(ApiResponse.ok());
     }
@@ -66,8 +71,8 @@ public class AdminBannerController {
     // 배너 상태 변경
     @PatchMapping("/{banId}/status")
     public ResponseEntity<ApiResponse<Void>> updateBannerStatus(
-            @PathVariable int banId,
-            @RequestParam String status
+            @PathVariable("banId") int banId,
+            @RequestParam(name = "status") String status
     ) {
         bannerService.updateBannerStatus(banId, status);
         return ResponseEntity.ok(ApiResponse.ok());

@@ -1,4 +1,3 @@
-// Entity (Room) - FK 적용 + UNIQUE 적용
 // 경로: org/myweb/uniplace/domain/property/domain/entity/Room.java
 package org.myweb.uniplace.domain.property.domain.entity;
 
@@ -27,6 +26,8 @@ import lombok.*;
         }
 )
 public class Room {
+    // ✅ SoftDeleteEntity 상속 없이 delete_yn 직접 관리
+    //    created_at / updated_at 컬럼 없음 (원본 rooms 테이블 스펙 유지)
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -79,10 +80,26 @@ public class Room {
     @Column(name = "room_desc", length = 3000)
     private String roomDesc;
 
+    // ✅ 논리 삭제 필드 직접 추가 (기본값 'N')
+    @Column(name = "delete_yn", nullable = false, length = 1)
+    @Builder.Default
+    private String deleteYn = "N";
+
+    /** 논리 삭제 처리 */
+    public void softDelete() {
+        this.deleteYn = "Y";
+    }
+
+    /** 삭제 여부 확인 */
+    public boolean isDeleted() {
+        return "Y".equals(this.deleteYn);
+    }
+
     @PrePersist
     public void prePersist() {
-        if (rentType == null) rentType = RentType.monthly_rent;
-        if (roomSt == null) roomSt = RoomStatus.available;
+        if (rentType == null)     rentType = RentType.monthly_rent;
+        if (roomSt == null)       roomSt = RoomStatus.available;
         if (roomCapacity == null) roomCapacity = 1;
+        if (deleteYn == null)     deleteYn = "N";
     }
 }
