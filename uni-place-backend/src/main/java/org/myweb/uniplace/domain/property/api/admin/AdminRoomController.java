@@ -22,22 +22,18 @@ public class AdminRoomController {
     private final RoomService roomService;
 
     @GetMapping("/{roomId}")
-    public ApiResponse<RoomDetailResponse> detail(
-            @PathVariable("roomId") Integer roomId
-    ) {
+    public ApiResponse<RoomDetailResponse> detail(@PathVariable Integer roomId) {
         return ApiResponse.ok(roomService.getRoomForAdmin(roomId));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<RoomDetailResponse> create(
-            @Validated @ModelAttribute RoomCreateRequest request
-    ) {
+    public ApiResponse<RoomDetailResponse> create(@Validated @ModelAttribute RoomCreateRequest request) {
         return ApiResponse.ok(roomService.createRoom(request));
     }
 
     @PutMapping(value = "/{roomId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<RoomDetailResponse> update(
-            @PathVariable("roomId") Integer roomId,
+            @PathVariable Integer roomId,
             @Validated @ModelAttribute RoomUpdateRequest request
     ) {
         return ApiResponse.ok(roomService.updateRoom(roomId, request));
@@ -45,10 +41,17 @@ public class AdminRoomController {
 
     @PutMapping("/{roomId}/status")
     public ApiResponse<Void> changeStatus(
-            @PathVariable("roomId") Integer roomId,
+            @PathVariable Integer roomId,
             @Validated @RequestBody RoomStatusUpdateRequest request
     ) {
         roomService.changeRoomStatus(roomId, request.getRoomStatus());
+        return ApiResponse.ok();
+    }
+
+    // ✅ 신규: Room soft delete
+    @DeleteMapping("/{roomId}")
+    public ApiResponse<Void> delete(@PathVariable Integer roomId) {
+        roomService.deleteRoom(roomId);
         return ApiResponse.ok();
     }
 }
