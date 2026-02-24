@@ -5,13 +5,22 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import Home from "./shared/pages/Home";
 import Login from "./features/user/pages/Login";
+import About from "./shared/pages/About";
+import ScrollToTop from "./shared/components/ScrollToTop";
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About variant="about" />} />
+        <Route path="/community" element={<About variant="community" />} />
+        <Route path="/guide" element={<About variant="guide" />} />
+        <Route path="/news" element={<About variant="news" />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
