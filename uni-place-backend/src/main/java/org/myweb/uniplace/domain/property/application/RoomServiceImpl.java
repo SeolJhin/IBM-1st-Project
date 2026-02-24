@@ -18,6 +18,8 @@ import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
 import org.myweb.uniplace.domain.property.repository.BuildingRepository;
 import org.myweb.uniplace.domain.property.repository.RoomRepository;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,12 +45,17 @@ public class RoomServiceImpl implements RoomService {
         return IMAGE_EXTS.contains(ext.toLowerCase());
     }
 
+    // ✅ 일반 사용자: 삭제된 방 조회 불가
     @Override
     @Transactional(readOnly = true)
     public RoomDetailResponse getRoom(Integer roomId) {
 
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("객실을 찾을 수 없습니다. roomId=" + roomId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        if (room.isDeleted()) {
+            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+        }
 
         List<FileResponse> files =
                 fileService.getActiveFiles(FileRefType.ROOM.dbValue(), roomId);
@@ -56,12 +63,13 @@ public class RoomServiceImpl implements RoomService {
         return RoomDetailResponse.fromEntity(room, files);
     }
 
+    // ✅ 관리자: 삭제된 방도 조회 가능 (findById 그대로 유지)
     @Override
     @Transactional(readOnly = true)
     public RoomDetailResponse getRoomForAdmin(Integer roomId) {
 
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("객실을 찾을 수 없습니다. roomId=" + roomId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         List<FileResponse> files =
                 fileService.getAllFilesForAdmin(FileRefType.ROOM.dbValue(), roomId);
@@ -69,7 +77,7 @@ public class RoomServiceImpl implements RoomService {
         return RoomDetailResponse.fromEntity(room, files);
     }
 
-    // ✅ PageResponse 제거: Page를 그대로 리턴
+    // ✅ searchWithFilters 쿼리에서 이미 deleteYn = 'N' 필터 적용됨
     @Override
     @Transactional(readOnly = true)
     public Page<RoomSummaryResponse> searchPage(RoomSearchRequest request, Pageable pageable) {
@@ -109,8 +117,7 @@ public class RoomServiceImpl implements RoomService {
 
                 pageable
         );
-        
-        //첫번째이미지 썸네일
+
         return page.map(room -> {
             List<FileResponse> files =
                     fileService.getActiveFiles(FileRefType.ROOM.dbValue(), room.getRoomId());
@@ -120,13 +127,13 @@ public class RoomServiceImpl implements RoomService {
                 for (FileResponse f : files) {
                     if (f != null && isImageExt(f.getFileType())) {
                         firstImage = f;
-                        break; // 첫 이미지가 썸네일
+                        break;
                     }
                 }
             }
 
-            Integer thumbId = (firstImage != null ? firstImage.getFileId() : null);
-            String thumbUrl = (firstImage != null ? firstImage.getViewUrl() : null);
+            Integer thumbId  = (firstImage != null ? firstImage.getFileId()  : null);
+            String  thumbUrl = (firstImage != null ? firstImage.getViewUrl() : null);
 
             return RoomSummaryResponse.fromEntity(room, thumbId, thumbUrl);
         });
@@ -135,6 +142,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public RoomDetailResponse createRoom(RoomCreateRequest request) {
 
+        // ✅ 삭제되지 않은 건물만 허용
         Building building = resolveBuildingByName(request.getBuildingNm());
 
         Room room = Room.builder()
@@ -174,29 +182,34 @@ public class RoomServiceImpl implements RoomService {
     public RoomDetailResponse updateRoom(Integer roomId, RoomUpdateRequest request) {
 
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("객실을 찾을 수 없습니다. roomId=" + roomId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        // ✅ 삭제된 방은 수정 불가
+        if (room.isDeleted()) {
+            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+        }
 
         if (request.getBuildingNm() != null && !request.getBuildingNm().isBlank()) {
             room.setBuilding(resolveBuildingByName(request.getBuildingNm()));
         }
 
-        if (request.getRoomNo() != null) room.setRoomNo(request.getRoomNo());
-        if (request.getFloor() != null) room.setFloor(request.getFloor());
-        if (request.getRoomSize() != null) room.setRoomSize(request.getRoomSize());
+        if (request.getRoomNo() != null)       room.setRoomNo(request.getRoomNo());
+        if (request.getFloor() != null)         room.setFloor(request.getFloor());
+        if (request.getRoomSize() != null)      room.setRoomSize(request.getRoomSize());
 
-        if (request.getDeposit() != null) room.setDeposit(request.getDeposit());
-        if (request.getRentPrice() != null) room.setRentPrice(request.getRentPrice());
-        if (request.getManageFee() != null) room.setManageFee(request.getManageFee());
+        if (request.getDeposit() != null)       room.setDeposit(request.getDeposit());
+        if (request.getRentPrice() != null)     room.setRentPrice(request.getRentPrice());
+        if (request.getManageFee() != null)     room.setManageFee(request.getManageFee());
 
-        if (request.getRentType() != null) room.setRentType(request.getRentType());
-        if (request.getRoomSt() != null) room.setRoomSt(request.getRoomSt());
+        if (request.getRentType() != null)      room.setRentType(request.getRentType());
+        if (request.getRoomSt() != null)        room.setRoomSt(request.getRoomSt());
 
-        if (request.getRoomOptions() != null) room.setRoomOptions(request.getRoomOptions());
-        if (request.getRoomCapacity() != null) room.setRoomCapacity(request.getRoomCapacity());
-        if (request.getRentMin() != null) room.setRentMin(request.getRentMin());
+        if (request.getRoomOptions() != null)   room.setRoomOptions(request.getRoomOptions());
+        if (request.getRoomCapacity() != null)  room.setRoomCapacity(request.getRoomCapacity());
+        if (request.getRentMin() != null)       room.setRentMin(request.getRentMin());
 
-        if (request.getSunDirection() != null) room.setSunDirection(request.getSunDirection());
-        if (request.getRoomDesc() != null) room.setRoomDesc(request.getRoomDesc());
+        if (request.getSunDirection() != null)  room.setSunDirection(request.getSunDirection());
+        if (request.getRoomDesc() != null)      room.setRoomDesc(request.getRoomDesc());
 
         if (request.getDeleteFileIds() != null && !request.getDeleteFileIds().isEmpty()) {
             fileService.softDeleteFilesByParent(
@@ -220,29 +233,50 @@ public class RoomServiceImpl implements RoomService {
         return RoomDetailResponse.fromEntity(room, files);
     }
 
+    @Override
+    public void changeRoomStatus(Integer roomId, RoomStatus roomStatus) {
+
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        // ✅ 삭제된 방은 상태 변경 불가
+        if (room.isDeleted()) {
+            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+        }
+
+        room.setRoomSt(roomStatus);
+    }
+
+    // ✅ 신규: Room soft delete
+    @Override
+    public void deleteRoom(Integer roomId) {
+
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        // 이미 삭제된 방이면 그냥 리턴 (멱등성 보장)
+        if (room.isDeleted()) {
+            return;
+        }
+
+        room.softDelete();
+        roomRepository.save(room);
+    }
+
+    // ✅ 삭제되지 않은 건물만 이름으로 검색
     private Building resolveBuildingByName(String buildingNm) {
 
-        List<Building> buildings = buildingRepository.findByBuildingNm(buildingNm);
+        List<Building> buildings = buildingRepository.findByBuildingNmAndDeleteYn(buildingNm, "N");
 
         if (buildings == null || buildings.isEmpty()) {
             throw new IllegalArgumentException("건물을 찾을 수 없습니다. buildingNm=" + buildingNm);
         }
 
         if (buildings.size() > 1) {
-            throw new IllegalArgumentException("건물명이 중복됩니다. buildingNm=" + buildingNm + " (buildingId로 지정 필요)");
+            throw new IllegalArgumentException(
+                    "건물명이 중복됩니다. buildingNm=" + buildingNm + " (buildingId로 지정 필요)");
         }
 
         return buildings.get(0);
-    }
-    
-    @Override
-    public void changeRoomStatus(Integer roomId, RoomStatus roomStatus) {
-
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("객실을 찾을 수 없습니다. roomId=" + roomId)
-                );
-
-        room.setRoomSt(roomStatus);
     }
 }
