@@ -31,7 +31,9 @@ public class BuildingController {
     private final SpaceService spaceService;
 
     @GetMapping("/{buildingId}")
-    public ApiResponse<BuildingDetailResponse> detail(@PathVariable Integer buildingId) {
+    public ApiResponse<BuildingDetailResponse> detail(
+            @PathVariable("buildingId") Integer buildingId
+    ) {
         return ApiResponse.ok(buildingService.getBuilding(buildingId));
     }
 
@@ -58,7 +60,7 @@ public class BuildingController {
     // ✅ 빌딩ID로 객실 조회
     @GetMapping("/{buildingId}/rooms")
     public ApiResponse<PageResponse<RoomSummaryResponse>> rooms(
-            @PathVariable Integer buildingId,
+            @PathVariable("buildingId") Integer buildingId,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", defaultValue = "roomId") String sort,
@@ -83,7 +85,7 @@ public class BuildingController {
     // ✅ 빌딩ID로 공용공간(스페이스) 조회
     @GetMapping("/{buildingId}/spaces")
     public ApiResponse<PageResponse<SpaceResponse>> spaces(
-            @PathVariable Integer buildingId,
+            @PathVariable("buildingId") Integer buildingId,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", defaultValue = "spaceId") String sort,

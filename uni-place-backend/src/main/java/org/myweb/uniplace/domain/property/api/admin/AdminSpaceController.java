@@ -21,8 +21,10 @@ public class AdminSpaceController {
     private final SpaceService spaceService;
 
     @GetMapping("/{spaceId}")
-    public ApiResponse<SpaceDetailResponse> detail(@PathVariable Integer spaceId) {
-        // 일반 상세와 동일(삭제 포함/관리자 분리 필요하면 서비스 메서드 추가 가능)
+    public ApiResponse<SpaceDetailResponse> detail(
+            @PathVariable("spaceId") Integer spaceId
+    ) {
+        // 관리자 상세 (삭제 포함 필요 시 service 분리 가능)
         return ApiResponse.ok(spaceService.getSpace(spaceId));
     }
 
@@ -35,14 +37,16 @@ public class AdminSpaceController {
 
     @PutMapping(value = "/{spaceId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<SpaceDetailResponse> update(
-            @PathVariable Integer spaceId,
+            @PathVariable("spaceId") Integer spaceId,
             @Validated @ModelAttribute SpaceUpdateRequest request
     ) {
         return ApiResponse.ok(spaceService.updateSpace(spaceId, request));
     }
 
     @DeleteMapping("/{spaceId}")
-    public ApiResponse<Void> delete(@PathVariable Integer spaceId) {
+    public ApiResponse<Void> delete(
+            @PathVariable("spaceId") Integer spaceId
+    ) {
         spaceService.deleteSpace(spaceId);
         return ApiResponse.ok();
     }

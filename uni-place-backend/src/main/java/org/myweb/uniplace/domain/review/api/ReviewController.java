@@ -30,29 +30,23 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    // ─────────────────────────────────────────────────────────────────────
     // [GET] /reviews?roomId={roomId}&page=0&size=10
-    // 방별 리뷰 목록 (게시판형 페이징, 최신순)
-    // ─────────────────────────────────────────────────────────────────────
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ReviewResponse>>> reviewList(
-            @RequestParam(required = false) Integer roomId,
+            @RequestParam(name = "roomId", required = false) Integer roomId,
             @PageableDefault(size = 10, sort = "reviewId", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        // roomId 누락 시 명확한 400 반환
         if (roomId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+            // ※ roomId 빠졌을 때 UNAUTHORIZED는 의미가 안 맞음 → BAD_REQUEST 추천
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
         return ResponseEntity.ok(
                 ApiResponse.ok(reviewService.getReviewListByRoom(roomId, pageable))
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────
     // [GET] /reviews/my?page=0&size=10
-    // 내 리뷰 목록 (로그인 필요)
-    // ─────────────────────────────────────────────────────────────────────
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<PageResponse<ReviewResponse>>> myReviews(
             @PageableDefault(size = 10, sort = "reviewId", direction = Sort.Direction.DESC)
@@ -63,37 +57,27 @@ public class ReviewController {
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────
     // [GET] /reviews/{reviewId}
-    // 리뷰 상세 (파일 포함)
-    // ─────────────────────────────────────────────────────────────────────
     @GetMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<ReviewResponse>> reviewDetail(
-            @PathVariable int reviewId
+            @PathVariable("reviewId") int reviewId
     ) {
         return ResponseEntity.ok(
                 ApiResponse.ok(reviewService.getReviewDetail(reviewId))
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────
     // [GET] /reviews/rooms/{roomId}/summary
-    // 방별 별점 요약 (평균·건수)
-    // ─────────────────────────────────────────────────────────────────────
     @GetMapping("/rooms/{roomId}/summary")
     public ResponseEntity<ApiResponse<ReviewRoomSummaryResponse>> roomSummary(
-            @PathVariable Integer roomId
+            @PathVariable("roomId") Integer roomId
     ) {
         return ResponseEntity.ok(
                 ApiResponse.ok(reviewService.getRoomReviewSummary(roomId))
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────
     // [POST] /reviews
-    // 리뷰 등록 (multipart: 필드 + 이미지 파일 다중)
-    // form-data: reviewTitle, reviewCtnt, rating, roomId, code, ofiles[]
-    // ─────────────────────────────────────────────────────────────────────
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> reviewCreate(
             @Valid @ModelAttribute ReviewCreateRequest request,
@@ -103,29 +87,22 @@ public class ReviewController {
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
-    // ─────────────────────────────────────────────────────────────────────
     // [PUT] /reviews/{reviewId}
-    // 리뷰 수정 (본인만)
-    // form-data: 수정 필드 + deleteFiles(boolean) + ofiles[]
-    // ─────────────────────────────────────────────────────────────────────
     @PutMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<Void>> reviewUpdate(
-            @PathVariable int reviewId,
+            @PathVariable("reviewId") int reviewId,
             @ModelAttribute ReviewUpdateRequest request,
-            @RequestParam(defaultValue = "false") boolean deleteFiles,
+            @RequestParam(name = "deleteFiles", defaultValue = "false") boolean deleteFiles,
             @RequestParam(name = "ofiles", required = false) List<MultipartFile> files
     ) {
         reviewService.updateReview(reviewId, request, deleteFiles, files);
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
-    // ─────────────────────────────────────────────────────────────────────
     // [DELETE] /reviews/{reviewId}
-    // 리뷰 삭제 (본인만)
-    // ─────────────────────────────────────────────────────────────────────
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<Void>> reviewDelete(
-            @PathVariable int reviewId
+            @PathVariable("reviewId") int reviewId
     ) {
         reviewService.deleteReview(reviewId);
         return ResponseEntity.ok(ApiResponse.ok());

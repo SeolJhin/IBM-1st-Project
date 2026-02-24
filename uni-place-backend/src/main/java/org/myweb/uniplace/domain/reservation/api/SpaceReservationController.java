@@ -1,4 +1,3 @@
-// Controller
 // 경로: org/myweb/uniplace/domain/reservation/api/SpaceReservationController.java
 package org.myweb.uniplace.domain.reservation.api;
 
@@ -12,7 +11,9 @@ import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
 
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -85,7 +86,7 @@ public class SpaceReservationController {
     @PutMapping("/cancel/{reservationId}")
     public ApiResponse<SpaceReservationResponse> cancel(
             @AuthenticationPrincipal AuthUser me,
-            @PathVariable Integer reservationId
+            @PathVariable("reservationId") Integer reservationId
     ) {
         return ApiResponse.ok(spaceReservationService.cancel(me, reservationId));
     }
