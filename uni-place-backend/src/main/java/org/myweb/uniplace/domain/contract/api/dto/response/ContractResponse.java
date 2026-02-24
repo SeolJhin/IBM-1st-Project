@@ -37,7 +37,7 @@ public class ContractResponse {
     private ContractStatus contractStatus;
 
     // ✅ 임대인(회원 입력)
-    private String lessorName;
+    private String lessorNm;
 
     // 마이페이지/관리자 공통 표시
     private LocalDateTime requestedAt; // createdAt
@@ -75,7 +75,7 @@ public class ContractResponse {
                 .paymentDay(c.getPaymentDay())
                 .contractStatus(c.getContractSt())
 
-                .lessorName(c.getLessorName())
+                .lessorNm(c.getLessorNm())
 
                 .requestedAt(c.getCreatedAt())
                 .approvedAt(c.getSignAt())

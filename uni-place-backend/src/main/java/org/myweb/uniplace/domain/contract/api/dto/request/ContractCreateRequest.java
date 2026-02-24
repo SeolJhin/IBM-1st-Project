@@ -36,8 +36,8 @@ public class ContractCreateRequest {
     @NotBlank(message = "lessorTel은 필수입니다.")
     private String lessorTel;
 
-    @NotBlank(message = "lessorName은 필수입니다.")
-    private String lessorName;
+    @NotBlank(message = "lessorNm은 필수입니다.")
+    private String lessorNm;
 
     // ✅ 서명/날인(이미지)
     @NotNull(message = "signFile은 필수입니다.")

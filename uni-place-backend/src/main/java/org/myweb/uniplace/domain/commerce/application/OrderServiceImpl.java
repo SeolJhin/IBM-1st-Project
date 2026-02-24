@@ -54,8 +54,10 @@ public class OrderServiceImpl implements OrderService {
             if (dto == null || dto.getProdId() == null || dto.getOrderQuantity() == null || dto.getOrderQuantity() <= 0) {
                 throw new BusinessException(ErrorCode.BAD_REQUEST);
             }
-            Product product = productRepository.findById(dto.getProdId())
+            // 비관적 락으로 조회 → 동시 주문 시 재고 초과 차감 방지
+            Product product = productRepository.findByIdWithLock(dto.getProdId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+            product.decreaseStock(dto.getOrderQuantity());  // 재고 차감 (품절/부족 시 예외)
             items.add(OrderItem.of(order, product, dto.getOrderQuantity()));
         }
 
@@ -99,6 +101,15 @@ public class OrderServiceImpl implements OrderService {
 
         if (!order.getUser().getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
+
+        // 재고 복원 (취소 시)
+        for (OrderItem item : order.getOrderItems()) {
+            Product product = productRepository.findByIdWithLock(item.getProduct().getProdId())
+                    .orElse(null);
+            if (product != null) {
+                product.restoreStock(item.getOrderQuantity());
+            }
         }
 
         order.cancel();

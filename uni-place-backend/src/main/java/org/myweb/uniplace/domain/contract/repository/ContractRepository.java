@@ -56,7 +56,7 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
            and (
                  :keyword is null or :keyword = ''
                  or lower(b.buildingNm) like lower(concat('%', :keyword, '%'))
-                 or lower(c.lessorName) like lower(concat('%', :keyword, '%'))
+                 or lower(c.lessorNm) like lower(concat('%', :keyword, '%'))
                  or lower(u.userId) like lower(concat('%', :keyword, '%'))
                )
     """)
