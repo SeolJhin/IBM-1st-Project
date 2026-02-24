@@ -25,7 +25,7 @@ public class BannerController {
 
     // 배너 상세(관리자 미리보기겸용)
     @GetMapping("/{banId}")
-    public ResponseEntity<ApiResponse<BannerResponse>> getBanner(@PathVariable int banId) {
+    public ResponseEntity<ApiResponse<BannerResponse>> getBanner(@PathVariable("banId") int banId) {
         return ResponseEntity.ok(ApiResponse.ok(bannerService.getBanner(banId)));
     }
 }
