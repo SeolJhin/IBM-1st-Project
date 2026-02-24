@@ -19,7 +19,9 @@ import org.myweb.uniplace.domain.reservation.application.TourReservationService;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -99,7 +101,7 @@ public class TourReservationController {
 
     @PutMapping("/cancel/{tourId}")
     public ApiResponse<TourReservationResponse> cancel(
-            @PathVariable Integer tourId,
+            @PathVariable("tourId") Integer tourId,
             @Validated @RequestBody CancelTourReservationRequest request
     ) {
         return ApiResponse.ok(tourReservationService.cancel(tourId, request));
