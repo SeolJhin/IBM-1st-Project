@@ -20,8 +20,9 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
     @Query("""
         select r
           from Room r
-         where
-               (:buildingId is null or r.building.buildingId = :buildingId)
+         where r.deleteYn = 'N'
+           and r.building.deleteYn = 'N'
+           and (:buildingId is null or r.building.buildingId = :buildingId)
            and (:buildingNm is null or :buildingNm = '' or lower(r.building.buildingNm) like lower(concat('%', :buildingNm, '%')))
            and (:buildingAddr is null or :buildingAddr = '' or lower(r.building.buildingAddr) like lower(concat('%', :buildingAddr, '%')))
            and (:minParkingCapacity is null or r.building.parkingCapacity >= :minParkingCapacity)
