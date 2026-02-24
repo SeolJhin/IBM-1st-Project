@@ -4,6 +4,7 @@ package org.myweb.uniplace.domain.review.api.dto.request;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+@Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,7 +26,5 @@ public class ReviewCreateRequest {
     @Size(max = 3000, message = "내용은 3000자 이내로 작성해 주세요.")
     private String reviewCtnt;
 
-    /** FK: common_code.code (리뷰 유형 분류) */
-    @NotBlank(message = "code는 필수입니다.")
     private String code;
 }

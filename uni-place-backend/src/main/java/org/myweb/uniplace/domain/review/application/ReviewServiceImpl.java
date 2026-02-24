@@ -120,8 +120,12 @@ public class ReviewServiceImpl implements ReviewService {
     public void createReview(ReviewCreateRequest request, List<MultipartFile> files) {
         String userId = requireCurrentUserId();
 
-        // 방 존재 여부 확인
-        if (!roomRepository.existsById(request.getRoomId())) {
+        // 방 존재 여부 + 삭제 여부 확인
+        Room reviewRoom = roomRepository.findById(request.getRoomId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        // ✅ 삭제된 방에 리뷰 작성 불가
+        if (reviewRoom.isDeleted()) {
             throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
         }
 
@@ -147,7 +151,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         // ✅ 알림: 관리자에게 새 리뷰 등록 알림
         notificationService.notifyAdmins(
-                NotificationType.RVW_NEW,
+                NotificationType.RVW_NEW.name(),
                 "새 리뷰가 등록되었습니다. (roomId=" + request.getRoomId() + ", 별점=" + request.getRating() + "★)",
                 userId,
                 TargetType.review,
