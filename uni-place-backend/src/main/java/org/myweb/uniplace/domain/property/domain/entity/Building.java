@@ -3,7 +3,7 @@ package org.myweb.uniplace.domain.property.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.myweb.uniplace.global.common.BaseTimeEntity;
+import org.myweb.uniplace.global.common.SoftDeleteEntity;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -14,8 +14,13 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "building") // ✅ uniqueConstraints 제거
-public class Building extends BaseTimeEntity {
+@Table(name = "building")
+public class Building extends SoftDeleteEntity {
+    // ✅ SoftDeleteEntity 상속으로 아래 필드/메서드 자동 제공
+    //    - deleteYn (CHAR(1), 기본값 'N')
+    //    - softDelete()   → deleteYn = 'Y'
+    //    - isDeleted()    → "Y".equals(deleteYn)
+    //    - createdAt / updatedAt (BaseTimeEntity 경유)
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,10 +51,13 @@ public class Building extends BaseTimeEntity {
     @Column(name = "parking_capacity")
     private Integer parkingCapacity;
 
+    // ✅ CascadeType.ALL + orphanRemoval 제거
+    //    이유: soft delete 방식에서 JPA cascade로 Room이 hard delete 되는 것을 방지
+    //    Building soft delete 시 Room 처리는 BuildingServiceImpl.deleteBuilding()에서 직접 수행
     @OneToMany(
             mappedBy = "building",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+            fetch = FetchType.LAZY
     )
     @Builder.Default
     private List<Room> rooms = new ArrayList<>();
@@ -64,13 +72,13 @@ public class Building extends BaseTimeEntity {
             String existElv,
             Integer parkingCapacity
     ) {
-        if (buildingNm != null) this.buildingNm = buildingNm;
-        if (buildingAddr != null) this.buildingAddr = buildingAddr;
-        if (buildingDesc != null) this.buildingDesc = buildingDesc;
-        if (landCategory != null) this.landCategory = landCategory;
-        if (buildSize != null) this.buildSize = buildSize;
-        if (buildingUsage != null) this.buildingUsage = buildingUsage;
-        if (existElv != null) this.existElv = existElv;
+        if (buildingNm != null)      this.buildingNm = buildingNm;
+        if (buildingAddr != null)    this.buildingAddr = buildingAddr;
+        if (buildingDesc != null)    this.buildingDesc = buildingDesc;
+        if (landCategory != null)    this.landCategory = landCategory;
+        if (buildSize != null)       this.buildSize = buildSize;
+        if (buildingUsage != null)   this.buildingUsage = buildingUsage;
+        if (existElv != null)        this.existElv = existElv;
         if (parkingCapacity != null) this.parkingCapacity = parkingCapacity;
     }
 }

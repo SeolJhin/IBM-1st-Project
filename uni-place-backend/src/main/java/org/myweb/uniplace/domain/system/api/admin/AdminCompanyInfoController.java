@@ -16,7 +16,7 @@ public class AdminCompanyInfoController {
 
     @PatchMapping("/{companyId}")
     public ApiResponse<CompanyInfoResponse> update(
-            @PathVariable Integer companyId,
+            @PathVariable("companyId") Integer companyId,
             @RequestBody CompanyInfoUpdateRequest request
     ) {
         return ApiResponse.ok(companyInfoService.update(companyId, request));

@@ -6,6 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 import org.myweb.uniplace.domain.system.domain.enums.BannerStatus;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -20,9 +21,11 @@ public class Banner {
     @Column(name = "ban_id")
     private Integer banId;
 
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "start_at", nullable = false)
     private LocalDateTime startAt;
 
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "end_at", nullable = false)
     private LocalDateTime endAt;
 

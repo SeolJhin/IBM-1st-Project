@@ -12,12 +12,19 @@ import org.springframework.data.domain.Pageable;
 
 public interface RoomService {
 
+    // 일반 사용자: 삭제된 방 제외
     RoomDetailResponse getRoom(Integer roomId);
+
+    // 관리자: 삭제된 방도 조회 가능
     RoomDetailResponse getRoomForAdmin(Integer roomId);
 
     Page<RoomSummaryResponse> searchPage(RoomSearchRequest request, Pageable pageable);
 
     RoomDetailResponse createRoom(RoomCreateRequest request);
     RoomDetailResponse updateRoom(Integer roomId, RoomUpdateRequest request);
+
     void changeRoomStatus(Integer roomId, RoomStatus roomStatus);
+
+    // ✅ soft delete
+    void deleteRoom(Integer roomId);
 }

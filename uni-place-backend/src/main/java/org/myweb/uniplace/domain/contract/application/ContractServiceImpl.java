@@ -74,6 +74,11 @@ public class ContractServiceImpl implements ContractService {
         Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new IllegalArgumentException("객실을 찾을 수 없습니다. roomId=" + request.getRoomId()));
 
+        // ✅ 삭제된 방으로 계약 신청 불가
+        if (room.isDeleted()) {
+            throw new IllegalArgumentException("객실을 찾을 수 없습니다. roomId=" + request.getRoomId());
+        }
+
         // 기간 겹침 체크 (requested + active)
         boolean overlapped = contractRepository.existsOverlappedContract(
                 room.getRoomId(),
