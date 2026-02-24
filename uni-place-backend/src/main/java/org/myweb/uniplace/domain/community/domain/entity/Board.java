@@ -42,19 +42,19 @@ public class Board {
     private String code;
 
     // 'Y'/'N'
-    @Column(name = "anonymity", nullable = false, columnDefinition = "CHAR(1)")
+    @Column(name = "anonymity", nullable = false, length = 1)
     private String anonymity;
 
-    @Column(name = "importance", nullable = false, columnDefinition = "CHAR(1)")
+    @Column(name = "importance", nullable = false, length = 1)
     private String importance;
 
     @Column(name = "imp_end_at")
     private LocalDateTime impEndAt;
 
-    @Column(name = "file_ck", nullable = false, columnDefinition = "CHAR(1)")
+    @Column(name = "file_ck", nullable = false,  length = 1)
     private String fileCk;
 
-    @Column(name = "reply_ck", nullable = false, columnDefinition = "CHAR(1)")
+    @Column(name = "reply_ck", nullable = false,  length = 1)
     private String replyCk;
 
     @PrePersist
