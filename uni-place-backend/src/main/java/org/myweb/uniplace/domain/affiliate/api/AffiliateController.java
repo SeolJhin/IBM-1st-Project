@@ -28,7 +28,7 @@ public class AffiliateController {
     }
 
     @GetMapping("/{affiliateId}")
-    public ApiResponse<AffiliateResponse> detail(@PathVariable Integer affiliateId) {
+    public ApiResponse<AffiliateResponse> detail(@PathVariable("affiliateId") Integer affiliateId) {
         return ApiResponse.ok(affiliateService.get(affiliateId));
     }
 }
