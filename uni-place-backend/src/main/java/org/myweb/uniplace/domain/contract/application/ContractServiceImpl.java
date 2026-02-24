@@ -102,7 +102,7 @@ public class ContractServiceImpl implements ContractService {
                 .lessorAddr(request.getLessorAddr())
                 .lessorRrn(request.getLessorRrn())
                 .lessorTel(request.getLessorTel())
-                .lessorName(request.getLessorName())
+                .lessorNm(request.getLessorNm())
                 .build();
 
         // 1) 계약 먼저 저장(계약ID 필요)
