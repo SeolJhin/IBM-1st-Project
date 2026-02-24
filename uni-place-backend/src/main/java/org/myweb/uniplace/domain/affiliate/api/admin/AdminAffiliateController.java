@@ -37,14 +37,14 @@ public class AdminAffiliateController {
 
     @PatchMapping("/{affiliateId}")
     public ApiResponse<AffiliateResponse> update(
-            @PathVariable Integer affiliateId,
+            @PathVariable("affiliateId") Integer affiliateId,
             @Valid @RequestBody AffiliateUpdateRequest request
     ) {
         return ApiResponse.ok(affiliateService.update(affiliateId, request));
     }
 
     @GetMapping("/{affiliateId}")
-    public ApiResponse<AffiliateResponse> detail(@PathVariable Integer affiliateId) {
+    public ApiResponse<AffiliateResponse> detail(@PathVariable("affiliateId") Integer affiliateId) {
         return ApiResponse.ok(affiliateService.get(affiliateId));
     }
 }
