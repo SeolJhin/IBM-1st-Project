@@ -50,7 +50,6 @@ public class TourReservationServiceImpl implements TourReservationService {
     private final ReservationValidator reservationValidator;
     private final TourReservationConflictPolicy reservationConflictPolicy;
 
-    // ✅ 알림
     private final NotificationService notificationService;
 
     private static final List<TourStatus> INACTIVE = List.of(TourStatus.cancelled, TourStatus.ended);
@@ -68,8 +67,18 @@ public class TourReservationServiceImpl implements TourReservationService {
         Building building = buildingRepository.findById(request.getBuildingId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
 
+        // ✅ 삭제된 건물로 투어 예약 불가
+        if (building.isDeleted()) {
+            throw new BusinessException(ErrorCode.BUILDING_NOT_FOUND);
+        }
+
         Room room = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        // ✅ 삭제된 방으로 투어 예약 불가
+        if (room.isDeleted()) {
+            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+        }
 
         if (room.getBuilding() == null || !building.getBuildingId().equals(room.getBuilding().getBuildingId())) {
             throw new BusinessException(ErrorCode.TOUR_RESERVATION_BUILDING_ROOM_MISMATCH);
@@ -104,9 +113,6 @@ public class TourReservationServiceImpl implements TourReservationService {
                         .build()
         );
 
-        // =========================
-        // ✅ 알림 - 투어 예약 생성 직후 (관리자용)
-        // =========================
         String timeMsg = saved.getTourStartAt() + " ~ " + saved.getTourEndAt();
 
         notificationService.notifyAdmins(
@@ -165,9 +171,6 @@ public class TourReservationServiceImpl implements TourReservationService {
 
         resv.setTourSt(TourStatus.cancelled);
 
-        // =========================
-        // ✅ 알림 - 투어 예약 취소 직후 (관리자용)
-        // =========================
         String timeMsg = resv.getTourStartAt() + " ~ " + resv.getTourEndAt();
 
         notificationService.notifyAdmins(
@@ -196,15 +199,25 @@ public class TourReservationServiceImpl implements TourReservationService {
         Building building = buildingRepository.findById(buildingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
 
+        // ✅ 삭제된 건물 슬롯 조회 불가
+        if (building.isDeleted()) {
+            throw new BusinessException(ErrorCode.BUILDING_NOT_FOUND);
+        }
+
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+
+        // ✅ 삭제된 방 슬롯 조회 불가
+        if (room.isDeleted()) {
+            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+        }
 
         if (room.getBuilding() == null || !building.getBuildingId().equals(room.getBuilding().getBuildingId())) {
             throw new BusinessException(ErrorCode.TOUR_RESERVATION_BUILDING_ROOM_MISMATCH);
         }
 
         LocalDateTime dayStart = date.atStartOfDay();
-        LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+        LocalDateTime dayEnd   = date.plusDays(1).atStartOfDay();
 
         List<TourReservationEntity> reserved = tourReservationRepository.findActiveInDayRange(
                 roomId, INACTIVE, dayStart, dayEnd
@@ -217,7 +230,7 @@ public class TourReservationServiceImpl implements TourReservationService {
         List<TourReservableResponse.TimeSlotResponse> available = Arrays.stream(TourFixedSlot.values())
                 .map(slot -> {
                     LocalDateTime startAt = LocalDateTime.of(date, slot.getStart());
-                    LocalDateTime endAt = LocalDateTime.of(date, slot.getEnd());
+                    LocalDateTime endAt   = LocalDateTime.of(date, slot.getEnd());
                     return TourReservableResponse.TimeSlotResponse.builder()
                             .label(slot.label())
                             .startAt(startAt)
