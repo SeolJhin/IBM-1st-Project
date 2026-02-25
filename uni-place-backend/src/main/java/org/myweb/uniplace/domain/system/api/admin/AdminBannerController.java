@@ -42,9 +42,6 @@ public class AdminBannerController {
             @ModelAttribute BannerCreateRequest request,
             @RequestParam(name = "file", required = false) MultipartFile file
     ) {
-    	log.info("startAt={}, endAt={}, title={}, order={}, url={}",
-    	        request.getStartAt(), request.getEndAt(),
-    	        request.getBanTitle(), request.getBanOrder(), request.getBanUrl());
         bannerService.createBanner(request, file);
         return ResponseEntity.ok(ApiResponse.ok());
     }
@@ -61,9 +58,12 @@ public class AdminBannerController {
     public ResponseEntity<ApiResponse<Void>> updateBanner(
             @PathVariable("banId") int banId,
             @ModelAttribute BannerUpdateRequest request,
-            @RequestParam(defaultValue = "false") boolean deleteFlag,
+            @RequestParam(name = "deleteFlag", defaultValue = "false") boolean deleteFlag,
             @RequestParam(name = "file", required = false) MultipartFile file
     ) {
+    	log.info("startAt={}, endAt={}, title={}, order={}, url={}",
+    	        request.getStartAt(), request.getEndAt(),
+    	        request.getBanTitle(), request.getBanOrder(), request.getBanUrl());
         bannerService.updateBanner(banId, request, deleteFlag, file);
         return ResponseEntity.ok(ApiResponse.ok());
     }
@@ -72,7 +72,7 @@ public class AdminBannerController {
     @PatchMapping("/{banId}/status")
     public ResponseEntity<ApiResponse<Void>> updateBannerStatus(
             @PathVariable("banId") int banId,
-            @RequestParam String status
+            @RequestParam(name = "status") String status
     ) {
         bannerService.updateBannerStatus(banId, status);
         return ResponseEntity.ok(ApiResponse.ok());
