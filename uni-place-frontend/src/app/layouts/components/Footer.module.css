@@ -1,0 +1,135 @@
+﻿.footer{
+  width: 100%;
+  margin-top: 40px;
+}
+
+.bottom{
+  background: #0B0E12;
+}
+
+.container{
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 56px 24px;
+}
+
+.aboutCol{
+  display: grid;
+  gap: 22px;
+}
+
+.aboutHead{
+  display: grid;
+  gap: 6px;
+}
+
+.kicker{
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  color: rgba(255,255,255,0.64);
+}
+
+.headline{
+  margin: 8px 0 0;
+  font-size: 32px;
+  line-height: 1.18;
+  color: #ffffff;
+}
+
+.contactList{
+  display: grid;
+  gap: 14px;
+}
+
+.miniKicker{
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: rgba(255,255,255,0.58);
+}
+
+.bodyText{
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.9);
+}
+
+.bottomGrid{
+  display: grid;
+  gap: 40px;
+  grid-template-columns: 1fr;
+}
+
+.logoWrap{
+  display: flex;
+  align-items: flex-start;
+}
+
+.logoInline{
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoMark{
+  width: 40px;
+  height: 40px;
+}
+
+.logoTitle{
+  margin: 0;
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: 14px;
+}
+
+.logoSub{
+  margin: 3px 0 0;
+  color: rgba(255,255,255,0.7);
+  font-size: 11px;
+}
+
+.navCol{
+  display: grid;
+  gap: 12px;
+}
+
+.navTitle{
+  margin: 0;
+  color: rgba(255,255,255,0.7);
+  font-size: 12px;
+  letter-spacing: 0.22em;
+}
+
+.navList{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.navList a{
+  color: #201812;
+  background: #FDF7EC;
+  border: 1px solid #D7CEBC;
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: inline-block;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.navList a:hover{
+  background: #FFD993;
+}
+
+@media (min-width: 900px){
+  .bottomGrid{
+    grid-template-columns: 0.9fr 1.6fr 0.7fr 0.7fr;
+    align-items: start;
+  }
+}

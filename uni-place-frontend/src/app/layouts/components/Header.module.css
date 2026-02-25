@@ -2,8 +2,8 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  background: #0B0E12;
+  border-bottom: 1px solid rgba(255,255,255,0.14);
 }
 
 .inner{
@@ -20,28 +20,43 @@
 .logoMark{
   width:28px; height:28px;
   border-radius: 10px;
-  background: var(--primary-weak);
-  box-shadow: 0 8px 18px rgba(217,173,91,0.25);
+  background: #D9AD5B;
+  box-shadow: 0 8px 18px rgba(217,173,91,0.3);
 }
 
 .brandText{ display:flex; flex-direction:column; line-height:1.1; }
-.brandName{ font-weight: 900; letter-spacing: 1px; color: var(--text); }
-.brandSub{ font-size: 12px; color: var(--muted); }
+.brandName{ font-weight: 900; letter-spacing: 1px; color: #FFFFFF; }
+.brandSub{ font-size: 12px; color: #D7CEBC; }
 
 .nav{ display:flex; align-items:center; gap:18px; }
-.link{ text-decoration:none; font-size:14px; opacity: 0.9; }
-.link:hover{ opacity: 1; }
+.linkBtn{
+  background: #FDF7EC;
+  border: 1px solid #D7CEBC;
+  color: #201812;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 1;
+}
+.linkBtn:hover{
+  background: #FFD993;
+}
 
 .icons{ display:flex; gap: 8px; }
 .iconBtn{
-  width: 34px; height: 34px;
+  min-width: 34px; height: 34px;
+  padding: 0 10px;
   border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--bg);
-  color: var(--text);
+  border: 1px solid #D7CEBC;
+  background: #FDF7EC;
+  color: #201812;
   cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
 }
 .iconBtn:hover{
-  background: rgba(255,205,142,0.45);
-  border-color: rgba(217,173,91,0.35);
+  background: #FFD993;
+  border-color: #D9AD5B;
 }
