@@ -12,6 +12,8 @@ import org.myweb.uniplace.domain.file.api.dto.response.FileUploadResponse;
 import org.myweb.uniplace.domain.file.domain.entity.UploadFile;
 import org.myweb.uniplace.domain.file.domain.enums.FileRefType;
 import org.myweb.uniplace.domain.file.repository.UploadFileRepository;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.util.FileNameChange;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -87,8 +89,6 @@ public class FileServiceImpl implements FileService {
                 .build();
     }
 
-    // ✅ 일반 사용자: 삭제 제외 목록
-    @Override
     @Transactional(readOnly = true)
     public List<FileResponse> getActiveFiles(String parentType, Integer parentId) {
         String normalized = normalizeParentType(parentType);
@@ -101,17 +101,14 @@ public class FileServiceImpl implements FileService {
         return files.stream().map(FileResponse::fromEntity).toList();
     }
 
-    // ✅ 일반 사용자: 삭제 제외 단건
     @Override
     @Transactional(readOnly = true)
     public FileResponse getFile(Integer fileId) {
         UploadFile file = uploadFileRepository.findByFileIdAndDeleteYn(fileId, NOT_DELETED)
-                .orElseThrow(() -> new IllegalArgumentException("파일이 존재하지 않습니다. fileId=" + fileId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
         return FileResponse.fromEntity(file);
     }
 
-    // ✅ 관리자: 삭제 포함 목록
-    @Override
     @Transactional(readOnly = true)
     public List<FileResponse> getAllFilesForAdmin(String parentType, Integer parentId) {
         String normalized = normalizeParentType(parentType);
@@ -124,12 +121,11 @@ public class FileServiceImpl implements FileService {
         return files.stream().map(FileResponse::fromEntity).toList();
     }
 
-    // ✅ 관리자: 삭제 포함 단건
     @Override
     @Transactional(readOnly = true)
     public FileResponse getFileForAdmin(Integer fileId) {
         UploadFile file = uploadFileRepository.findById(fileId)
-                .orElseThrow(() -> new IllegalArgumentException("파일이 존재하지 않습니다. fileId=" + fileId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
         return FileResponse.fromEntity(file);
     }
 
@@ -231,3 +227,4 @@ public class FileServiceImpl implements FileService {
         return path == null ? null : path.replace("\\", "/");
     }
 }
+

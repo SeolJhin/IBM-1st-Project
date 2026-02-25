@@ -1,4 +1,3 @@
-// 경로: org/myweb/uniplace/domain/property/application/RoomServiceImpl.java
 package org.myweb.uniplace.domain.property.application;
 
 import java.util.List;
@@ -45,7 +44,6 @@ public class RoomServiceImpl implements RoomService {
         return IMAGE_EXTS.contains(ext.toLowerCase());
     }
 
-    // ✅ 일반 사용자: 삭제된 방 조회 불가
     @Override
     @Transactional(readOnly = true)
     public RoomDetailResponse getRoom(Integer roomId) {
@@ -63,7 +61,6 @@ public class RoomServiceImpl implements RoomService {
         return RoomDetailResponse.fromEntity(room, files);
     }
 
-    // ✅ 관리자: 삭제된 방도 조회 가능 (findById 그대로 유지)
     @Override
     @Transactional(readOnly = true)
     public RoomDetailResponse getRoomForAdmin(Integer roomId) {
@@ -77,7 +74,6 @@ public class RoomServiceImpl implements RoomService {
         return RoomDetailResponse.fromEntity(room, files);
     }
 
-    // ✅ searchWithFilters 쿼리에서 이미 deleteYn = 'N' 필터 적용됨
     @Override
     @Transactional(readOnly = true)
     public Page<RoomSummaryResponse> searchPage(RoomSearchRequest request, Pageable pageable) {
@@ -142,7 +138,6 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public RoomDetailResponse createRoom(RoomCreateRequest request) {
 
-        // ✅ 삭제되지 않은 건물만 허용
         Building building = resolveBuildingByName(request.getBuildingNm());
 
         Room room = Room.builder()
@@ -184,7 +179,6 @@ public class RoomServiceImpl implements RoomService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // ✅ 삭제된 방은 수정 불가
         if (room.isDeleted()) {
             throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
         }
@@ -239,7 +233,6 @@ public class RoomServiceImpl implements RoomService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // ✅ 삭제된 방은 상태 변경 불가
         if (room.isDeleted()) {
             throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
         }
@@ -247,14 +240,12 @@ public class RoomServiceImpl implements RoomService {
         room.setRoomSt(roomStatus);
     }
 
-    // ✅ 신규: Room soft delete
     @Override
     public void deleteRoom(Integer roomId) {
 
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // 이미 삭제된 방이면 그냥 리턴 (멱등성 보장)
         if (room.isDeleted()) {
             return;
         }
@@ -263,20 +254,20 @@ public class RoomServiceImpl implements RoomService {
         roomRepository.save(room);
     }
 
-    // ✅ 삭제되지 않은 건물만 이름으로 검색
     private Building resolveBuildingByName(String buildingNm) {
 
         List<Building> buildings = buildingRepository.findByBuildingNmAndDeleteYn(buildingNm, "N");
 
         if (buildings == null || buildings.isEmpty()) {
-            throw new IllegalArgumentException("건물을 찾을 수 없습니다. buildingNm=" + buildingNm);
+            throw new BusinessException(ErrorCode.BUILDING_NOT_FOUND);
         }
 
         if (buildings.size() > 1) {
-            throw new IllegalArgumentException(
-                    "건물명이 중복됩니다. buildingNm=" + buildingNm + " (buildingId로 지정 필요)");
+            throw new IllegalArgumentException("건물명이 중복됩니다. buildingNm=" + buildingNm + " (buildingId로 지정 필요)");
         }
 
         return buildings.get(0);
     }
 }
+
+
