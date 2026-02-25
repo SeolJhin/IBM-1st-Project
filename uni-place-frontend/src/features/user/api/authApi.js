@@ -61,8 +61,11 @@ async function request(
 
 export const authApi = {
   // ===== AuthController (/auth) =====
-  signup: ({ userEmail, userPwd }) =>
-    request('/auth/signup', { method: 'POST', body: { userEmail, userPwd } }),
+  signup: (data) =>
+    request('/auth/signup', {
+      method: 'POST',
+      body: data,
+    }),
 
   login: ({ userEmail, userPwd, deviceId }) =>
     request('/auth/login', {
