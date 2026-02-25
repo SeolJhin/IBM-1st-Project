@@ -43,6 +43,7 @@ public enum ErrorCode {
 
     // ===== Room =====
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "ROOM_404", "방을 찾을 수 없습니다."),
+    CONTRACT_NOT_FOUND(HttpStatus.NOT_FOUND, "CONTRACT_404", "계약을 찾을 수 없습니다."),
 
     // ===== Order =====
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_404", "주문을 찾을 수 없습니다."),
@@ -72,6 +73,9 @@ public enum ErrorCode {
     // ===== Cart =====
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_404", "장바구니 항목을 찾을 수 없습니다."),
     CART_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_404_1", "장바구니를 찾을 수 없습니다."),
+    FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE_404", "파일을 찾을 수 없습니다."),
+    BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "BOARD_404", "게시글을 찾을 수 없습니다."),
+    REPLY_NOT_FOUND(HttpStatus.NOT_FOUND, "REPLY_404", "댓글을 찾을 수 없습니다."),
 
     // ===== Notification =====
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTI_404", "알림을 찾을 수 없습니다."),

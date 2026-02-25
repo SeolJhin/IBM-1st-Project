@@ -43,7 +43,6 @@ public class BoardServiceImpl implements BoardService {
         Pageable pageReq = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<Board> page = boardRepository.findBoardListOrdered(LocalDateTime.now(), pageReq);
 
-        // ✅ 첫 페이지면 주간 TOP5를 상단에 추가
         List<Board> weeklyTop = List.of();
         if (pageReq.getPageNumber() == 0) {
             weeklyTop = boardRepository.findWeeklyTop(
@@ -52,7 +51,6 @@ public class BoardServiceImpl implements BoardService {
             );
         }
 
-        // ✅ likeCount/likedByMe 계산을 위해 boardId를 합쳐서 한번에
         List<Integer> pageIds = page.getContent().stream().map(Board::getBoardId).toList();
         List<Integer> topIds = weeklyTop.stream().map(Board::getBoardId).toList();
 
@@ -64,7 +62,6 @@ public class BoardServiceImpl implements BoardService {
         Map<Integer, Long> likeCountMap = loadBoardLikeCounts(unionIds);
         String me = tryCurrentUserId();
 
-        // weeklyTop -> response
         List<BoardResponse> topResp = weeklyTop.stream()
                 .map(b -> {
                     long cnt = likeCountMap.getOrDefault(b.getBoardId(), 0L);
@@ -73,7 +70,6 @@ public class BoardServiceImpl implements BoardService {
                 })
                 .toList();
 
-        // page -> response (weeklyTop에 있는 글은 중복 제거)
         Set<Integer> topIdSet = new HashSet<>(topIds);
 
         List<BoardResponse> pageResp = page.getContent().stream()
@@ -85,7 +81,6 @@ public class BoardServiceImpl implements BoardService {
                 })
                 .toList();
 
-        // ✅ 합치고 pageSize만큼 자르기(기존 API 스펙 유지)
         List<BoardResponse> merged = new ArrayList<>();
         merged.addAll(topResp);
         merged.addAll(pageResp);
@@ -103,7 +98,7 @@ public class BoardServiceImpl implements BoardService {
         boardRepository.incrementReadCount(boardId);
 
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
         List<FileResponse> files = null;
         if ("Y".equalsIgnoreCase(board.getFileCk())) {
@@ -152,7 +147,7 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public void updateBoard(int boardId, BoardUpdateRequest request, boolean deleteFlag, MultipartFile file) {
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
         String me = requireCurrentUserId();
         if (!me.equals(board.getUserId())) throw new BusinessException(ErrorCode.FORBIDDEN);
@@ -196,7 +191,7 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public void deleteBoard(int boardId) {
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
+                .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
         String me = requireCurrentUserId();
         if (!me.equals(board.getUserId())) throw new BusinessException(ErrorCode.FORBIDDEN);
@@ -204,7 +199,6 @@ public class BoardServiceImpl implements BoardService {
         boardRepository.deleteById(boardId);
     }
 
-    // ========= helpers =========
 
     private Map<Integer, Long> loadBoardLikeCounts(List<Integer> boardIds) {
         if (boardIds == null || boardIds.isEmpty()) return Map.of();

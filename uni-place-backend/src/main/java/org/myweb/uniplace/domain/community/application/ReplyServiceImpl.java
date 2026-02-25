@@ -1,7 +1,9 @@
-// 경로: org/myweb/uniplace/domain/community/application/ReplyServiceImpl.java
 package org.myweb.uniplace.domain.community.application;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import org.myweb.uniplace.domain.community.api.dto.request.ReplyCreateRequest;
 import org.myweb.uniplace.domain.community.api.dto.request.ReplyUpdateRequest;
@@ -16,7 +18,6 @@ import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.security.AuthUser;
-
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,8 +32,6 @@ public class ReplyServiceImpl implements ReplyService {
     private final ReplyRepository replyRepository;
     private final BoardRepository boardRepository;
     private final ReplyLikeRepository replyLikeRepository;
-
-    // ✅ 알림
     private final NotificationService notificationService;
 
     @Override
@@ -40,16 +39,15 @@ public class ReplyServiceImpl implements ReplyService {
     public List<ReplyResponse> getRepliesByBoard(int boardId) {
         List<Reply> replies = replyRepository.findByBoardIdAndParentIdIsNullOrderByCreatedAtAscReplySeqAsc(boardId);
         Map<Integer, Long> likeCountMap = loadReplyLikeCounts(replies);
-
         String me = tryCurrentUserId();
 
         return replies.stream()
-                .map(r -> {
-                    long cnt = likeCountMap.getOrDefault(r.getReplyId(), 0L);
-                    boolean liked = (me != null) && replyLikeRepository.existsByIdUserIdAndIdReplyId(me, r.getReplyId());
-                    return ReplyResponse.fromEntity(r, cnt, liked);
-                })
-                .toList();
+            .map(r -> {
+                long cnt = likeCountMap.getOrDefault(r.getReplyId(), 0L);
+                boolean liked = (me != null) && replyLikeRepository.existsByIdUserIdAndIdReplyId(me, r.getReplyId());
+                return ReplyResponse.fromEntity(r, cnt, liked);
+            })
+            .toList();
     }
 
     @Override
@@ -57,16 +55,15 @@ public class ReplyServiceImpl implements ReplyService {
     public List<ReplyResponse> getChildReplies(int boardId, int parentId) {
         List<Reply> replies = replyRepository.findByBoardIdAndParentIdOrderByCreatedAtAscReplySeqAsc(boardId, parentId);
         Map<Integer, Long> likeCountMap = loadReplyLikeCounts(replies);
-
         String me = tryCurrentUserId();
 
         return replies.stream()
-                .map(r -> {
-                    long cnt = likeCountMap.getOrDefault(r.getReplyId(), 0L);
-                    boolean liked = (me != null) && replyLikeRepository.existsByIdUserIdAndIdReplyId(me, r.getReplyId());
-                    return ReplyResponse.fromEntity(r, cnt, liked);
-                })
-                .toList();
+            .map(r -> {
+                long cnt = likeCountMap.getOrDefault(r.getReplyId(), 0L);
+                boolean liked = (me != null) && replyLikeRepository.existsByIdUserIdAndIdReplyId(me, r.getReplyId());
+                return ReplyResponse.fromEntity(r, cnt, liked);
+            })
+            .toList();
     }
 
     @Override
@@ -74,31 +71,29 @@ public class ReplyServiceImpl implements ReplyService {
         String userId = requireCurrentUserId();
 
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
         Reply reply = Reply.builder()
-                .boardId(boardId)
-                .userId(userId)
-                .replyCtnt(request.getReplyCtnt())
-                .parentId(null)
-                .replyLev(1)
-                .replySeq(1)
-                .build();
+            .boardId(boardId)
+            .userId(userId)
+            .replyCtnt(request.getReplyCtnt())
+            .parentId(null)
+            .replyLev(1)
+            .replySeq(1)
+            .build();
 
         Reply saved = replyRepository.save(reply);
         board.markReply(true);
 
-        // ✅ 알림: "내 글에 댓글"
         if (!userId.equals(board.getUserId())) {
-            String msg = "내 게시글에 댓글이 달렸습니다.";
             notificationService.notifyUser(
-                    board.getUserId(),
-                    "BRD_REPLY",
-                    msg,
-                    userId,
-                    TargetType.reply,
-                    saved.getReplyId(),
-                    "/boards/" + boardId
+                board.getUserId(),
+                "BRD_REPLY",
+                "작성하신 게시글에 댓글이 달렸습니다.",
+                userId,
+                TargetType.reply,
+                saved.getReplyId(),
+                "/boards/" + boardId
             );
         }
     }
@@ -108,39 +103,36 @@ public class ReplyServiceImpl implements ReplyService {
         String userId = requireCurrentUserId();
 
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
         Reply parent = replyRepository.findById(parentId)
-                .orElseThrow(() -> new IllegalArgumentException("부모 댓글이 존재하지 않습니다. parentId=" + parentId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.REPLY_NOT_FOUND));
 
         if (!Objects.equals(boardId, parent.getBoardId())) {
-            throw new IllegalArgumentException("부모 댓글이 해당 게시글의 댓글이 아닙니다.");
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         Reply child = Reply.builder()
-                .boardId(boardId)
-                .userId(userId)
-                .replyCtnt(request.getReplyCtnt())
-                .parentId(parentId)
-                .replyLev(2)
-                .replySeq(1)
-                .build();
+            .boardId(boardId)
+            .userId(userId)
+            .replyCtnt(request.getReplyCtnt())
+            .parentId(parentId)
+            .replyLev(2)
+            .replySeq(1)
+            .build();
 
         Reply saved = replyRepository.save(child);
         board.markReply(true);
 
-        // ✅ 알림: "내 댓글에 대댓글"
-        // - 내 댓글에 내가 대댓글 다는건 스킵
         if (!userId.equals(parent.getUserId())) {
-            String msg = "내 댓글에 대댓글이 달렸습니다.";
             notificationService.notifyUser(
-                    parent.getUserId(),
-                    "BRD_REREPLY",
-                    msg,
-                    userId,
-                    TargetType.reply,
-                    saved.getReplyId(),
-                    "/boards/" + boardId
+                parent.getUserId(),
+                "BRD_REREPLY",
+                "작성하신 댓글에 답글이 달렸습니다.",
+                userId,
+                TargetType.reply,
+                saved.getReplyId(),
+                "/boards/" + boardId
             );
         }
     }
@@ -148,34 +140,36 @@ public class ReplyServiceImpl implements ReplyService {
     @Override
     public void updateReply(int replyId, ReplyUpdateRequest request) {
         Reply reply = replyRepository.findById(replyId)
-                .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. replyId=" + replyId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.REPLY_NOT_FOUND));
 
         String me = requireCurrentUserId();
-        if (!me.equals(reply.getUserId())) throw new BusinessException(ErrorCode.FORBIDDEN);
+        if (!me.equals(reply.getUserId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
 
-        if (request.getReplyCtnt() != null) reply.setReplyCtnt(request.getReplyCtnt());
+        if (request.getReplyCtnt() != null) {
+            reply.setReplyCtnt(request.getReplyCtnt());
+        }
     }
 
     @Override
     public void deleteReply(int replyId) {
         Reply reply = replyRepository.findById(replyId)
-                .orElseThrow(() -> new IllegalArgumentException("댓글이 존재하지 않습니다. replyId=" + replyId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.REPLY_NOT_FOUND));
 
         String me = requireCurrentUserId();
-        if (!me.equals(reply.getUserId())) throw new BusinessException(ErrorCode.FORBIDDEN);
+        if (!me.equals(reply.getUserId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
 
         Integer boardId = reply.getBoardId();
         replyRepository.deleteById(replyId);
 
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글이 존재하지 않습니다. boardId=" + boardId));
+            .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
         board.markReply(replyRepository.countByBoardId(boardId) > 0);
-
-        // ✅ 사용자 자가삭제는 알림 보통 안 함
     }
-
-    // ========= helpers =========
 
     private Map<Integer, Long> loadReplyLikeCounts(List<Reply> replies) {
         if (replies == null || replies.isEmpty()) return Map.of();
@@ -193,8 +187,11 @@ public class ReplyServiceImpl implements ReplyService {
     }
 
     private String tryCurrentUserId() {
-        try { return requireCurrentUserId(); }
-        catch (Exception e) { return null; }
+        try {
+            return requireCurrentUserId();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private String requireCurrentUserId() {
