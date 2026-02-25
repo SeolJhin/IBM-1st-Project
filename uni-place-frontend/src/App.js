@@ -9,6 +9,10 @@ import Signup from './features/user/pages/Signup';
 import MemberInfo from './features/user/pages/MemberInfo';
 import About from './shared/pages/About';
 import ScrollToTop from './shared/components/ScrollToTop';
+import SpaceReservationCreate from './features/reservation/pages/SpaceReservationCreate';
+import SpaceReservationList from './features/reservation/pages/SpaceReservationList';
+import TourReservationCreate from './features/reservation/pages/TourReservationCreate';
+import TourReservationList from './features/reservation/pages/TourReservationList';
 
 export default function App() {
   return (
@@ -24,6 +28,22 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/me" element={<MemberInfo />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="/reservations/space/create"
+          element={<SpaceReservationCreate />}
+        />
+        <Route
+          path="/reservations/space/list"
+          element={<SpaceReservationList />}
+        />
+        <Route
+          path="/reservations/tour/create"
+          element={<TourReservationCreate />}
+        />
+        <Route
+          path="/reservations/tour/list"
+          element={<TourReservationList />}
+        />
       </Routes>
     </>
   );
