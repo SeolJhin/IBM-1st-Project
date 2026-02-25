@@ -7,6 +7,7 @@ import org.myweb.uniplace.domain.commerce.api.dto.response.RoomServiceOrderRespo
 import org.myweb.uniplace.domain.commerce.domain.entity.Order;
 import org.myweb.uniplace.domain.commerce.domain.entity.RoomServiceOrder;
 import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
+import org.myweb.uniplace.domain.commerce.domain.enums.RoomServiceOrderStatus;
 import org.myweb.uniplace.domain.commerce.repository.OrderRepository;
 import org.myweb.uniplace.domain.commerce.repository.RoomServiceOrderRepository;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
@@ -48,11 +49,6 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
 
         Room room = roomRepository.findById(request.getRoomId())
             .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
-
-        // ✅ 삭제된 방으로 룸서비스 주문 불가
-        if (room.isDeleted()) {
-            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
-        }
 
         Order parentOrder = resolveParentOrder(user, request);
 
@@ -99,6 +95,44 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
 
         order.updateStatus(request.getOrderSt());
         return RoomServiceOrderResponse.from(order);
+    }
+
+    /* 주문 취소 - status 를 cancelled 로 변경 (소프트 딜리트)
+     * 형제 RoomServiceOrder 가 전부 취소되면 부모 Order 도 자동 cancelled 처리 */
+    @Override
+    public RoomServiceOrderResponse cancelOrder(String userId, Integer orderId) {
+        RoomServiceOrder roomServiceOrder = roomServiceOrderRepository.findById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_SERVICE_ORDER_NOT_FOUND));
+
+        // 본인 주문인지 확인
+        if (!roomServiceOrder.getUser().getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
+
+        // 이미 취소된 주문인지 확인
+        if (roomServiceOrder.getOrderSt() == RoomServiceOrderStatus.cancelled) {
+            throw new BusinessException(ErrorCode.ORDER_CANNOT_CANCEL);
+        }
+
+        // RoomServiceOrder 취소
+        roomServiceOrder.updateStatus(RoomServiceOrderStatus.cancelled);
+
+        // 부모 Order 아래 모든 RoomServiceOrder 가 취소됐는지 확인
+        Order parentOrder = roomServiceOrder.getParentOrder();
+        boolean allCancelled = parentOrder.getRoomServiceOrders().stream()
+            .allMatch(rso -> rso.getOrderSt() == RoomServiceOrderStatus.cancelled);
+
+        if (allCancelled) {
+            // ordered 상태 → cancel() 호출
+            // paid 상태   → markRefunded() 호출 (결제 후 전체 취소 = 환불 처리)
+            if (parentOrder.getOrderSt() == OrderStatus.ordered) {
+                parentOrder.cancel();
+            } else if (parentOrder.getOrderSt() == OrderStatus.paid) {
+                parentOrder.markRefunded(null);
+            }
+        }
+
+        return RoomServiceOrderResponse.from(roomServiceOrder);
     }
 
     private Order resolveParentOrder(User user, RoomServiceOrderCreateRequest request) {

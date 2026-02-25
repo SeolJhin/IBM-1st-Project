@@ -29,25 +29,25 @@ public class CartController {
 
     @PostMapping("/items")
     public ApiResponse<CartResponse> add(
-        @AuthenticationPrincipal AuthUser authUser,
-        @RequestBody CartAddRequest request
+            @AuthenticationPrincipal AuthUser authUser,
+            @RequestBody CartAddRequest request
     ) {
         return ApiResponse.ok(cartService.addItem(requireUserId(authUser), request));
     }
 
     @PatchMapping("/items/{cartItemId}")
     public ApiResponse<CartResponse> updateQuantity(
-        @AuthenticationPrincipal AuthUser authUser,
-        @PathVariable Integer cartItemId,
-        @RequestBody CartQuantityUpdateRequest request
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable("cartItemId") Integer cartItemId, 
+            @RequestBody CartQuantityUpdateRequest request
     ) {
         return ApiResponse.ok(cartService.updateQuantity(requireUserId(authUser), cartItemId, request));
     }
 
     @DeleteMapping("/items/{cartItemId}")
     public ApiResponse<CartResponse> remove(
-        @AuthenticationPrincipal AuthUser authUser,
-        @PathVariable Integer cartItemId
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable("cartItemId") Integer cartItemId    
     ) {
         return ApiResponse.ok(cartService.removeItem(requireUserId(authUser), cartItemId));
     }

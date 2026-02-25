@@ -6,7 +6,6 @@ import java.util.List;
 import org.myweb.uniplace.domain.notification.api.dto.response.NotificationListResponse;
 import org.myweb.uniplace.domain.notification.api.dto.response.NotificationResponse;
 import org.myweb.uniplace.domain.notification.domain.entity.Notification;
-import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.notification.repository.NotificationRepository;
 import org.myweb.uniplace.domain.user.domain.entity.User;
@@ -71,7 +70,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void notifyUser(String receiverId,
-                           NotificationType code,
+                           String code,
                            String message,
                            String senderId,
                            TargetType target,
@@ -90,7 +89,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void notifyAdmins(NotificationType code,
+    public void notifyAdmins(String code,
                              String message,
                              String senderId,
                              TargetType target,

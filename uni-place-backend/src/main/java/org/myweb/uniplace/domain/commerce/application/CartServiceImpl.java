@@ -10,6 +10,9 @@ import org.myweb.uniplace.domain.commerce.api.dto.response.*;
 import org.myweb.uniplace.domain.commerce.domain.entity.*;
 import org.myweb.uniplace.domain.commerce.repository.*;
 
+import org.myweb.uniplace.domain.commerce.domain.entity.Product;
+import org.myweb.uniplace.domain.commerce.repository.ProductRepository;
+
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 
@@ -18,10 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-
-// ⚠️ 실제 Product 경로에 맞춰 유지
-import org.myweb.uniplace.domain.commerce.domain.entity.Product;
-import org.myweb.uniplace.domain.commerce.repository.ProductRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -35,13 +34,44 @@ public class CartServiceImpl implements CartService {
     private final ProductRepository productRepository;
     private final CartFileQueryRepository cartFileQueryRepository;
 
+    // ===================== 조회 =====================
+
+    /**
+     * 내 카트 조회
+     * - 카트가 없어도 생성하지 않음
+     * - readOnly 안전
+     */
     @Override
     @Transactional(readOnly = true)
     public CartResponse getMyCart(String userId) {
-        Cart cart = getOrCreateCart(userId);
+
+        if (userId == null || userId.isBlank()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Cart cart = cartRepository
+            .findTop1ByUserIdOrderByCartCreatedAtDesc(userId)
+            .orElse(null);
+
+        if (cart == null) {
+            return CartResponse.builder()
+                .cartId(null)
+                .userId(userId)
+                .items(List.of())
+                .totalAmount(BigDecimal.ZERO)
+                .totalQuantity(0)
+                .build();
+        }
+
         return buildResponse(cart);
     }
 
+    // ===================== 담기 =====================
+
+    /**
+     * 상품 담기
+     * - 여기서만 카트 자동 생성
+     */
     @Override
     public CartResponse addItem(String userId, CartAddRequest request) {
 
@@ -73,22 +103,32 @@ public class CartServiceImpl implements CartService {
                 item.increase(qty);
             }
         } catch (DataIntegrityViolationException e) {
-            cartItemRepository.findByCartIdAndProdId(cart.getCartId(), product.getProdId())
+            // 동시성 대응
+            cartItemRepository
+                .findByCartIdAndProdId(cart.getCartId(), product.getProdId())
                 .ifPresent(i -> i.increase(qty));
         }
 
         return buildResponse(cart);
     }
 
+    // ===================== 수량 변경 =====================
+
     @Override
-    public CartResponse updateQuantity(String userId, Integer cartItemId, CartQuantityUpdateRequest request) {
+    public CartResponse updateQuantity(
+        String userId,
+        Integer cartItemId,
+        CartQuantityUpdateRequest request
+    ) {
+
         if (cartItemId == null || request == null || request.getQuantity() == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        Cart cart = getOrCreateCart(userId);
+        Cart cart = getCartOrThrow(userId);
+
         CartItem item = cartItemRepository.findById(cartItemId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND)); //BAD_REQUEST CART_ITEM_NOT_FOUND
+            .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
 
         if (!item.getCartId().equals(cart.getCartId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
@@ -98,13 +138,17 @@ public class CartServiceImpl implements CartService {
         return buildResponse(cart);
     }
 
+    // ===================== 아이템 삭제 =====================
+
     @Override
     public CartResponse removeItem(String userId, Integer cartItemId) {
+
         if (cartItemId == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        Cart cart = getOrCreateCart(userId);
+        Cart cart = getCartOrThrow(userId);
+
         CartItem item = cartItemRepository.findById(cartItemId)
             .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
 
@@ -116,25 +160,62 @@ public class CartServiceImpl implements CartService {
         return buildResponse(cart);
     }
 
+    // ===================== 카트 비우기 =====================
+
     @Override
     public void clear(String userId) {
-        Cart cart = getOrCreateCart(userId);
+
+        Cart cart = cartRepository
+            .findTop1ByUserIdOrderByCartCreatedAtDesc(userId)
+            .orElse(null);
+
+        if (cart == null) {
+            return; // 비어있으면 아무 것도 안 함
+        }
+
         cartItemRepository.deleteByCartId(cart.getCartId());
     }
 
     // ===================== private =====================
 
+    /**
+     * 담기 전용
+     */
     private Cart getOrCreateCart(String userId) {
+
         if (userId == null || userId.isBlank()) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
-        return cartRepository.findTop1ByUserIdOrderByCartCreatedAtDesc(userId)
-            .orElseGet(() -> cartRepository.save(Cart.builder().userId(userId).build()));
+
+        return cartRepository
+            .findTop1ByUserIdOrderByCartCreatedAtDesc(userId)
+            .orElseGet(() ->
+                cartRepository.save(
+                    Cart.builder()
+                        .userId(userId)
+                        .build()
+                )
+            );
+    }
+
+    /**
+     * 수정/삭제 전용
+     */
+    private Cart getCartOrThrow(String userId) {
+
+        if (userId == null || userId.isBlank()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        return cartRepository
+            .findTop1ByUserIdOrderByCartCreatedAtDesc(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
     }
 
     private CartResponse buildResponse(Cart cart) {
 
         List<CartItem> items = cartItemRepository.findByCartId(cart.getCartId());
+
         if (items.isEmpty()) {
             return CartResponse.builder()
                 .cartId(cart.getCartId())
@@ -145,10 +226,15 @@ public class CartServiceImpl implements CartService {
                 .build();
         }
 
-        List<Integer> prodIds = items.stream().map(CartItem::getProdId).distinct().toList();
+        List<Integer> prodIds = items.stream()
+            .map(CartItem::getProdId)
+            .distinct()
+            .toList();
 
-        Map<Integer, Product> productMap = productRepository.findByProdIdIn(prodIds)  //product에 만들기
-            .stream().collect(Collectors.toMap(Product::getProdId, p -> p));
+        Map<Integer, Product> productMap =
+            productRepository.findByProdIdIn(prodIds)
+                .stream()
+                .collect(Collectors.toMap(Product::getProdId, p -> p));
 
         Map<Integer, String> thumbMap =
             cartFileQueryRepository.findProductThumbs(prodIds)
@@ -160,16 +246,19 @@ public class CartServiceImpl implements CartService {
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         int totalQty = 0;
+
         List<CartItemResponse> responses = new ArrayList<>();
 
         for (CartItem ci : items) {
             Product p = productMap.get(ci.getProdId());
-            if (p == null) throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+            if (p == null) {
+                throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
+            }
 
-            BigDecimal line = ci.getOrderPrice()
-                .multiply(BigDecimal.valueOf(ci.getOrderQuantity()));
+            BigDecimal lineTotal =
+                ci.getOrderPrice().multiply(BigDecimal.valueOf(ci.getOrderQuantity()));
 
-            totalAmount = totalAmount.add(line);
+            totalAmount = totalAmount.add(lineTotal);
             totalQty += ci.getOrderQuantity();
 
             responses.add(
@@ -179,7 +268,7 @@ public class CartServiceImpl implements CartService {
                     .prodNm(p.getProdNm())
                     .orderPrice(ci.getOrderPrice())
                     .orderQuantity(ci.getOrderQuantity())
-                    .lineTotal(line)
+                    .lineTotal(lineTotal)
                     .thumbnailPath(thumbMap.get(p.getProdId()))
                     .build()
             );

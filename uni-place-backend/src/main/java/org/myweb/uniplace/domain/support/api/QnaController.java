@@ -10,9 +10,9 @@ import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -30,8 +30,19 @@ public class QnaController {
     @GetMapping
     public ApiResponse<PageResponse<QnaResponse>> search(
             @ModelAttribute QnaSearchRequest request,
-            @PageableDefault(size = 10, sort = "qnaId", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sort", defaultValue = "qnaId") String sort,
+            @RequestParam(name = "direct", defaultValue = "DESC") String direct
     ) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
+
+        Sort.Direction direction =
+                "ASC".equalsIgnoreCase(direct) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
+
         return ApiResponse.ok(qnaService.search(request, pageable));
     }
 
@@ -40,20 +51,35 @@ public class QnaController {
     @GetMapping("/all")
     public ApiResponse<PageResponse<QnaResponse>> searchAll(
             @ModelAttribute QnaSearchRequest request,
-            @PageableDefault(size = 20, sort = "qnaId", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sort", defaultValue = "qnaId") String sort,
+            @RequestParam(name = "direct", defaultValue = "DESC") String direct
     ) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 20;
+
+        Sort.Direction direction =
+                "ASC".equalsIgnoreCase(direct) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
+
         return ApiResponse.ok(qnaService.searchAll(request, pageable));
     }
 
     /** QNA 상세 조회 */
     @GetMapping("/{qnaId}")
-    public ApiResponse<QnaResponse> detail(@PathVariable Integer qnaId) {
+    public ApiResponse<QnaResponse> detail(
+            @PathVariable("qnaId") Integer qnaId
+    ) {
         return ApiResponse.ok(qnaService.get(qnaId));
     }
 
     /** QNA 답변 목록 조회 */
     @GetMapping("/{qnaId}/replies")
-    public ApiResponse<List<QnaResponse>> replies(@PathVariable Integer qnaId) {
+    public ApiResponse<List<QnaResponse>> replies(
+            @PathVariable("qnaId") Integer qnaId
+    ) {
         return ApiResponse.ok(qnaService.getReplies(qnaId));
     }
 
@@ -69,7 +95,7 @@ public class QnaController {
     /** QNA 수정 */
     @PutMapping("/{qnaId}")
     public ApiResponse<QnaResponse> update(
-            @PathVariable Integer qnaId,
+            @PathVariable("qnaId") Integer qnaId,
             @Valid @RequestBody QnaUpdateRequest request
     ) {
         return ApiResponse.ok(qnaService.update(qnaId, request));
@@ -77,7 +103,9 @@ public class QnaController {
 
     /** QNA 삭제 */
     @DeleteMapping("/{qnaId}")
-    public ApiResponse<Void> delete(@PathVariable Integer qnaId) {
+    public ApiResponse<Void> delete(
+            @PathVariable("qnaId") Integer qnaId
+    ) {
         qnaService.delete(qnaId);
         return ApiResponse.ok();
     }
@@ -86,7 +114,7 @@ public class QnaController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{qnaId}/answer")
     public ApiResponse<QnaResponse> createAnswer(
-            @PathVariable Integer qnaId,
+            @PathVariable("qnaId") Integer qnaId,
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody QnaAnswerRequest request
     ) {
@@ -97,7 +125,7 @@ public class QnaController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{qnaId}/answer")
     public ApiResponse<QnaResponse> updateAnswer(
-            @PathVariable Integer qnaId,
+            @PathVariable("qnaId") Integer qnaId,
             @Valid @RequestBody QnaAnswerRequest request
     ) {
         return ApiResponse.ok(qnaService.updateAnswer(qnaId, request));
@@ -107,7 +135,7 @@ public class QnaController {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{qnaId}/status")
     public ApiResponse<QnaResponse> updateStatus(
-            @PathVariable Integer qnaId,
+            @PathVariable("qnaId") Integer qnaId,
             @Valid @RequestBody QnaStatusUpdateRequest request
     ) {
         return ApiResponse.ok(qnaService.updateStatus(qnaId, request));

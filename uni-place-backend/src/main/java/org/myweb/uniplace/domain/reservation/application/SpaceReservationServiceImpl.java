@@ -77,8 +77,13 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        buildingRepository.findById(buildingId)
+        Building reservableBuilding = buildingRepository.findById(buildingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
+
+        // ✅ 삭제된 건물의 공간 예약 가능 목록 조회 불가
+        if (reservableBuilding.isDeleted()) {
+            throw new BusinessException(ErrorCode.BUILDING_NOT_FOUND);
+        }
 
         SpaceSearchRequest request = SpaceSearchRequest.builder()
                 .buildingId(buildingId)
@@ -161,6 +166,11 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         Building building = buildingRepository.findById(request.getBuildingId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
 
+        // ✅ 삭제된 건물로 공간 예약 불가
+        if (building.isDeleted()) {
+            throw new BusinessException(ErrorCode.BUILDING_NOT_FOUND);
+        }
+
         CommonSpace space = spaceRepository.findById(request.getSpaceId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SPACE_NOT_FOUND));
 
@@ -198,7 +208,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         // 1) 사용자 알림
         notificationService.notifyUser(
                 user.getUserId(),
-                NotificationType.SP_REQ,
+                NotificationType.SP_REQ.name(),
                 "공간 예약 요청이 접수되었습니다. (" + timeMsg + ")",
                 null,
                 TargetType.space,
@@ -208,7 +218,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
 
         // 2) 관리자 알림
         notificationService.notifyAdmins(
-                NotificationType.SP_REQ,
+                NotificationType.SP_REQ.name(),
                 "공간 예약 요청이 생성되었습니다. userId=" + user.getUserId()
                         + ", buildingId=" + building.getBuildingId()
                         + ", spaceId=" + space.getSpaceId()
@@ -257,7 +267,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         // 1) 사용자 알림(자기 취소 확인)
         notificationService.notifyUser(
                 e.getUser().getUserId(),
-                NotificationType.SP_CAN,
+                NotificationType.SP_CAN.name(),
                 "공간 예약이 취소되었습니다. (" + timeMsg + ")",
                 null,
                 TargetType.space,
@@ -267,7 +277,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
 
         // 2) 관리자 알림
         notificationService.notifyAdmins(
-                NotificationType.SP_CAN,
+                NotificationType.SP_CAN.name(),
                 "사용자가 공간 예약을 취소했습니다. userId=" + e.getUser().getUserId()
                         + ", reservationId=" + e.getReservationId()
                         + ", time=" + timeMsg,
@@ -372,7 +382,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
 
         notificationService.notifyUser(
                 e.getUser().getUserId(),
-                NotificationType.SP_CFM,
+                NotificationType.SP_CFM.name(),
                 "공간 예약이 확정되었습니다. (" + timeMsg + ")",
                 me.getUserId(), // sender=admin
                 TargetType.space,
@@ -432,7 +442,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
 
         notificationService.notifyUser(
                 e.getUser().getUserId(),
-                NotificationType.SP_CAN,
+                NotificationType.SP_CAN.name(),
                 "관리자에 의해 공간 예약이 취소되었습니다. (" + timeMsg + ")" + reason,
                 me.getUserId(),
                 TargetType.space,

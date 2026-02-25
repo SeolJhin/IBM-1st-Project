@@ -42,6 +42,17 @@ public class RoomServiceOrderController {
         ));
     }
 
+    // PATCH /room-services/{orderId}/cancel
+    @PatchMapping("/{orderId}/cancel")
+    public ResponseEntity<ApiResponse<RoomServiceOrderResponse>> cancelOrder(
+            @AuthenticationPrincipal AuthUser authUser,
+            @PathVariable("orderId") Integer orderId
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                roomServiceOrderService.cancelOrder(requireUserId(authUser), orderId)
+        ));
+    }
+
     private String requireUserId(AuthUser authUser) {
         if (authUser == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);

@@ -15,7 +15,7 @@ public class NotificationResponse {
     private Integer notificationId;
     private String receiverId;
 
-    private String code;      // enum name
+    private String code;      // String code
     private String senderId;
 
     private String message;
@@ -32,7 +32,7 @@ public class NotificationResponse {
         return NotificationResponse.builder()
                 .notificationId(n.getNotificationId())
                 .receiverId(n.getReceiverId())
-                .code(n.getCode() != null ? n.getCode().name() : null)
+                .code(n.getCode())
                 .senderId(n.getSenderId())
                 .message(n.getMessage())
                 .target(n.getTarget() != null ? n.getTarget().name() : null)

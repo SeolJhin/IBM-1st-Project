@@ -1,7 +1,8 @@
 // org/myweb/uniplace/domain/commerce/application/CartService.java
 package org.myweb.uniplace.domain.commerce.application;
 
-import org.myweb.uniplace.domain.commerce.api.dto.request.*;
+import org.myweb.uniplace.domain.commerce.api.dto.request.CartAddRequest;
+import org.myweb.uniplace.domain.commerce.api.dto.request.CartQuantityUpdateRequest;
 import org.myweb.uniplace.domain.commerce.api.dto.response.CartResponse;
 
 public interface CartService {

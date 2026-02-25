@@ -4,6 +4,7 @@ package org.myweb.uniplace.domain.review.api.dto.request;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+@Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

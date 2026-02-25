@@ -12,9 +12,9 @@ import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -30,14 +30,27 @@ public class NoticeController {
     @GetMapping
     public ApiResponse<PageResponse<NoticeResponse>> search(
             @ModelAttribute NoticeSearchRequest request,
-            @PageableDefault(size = 10, sort = "noticeId", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sort", defaultValue = "noticeId") String sort,
+            @RequestParam(name = "direct", defaultValue = "DESC") String direct
     ) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
+
+        Sort.Direction direction =
+                "ASC".equalsIgnoreCase(direct) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
+
         return ApiResponse.ok(noticeService.search(request, pageable));
     }
 
     /** 공지 상세 */
     @GetMapping("/{noticeId}")
-    public ApiResponse<NoticeResponse> detail(@PathVariable Integer noticeId) {
+    public ApiResponse<NoticeResponse> detail(
+            @PathVariable("noticeId") Integer noticeId
+    ) {
         return ApiResponse.ok(noticeService.get(noticeId));
     }
 
@@ -54,7 +67,7 @@ public class NoticeController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{noticeId}")
     public ApiResponse<NoticeResponse> update(
-            @PathVariable Integer noticeId,
+            @PathVariable("noticeId") Integer noticeId,
             @Valid @RequestBody NoticeUpdateRequest request
     ) {
         return ApiResponse.ok(noticeService.update(noticeId, request));
@@ -63,7 +76,9 @@ public class NoticeController {
     /** 공지 삭제 (관리자) */
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{noticeId}")
-    public ApiResponse<Void> delete(@PathVariable Integer noticeId) {
+    public ApiResponse<Void> delete(
+            @PathVariable("noticeId") Integer noticeId
+    ) {
         noticeService.delete(noticeId);
         return ApiResponse.ok();
     }
