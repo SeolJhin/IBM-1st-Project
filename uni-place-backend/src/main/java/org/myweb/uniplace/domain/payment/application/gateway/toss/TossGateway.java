@@ -16,6 +16,8 @@ import org.myweb.uniplace.domain.payment.application.gateway.toss.dto.TossApprov
 import org.myweb.uniplace.domain.payment.application.gateway.toss.dto.TossApproveResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.toss.dto.TossCancelRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.toss.dto.TossCancelResponse;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -46,10 +48,10 @@ public class TossGateway implements PaymentGateway {
         int amount = toIntExact(request.getAmount(), "amount");
 
         if (paymentKey == null || paymentKey.isBlank()) {
-            throw new IllegalArgumentException("paymentKey is required for TOSS confirm");
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
         if (orderId == null || orderId.isBlank()) {
-            throw new IllegalArgumentException("orderId is required for TOSS confirm");
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
 
         TossApproveResponse tossRes = client.confirm(
@@ -74,7 +76,7 @@ public class TossGateway implements PaymentGateway {
     public PaymentGatewayRefundResponse refund(PaymentGatewayRefundRequest request) {
         String paymentKey = request.getProviderPaymentId();
         if (paymentKey == null || paymentKey.isBlank()) {
-            throw new IllegalArgumentException("providerPaymentId(paymentKey) is required for TOSS cancel");
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
 
         TossCancelRequest cancelReq = TossCancelRequest.builder()
@@ -108,12 +110,12 @@ public class TossGateway implements PaymentGateway {
 
     private static Integer toIntExact(BigDecimal v, String field) {
         if (v == null) {
-            throw new IllegalArgumentException(field + " is required");
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
         try {
             return v.intValueExact();
         } catch (ArithmeticException e) {
-            throw new IllegalArgumentException(field + " must be integer(no decimals): " + v);
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
     }
 
@@ -124,7 +126,7 @@ public class TossGateway implements PaymentGateway {
         try {
             return v.intValueExact();
         } catch (ArithmeticException e) {
-            throw new IllegalArgumentException("refundPrice must be integer(no decimals): " + v);
+            throw new BusinessException(ErrorCode.PAYMENT_REFUND_INVALID_AMOUNT);
         }
     }
 }

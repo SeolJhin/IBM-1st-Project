@@ -31,4 +31,11 @@ public class ApiResponse<T> {
     public static ApiResponse<Void> error(ErrorCode errorCode) {
         return new ApiResponse<>(false, null, errorCode.getCode(), errorCode.getMessage());
     }
+
+    public static ApiResponse<Void> error(ErrorCode errorCode, String message) {
+        String safeMessage = (message == null || message.isBlank())
+            ? errorCode.getMessage()
+            : message;
+        return new ApiResponse<>(false, null, errorCode.getCode(), safeMessage);
+    }
 }
