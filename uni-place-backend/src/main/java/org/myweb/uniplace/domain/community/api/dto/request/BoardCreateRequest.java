@@ -7,6 +7,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import lombok.*;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

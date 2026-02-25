@@ -25,15 +25,15 @@ public class ReplyController {
 
     // 댓글 조회
     @GetMapping("/boards/{boardId}/replies")
-    public ResponseEntity<ApiResponse<List<ReplyResponse>>> getRepliesByBoard(@PathVariable int boardId) {
+    public ResponseEntity<ApiResponse<List<ReplyResponse>>> getRepliesByBoard(@PathVariable("boardId") int boardId) {
         return ResponseEntity.ok(ApiResponse.ok(replyService.getRepliesByBoard(boardId)));
     }
 
     // 대댓글 조회
     @GetMapping("/boards/{boardId}/replies/{parentId}/children")
     public ResponseEntity<ApiResponse<List<ReplyResponse>>> getChildReplies(
-            @PathVariable int boardId,
-            @PathVariable int parentId
+            @PathVariable("boardId") int boardId,
+            @PathVariable("parentId") int parentId
     ) {
         return ResponseEntity.ok(ApiResponse.ok(replyService.getChildReplies(boardId, parentId)));
     }
@@ -41,7 +41,7 @@ public class ReplyController {
     // 댓글 등록
     @PostMapping("/boards/{boardId}/replies")
     public ResponseEntity<ApiResponse<Void>> createReply(
-            @PathVariable int boardId,
+            @PathVariable("boardId") int boardId,
             @ModelAttribute ReplyCreateRequest request
     ) {
         replyService.createReply(boardId, request);
@@ -51,8 +51,8 @@ public class ReplyController {
     // 대댓글 등록
     @PostMapping("/boards/{boardId}/replies/{parentId}/children")
     public ResponseEntity<ApiResponse<Void>> createChildReply(
-            @PathVariable int boardId,
-            @PathVariable int parentId,
+            @PathVariable("boardId") int boardId,
+            @PathVariable("parentId") int parentId,
             @ModelAttribute ReplyCreateRequest request
     ) {
         replyService.createChildReply(boardId, parentId, request);
@@ -62,7 +62,7 @@ public class ReplyController {
     // 댓글/대댓글 수정
     @PutMapping("/replies/{replyId}")
     public ResponseEntity<ApiResponse<Void>> replyUpdate(
-            @PathVariable int replyId,
+            @PathVariable("replyId") int replyId,
             @ModelAttribute ReplyUpdateRequest request
     ) {
         replyService.updateReply(replyId, request);
@@ -79,7 +79,7 @@ public class ReplyController {
     // 댓글 좋아요 등록
     @PostMapping("/replies/{replyId}/likes")
     public ResponseEntity<ApiResponse<Void>> likeReply(
-            @PathVariable int replyId,
+            @PathVariable("replyId") int replyId,
             @AuthenticationPrincipal AuthUser user
     ) {
         likeService.likeReply(replyId, user.getUserId());
@@ -89,7 +89,7 @@ public class ReplyController {
     // 댓글 좋아요 취소
     @DeleteMapping("/replies/{replyId}/likes")
     public ResponseEntity<ApiResponse<Void>> unlikeReply(
-            @PathVariable int replyId,
+            @PathVariable("replyId") int replyId,
             @AuthenticationPrincipal AuthUser user
     ) {
         likeService.unlikeReply(replyId, user.getUserId());
