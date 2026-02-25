@@ -52,7 +52,7 @@ public class AdminContractController {
     // ======================================
     @PutMapping(value = "/{contractId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<ContractResponse> updateContract(
-            @PathVariable Integer contractId,
+            @PathVariable("contractId") Integer contractId,
             @Validated @ModelAttribute ContractUpdateRequest request
     ) {
         return ApiResponse.ok(
