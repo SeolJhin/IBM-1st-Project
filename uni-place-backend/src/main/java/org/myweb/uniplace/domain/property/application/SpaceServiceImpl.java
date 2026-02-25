@@ -209,7 +209,7 @@ public class SpaceServiceImpl implements SpaceService {
 
     private Building resolveBuildingByName(String buildingNm) {
 
-        List<Building> buildings = buildingRepository.findByBuildingNm(buildingNm);
+        List<Building> buildings = buildingRepository.findByBuildingNmAndDeleteYn(buildingNm, "N");
 
         if (buildings == null || buildings.isEmpty()) {
             throw new IllegalArgumentException(

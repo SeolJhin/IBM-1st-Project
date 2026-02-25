@@ -13,4 +13,5 @@ public interface RoomServiceOrderService {
     List<RoomServiceOrderResponse> getMyOrders(String userId);
     Page<RoomServiceOrderResponse> getAllOrders(Pageable pageable);
     RoomServiceOrderResponse       updateStatus(Integer orderId, RoomServiceOrderStatusRequest request);
+    RoomServiceOrderResponse       cancelOrder(String userId, Integer orderId);  // 주문 취소
 }
