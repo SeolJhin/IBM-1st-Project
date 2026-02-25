@@ -19,6 +19,8 @@ import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverCanc
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverCancelResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverReadyRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverReadyResponse;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -43,7 +45,7 @@ public class NaverPayGateway implements PaymentGateway {
         int taxScopeAmount = totalPayAmount - taxExScopeAmount;
 
         if (taxScopeAmount < 0) {
-            throw new IllegalArgumentException("taxFreePrice must be <= totalPrice");
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
 
         NaverReadyRequest naverReq = NaverReadyRequest.builder()
@@ -75,7 +77,7 @@ public class NaverPayGateway implements PaymentGateway {
     public PaymentGatewayApproveResponse approve(PaymentGatewayApproveRequest request) {
         String paymentId = request.getPgToken();
         if (paymentId == null || paymentId.isBlank()) {
-            throw new IllegalArgumentException("pgToken(paymentId) is required for NAVER approve");
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
 
         NaverApproveResponse naverRes = client.approve(
@@ -151,12 +153,12 @@ public class NaverPayGateway implements PaymentGateway {
 
     private static Integer toIntExact(BigDecimal v, String field) {
         if (v == null) {
-            throw new IllegalArgumentException(field + " is required");
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
         try {
             return v.intValueExact();
         } catch (ArithmeticException e) {
-            throw new IllegalArgumentException(field + " must be integer(no decimals): " + v);
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
     }
 }

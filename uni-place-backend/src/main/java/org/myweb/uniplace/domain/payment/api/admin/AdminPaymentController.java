@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.*;
 
 import org.myweb.uniplace.domain.payment.repository.PaymentRepository;
 import org.myweb.uniplace.domain.payment.domain.entity.Payment;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 
 import java.util.List;
 
@@ -21,8 +23,8 @@ public class AdminPaymentController {
     }
 
     @GetMapping("/{id}")
-    public Payment findOne(@PathVariable Integer id) {
+    public Payment findOne(@PathVariable("id") Integer id) {
         return paymentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
     }
 }

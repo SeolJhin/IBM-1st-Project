@@ -37,7 +37,7 @@ public class MonthlyChargeController {
     @GetMapping("/{chargeId}")
     public ResponseEntity<ApiResponse<MonthlyChargeDetailResponse>> detail(
             @AuthenticationPrincipal AuthUser authUser,
-            @PathVariable Integer chargeId
+            @PathVariable("chargeId") Integer chargeId
     ) {
         if (authUser == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
