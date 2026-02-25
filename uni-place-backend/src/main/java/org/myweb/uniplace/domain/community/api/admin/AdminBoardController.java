@@ -20,7 +20,7 @@ public class AdminBoardController {
      * ✅ 관리자 게시글 삭제
      */
     @DeleteMapping("/boards/{boardId}")
-    public ResponseEntity<ApiResponse<Void>> adminDeleteBoard(@PathVariable int boardId) {
+    public ResponseEntity<ApiResponse<Void>> adminDeleteBoard(@PathVariable("boardId") int boardId) {
         adminBoardService.deleteBoardAsAdmin(boardId);
         return ResponseEntity.ok(ApiResponse.ok());
     }
@@ -29,7 +29,7 @@ public class AdminBoardController {
      * ✅ 관리자 댓글 삭제
      */
     @DeleteMapping("/replies/{replyId}")
-    public ResponseEntity<ApiResponse<Void>> adminDeleteReply(@PathVariable int replyId) {
+    public ResponseEntity<ApiResponse<Void>> adminDeleteReply(@PathVariable("replyId") int replyId) {
         adminBoardService.deleteReplyAsAdmin(replyId);
         return ResponseEntity.ok(ApiResponse.ok());
     }
@@ -41,7 +41,7 @@ public class AdminBoardController {
      */
     @PatchMapping("/boards/{boardId}/importance")
     public ResponseEntity<ApiResponse<Void>> updateImportance(
-            @PathVariable int boardId,
+            @PathVariable("boardId") int boardId,
             @RequestBody BoardImportanceUpdateRequest request
     ) {
         adminBoardService.updateImportance(boardId, request);

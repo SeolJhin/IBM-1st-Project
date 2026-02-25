@@ -48,14 +48,14 @@ public class BoardController {
 
     // 게시판 상세 보기
     @GetMapping("/{boardId}")
-    public ResponseEntity<ApiResponse<BoardResponse>> boardDetail(@PathVariable int boardId) {
+    public ResponseEntity<ApiResponse<BoardResponse>> boardDetail(@PathVariable("boardId") int boardId) {
         return ResponseEntity.ok(ApiResponse.ok(boardService.getBoardDetail(boardId)));
     }
 
     // 게시글 좋아요 등록
     @PostMapping("/{boardId}/likes")
     public ResponseEntity<ApiResponse<Void>> likeBoard(
-            @PathVariable int boardId,
+            @PathVariable("boardId") int boardId,
             @AuthenticationPrincipal AuthUser user
     ) {
         likeService.likeBoard(boardId, user.getUserId());
@@ -65,7 +65,7 @@ public class BoardController {
     // 게시글 좋아요 취소
     @DeleteMapping("/{boardId}/likes")
     public ResponseEntity<ApiResponse<Void>> unlikeBoard(
-            @PathVariable int boardId,
+            @PathVariable("boardId") int boardId,
             @AuthenticationPrincipal AuthUser user
     ) {
         likeService.unlikeBoard(boardId, user.getUserId());
@@ -75,9 +75,9 @@ public class BoardController {
     // 게시판 수정
     @PutMapping("/{boardId}")
     public ResponseEntity<ApiResponse<Void>> boardUpdate(
-            @PathVariable int boardId,
+            @PathVariable("boardId") int boardId,
             @ModelAttribute BoardUpdateRequest request,
-            @RequestParam(defaultValue = "false") boolean deleteFlag,
+            @RequestParam(name = "deleteFlag", defaultValue = "false") boolean deleteFlag,
             @RequestParam(name = "ofile", required = false) MultipartFile file
     ) {
         boardService.updateBoard(boardId, request, deleteFlag, file);
