@@ -3,7 +3,6 @@ package org.myweb.uniplace.domain.notification.domain.entity;
 
 import java.time.LocalDateTime;
 
-import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 
 import jakarta.persistence.*;
@@ -32,10 +31,9 @@ public class Notification {
     @Column(name = "receiver_id", length = 50, nullable = false)
     private String receiverId;
 
-    // ✅ SQL: code VARCHAR(20) -> enum STRING 저장
-    @Enumerated(EnumType.STRING)
+    // ✅ SQL: code VARCHAR(20) -> String 저장
     @Column(name = "code", length = 20, nullable = false)
-    private NotificationType code;
+    private String code;
 
     @Column(name = "sender_id", length = 50)
     private String senderId;

@@ -13,9 +13,9 @@ import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -32,8 +32,19 @@ public class ComplainController {
     @GetMapping
     public ApiResponse<PageResponse<ComplainResponse>> search(
             @ModelAttribute ComplainSearchRequest request,
-            @PageableDefault(size = 20, sort = "compId", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "20") int size,
+            @RequestParam(name = "sort", defaultValue = "compId") String sort,
+            @RequestParam(name = "direct", defaultValue = "DESC") String direct
     ) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 20;
+
+        Sort.Direction direction =
+                "ASC".equalsIgnoreCase(direct) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
+
         return ApiResponse.ok(complainService.search(request, pageable));
     }
 
@@ -41,14 +52,27 @@ public class ComplainController {
     @GetMapping("/me")
     public ApiResponse<PageResponse<ComplainResponse>> myList(
             @AuthenticationPrincipal AuthUser authUser,
-            @PageableDefault(size = 10, sort = "compId", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sort", defaultValue = "compId") String sort,
+            @RequestParam(name = "direct", defaultValue = "DESC") String direct
     ) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
+
+        Sort.Direction direction =
+                "ASC".equalsIgnoreCase(direct) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
+
         return ApiResponse.ok(complainService.getMyList(requireUserId(authUser), pageable));
     }
 
     /** 민원 상세 */
     @GetMapping("/{compId}")
-    public ApiResponse<ComplainResponse> detail(@PathVariable Integer compId) {
+    public ApiResponse<ComplainResponse> detail(
+            @PathVariable("compId") Integer compId
+    ) {
         return ApiResponse.ok(complainService.get(compId));
     }
 
@@ -64,7 +88,7 @@ public class ComplainController {
     /** 민원 수정 */
     @PutMapping("/{compId}")
     public ApiResponse<ComplainResponse> update(
-            @PathVariable Integer compId,
+            @PathVariable("compId") Integer compId,
             @Valid @RequestBody ComplainUpdateRequest request
     ) {
         return ApiResponse.ok(complainService.update(compId, request));
@@ -74,7 +98,7 @@ public class ComplainController {
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{compId}/status")
     public ApiResponse<ComplainResponse> updateStatus(
-            @PathVariable Integer compId,
+            @PathVariable("compId") Integer compId,
             @Valid @RequestBody ComplainUpdateRequest request
     ) {
         return ApiResponse.ok(complainService.updateStatus(compId, request));
@@ -84,7 +108,7 @@ public class ComplainController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{compId}/reply")
     public ApiResponse<ComplainResponse> createReply(
-            @PathVariable Integer compId,
+            @PathVariable("compId") Integer compId,
             @RequestBody ComplainReplyRequest request
     ) {
         return ApiResponse.ok(complainService.createReply(compId, request));
@@ -92,7 +116,9 @@ public class ComplainController {
 
     /** 민원 삭제 */
     @DeleteMapping("/{compId}")
-    public ApiResponse<Void> delete(@PathVariable Integer compId) {
+    public ApiResponse<Void> delete(
+            @PathVariable("compId") Integer compId
+    ) {
         complainService.delete(compId);
         return ApiResponse.ok();
     }

@@ -12,7 +12,6 @@ import org.myweb.uniplace.domain.community.repository.BoardRepository;
 import org.myweb.uniplace.domain.community.repository.ReplyLikeRepository;
 import org.myweb.uniplace.domain.community.repository.ReplyRepository;
 import org.myweb.uniplace.domain.notification.application.NotificationService;
-import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
@@ -94,7 +93,7 @@ public class ReplyServiceImpl implements ReplyService {
             String msg = "내 게시글에 댓글이 달렸습니다.";
             notificationService.notifyUser(
                     board.getUserId(),
-                    NotificationType.BRD_REPLY,
+                    "BRD_REPLY",
                     msg,
                     userId,
                     TargetType.reply,
@@ -136,7 +135,7 @@ public class ReplyServiceImpl implements ReplyService {
             String msg = "내 댓글에 대댓글이 달렸습니다.";
             notificationService.notifyUser(
                     parent.getUserId(),
-                    NotificationType.BRD_REREPLY,
+                    "BRD_REREPLY",
                     msg,
                     userId,
                     TargetType.reply,

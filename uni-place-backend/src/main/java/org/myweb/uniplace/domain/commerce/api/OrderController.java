@@ -42,22 +42,22 @@ public class OrderController {
         ));
     }
 
-    // GET /orders/{id}
-    @GetMapping("/{id}")
+    // GET /orders/{orderId}
+    @GetMapping("/{orderId}")
     public ResponseEntity<ApiResponse<OrderResponse>> getOrder(
             @AuthenticationPrincipal AuthUser authUser,
-            @PathVariable("id") Integer orderId   
+            @PathVariable("orderId") Integer orderId
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
                 orderService.getOrder(requireUserId(authUser), orderId)
         ));
     }
 
-    // PATCH /orders/{id}/cancel
-    @PatchMapping("/{id}/cancel")
+    // PATCH /orders/{orderId}/cancel
+    @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(
             @AuthenticationPrincipal AuthUser authUser,
-            @PathVariable("id") Integer orderId 
+            @PathVariable("orderId") Integer orderId
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
                 orderService.cancelOrder(requireUserId(authUser), orderId)

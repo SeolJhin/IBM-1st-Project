@@ -14,6 +14,7 @@ import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,10 +55,9 @@ public class OrderServiceImpl implements OrderService {
             if (dto == null || dto.getProdId() == null || dto.getOrderQuantity() == null || dto.getOrderQuantity() <= 0) {
                 throw new BusinessException(ErrorCode.BAD_REQUEST);
             }
-            // 비관적 락으로 조회 → 동시 주문 시 재고 초과 차감 방지
             Product product = productRepository.findByIdWithLock(dto.getProdId())
                     .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
-            product.decreaseStock(dto.getOrderQuantity());  // 재고 차감 (품절/부족 시 예외)
+            product.decreaseStock(dto.getOrderQuantity());
             items.add(OrderItem.of(order, product, dto.getOrderQuantity()));
         }
 
@@ -75,7 +75,12 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public List<OrderResponse> getMyOrders(String userId) {
-        return orderRepository.findAllByUserIdWithItems(userId).stream()
+        // ✅ 1단계: orderItems fetch
+        List<Order> orders = orderRepository.findAllByUserIdWithItems(userId);
+        // ✅ 2단계: roomServiceOrders fetch (같은 트랜잭션 → 1차 캐시에서 자동 병합)
+        orderRepository.findAllByUserIdWithRoomServices(userId);
+
+        return orders.stream()
                 .map(OrderResponse::from)
                 .collect(Collectors.toList());
     }
@@ -84,8 +89,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public OrderResponse getOrder(String userId, Integer orderId) {
+        // ✅ 1단계: orderItems fetch
         Order order = orderRepository.findByIdWithItems(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        // ✅ 2단계: roomServiceOrders fetch
+        orderRepository.findByIdWithRoomServices(orderId);
 
         if (!order.getUser().getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
@@ -96,14 +104,16 @@ public class OrderServiceImpl implements OrderService {
     /* 주문 취소 */
     @Override
     public OrderResponse cancelOrder(String userId, Integer orderId) {
+        // ✅ 1단계: orderItems fetch
         Order order = orderRepository.findByIdWithItems(orderId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+        // ✅ 2단계: roomServiceOrders fetch
+        orderRepository.findByIdWithRoomServices(orderId);
 
         if (!order.getUser().getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
         }
 
-        // 재고 복원 (취소 시)
         for (OrderItem item : order.getOrderItems()) {
             Product product = productRepository.findByIdWithLock(item.getProduct().getProdId())
                     .orElse(null);
@@ -120,7 +130,17 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponse> getAllOrders(Pageable pageable) {
-        return orderRepository.findAllWithItems(pageable)
-                .map(OrderResponse::from);
+        // ✅ 1단계: 페이징 포함 orderItems fetch
+        Page<Order> orderPage = orderRepository.findAllWithItems(pageable);
+
+        // ✅ 2단계: roomServiceOrders fetch (ID 목록으로 in절 조회)
+        List<Integer> orderIds = orderPage.getContent().stream()
+                .map(Order::getOrderId)
+                .collect(Collectors.toList());
+        if (!orderIds.isEmpty()) {
+            orderRepository.findAllWithRoomServicesByIds(orderIds);
+        }
+
+        return orderPage.map(OrderResponse::from);
     }
 }

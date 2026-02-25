@@ -65,7 +65,7 @@ public class AdminReviewServiceImpl implements AdminReviewService {
         // ✅ 알림은 삭제 전에 먼저 발송
         notificationService.notifyUser(
                 writerId,
-                NotificationType.ADM_RVW_DEL,
+                NotificationType.ADM_RVW_DEL.name(),
                 "관리자 정책에 의해 리뷰가 삭제되었습니다.",
                 null,
                 TargetType.review,
@@ -73,7 +73,7 @@ public class AdminReviewServiceImpl implements AdminReviewService {
                 "/reviews"
         );
         notificationService.notifyAdmins(
-                NotificationType.ADM_RVW_DEL,
+                NotificationType.ADM_RVW_DEL.name(),
                 "관리자 리뷰 삭제 처리 (reviewId=" + reviewId + ")",
                 null,
                 TargetType.review,
