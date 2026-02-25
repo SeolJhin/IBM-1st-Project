@@ -175,6 +175,16 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    public void recordReturnedParams(Integer paymentId, String returnedParamsJson) {
+        if (paymentId == null || !hasText(returnedParamsJson)) {
+            return;
+        }
+        paymentIntentRepository
+            .findTopByPaymentIdOrderByPaymentIntentIdDesc(paymentId)
+            .ifPresent(intent -> intent.markReturned(returnedParamsJson));
+    }
+
+    @Override
     public void cancelFromCallback(Integer paymentId, String merchantUid) {
         Payment payment = getPaymentForCallback(paymentId, merchantUid);
 

@@ -21,7 +21,7 @@ public class AdminPaymentController {
     }
 
     @GetMapping("/{id}")
-    public Payment findOne(@PathVariable Integer id) {
+    public Payment findOne(@PathVariable("id") Integer id) {
         return paymentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
     }

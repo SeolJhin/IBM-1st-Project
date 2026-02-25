@@ -13,6 +13,8 @@ public interface PaymentService {
 
     PaymentResponse approveFromCallback(PaymentApproveRequest request);
 
+    void recordReturnedParams(Integer paymentId, String returnedParamsJson);
+
     void cancelFromCallback(Integer paymentId, String merchantUid);
 
     void failFromCallback(Integer paymentId, String merchantUid, String failCode, String failMessage);
