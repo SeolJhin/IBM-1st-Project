@@ -57,7 +57,7 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
             return;
         }
 
-        PaymentIntent intent = resolveIntent(payment.getPaymentId(), providerRefId);
+        PaymentIntent intent = resolveIntent(payment.getPaymentId(), provider, providerRefId);
         if (intent.getPaymentIntentId() == null) {
             intent.recordReturnedParams(payload);
             paymentIntentRepository.save(intent);
@@ -78,7 +78,7 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
         }
     }
 
-    private PaymentIntent resolveIntent(Integer paymentId, String providerRefId) {
+    private PaymentIntent resolveIntent(Integer paymentId, String provider, String providerRefId) {
         if (hasText(providerRefId)) {
             PaymentIntent existing = paymentIntentRepository
                 .findByPaymentIdAndProviderRefId(paymentId, providerRefId)
@@ -97,6 +97,7 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
 
         return PaymentIntent.builder()
             .paymentId(paymentId)
+            .provider(provider)
             .intentSt(PaymentIntentStatus.RETURNED)
             .providerRefId(blankToNull(providerRefId))
             .returnedParamsJson(null)

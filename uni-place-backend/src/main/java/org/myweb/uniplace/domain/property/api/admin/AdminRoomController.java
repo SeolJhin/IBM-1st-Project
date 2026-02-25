@@ -22,7 +22,7 @@ public class AdminRoomController {
     private final RoomService roomService;
 
     @GetMapping("/{roomId}")
-    public ApiResponse<RoomDetailResponse> detail(@PathVariable Integer roomId) {
+    public ApiResponse<RoomDetailResponse> detail(@PathVariable("roomId") Integer roomId) {
         return ApiResponse.ok(roomService.getRoomForAdmin(roomId));
     }
 
@@ -33,7 +33,7 @@ public class AdminRoomController {
 
     @PutMapping(value = "/{roomId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<RoomDetailResponse> update(
-            @PathVariable Integer roomId,
+            @PathVariable("roomId") Integer roomId,
             @Validated @ModelAttribute RoomUpdateRequest request
     ) {
         return ApiResponse.ok(roomService.updateRoom(roomId, request));
@@ -41,7 +41,7 @@ public class AdminRoomController {
 
     @PutMapping("/{roomId}/status")
     public ApiResponse<Void> changeStatus(
-            @PathVariable Integer roomId,
+            @PathVariable("roomId") Integer roomId,
             @Validated @RequestBody RoomStatusUpdateRequest request
     ) {
         roomService.changeRoomStatus(roomId, request.getRoomStatus());
@@ -50,7 +50,7 @@ public class AdminRoomController {
 
     // ✅ 신규: Room soft delete
     @DeleteMapping("/{roomId}")
-    public ApiResponse<Void> delete(@PathVariable Integer roomId) {
+    public ApiResponse<Void> delete(@PathVariable("roomId") Integer roomId) {
         roomService.deleteRoom(roomId);
         return ApiResponse.ok();
     }

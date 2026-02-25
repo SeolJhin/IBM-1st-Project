@@ -19,6 +19,8 @@ import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoCanc
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoCancelResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoReadyRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoReadyResponse;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -126,12 +128,12 @@ public class KakaoPayGateway implements PaymentGateway {
 
     private static Integer toIntExact(BigDecimal v, String field) {
         if (v == null) {
-            throw new IllegalArgumentException(field + " is required");
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
         try {
             return v.intValueExact();
         } catch (ArithmeticException e) {
-            throw new IllegalArgumentException(field + " must be integer(no decimals): " + v);
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
     }
 }

@@ -18,6 +18,7 @@ public class OrderResponse {
     private String userId;
     private OrderStatus orderSt;
     private BigDecimal totalPrice;
+    private Integer paymentId;
     private LocalDateTime orderCreatedAt;
     private List<OrderItemResponse> orderItems;
     private List<RoomServiceOrderResponse> roomServiceOrders;
@@ -28,6 +29,7 @@ public class OrderResponse {
                 .userId(order.getUser().getUserId())
                 .orderSt(order.getOrderSt())
                 .totalPrice(order.getTotalPrice())
+                .paymentId(order.getPaymentId())
                 .orderCreatedAt(order.getOrderCreatedAt())
                 .orderItems(order.getOrderItems().stream()
                         .map(OrderItemResponse::from)
