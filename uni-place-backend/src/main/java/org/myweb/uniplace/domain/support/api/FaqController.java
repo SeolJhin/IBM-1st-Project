@@ -9,9 +9,9 @@ import org.myweb.uniplace.domain.support.api.dto.response.FaqResponse;
 import org.myweb.uniplace.domain.support.application.FaqService;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.response.PageResponse;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,21 +26,36 @@ public class FaqController {
     @GetMapping
     public ApiResponse<PageResponse<FaqResponse>> search(
             @ModelAttribute FaqSearchRequest request,
-            @PageableDefault(size = 10, sort = "faqId", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sort", defaultValue = "faqId") String sort,
+            @RequestParam(name = "direct", defaultValue = "DESC") String direct
     ) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
+
+        Sort.Direction direction =
+                "ASC".equalsIgnoreCase(direct) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
+
         return ApiResponse.ok(faqService.search(request, pageable));
     }
 
     /** FAQ 상세 */
     @GetMapping("/{faqId}")
-    public ApiResponse<FaqResponse> detail(@PathVariable Integer faqId) {
+    public ApiResponse<FaqResponse> detail(
+            @PathVariable("faqId") Integer faqId
+    ) {
         return ApiResponse.ok(faqService.get(faqId));
     }
 
     /** FAQ 등록 (관리자) */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ApiResponse<FaqResponse> create(@Valid @RequestBody FaqCreateRequest request) {
+    public ApiResponse<FaqResponse> create(
+            @Valid @RequestBody FaqCreateRequest request
+    ) {
         return ApiResponse.ok(faqService.create(request));
     }
 
@@ -48,7 +63,7 @@ public class FaqController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{faqId}")
     public ApiResponse<FaqResponse> update(
-            @PathVariable Integer faqId,
+            @PathVariable("faqId") Integer faqId,
             @Valid @RequestBody FaqUpdateRequest request
     ) {
         return ApiResponse.ok(faqService.update(faqId, request));
@@ -57,9 +72,10 @@ public class FaqController {
     /** FAQ 삭제 (관리자) */
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{faqId}")
-    public ApiResponse<Void> delete(@PathVariable Integer faqId) {
+    public ApiResponse<Void> delete(
+            @PathVariable("faqId") Integer faqId
+    ) {
         faqService.delete(faqId);
         return ApiResponse.ok();
     }
 }
-
