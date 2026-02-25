@@ -1,15 +1,14 @@
-// features/support/hooks/useNotices.js
-// 공지사항 목록 조회 + 페이징
+// features/support/hooks/useComplains.js
+// 내 민원 목록 조회 + 페이징 (인증 필요)
 //
 // [사용 예시]
-// const { notices, pagination, loading, error, goToPage } = useNotices();
-// const { notices } = useNotices({ size: 5, sort: 'importance' });
+// const { complains, pagination, loading, error, goToPage } = useComplains();
 
 import { useCallback, useEffect, useState } from 'react';
 import { supportApi } from '../api/supportApi';
 
-export function useNotices(initialParams = {}) {
-  const [notices, setNotices] = useState([]);
+export function useComplains(initialParams = {}) {
+  const [complains, setComplains] = useState([]);
   const [pagination, setPagination] = useState({
     page: initialParams.page ?? 1,
     size: initialParams.size ?? 10,
@@ -21,23 +20,22 @@ export function useNotices(initialParams = {}) {
   const [params, setParams] = useState({
     page: 1,
     size: 10,
-    sort: 'noticeId',
+    sort: 'compId',
     direct: 'DESC',
     ...initialParams,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchNotices = useCallback(async (fetchParams) => {
+  const fetchComplains = useCallback(async (fetchParams) => {
     setLoading(true);
     setError(null);
     try {
-      // PageResponse<NoticeResponse>
-      // 필드: noticeId, noticeTitle, userId, noticeCtnt,
-      //       importance, impEndAt, readCount, noticeSt,
-      //       fileCk, code, createdAt, updatedAt
-      const data = await supportApi.getNotices(fetchParams);
-      setNotices(data?.content ?? []);
+      // PageResponse<ComplainResponse>
+      // 필드: compId, compTitle, userId, compCtnt, compSt,
+      //       code, fileCk, replyCk, createdAt, updatedAt
+      const data = await supportApi.getMyComplains(fetchParams);
+      setComplains(data?.content ?? []);
       setPagination({
         page: data?.page ?? fetchParams.page,
         size: data?.size ?? fetchParams.size,
@@ -47,16 +45,16 @@ export function useNotices(initialParams = {}) {
         isLast: (data?.page ?? fetchParams.page) >= (data?.totalPages ?? 1),
       });
     } catch (err) {
-      setError(err?.message || '공지사항을 불러오는 데 실패했습니다.');
-      setNotices([]);
+      setError(err?.message || '민원 목록을 불러오는 데 실패했습니다.');
+      setComplains([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchNotices(params);
-  }, [fetchNotices, params]);
+    fetchComplains(params);
+  }, [fetchComplains, params]);
 
   const goToPage = useCallback((nextPage) => {
     setParams((prev) => ({ ...prev, page: nextPage }));
@@ -67,11 +65,11 @@ export function useNotices(initialParams = {}) {
   }, []);
 
   const refetch = useCallback(() => {
-    fetchNotices(params);
-  }, [fetchNotices, params]);
+    fetchComplains(params);
+  }, [fetchComplains, params]);
 
   return {
-    notices,      // NoticeResponse[]
+    complains, // ComplainResponse[]
     pagination,
     loading,
     error,
