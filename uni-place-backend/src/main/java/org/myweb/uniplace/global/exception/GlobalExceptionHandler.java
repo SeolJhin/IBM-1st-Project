@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -32,7 +33,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException e) {
         return ResponseEntity
             .status(ErrorCode.BAD_REQUEST.getStatus())
-            .body(ApiResponse.error(ErrorCode.BAD_REQUEST));
+            .body(ApiResponse.error(ErrorCode.BAD_REQUEST, safeMessage(e.getMessage())));
     }
 
     @ExceptionHandler(IllegalStateException.class)
@@ -44,23 +45,26 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+        String message = firstFieldErrorMessage(e.getBindingResult().getFieldErrors());
         return ResponseEntity
             .status(ErrorCode.BAD_REQUEST.getStatus())
-            .body(ApiResponse.error(ErrorCode.BAD_REQUEST));
+            .body(ApiResponse.error(ErrorCode.BAD_REQUEST, message));
     }
 
     @ExceptionHandler(BindException.class)
     public ResponseEntity<ApiResponse<Void>> handleBindException(BindException e) {
+        String message = firstFieldErrorMessage(e.getFieldErrors());
         return ResponseEntity
             .status(ErrorCode.BAD_REQUEST.getStatus())
-            .body(ApiResponse.error(ErrorCode.BAD_REQUEST));
+            .body(ApiResponse.error(ErrorCode.BAD_REQUEST, message));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
+        String message = "요청 본문(JSON) 형식 또는 타입이 올바르지 않습니다.";
         return ResponseEntity
             .status(ErrorCode.BAD_REQUEST.getStatus())
-            .body(ApiResponse.error(ErrorCode.BAD_REQUEST));
+            .body(ApiResponse.error(ErrorCode.BAD_REQUEST, message));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -80,7 +84,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
             .status(ErrorCode.BAD_REQUEST.getStatus())
-            .body(ApiResponse.error(ErrorCode.BAD_REQUEST));
+            .body(ApiResponse.error(ErrorCode.BAD_REQUEST, safeMessage(rootMessage(e))));
     }
 
     @ExceptionHandler(Exception.class)
@@ -96,5 +100,27 @@ public class GlobalExceptionHandler {
             current = current.getCause();
         }
         return current.getMessage() == null ? "" : current.getMessage();
+    }
+
+    private String safeMessage(String message) {
+        if (message == null || message.isBlank()) {
+            return ErrorCode.BAD_REQUEST.getMessage();
+        }
+        if (message.length() > 200) {
+            return message.substring(0, 200);
+        }
+        return message;
+    }
+
+    private String firstFieldErrorMessage(java.util.List<FieldError> fieldErrors) {
+        if (fieldErrors == null || fieldErrors.isEmpty()) {
+            return ErrorCode.BAD_REQUEST.getMessage();
+        }
+        FieldError first = fieldErrors.get(0);
+        String defaultMessage = first.getDefaultMessage();
+        if (defaultMessage != null && !defaultMessage.isBlank()) {
+            return first.getField() + ": " + defaultMessage;
+        }
+        return first.getField() + " 값이 올바르지 않습니다.";
     }
 }

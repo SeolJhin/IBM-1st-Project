@@ -47,6 +47,7 @@ import java.util.Objects;
 public class PaymentServiceImpl implements PaymentService {
 
     private static final String ST_READY = "ready";
+    private static final String ST_PENDING = "pending";
     private static final String ST_PAID = "paid";
     private static final String ST_CANCELLED = "cancelled";
 
@@ -72,6 +73,18 @@ public class PaymentServiceImpl implements PaymentService {
         PreparedTarget target = resolveTarget(userId, request);
         validateServiceGoodsMapping(request.getServiceGoodsId(), target.targetType());
         String idempotencyKey = blankToNull(request.getIdempotencyKey());
+
+        Payment existingByTarget = paymentRepository
+            .findTopByUserIdAndTargetTypeAndTargetIdAndPaymentStInOrderByPaymentIdDesc(
+                userId,
+                target.targetType(),
+                target.targetId(),
+                java.util.List.of(ST_READY, ST_PENDING)
+            )
+            .orElse(null);
+        if (existingByTarget != null) {
+            return buildPrepareResponse(existingByTarget);
+        }
 
         if (idempotencyKey != null) {
             Payment existing = paymentRepository
@@ -140,6 +153,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         PaymentIntent intent = PaymentIntent.builder()
             .paymentId(payment.getPaymentId())
+            .provider(payment.getProvider())
             .intentSt(PaymentIntentStatus.READY_OK)
             .providerRefId(gwRes.getProviderRefId())
             .appSchemeUrl(firstNonBlank(

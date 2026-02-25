@@ -33,6 +33,9 @@ public class PaymentIntent {
     @Column(name = "payment_id", nullable = false)
     private Integer paymentId;
 
+    @Column(name = "provider", nullable = false, length = 20)
+    private String provider;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "intent_st", nullable = false)
     private PaymentIntentStatus intentSt;
