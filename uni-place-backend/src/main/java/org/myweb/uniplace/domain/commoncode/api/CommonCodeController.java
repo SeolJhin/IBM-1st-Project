@@ -30,13 +30,13 @@ public class CommonCodeController {
 
     // ✅ 특정 그룹의 "활성 코드" 목록
     @GetMapping("/{groupCode}")
-    public ApiResponse<List<CommonCodeResponse>> activeCodes(@PathVariable String groupCode) {
+    public ApiResponse<List<CommonCodeResponse>> activeCodes(@PathVariable("groupCode") String groupCode) {
         return ApiResponse.ok(commonCodeService.getActiveCodes(groupCode));
     }
 
     // ✅ 특정 그룹의 "전체 코드(활성/비활성 포함)" 목록
     @GetMapping("/{groupCode}/all")
-    public ApiResponse<List<CommonCodeResponse>> allCodes(@PathVariable String groupCode) {
+    public ApiResponse<List<CommonCodeResponse>> allCodes(@PathVariable("groupCode") String groupCode) {
         return ApiResponse.ok(commonCodeService.getAllCodes(groupCode));
     }
 
@@ -64,14 +64,14 @@ public class CommonCodeController {
 
     // ✅ 그룹 활성/비활성
     @PatchMapping("/groups/{groupCode}/active")
-    public ApiResponse<Void> changeGroupActive(@PathVariable String groupCode, @RequestParam boolean active) {
+    public ApiResponse<Void> changeGroupActive(@PathVariable("groupCode") String groupCode, @RequestParam(name = "isActive") boolean active) {
         commonCodeService.changeGroupActive(groupCode, active);
         return ApiResponse.ok();
     }
 
     // ✅ 코드 활성/비활성
     @PatchMapping("/{code}/active")
-    public ApiResponse<Void> changeCodeActive(@PathVariable String code, @RequestParam boolean active) {
+    public ApiResponse<Void> changeCodeActive(@PathVariable("code") String code, @RequestParam(name = "isActive") boolean active) {
         commonCodeService.changeCodeActive(code, active);
         return ApiResponse.ok();
     }
