@@ -1,16 +1,33 @@
-import React from "react";
-import styles from "./Header.module.css";
-import { useNavigate } from "react-router-dom";
+import React, { useCallback } from 'react';
+import styles from './Header.module.css';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../features/user/hooks/useAuth';
 
 export default function Header() {
   const navigate = useNavigate();
+  const { user, loading, logout } = useAuth();
+
+  const goHome = useCallback(() => navigate('/'), [navigate]);
+
+  const onKeyDownBrand = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') goHome();
+  };
+
+  const onClickLogout = useCallback(async () => {
+    try {
+      await logout();
+    } finally {
+      navigate('/', { replace: true });
+    }
+  }, [logout, navigate]);
 
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
         <div
           className={styles.brand}
-          onClick={() => navigate("/")}
+          onClick={goHome}
+          onKeyDown={onKeyDownBrand}
           role="button"
           tabIndex={0}
         >
@@ -25,21 +42,21 @@ export default function Header() {
           <button
             className={styles.linkBtn}
             type="button"
-            onClick={() => navigate("/company_info")}
+            onClick={() => navigate('/company_info')}
           >
             회사소개
           </button>
           <button
             className={styles.linkBtn}
             type="button"
-            onClick={() => navigate("/community")}
+            onClick={() => navigate('/community')}
           >
             커뮤니티
           </button>
           <button
             className={styles.linkBtn}
             type="button"
-            onClick={() => navigate("/membership")}
+            onClick={() => navigate('/membership')}
           >
             방찾기
           </button>
@@ -50,18 +67,41 @@ export default function Header() {
             className={styles.iconBtn}
             type="button"
             aria-label="search"
-            onClick={() => navigate("/search")}
+            onClick={() => navigate('/search')}
           >
             검색
           </button>
-          <button
-            className={styles.iconBtn}
-            type="button"
-            aria-label="login"
-            onClick={() => navigate("/login")}
-          >
-            로그인
-          </button>
+
+          {/* ✅ 로그인 상태에 따라 우측 버튼 변경 */}
+          {loading ? null : user ? (
+            <>
+              <button
+                className={styles.iconBtn}
+                type="button"
+                aria-label="me"
+                onClick={() => navigate('/me')}
+              >
+                마이페이지
+              </button>
+              <button
+                className={styles.iconBtn}
+                type="button"
+                aria-label="logout"
+                onClick={onClickLogout}
+              >
+                로그아웃
+              </button>
+            </>
+          ) : (
+            <button
+              className={styles.iconBtn}
+              type="button"
+              aria-label="login"
+              onClick={() => navigate('/login')}
+            >
+              로그인
+            </button>
+          )}
         </div>
       </div>
     </header>
