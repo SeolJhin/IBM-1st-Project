@@ -77,8 +77,13 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        buildingRepository.findById(buildingId)
+        Building reservableBuilding = buildingRepository.findById(buildingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
+
+        // ✅ 삭제된 건물의 공간 예약 가능 목록 조회 불가
+        if (reservableBuilding.isDeleted()) {
+            throw new BusinessException(ErrorCode.BUILDING_NOT_FOUND);
+        }
 
         SpaceSearchRequest request = SpaceSearchRequest.builder()
                 .buildingId(buildingId)
@@ -161,6 +166,11 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         Building building = buildingRepository.findById(request.getBuildingId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
 
+        // ✅ 삭제된 건물로 공간 예약 불가
+        if (building.isDeleted()) {
+            throw new BusinessException(ErrorCode.BUILDING_NOT_FOUND);
+        }
+
         CommonSpace space = spaceRepository.findById(request.getSpaceId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.SPACE_NOT_FOUND));
 
@@ -191,7 +201,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         );
 
         // =========================
-        // 알림 - 예약 생성 직후
+        // 알림(여기 라인에 넣기) - 예약 생성 직후
         // =========================
         String timeMsg = saved.getSrStartAt() + " ~ " + saved.getSrEndAt();
 
@@ -250,7 +260,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         e.setSrSt(SpaceReservationStatus.cancelled);
 
         // =========================
-        // ✅ 알림 - 사용자 취소 직후
+        // ✅ 알림(여기 라인에 넣기) - 사용자 취소 직후
         // =========================
         String timeMsg = e.getSrStartAt() + " ~ " + e.getSrEndAt();
 
@@ -399,6 +409,8 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         }
 
         e.setSrSt(SpaceReservationStatus.ended);
+
+        // 종료 알림을 원하면 여기서 NotificationType 하나 더 추가해서 보내면 됨
 
         return SpaceReservationResponse.fromEntity(e);
     }

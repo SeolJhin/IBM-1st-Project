@@ -12,7 +12,8 @@ public enum FileRefType {
     QNA("QNA"),
     COMPLAIN("COMPLAIN"),
     SPACE("SPACE"),
-    COMPANY("COMPANY"), 
+    COMPANY("COMPANY"),
+    PRODUCT("PRODUCT"),
     BUILDING("BUILDING");
 
     private final String value;
@@ -25,13 +26,15 @@ public enum FileRefType {
         return value;
     }
 
-    public static FileRefType from(String value) {
-        if (value == null || value.isBlank()) {
+    // ✅ name() 기준으로도, value 기준으로도 찾을 수 있게 수정
+    public static FileRefType from(String input) {
+        if (input == null || input.isBlank()) {
             throw new IllegalArgumentException("fileParentType이 없습니다.");
         }
+        String upper = input.trim().toUpperCase();
         for (FileRefType t : values()) {
-            if (t.value.equalsIgnoreCase(value.trim())) return t;
+            if (t.name().equals(upper) || t.value.equals(upper)) return t;
         }
-        throw new IllegalArgumentException("지원하지 않는 FileRefType 입니다: " + value);
+        throw new IllegalArgumentException("지원하지 않는 FileRefType 입니다: " + input);
     }
 }

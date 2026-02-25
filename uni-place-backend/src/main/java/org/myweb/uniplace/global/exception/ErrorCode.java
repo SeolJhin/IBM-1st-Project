@@ -71,6 +71,7 @@ public enum ErrorCode {
 
     // ===== Cart =====
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_404", "장바구니 항목을 찾을 수 없습니다."),
+    CART_NOT_FOUND(HttpStatus.NOT_FOUND, "CART_404_1", "장바구니를 찾을 수 없습니다."),
 
     // ===== Notification =====
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTI_404", "알림을 찾을 수 없습니다."),

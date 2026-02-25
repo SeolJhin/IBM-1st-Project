@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import lombok.RequiredArgsConstructor;
@@ -29,8 +28,9 @@ public class FileController {
     @Value("${file.upload-path}")
     private String uploadBasePath;
 
+    // ✅ @Validated 제거 → MultipartFile 바인딩 실패로 인한 400 방지
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<FileUploadResponse> upload(@Validated @ModelAttribute FileUploadRequest request) {
+    public ApiResponse<FileUploadResponse> upload(@ModelAttribute FileUploadRequest request) {
         return ApiResponse.ok(fileService.uploadFiles(request));
     }
 
@@ -40,8 +40,8 @@ public class FileController {
 
     @GetMapping
     public ApiResponse<List<FileResponse>> list(
-            @RequestParam("parentType") String parentType,
-            @RequestParam("parentId") Integer parentId
+            @RequestParam("fileParentType") String parentType,
+            @RequestParam("fileParentId") Integer parentId
     ) {
         return ApiResponse.ok(fileService.getActiveFiles(parentType, parentId));
     }
@@ -107,19 +107,23 @@ public class FileController {
         return ResponseEntity.ok().headers(headers).body(resource);
     }
 
+    // ✅ fileIds가 없으면 빈 리스트로 처리 (required=false + defaultValue)
     @DeleteMapping
     public ApiResponse<Void> deleteByParent(
-            @RequestParam("parentType") String parentType,
-            @RequestParam("parentId") Integer parentId,
-            @RequestBody List<Integer> fileIds
+            @RequestParam("fileParentType") String parentType,
+            @RequestParam("fileParentId") Integer parentId,
+            @RequestBody(required = false) List<Integer> fileIds
     ) {
-        fileService.softDeleteFilesByParent(parentType, parentId, fileIds);
+        fileService.softDeleteFilesByParent(parentType, parentId,
+                fileIds != null ? fileIds : List.of());
         return ApiResponse.ok();
     }
 
     @DeleteMapping("/admin")
-    public ApiResponse<Void> deleteByIds(@RequestBody List<Integer> fileIds) {
-        fileService.softDeleteFiles(fileIds);
+    public ApiResponse<Void> deleteByIds(
+            @RequestBody(required = false) List<Integer> fileIds
+    ) {
+        fileService.softDeleteFiles(fileIds != null ? fileIds : List.of());
         return ApiResponse.ok();
     }
 
@@ -129,8 +133,8 @@ public class FileController {
 
     @GetMapping("/admin")
     public ApiResponse<List<FileResponse>> adminList(
-            @RequestParam("parentType") String parentType,
-            @RequestParam("parentId") Integer parentId
+            @RequestParam("fileParentType") String parentType,
+            @RequestParam("fileParentId") Integer parentId
     ) {
         return ApiResponse.ok(fileService.getAllFilesForAdmin(parentType, parentId));
     }
@@ -203,12 +207,10 @@ public class FileController {
 
         String v = fileTypeOrExt.trim().toLowerCase();
 
-        // MIME 형태 들어오는 경우도 처리
         if (v.startsWith("image/")) return MediaType.parseMediaType(v);
         if (v.equals("application/pdf")) return MediaType.APPLICATION_PDF;
         if (v.equals("text/plain")) return MediaType.TEXT_PLAIN;
 
-        // 확장자 형태 처리 (".png" / "png" 둘 다)
         if (v.startsWith(".")) v = v.substring(1);
 
         return switch (v) {
