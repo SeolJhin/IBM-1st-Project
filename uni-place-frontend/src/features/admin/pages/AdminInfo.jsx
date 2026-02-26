@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/AdminPageHeader'; // 프로젝트 경로에 맞게 조정
 import styles from './AdminInfo.module.css';
 
-import { getAdminDashboard } from '../api/adminApi';
+import { adminApi } from '../api/adminApi';
 import { useAuth } from '../../user/hooks/useAuth';
 
 // tokenStore가 이미 src/app/http/tokenStore.js 에 있으면 그걸 쓰는 게 베스트
@@ -40,7 +40,7 @@ export default function AdminInfo() {
     setLoading(true);
     setErrMsg('');
     try {
-      const resp = await getAdminDashboard();
+      const resp = await adminApi.dashboard();
       // apiJson.get() 가 axios 기반이면 resp.data에 담겨올 가능성 큼
       const payload = resp?.data ?? resp;
 
