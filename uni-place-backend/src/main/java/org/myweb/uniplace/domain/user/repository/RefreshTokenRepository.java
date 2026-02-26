@@ -42,4 +42,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Stri
     int revokeActiveByUserIdAndDeviceId(@Param("userId") String userId,
                                         @Param("deviceId") String deviceId,
                                         @Param("now") LocalDateTime now);
+
+    boolean existsByUser_UserIdAndRevokedFalse(String userId);
+
+    boolean existsByUser_UserIdAndDeviceIdAndRevokedFalse(String userId, String deviceId);
 }
