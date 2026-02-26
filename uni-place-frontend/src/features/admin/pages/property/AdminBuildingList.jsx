@@ -1,5 +1,7 @@
 import React from 'react';
+import { AdminEndpointListProbe } from '../../components/AdminEndpointProbe';
+import { adminApi } from '../../api/adminApi';
 
 export default function AdminBuildingList() {
-  return <div>건물 관리 목록 (AdminBuildingList)</div>;
+  return <AdminEndpointListProbe title="Admin Buildings" fetcher={() => adminApi.getBuildings()} />;
 }

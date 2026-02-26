@@ -1,5 +1,7 @@
 import React from 'react';
+import { AdminEndpointListProbe } from '../../components/AdminEndpointProbe';
+import { adminApi } from '../../api/adminApi';
 
 export default function AdminContractList() {
-  return <div>계약 관리 목록 (AdminContractList)</div>;
+  return <AdminEndpointListProbe title="Admin Contracts" fetcher={() => adminApi.getContracts()} />;
 }
