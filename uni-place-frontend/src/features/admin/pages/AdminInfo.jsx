@@ -75,13 +75,13 @@ export default function AdminInfo() {
         title: '투어',
         icon: 'tour',
         value: `${data.tourCount}개`,
-        onClick: () => navigate('/admin/reservation/tours'),
+        onClick: () => navigate('/admin/reservations/tours'),
       },
       {
         title: '계약',
         icon: 'contract',
         value: `${data.contractCount}건`,
-        onClick: () => navigate('/admin/contract/contracts'),
+        onClick: () => navigate('/admin/contracts'),
       },
       {
         title: '배너',
