@@ -14,6 +14,10 @@ import SpaceReservationList from './features/reservation/pages/SpaceReservationL
 import TourReservationCreate from './features/reservation/pages/TourReservationCreate';
 import TourReservationList from './features/reservation/pages/TourReservationList';
 
+import RequireAuth from './app/router/guards/RequireAuth';
+import RequireRole from './app/router/guards/RequireRole';
+import AdminInfo from './features/admin/pages/AdminInfo';
+
 export default function App() {
   return (
     <>
@@ -44,6 +48,12 @@ export default function App() {
           path="/reservations/tour/list"
           element={<TourReservationList />}
         />
+
+        <Route element={<RequireAuth />}>
+          <Route element={<RequireRole allow={['admin']} />}>
+            <Route path="/admin" element={<AdminInfo />} />
+          </Route>
+        </Route>
       </Routes>
     </>
   );

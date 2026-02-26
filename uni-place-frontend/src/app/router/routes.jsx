@@ -8,26 +8,6 @@ import RequireRole from './guards/RequireRole';
 import AdminInfo from '../../features/admin/pages/AdminInfo';
 import { ADMIN_ROUTES } from '../../features/admin/constants/adminRoutes';
 
-function ComingSoon({ title = '준비중' }) {
-  return (
-    <div style={{ padding: 28 }}>
-      <h2 style={{ margin: 0, fontSize: 20 }}>{title}</h2>
-      <p style={{ marginTop: 10, color: '#666' }}>
-        이 페이지는 다음 단계에서 구현할게요.
-      </p>
-    </div>
-  );
-}
-
-function NotFound() {
-  return (
-    <div style={{ padding: 28 }}>
-      <h2 style={{ margin: 0, fontSize: 20 }}>404</h2>
-      <p style={{ marginTop: 10, color: '#666' }}>페이지를 찾을 수 없어요.</p>
-    </div>
-  );
-}
-
 export const router = createBrowserRouter([
   // ===== 공개 영역 =====
   {
