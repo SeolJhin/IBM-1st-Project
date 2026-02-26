@@ -9,6 +9,9 @@ import org.myweb.uniplace.domain.commerce.domain.entity.Order;
 import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
 import org.myweb.uniplace.domain.commerce.repository.OrderRepository;
 import org.myweb.uniplace.domain.contract.repository.ContractRepository;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentApproveRequest;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentPrepareRequest;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentPrepareResponse;
@@ -30,6 +33,8 @@ import org.myweb.uniplace.domain.payment.repository.ServiceGoodsRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.util.IdGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -45,6 +50,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Transactional
 public class PaymentServiceImpl implements PaymentService {
+    private static final Logger log = LoggerFactory.getLogger(PaymentServiceImpl.class);
 
     private static final String ST_READY = "ready";
     private static final String ST_PENDING = "pending";
@@ -62,6 +68,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final MonthlyChargeRepository monthlyChargeRepository;
     private final ContractRepository contractRepository;
     private final ServiceGoodsRepository serviceGoodsRepository;
+    private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
 
     @Value("${app.baseUrl:http://localhost:8080}")
@@ -233,6 +240,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.markCanceled();
         paymentRepository.save(payment);
         paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
+        notifyPaymentFail(payment, trimMessage(failMessage));
     }
 
     private PaymentResponse approveInternal(String requesterUserId, PaymentApproveRequest request) {
@@ -303,6 +311,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             syncTargetPaid(payment);
             paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.approved);
+            notifyPaymentSuccess(payment);
 
             return PaymentResponse.builder()
                 .paymentId(payment.getPaymentId())
@@ -313,6 +322,7 @@ public class PaymentServiceImpl implements PaymentService {
             intent.markApproveFail("APPROVE_FAIL", trimMessage(e.getMessage()), null);
             paymentIntentRepository.save(intent);
             paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
+            notifyPaymentFail(payment, trimMessage(e.getMessage()));
             throw e;
         }
     }
@@ -334,6 +344,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         payment.markReady();
         paymentRepository.save(payment);
+        notifyPaymentRetry(payment);
 
         return PaymentResponse.builder()
             .paymentId(payment.getPaymentId())
@@ -558,16 +569,43 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
         }
         if (hasText(gwRes.getMerchantUid()) && !payment.getMerchantUid().equals(gwRes.getMerchantUid())) {
+            safeNotifyAdmins(
+                NotificationType.PAY_STATUS_MISMATCH.name(),
+                "결제 상태 불일치(merchantUid). paymentId=" + payment.getPaymentId()
+                    + ", expected=" + payment.getMerchantUid()
+                    + ", actual=" + gwRes.getMerchantUid(),
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
         if (gwRes.getCapturedPrice() != null
             && payment.getTotalPrice() != null
             && payment.getTotalPrice().compareTo(gwRes.getCapturedPrice()) != 0) {
+            safeNotifyAdmins(
+                NotificationType.PAY_STATUS_MISMATCH.name(),
+                "결제 상태 불일치(amount). paymentId=" + payment.getPaymentId()
+                    + ", expected=" + payment.getTotalPrice()
+                    + ", actual=" + gwRes.getCapturedPrice(),
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
         if (hasText(gwRes.getCurrency())
             && hasText(payment.getCurrency())
             && !payment.getCurrency().equalsIgnoreCase(gwRes.getCurrency())) {
+            safeNotifyAdmins(
+                NotificationType.PAY_STATUS_MISMATCH.name(),
+                "결제 상태 불일치(currency). paymentId=" + payment.getPaymentId()
+                    + ", expected=" + payment.getCurrency()
+                    + ", actual=" + gwRes.getCurrency(),
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
     }
@@ -577,6 +615,16 @@ public class PaymentServiceImpl implements PaymentService {
             throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
         }
         if (hasText(payment.getProviderPaymentId()) && !payment.getProviderPaymentId().equals(providerPaymentId)) {
+            safeNotifyAdmins(
+                NotificationType.PAY_DUPLICATE.name(),
+                "결제 거래번호 충돌 감지. paymentId=" + payment.getPaymentId()
+                    + ", provider=" + payment.getProvider()
+                    + ", existingProviderPaymentId=" + payment.getProviderPaymentId()
+                    + ", requestedProviderPaymentId=" + providerPaymentId,
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
             throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
         }
 
@@ -585,6 +633,16 @@ public class PaymentServiceImpl implements PaymentService {
             .orElse(null);
 
         if (existing != null && !Objects.equals(existing.getPaymentId(), payment.getPaymentId())) {
+            safeNotifyAdmins(
+                NotificationType.PAY_DUPLICATE.name(),
+                "중복 결제 감지. paymentId=" + payment.getPaymentId()
+                    + ", duplicatePaymentId=" + existing.getPaymentId()
+                    + ", provider=" + payment.getProvider()
+                    + ", providerPaymentId=" + providerPaymentId,
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
             throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
         }
     }
@@ -661,6 +719,71 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private void notifyPaymentSuccess(Payment payment) {
+        if (payment == null || !hasText(payment.getUserId())) {
+            return;
+        }
+        String msg = "결제가 완료되었습니다. (paymentId=" + payment.getPaymentId()
+            + ", 금액=" + payment.getCapturedPrice() + "원)";
+        safeNotifyUser(payment.getUserId(), NotificationType.PAY_OK.name(), msg, payment.getPaymentId());
+    }
+
+    private void notifyPaymentFail(Payment payment, String reason) {
+        if (payment == null || !hasText(payment.getUserId())) {
+            return;
+        }
+        String failReason = hasText(reason) ? " 사유: " + reason : "";
+        String msg = "결제에 실패했습니다. 다시 시도해주세요. (paymentId=" + payment.getPaymentId() + ")" + failReason;
+        safeNotifyUser(payment.getUserId(), NotificationType.PAY_FAIL.name(), msg, payment.getPaymentId());
+    }
+
+    private void notifyPaymentRetry(Payment payment) {
+        if (payment == null || !hasText(payment.getUserId())) {
+            return;
+        }
+        String msg = "결제를 다시 시도합니다. (paymentId=" + payment.getPaymentId() + ")";
+        safeNotifyUser(payment.getUserId(), NotificationType.PAY_RETRY.name(), msg, payment.getPaymentId());
+    }
+
+    private void safeNotifyUser(String receiverId, String code, String message, Integer paymentId) {
+        try {
+            notificationService.notifyUser(
+                receiverId,
+                code,
+                message,
+                null,
+                TargetType.payment,
+                paymentId,
+                "/payments/" + paymentId
+            );
+        } catch (Exception e) {
+            log.warn("[PAYMENT][NOTIFY] failed code={} paymentId={} reason={}",
+                code, paymentId, trimMessage(e.getMessage()));
+        }
+    }
+
+    private void safeNotifyAdmins(
+        String code,
+        String message,
+        String senderId,
+        Integer paymentId,
+        String urlPath
+    ) {
+        try {
+            notificationService.notifyAdmins(
+                code,
+                message,
+                senderId,
+                TargetType.payment,
+                paymentId,
+                urlPath
+            );
+        } catch (Exception e) {
+            log.warn("[PAYMENT][NOTIFY][ADMIN] failed code={} paymentId={} reason={}",
+                code, paymentId, trimMessage(e.getMessage()));
+        }
     }
 
     private record PreparedTarget(
