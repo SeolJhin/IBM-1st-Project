@@ -40,6 +40,24 @@ public enum NotificationType {
     PAY_STATUS_MISMATCH, // 결제 상태/금액/통화 불일치
     PAY_BATCH_FAIL,   // 배치/리컨실 처리 실패
 
+    // ===== security/account =====
+    SEC_NEW_DEVICE,   // 새 기기 로그인
+    SEC_EMAIL_CHG,    // 이메일 변경
+    SEC_TEL_CHG,      // 휴대폰 변경
+    SEC_PWD_CHG,      // 비밀번호 변경
+    SEC_LOGIN_LOCK,   // 로그인 실패 누적 잠금
+    SEC_SOCIAL_LINK,  // 소셜 계정 연동
+
+    // ===== admin security =====
+    ADM_LOGIN_OK,        // 관리자 로그인 성공
+    ADM_NEW_DEVICE,      // 관리자 새 기기 로그인
+    ADM_LOGIN_LOCK,      // 관리자 로그인 실패 누적 잠금
+    ADM_USER_ROLE_CHG,   // 관리자 회원 권한 변경
+    ADM_USER_STATUS_CHG, // 관리자 회원 상태 변경
+    ADM_BULK_USER_CHANGE, // 대량 회원 상태/권한 변경
+    ADM_ABNORMAL_TRAFFIC, // 로그인 실패 급증
+    ADM_ABNORMAL_API,     // 비정상 API 접근 감지
+
     // ===== admin/system =====
     ADMIN_NOTICE
 }
