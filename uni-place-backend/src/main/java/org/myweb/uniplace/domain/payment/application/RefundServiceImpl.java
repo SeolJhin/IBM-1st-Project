@@ -5,6 +5,9 @@ import org.myweb.uniplace.domain.billing.domain.entity.MonthlyCharge;
 import org.myweb.uniplace.domain.billing.repository.MonthlyChargeRepository;
 import org.myweb.uniplace.domain.commerce.domain.entity.Order;
 import org.myweb.uniplace.domain.commerce.repository.OrderRepository;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentRefundRequest;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentRefundResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.PaymentGateway;
@@ -17,6 +20,8 @@ import org.myweb.uniplace.domain.payment.repository.PaymentRefundRepository;
 import org.myweb.uniplace.domain.payment.repository.PaymentRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +32,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 @Transactional
 public class RefundServiceImpl implements RefundService {
+    private static final Logger log = LoggerFactory.getLogger(RefundServiceImpl.class);
 
     private static final String ST_PAID = "paid";
     private static final String TARGET_TYPE_ORDER = "order";
@@ -37,6 +43,7 @@ public class RefundServiceImpl implements RefundService {
     private final PaymentGatewayFactory paymentGatewayFactory;
     private final OrderRepository orderRepository;
     private final MonthlyChargeRepository monthlyChargeRepository;
+    private final NotificationService notificationService;
 
     @Override
     public PaymentRefundResponse refund(String userId, PaymentRefundRequest request) {
@@ -94,6 +101,7 @@ public class RefundServiceImpl implements RefundService {
         payment.markCanceled();
         paymentRepository.save(payment);
         syncTargetCanceled(payment);
+        notifyRefundDone(payment, refundPrice);
 
         return PaymentRefundResponse.builder()
             .paymentId(payment.getPaymentId())
@@ -136,5 +144,26 @@ public class RefundServiceImpl implements RefundService {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private void notifyRefundDone(Payment payment, BigDecimal refundPrice) {
+        if (payment == null || !hasText(payment.getUserId())) {
+            return;
+        }
+        try {
+            notificationService.notifyUser(
+                payment.getUserId(),
+                NotificationType.PAY_REFUND.name(),
+                "환불이 완료되었습니다. (paymentId=" + payment.getPaymentId()
+                    + ", 환불금액=" + refundPrice + "원)",
+                null,
+                TargetType.payment,
+                payment.getPaymentId(),
+                "/payments/" + payment.getPaymentId()
+            );
+        } catch (Exception e) {
+            log.warn("[PAYMENT][NOTIFY] refund notify failed paymentId={} reason={}",
+                payment.getPaymentId(), e.getMessage());
+        }
     }
 }

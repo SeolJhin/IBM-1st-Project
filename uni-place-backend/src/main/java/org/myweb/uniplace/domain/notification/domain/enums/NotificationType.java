@@ -29,6 +29,17 @@ public enum NotificationType {
     TOUR_CAN,       // 투어예약 취소(관리자)
     TOUR_REM,       // 투어예약 리마인드(관리자)
 
+    // ===== payment =====
+    PAY_OK,         // 결제 성공
+    PAY_FAIL,       // 결제 실패
+    PAY_RETRY,      // 결제 재시도
+    PAY_REFUND,     // 결제 환불
+    PAY_STATUS_ADMIN, // 관리자에 의한 결제 상태 변경
+    PAY_WEBHOOK_FAIL, // webhook 검증/처리 실패
+    PAY_DUPLICATE,    // 중복 결제/거래 식별자 충돌
+    PAY_STATUS_MISMATCH, // 결제 상태/금액/통화 불일치
+    PAY_BATCH_FAIL,   // 배치/리컨실 처리 실패
+
     // ===== admin/system =====
     ADMIN_NOTICE
 }

@@ -7,6 +7,9 @@ import org.myweb.uniplace.domain.billing.repository.MonthlyChargeRepository;
 import org.myweb.uniplace.domain.commerce.domain.entity.Order;
 import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
 import org.myweb.uniplace.domain.commerce.repository.OrderRepository;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.payment.domain.entity.Payment;
 import org.myweb.uniplace.domain.payment.domain.entity.PaymentAttempt;
 import org.myweb.uniplace.domain.payment.repository.PaymentAttemptRepository;
@@ -49,6 +52,7 @@ public class PaymentReconcileService {
     private final OrderRepository orderRepository;
     private final MonthlyChargeRepository monthlyChargeRepository;
     private final TossClient tossClient;
+    private final NotificationService notificationService;
 
     @Value("${payment.reconcile.enabled:true}")
     private boolean reconcileEnabled;
@@ -93,6 +97,15 @@ public class PaymentReconcileService {
             } catch (Exception e) {
                 log.warn("[ALERT][PAYMENT_RECONCILE] reconcile failed paymentId={} reason={}",
                     payment.getPaymentId(), trimMessage(e.getMessage()));
+                notifyAdmins(
+                    NotificationType.PAY_BATCH_FAIL.name(),
+                    "결제 배치(reconcile) 실패. paymentId=" + payment.getPaymentId()
+                        + ", provider=" + payment.getProvider()
+                        + ", reason=" + trimMessage(e.getMessage()),
+                    payment.getUserId(),
+                    payment.getPaymentId(),
+                    "/admin/payments/" + payment.getPaymentId()
+                );
             }
         }
     }
@@ -239,6 +252,17 @@ public class PaymentReconcileService {
         paymentRepository.save(payment);
         log.warn("[ALERT][PAYMENT_RECONCILE] disputed paymentId={} provider={} reason={}",
             payment.getPaymentId(), payment.getProvider(), reason);
+        if (hasText(reason) && reason.contains("MISMATCH")) {
+            notifyAdmins(
+                NotificationType.PAY_STATUS_MISMATCH.name(),
+                "결제 상태 불일치 감지(disputed). paymentId=" + payment.getPaymentId()
+                    + ", provider=" + payment.getProvider()
+                    + ", reason=" + reason,
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
+        }
     }
 
     private boolean isBackoffElapsed(Payment payment, int requestedCount) {
@@ -353,5 +377,21 @@ public class PaymentReconcileService {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private void notifyAdmins(String code, String message, String senderId, Integer paymentId, String urlPath) {
+        try {
+            notificationService.notifyAdmins(
+                code,
+                message,
+                senderId,
+                TargetType.payment,
+                paymentId,
+                urlPath
+            );
+        } catch (Exception e) {
+            log.warn("[PAYMENT][NOTIFY][ADMIN] reconcile notify failed code={} paymentId={} reason={}",
+                code, paymentId, trimMessage(e.getMessage()));
+        }
     }
 }
