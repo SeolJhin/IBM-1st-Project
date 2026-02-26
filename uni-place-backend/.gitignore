@@ -16,7 +16,10 @@ build/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
-.properties
+*.properties
+# local secret configs
+**/src/main/resources/application-local.properties
+**/src/main/resources/application-*.secret.properties
 
 ### IntelliJ IDEA ###
 .idea
@@ -40,5 +43,3 @@ out/
 # application 관련 파일/폴더 무시
 .application/
 
-# gitignore 파일 자체 무시
-.gitignore

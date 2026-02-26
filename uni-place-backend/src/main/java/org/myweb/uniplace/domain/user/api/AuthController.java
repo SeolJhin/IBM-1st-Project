@@ -66,6 +66,14 @@ public class AuthController {
         return ApiResponse.ok(authService.kakaoComplete(req, http.getHeader("User-Agent"), extractIp(http)));
     }
 
+    @PostMapping("/oauth2/google/complete")
+    public ApiResponse<UserTokenResponse> googleComplete(
+        HttpServletRequest http,
+        @Valid @RequestBody KakaoSignupCompleteRequest req
+    ) {
+        return ApiResponse.ok(authService.googleComplete(req, http.getHeader("User-Agent"), extractIp(http)));
+    }
+
     private String extractIp(HttpServletRequest request) {
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isBlank()) {
