@@ -144,6 +144,12 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
             .build();
     }
 
+    @Override
+    @Transactional
+    public UserTokenResponse googleComplete(KakaoSignupCompleteRequest req, String userAgent, String ip) {
+        return kakaoComplete(req, userAgent, ip);
+    }
+
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
     }
