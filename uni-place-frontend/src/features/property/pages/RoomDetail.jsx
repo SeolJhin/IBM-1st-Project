@@ -245,7 +245,7 @@ export default function RoomDetail() {
       navigate('/login', { state: { from: `/rooms/${roomId}` } });
       return;
     }
-    if (user.userRole !== 'TENANT') {
+    if (user.userRole !== 'tenant') {
       setPermError('리뷰 작성은 입주자(TENANT) 권한이 필요합니다.');
       return;
     }
@@ -438,7 +438,7 @@ export default function RoomDetail() {
                   }}
                   onClick={() => {
                     setFindMenuOpen(false);
-                    navigate('/buildings');
+                    navigate('/rooms', { state: { tab: 'buildings' } });
                   }}
                 >
                   🏢 건물 목록
@@ -456,10 +456,10 @@ export default function RoomDetail() {
                   }}
                   onClick={() => {
                     setFindMenuOpen(false);
-                    navigate('/reservations/tour/list');
+                    navigate('/rooms', { state: { tab: 'spaces' } });
                   }}
                 >
-                  📋 방문예약 조회
+                  🛋️ 공용공간 목록
                 </button>
               </div>
             )}

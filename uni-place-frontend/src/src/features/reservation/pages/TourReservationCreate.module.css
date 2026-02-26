@@ -1,0 +1,278 @@
+/* TourReservationCreate.module.css */
+/* 다크 테마: #0B0E12 베이스, #D9AD5B 골드 액센트 */
+
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 0 64px;
+  min-height: 100vh;
+  background: #0b0e12;
+  color: #f4ecd8;
+}
+
+/* ── 상단 바 ── */
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #0b0e12;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.backBtn {
+  background: none;
+  border: none;
+  color: #d9ad5b;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.backBtn:hover {
+  background: rgba(217, 173, 91, 0.12);
+}
+.pageTitle {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+.listLink {
+  background: none;
+  border: 1px solid rgba(217, 173, 91, 0.4);
+  color: #d9ad5b;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.listLink:hover {
+  background: rgba(217, 173, 91, 0.1);
+}
+
+/* ── 폼 ── */
+.form {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── 섹션 카드 ── */
+.section {
+  background: #161a22;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sectionTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+.refreshBtn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(215, 206, 188, 0.6);
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.refreshBtn:hover:not(:disabled) {
+  border-color: #d9ad5b;
+  color: #d9ad5b;
+}
+.refreshBtn:disabled {
+  opacity: 0.4;
+}
+
+/* ── 폼 요소 ── */
+.rowGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #d7cebc;
+  letter-spacing: 0.02em;
+}
+.input,
+.select {
+  background: #0b0e12;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  color: #f4ecd8;
+  font-size: 14px;
+  padding: 10px 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.input::placeholder {
+  color: rgba(215, 206, 188, 0.25);
+}
+.input:focus,
+.select:focus {
+  border-color: #d9ad5b;
+}
+.input:disabled,
+.select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.select {
+  cursor: pointer;
+}
+.select option {
+  background: #161a22;
+}
+
+.inputHint {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(215, 206, 188, 0.35);
+}
+
+/* 자동 선택 배지 */
+.autoSelectedBadge {
+  margin: 0;
+  font-size: 12px;
+  color: #d9ad5b;
+  background: rgba(217, 173, 91, 0.1);
+  border: 1px solid rgba(217, 173, 91, 0.25);
+  border-radius: 7px;
+  padding: 6px 12px;
+}
+
+.selectedHint {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(215, 206, 188, 0.55);
+}
+.selectedHint strong {
+  color: #d9ad5b;
+}
+
+.mutedMsg {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(215, 206, 188, 0.4);
+}
+.mutedInline {
+  font-size: 11px;
+  color: rgba(215, 206, 188, 0.4);
+  font-weight: 400;
+}
+.errMsg {
+  margin: 0;
+  font-size: 13px;
+  color: #e07070;
+}
+
+/* ── 예약 요약 ── */
+.summaryBox {
+  background: rgba(217, 173, 91, 0.06);
+  border: 1px solid rgba(217, 173, 91, 0.25);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.summaryTitle {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #d9ad5b;
+}
+.summaryGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px 20px;
+  font-size: 13px;
+}
+.summaryGrid span:nth-child(odd) {
+  color: rgba(215, 206, 188, 0.5);
+  font-weight: 600;
+}
+.summaryGrid span:nth-child(even) {
+  color: #f4ecd8;
+}
+
+/* ── 버튼 행 ── */
+.btnRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+.cancelBtn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(215, 206, 188, 0.5);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 11px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cancelBtn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #f4ecd8;
+}
+.submitBtn {
+  background: #d9ad5b;
+  border: none;
+  color: #201812;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 11px 28px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.submitBtn:hover:not(:disabled) {
+  background: #ffd993;
+}
+.submitBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .rowGroup {
+    grid-template-columns: 1fr;
+  }
+  .btnRow {
+    flex-direction: column-reverse;
+  }
+  .submitBtn,
+  .cancelBtn {
+    width: 100%;
+    text-align: center;
+  }
+}

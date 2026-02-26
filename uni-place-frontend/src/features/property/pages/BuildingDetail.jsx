@@ -292,7 +292,7 @@ export default function BuildingDetail() {
                   className={styles.findMenuItem}
                   onClick={() => {
                     setFindMenuOpen(false);
-                    navigate('/buildings');
+                    navigate('/rooms', { state: { tab: 'buildings' } });
                   }}
                   type="button"
                 >
@@ -302,9 +302,7 @@ export default function BuildingDetail() {
                   className={styles.findMenuItem}
                   onClick={() => {
                     setFindMenuOpen(false);
-                    navigate(
-                      `/spaces?buildingId=${buildingId}&buildingNm=${buildingNmEncoded}`
-                    );
+                    navigate('/rooms', { state: { tab: 'spaces' } });
                   }}
                   type="button"
                 >
@@ -492,11 +490,7 @@ export default function BuildingDetail() {
               </h2>
               <button
                 className={styles.goListBtn}
-                onClick={() =>
-                  navigate(
-                    `/spaces?buildingId=${buildingId}&buildingNm=${buildingNmEncoded}`
-                  )
-                }
+                onClick={() => navigate('/rooms', { state: { tab: 'spaces' } })}
                 type="button"
               >
                 공용공간 목록에서 보기 →

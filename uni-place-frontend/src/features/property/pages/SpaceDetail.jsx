@@ -253,7 +253,7 @@ export default function SpaceDetail() {
                   }}
                   onClick={() => {
                     setFindMenuOpen(false);
-                    navigate('/buildings');
+                    navigate('/rooms', { state: { tab: 'buildings' } });
                   }}
                 >
                   🏢 건물 목록

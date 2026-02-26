@@ -5,6 +5,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { propertyApi } from '../../property/api/propertyApi';
 import { reservationApi } from '../api/reservationApi';
 import { useAuth } from '../../user/hooks/useAuth';
+import Header from '../../../app/layouts/components/Header';
+import Footer from '../../../app/layouts/components/Footer';
 
 import BuildingSlotButtons from '../components/BuildingSlotButtons';
 import TimeSlotButtons from '../components/TimeSlotButtons';
@@ -173,15 +175,18 @@ export default function SpaceReservationCreate() {
   if (authLoading) {
     return (
       <div className={styles.page}>
+        <Header />
         <div className={styles.centerBox}>
           <span className={styles.spinner} />
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
     <div className={styles.page}>
+      <Header />
       <div className={styles.topBar}>
         <button
           className={styles.backBtn}
@@ -190,7 +195,7 @@ export default function SpaceReservationCreate() {
         >
           ←
         </button>
-        <h1 className={styles.pageTitle}>공용공간 예약</h1>
+        <h1 className={styles.pageTitle}>🛋️ 공용공간 예약</h1>
         <button
           className={styles.listLink}
           type="button"
@@ -343,6 +348,7 @@ export default function SpaceReservationCreate() {
           </button>
         </div>
       </form>
+      <Footer />
     </div>
   );
 }
