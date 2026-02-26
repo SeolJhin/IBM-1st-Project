@@ -1,6 +1,11 @@
 package org.myweb.uniplace.global.security.oauth;
 
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.user.domain.entity.SocialAccount;
 import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.repository.SocialAccountRepository;
@@ -11,14 +16,15 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
     private final SocialAccountRepository socialAccountRepository;
+    private final NotificationService notificationService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest request) throws OAuth2AuthenticationException {
@@ -110,6 +116,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .providerEmail(parsed.email())
             .build();
         socialAccountRepository.save(linked);
+        notifySocialLinked(user.getUserId(), parsed.provider().toUpperCase());
     }
 
     private static User requireLoginable(User user) {
@@ -120,6 +127,25 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             );
         }
         return user;
+    }
+
+    private void notifySocialLinked(String userId, String provider) {
+        if (userId == null || userId.isBlank()) {
+            return;
+        }
+        try {
+            notificationService.notifyUser(
+                userId,
+                NotificationType.SEC_SOCIAL_LINK.name(),
+                "Social account linked. (provider=" + provider + ")",
+                null,
+                TargetType.notice,
+                null,
+                "/mypage/security"
+            );
+        } catch (Exception e) {
+            log.warn("[AUTH][NOTIFY] social link notify failed userId={} reason={}", userId, e.getMessage());
+        }
     }
 
     private record ParsedOAuth(

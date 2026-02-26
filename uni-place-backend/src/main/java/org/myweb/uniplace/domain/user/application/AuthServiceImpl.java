@@ -1,6 +1,11 @@
 package org.myweb.uniplace.domain.user.application;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.user.api.dto.request.KakaoSignupCompleteRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.LogoutRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.RefreshTokenRequest;
@@ -25,19 +30,35 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HexFormat;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AuthServiceImpl implements AuthService {
+
+    private static final int LOGIN_FAIL_THRESHOLD = 5;
+    private static final long LOGIN_FAIL_WINDOW_MINUTES = 5L;
+    private static final long LOGIN_LOCK_MINUTES = 5L;
+    private static final int GLOBAL_LOGIN_FAIL_ALERT_THRESHOLD = 30;
+    private static final DateTimeFormatter TS_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final Map<String, LoginAttemptState> LOGIN_ATTEMPTS = new ConcurrentHashMap<>();
+    private static final Deque<LocalDateTime> GLOBAL_LOGIN_FAILURES = new ArrayDeque<>();
+    private static LocalDateTime lastGlobalFailAlertAt;
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final OAuthCompleteService oAuthCompleteService;
+    private final NotificationService notificationService;
 
     @Value("${jwt.refresh-exp:86400000}")
     private long refreshExpMillis;
@@ -82,21 +103,39 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
         String userEmail = normalizeEmail(req.getUserEmail());
+        LocalDateTime now = LocalDateTime.now();
 
-        User user = userRepository.findByUserEmail(userEmail)
-            .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+        User user = userRepository.findByUserEmail(userEmail).orElse(null);
+        if (user == null) {
+            log.warn("[LOGIN_FAIL] reason=USER_NOT_FOUND email={}", userEmail);
+            recordGlobalLoginFailure(now);
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        if (isLoginLocked(user.getUserId(), now)) {
+            log.warn("[LOGIN_FAIL] reason=LOCKED userId={}", user.getUserId());
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
 
         if (!passwordEncoder.matches(req.getUserPwd(), user.getUserPwd())) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+            log.warn("[LOGIN_FAIL] reason=PASSWORD_MISMATCH userId={}", user.getUserId());
+            recordLoginFailure(user, now, req.getDeviceId(), userAgent, ip);
+            recordGlobalLoginFailure(now);
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         if (!user.canLogin()) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+            log.warn("[LOGIN_FAIL] reason=USER_CANNOT_LOGIN userId={} status={} deleteYn={}",
+                user.getUserId(), user.getUserSt(), user.getDeleteYN());
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         user.markLoginNow();
 
         String deviceId = resolveDeviceId(req.getDeviceId());
+        boolean hasAnyDevice = refreshTokenRepository.existsByUser_UserIdAndRevokedFalse(user.getUserId());
+        boolean isKnownDevice = refreshTokenRepository
+            .existsByUser_UserIdAndDeviceIdAndRevokedFalse(user.getUserId(), deviceId);
 
         if (user.getFirstSign() == null) {
             user.markFirstLoginFlagIfNeeded();
@@ -104,10 +143,8 @@ public class AuthServiceImpl implements AuthService {
 
         String accessToken = jwtProvider.createAccessToken(user.getUserId(), requireRoleName(user));
         String refreshToken = jwtProvider.createRefreshToken(user.getUserId());
-
         String tokenHash = sha256Hex(refreshToken);
 
-        LocalDateTime now = LocalDateTime.now();
         LocalDateTime expiresAt = now.plusSeconds(refreshExpMillis / 1000);
 
         RefreshToken rt = RefreshToken.builder()
@@ -123,6 +160,12 @@ public class AuthServiceImpl implements AuthService {
             .build();
 
         refreshTokenRepository.save(rt);
+        clearLoginFailures(user.getUserId());
+        notifyAdminLoginSuccess(user, deviceId, ip, userAgent, now);
+
+        if (hasAnyDevice && !isKnownDevice) {
+            notifyNewDeviceLogin(user, deviceId, ip, userAgent);
+        }
 
         boolean additionalInfoRequired = user.isAdditionalInfoRequired();
 
@@ -289,5 +332,191 @@ public class AuthServiceImpl implements AuthService {
             return deviceId.trim();
         }
         return "WEB-" + UUID.randomUUID();
+    }
+
+    private boolean isLoginLocked(String userId, LocalDateTime now) {
+        LoginAttemptState state = LOGIN_ATTEMPTS.get(userId);
+        if (state == null) {
+            return false;
+        }
+        synchronized (state) {
+            if (state.lockedUntil == null) {
+                return false;
+            }
+            if (state.lockedUntil.isAfter(now)) {
+                return true;
+            }
+            state.lockedUntil = null;
+            state.lockNotifiedUntil = null;
+            state.failures.clear();
+            return false;
+        }
+    }
+
+    private void recordLoginFailure(User user, LocalDateTime now, String deviceId, String userAgent, String ip) {
+        if (user == null || user.getUserId() == null) {
+            return;
+        }
+        LoginAttemptState state = LOGIN_ATTEMPTS.computeIfAbsent(user.getUserId(), k -> new LoginAttemptState());
+        synchronized (state) {
+            LocalDateTime windowStart = now.minusMinutes(LOGIN_FAIL_WINDOW_MINUTES);
+            while (!state.failures.isEmpty() && state.failures.peekFirst().isBefore(windowStart)) {
+                state.failures.pollFirst();
+            }
+            state.failures.addLast(now);
+
+            if (state.failures.size() < LOGIN_FAIL_THRESHOLD) {
+                return;
+            }
+
+            LocalDateTime lockUntil = now.plusMinutes(LOGIN_LOCK_MINUTES);
+            state.lockedUntil = lockUntil;
+            if (state.lockNotifiedUntil != null && !state.lockNotifiedUntil.isBefore(lockUntil)) {
+                return;
+            }
+            state.lockNotifiedUntil = lockUntil;
+
+            safeNotifyUser(
+                user.getUserId(),
+                NotificationType.SEC_LOGIN_LOCK.name(),
+                "Login blocked for 5 minutes due to repeated failures. (unlockAt="
+                    + lockUntil.format(TS_FMT)
+                    + ", deviceId=" + safe(deviceId)
+                    + ", ip=" + safe(ip)
+                    + ", ua=" + safe(userAgent) + ")"
+            );
+            notifyAdminLoginLock(user, deviceId, ip, userAgent, lockUntil);
+        }
+    }
+
+    private void clearLoginFailures(String userId) {
+        if (userId == null) {
+            return;
+        }
+        LOGIN_ATTEMPTS.remove(userId);
+    }
+
+    private void notifyNewDeviceLogin(User user, String deviceId, String ip, String userAgent) {
+        if (user == null || user.getUserId() == null) {
+            return;
+        }
+        safeNotifyUser(
+            user.getUserId(),
+            NotificationType.SEC_NEW_DEVICE.name(),
+            "New device login detected. (deviceId=" + safe(deviceId)
+                + ", ip=" + safe(ip)
+                + ", ua=" + safe(userAgent) + ")"
+        );
+        if (isAdmin(user)) {
+            safeNotifyAdmins(
+                NotificationType.ADM_NEW_DEVICE.name(),
+                "Admin new device login detected. adminId=" + user.getUserId()
+                    + ", deviceId=" + safe(deviceId)
+                    + ", ip=" + safe(ip)
+                    + ", ua=" + safe(userAgent),
+                user.getUserId()
+            );
+        }
+    }
+
+    private void safeNotifyUser(String userId, String code, String message) {
+        try {
+            notificationService.notifyUser(
+                userId,
+                code,
+                message,
+                null,
+                TargetType.notice,
+                null,
+                "/mypage/security"
+            );
+        } catch (Exception e) {
+            log.warn("[AUTH][NOTIFY] failed userId={} code={} reason={}", userId, code, e.getMessage());
+        }
+    }
+
+    private void safeNotifyAdmins(String code, String message, String senderId) {
+        try {
+            notificationService.notifyAdmins(
+                code,
+                message,
+                senderId,
+                TargetType.notice,
+                null,
+                "/admin/users"
+            );
+        } catch (Exception e) {
+            log.warn("[AUTH][NOTIFY][ADMIN] failed code={} reason={}", code, e.getMessage());
+        }
+    }
+
+    private void notifyAdminLoginSuccess(User user, String deviceId, String ip, String userAgent, LocalDateTime now) {
+        if (!isAdmin(user)) {
+            return;
+        }
+        safeNotifyAdmins(
+            NotificationType.ADM_LOGIN_OK.name(),
+            "Admin login success. adminId=" + user.getUserId()
+                + ", loginAt=" + now.format(TS_FMT)
+                + ", deviceId=" + safe(deviceId)
+                + ", ip=" + safe(ip)
+                + ", ua=" + safe(userAgent),
+            user.getUserId()
+        );
+    }
+
+    private void notifyAdminLoginLock(User user, String deviceId, String ip, String userAgent, LocalDateTime lockUntil) {
+        if (!isAdmin(user)) {
+            return;
+        }
+        safeNotifyAdmins(
+            NotificationType.ADM_LOGIN_LOCK.name(),
+            "Admin login locked due to repeated failures. adminId=" + user.getUserId()
+                + ", unlockAt=" + lockUntil.format(TS_FMT)
+                + ", deviceId=" + safe(deviceId)
+                + ", ip=" + safe(ip)
+                + ", ua=" + safe(userAgent),
+            user.getUserId()
+        );
+    }
+
+    private void recordGlobalLoginFailure(LocalDateTime now) {
+        synchronized (GLOBAL_LOGIN_FAILURES) {
+            LocalDateTime windowStart = now.minusMinutes(LOGIN_FAIL_WINDOW_MINUTES);
+            while (!GLOBAL_LOGIN_FAILURES.isEmpty() && GLOBAL_LOGIN_FAILURES.peekFirst().isBefore(windowStart)) {
+                GLOBAL_LOGIN_FAILURES.pollFirst();
+            }
+            GLOBAL_LOGIN_FAILURES.addLast(now);
+
+            if (GLOBAL_LOGIN_FAILURES.size() < GLOBAL_LOGIN_FAIL_ALERT_THRESHOLD) {
+                return;
+            }
+            if (lastGlobalFailAlertAt != null && lastGlobalFailAlertAt.isAfter(windowStart)) {
+                return;
+            }
+            lastGlobalFailAlertAt = now;
+        }
+
+        safeNotifyAdmins(
+            NotificationType.ADM_ABNORMAL_TRAFFIC.name(),
+            "Abnormal login traffic detected. failedLogins="
+                + GLOBAL_LOGIN_FAIL_ALERT_THRESHOLD
+                + "+ in " + LOGIN_FAIL_WINDOW_MINUTES + " minutes.",
+            null
+        );
+    }
+
+    private static String safe(String value) {
+        return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private static boolean isAdmin(User user) {
+        return user != null && user.getUserRole() != null && user.getUserRole().isAdmin();
+    }
+
+    private static final class LoginAttemptState {
+        private final Deque<LocalDateTime> failures = new ArrayDeque<>();
+        private LocalDateTime lockedUntil;
+        private LocalDateTime lockNotifiedUntil;
     }
 }
