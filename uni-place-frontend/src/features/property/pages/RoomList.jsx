@@ -852,6 +852,25 @@ export default function RoomList() {
                     <>{spacePag.totalElements}개 결과</>
                   )}
                 </span>
+                <button
+                  type="button"
+                  style={{
+                    background: '#ba8037',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '7px 14px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                  onClick={() => navigate('/reservations/space/list')}
+                >
+                  📋 공용공간예약 조회
+                </button>
               </div>
               {spaceLoading && (
                 <div className={styles.loadingWrap}>

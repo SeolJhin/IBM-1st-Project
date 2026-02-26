@@ -237,8 +237,6 @@ export default function BuildingDetail() {
     );
   }
 
-  const buildingNmEncoded = encodeURIComponent(building.buildingNm);
-
   return (
     <div className={styles.page}>
       <Header />

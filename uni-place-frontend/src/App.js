@@ -1,30 +1,44 @@
+// App.js
 import React from 'react';
 import './app/styles/globals.css';
 
 import { Routes, Route, Navigate } from 'react-router-dom';
 
+import ScrollToTop from './shared/components/ScrollToTop';
 import Home from './shared/pages/Home';
+import About from './shared/pages/About';
+
+// ── 유저 ──────────────────────────────────────────────────────
 import Login from './features/user/pages/Login';
 import Signup from './features/user/pages/Signup';
 import MemberInfo from './features/user/pages/MemberInfo';
-import About from './shared/pages/About';
-import ScrollToTop from './shared/components/ScrollToTop';
+
+// ── Property ──────────────────────────────────────────────────
+import RoomList from './features/property/pages/RoomList';
+import RoomDetail from './features/property/pages/RoomDetail';
+import SpaceDetail from './features/property/pages/SpaceDetail';
+import BuildingDetail from './features/property/pages/BuildingDetail';
+
+// ── 예약 ──────────────────────────────────────────────────────
 import SpaceReservationCreate from './features/reservation/pages/SpaceReservationCreate';
 import SpaceReservationList from './features/reservation/pages/SpaceReservationList';
 import TourReservationCreate from './features/reservation/pages/TourReservationCreate';
 import TourReservationList from './features/reservation/pages/TourReservationList';
 
-// App.jsx (admin 라우트 부분만 발췌)
+// ── 리뷰 ──────────────────────────────────────────────────────
+import ReviewWrite from './features/review/pages/ReviewWrite';
+import MyReviewsList from './features/review/pages/MyReviewsList';
+import MyReviewsDetail from './features/review/pages/MyReviewsDetail';
+
+// ── 어드민 ────────────────────────────────────────────────────
 import RequireAuth from './app/router/guards/RequireAuth';
 import RequireRole from './app/router/guards/RequireRole';
-
 import AdminShell from './features/admin/components/AdminShell';
 import AdminInfo from './features/admin/pages/AdminInfo';
-
-// ✅ 연결될 리스트 페이지들 (너가 말한 파일들)
 import AdminUserList from './features/admin/pages/user/AdminUserList';
 import AdminSpaceList from './features/admin/pages/property/AdminSpaceList';
 import AdminTourReservationList from './features/admin/pages/reservation/AdminTourReservationList';
+import AdminSpaceReservationList from './features/admin/pages/reservation/AdminSpaceReservationList';
 import AdminContractList from './features/admin/pages/contract/AdminContractList';
 import AdminBannerList from './features/admin/pages/system/AdminBannerList';
 import AdminRoomServiceOrderList from './features/admin/pages/roomservice/AdminRoomServiceOrderList';
@@ -34,6 +48,7 @@ export default function App() {
     <>
       <ScrollToTop />
       <Routes>
+        {/* ── 공통 ── */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About variant="about" />} />
         <Route path="/community" element={<About variant="community" />} />
@@ -42,7 +57,23 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/me" element={<MemberInfo />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* ── Property ── */}
+        <Route path="/rooms" element={<RoomList />} />
+        <Route path="/rooms/:roomId" element={<RoomDetail />} />
+        <Route path="/spaces/:spaceId" element={<SpaceDetail />} />
+        <Route path="/buildings/:buildingId" element={<BuildingDetail />} />
+        {/* /buildings → /rooms 건물 탭으로 리다이렉트 */}
+        <Route
+          path="/buildings"
+          element={
+            <Navigate to="/rooms" state={{ tab: 'buildings' }} replace />
+          }
+        />
+        {/* /membership → /rooms 리다이렉트 */}
+        <Route path="/membership" element={<Navigate to="/rooms" replace />} />
+
+        {/* ── 예약 ── */}
         <Route
           path="/reservations/space/create"
           element={<SpaceReservationCreate />}
@@ -60,31 +91,32 @@ export default function App() {
           element={<TourReservationList />}
         />
 
+        {/* ── 리뷰 ── */}
+        <Route path="/reviews/write" element={<ReviewWrite />} />
+        <Route path="/reviews/:reviewId/edit" element={<ReviewWrite />} />
+        <Route path="/reviews/my" element={<MyReviewsList />} />
+        <Route path="/reviews/:reviewId" element={<MyReviewsDetail />} />
+
+        {/* ── 어드민 (로그인 + ADMIN 역할 필요) ── */}
         <Route element={<RequireAuth />}>
           <Route element={<RequireRole allow={['admin']} />}>
-            {/* ✅ /admin 이하 공통 레이아웃 */}
             <Route path="/admin" element={<AdminShell />}>
               <Route index element={<AdminInfo />} />
-
-              {/* 사이드바 메뉴 1: 회원관리 */}
               <Route path="users" element={<AdminUserList />} />
-
-              {/* 사이드바 메뉴 2: 시설관리 -> 공용공간 리스트 */}
               <Route path="property/spaces" element={<AdminSpaceList />} />
-
-              {/* 사이드바 메뉴 3: 사전방문 관리 -> 투어 예약 리스트 */}
               <Route
-                path="reservations/tours"
+                path="reservation/tours"
                 element={<AdminTourReservationList />}
               />
-
-              {/* 사이드바 메뉴 4: 계약 관리 -> 계약 리스트 */}
-              <Route path="contracts" element={<AdminContractList />} />
-
-              {/* 사이드바 메뉴 5: 배너관리 -> 배너 리스트 */}
+              <Route
+                path="reservation/spaces"
+                element={<AdminSpaceReservationList />}
+              />
+              <Route
+                path="contract/contracts"
+                element={<AdminContractList />}
+              />
               <Route path="system/banners" element={<AdminBannerList />} />
-
-              {/* 사이드바 메뉴 6: 룸서비스 관리 -> 룸서비스 주문 리스트 */}
               <Route
                 path="roomservice/orders"
                 element={<AdminRoomServiceOrderList />}
@@ -92,6 +124,8 @@ export default function App() {
             </Route>
           </Route>
         </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

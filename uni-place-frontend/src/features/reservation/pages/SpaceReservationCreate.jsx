@@ -45,7 +45,7 @@ export default function SpaceReservationCreate() {
   const [spacesPage, setSpacesPage] = useState(null);
   const [spacesLoading, setSpacesLoading] = useState(false);
   const [spacesError, setSpacesError] = useState('');
-  const spaces = spacesPage?.content ?? [];
+  const spaces = useMemo(() => spacesPage?.content ?? [], [spacesPage]);
 
   const [spaceId, setSpaceId] = useState(
     initSpaceId ? String(initSpaceId) : ''
@@ -84,6 +84,7 @@ export default function SpaceReservationCreate() {
       (b) => Number(b.buildingId) === initBuildingId
     );
     if (found && !selectedBuilding) setSelectedBuilding(found);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildings, initBuildingId]);
 
   // 빌딩 선택 또는 날짜 변경 → spaces 조회
@@ -120,6 +121,7 @@ export default function SpaceReservationCreate() {
     ) {
       setSpaceId('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBuilding, date]);
 
   // spaces 로드 후 URL spaceId 자동 선택 (없으면 첫 번째)
@@ -130,6 +132,7 @@ export default function SpaceReservationCreate() {
     } else if (!spaceId) {
       setSpaceId(String(spaces[0].spaceId));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spaces]);
 
   // spaceId 변경 → slot 초기화
