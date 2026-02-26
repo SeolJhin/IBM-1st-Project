@@ -86,6 +86,8 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "REVIEW_404", "리뷰를 찾을 수 없습니다."),
     REVIEW_DUPLICATE(HttpStatus.CONFLICT, "REVIEW_409", "이미 작성한 리뷰가 있습니다."),
     REVIEW_ACCESS_DENIED(HttpStatus.FORBIDDEN, "REVIEW_403", "해당 리뷰에 접근 권한이 없습니다."),
+    REVIEW_TENANT_ONLY(HttpStatus.FORBIDDEN, "REVIEW_403_1", "입주자(tenant)만 리뷰를 작성·수정·삭제할 수 있습니다."),
+
 
     // ===== Building / Space =====
     BUILDING_NOT_FOUND(HttpStatus.NOT_FOUND, "BUILDING_404", "빌딩을 찾을 수 없습니다."),

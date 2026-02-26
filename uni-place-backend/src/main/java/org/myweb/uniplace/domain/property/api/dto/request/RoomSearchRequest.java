@@ -10,6 +10,7 @@ import org.myweb.uniplace.domain.property.domain.enums.SunDirection;
 
 import lombok.*;
 
+@Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
