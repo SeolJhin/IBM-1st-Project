@@ -22,6 +22,11 @@ import ReviewWrite from '../../features/review/pages/ReviewWrite';
 import MyReviewsList from '../../features/review/pages/MyReviewsList';
 import MyReviewsDetail from '../../features/review/pages/MyReviewsDetail';
 
+// ── admin ─────────────────────────────────────────────────────
+import AdminInfo from '../../features/admin/pages/AdminInfo';
+import AdminTourReservationList from '../../features/admin/pages/reservation/AdminTourReservationList';
+import AdminSpaceReservationList from '../../features/admin/pages/reservation/AdminSpaceReservationList';
+
 export const router = createBrowserRouter([
   { path: '/', element: <Home /> },
   { path: '/notifications', element: <NotificationList /> },
@@ -47,6 +52,11 @@ export const router = createBrowserRouter([
   { path: '/reviews/:reviewId/edit', element: <ReviewWrite /> },
   { path: '/reviews/my', element: <MyReviewsList /> },
   { path: '/reviews/:reviewId', element: <MyReviewsDetail /> },
+
+  // admin
+  { path: '/admin', element: <AdminInfo /> },
+  { path: '/admin/reservation/tours', element: <AdminTourReservationList /> },
+  { path: '/admin/reservation/spaces', element: <AdminSpaceReservationList /> },
 ]);
 
 export default router;

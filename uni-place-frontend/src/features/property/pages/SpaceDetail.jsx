@@ -271,10 +271,10 @@ export default function SpaceDetail() {
                   }}
                   onClick={() => {
                     setFindMenuOpen(false);
-                    navigate('/reservations/space/list');
+                    navigate('/rooms', { state: { tab: 'spaces' } });
                   }}
                 >
-                  📋 공용공간예약 조회
+                  🛋️ 공용공간 목록
                 </button>
               </div>
             )}

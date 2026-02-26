@@ -76,6 +76,7 @@ export default function TourReservationCreate() {
       (b) => Number(b.buildingId) === initBuildingId
     );
     if (found && !selectedBuilding) setSelectedBuilding(found);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildings, initBuildingId]);
 
   // 빌딩 선택 → 방 목록 로드
@@ -131,6 +132,7 @@ export default function TourReservationCreate() {
     ) {
       setRoomId('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBuilding]);
 
   // rooms 로드 후 URL roomId 자동 선택 (없으면 첫 번째)
@@ -141,6 +143,7 @@ export default function TourReservationCreate() {
     } else if (!roomId) {
       setRoomId(String(rooms[0].roomId));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rooms]);
 
   // roomId/date/building 변경 → slots 조회
