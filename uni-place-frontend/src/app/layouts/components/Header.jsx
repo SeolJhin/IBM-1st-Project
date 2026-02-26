@@ -21,6 +21,24 @@ export default function Header() {
     }
   }, [logout, navigate]);
 
+  // 🔥 역할 판별 함수 (추가)
+  function normalizeRole(user) {
+    const raw =
+      user?.userRole ??
+      user?.role ??
+      user?.userRl ??
+      user?.user_role ??
+      user?.authority ??
+      user?.authorities?.[0];
+
+    return String(raw ?? '')
+      .toLowerCase()
+      .replace('role_', '');
+  }
+
+  const role = normalizeRole(user);
+  const isAdmin = role === 'admin';
+
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
@@ -78,10 +96,10 @@ export default function Header() {
               <button
                 className={styles.iconBtn}
                 type="button"
-                aria-label="me"
-                onClick={() => navigate('/me')}
+                aria-label="mypage"
+                onClick={() => navigate(isAdmin ? '/admin' : '/me')}
               >
-                마이페이지
+                {isAdmin ? '관리자페이지' : '마이페이지'}
               </button>
               <button
                 className={styles.iconBtn}

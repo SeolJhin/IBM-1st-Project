@@ -1,0 +1,24 @@
+:root {
+  --bg: #fbfaf7;
+}
+
+.page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.body {
+  display: flex;
+  align-items: stretch;
+}
+
+.main {
+  flex: 1;
+  padding: 92px 28px 44px 28px;
+}
+
+@media (max-width: 820px) {
+  .main {
+    padding: 92px 16px 36px 16px;
+  }
+}
