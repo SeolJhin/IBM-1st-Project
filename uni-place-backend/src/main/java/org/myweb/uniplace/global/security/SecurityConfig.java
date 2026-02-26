@@ -67,6 +67,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/rooms").permitAll()
                 .requestMatchers(HttpMethod.GET, "/spaces/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/spaces").permitAll()
+                .requestMatchers(HttpMethod.GET, "/products").permitAll()
+                .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/reviews").permitAll()
                 .requestMatchers(HttpMethod.GET, "/reviews/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/notices").permitAll()
