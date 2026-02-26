@@ -1,16 +1,72 @@
-// src/features/reservation/pages/SpaceReservationList.jsx
+// features/reservation/pages/SpaceReservationList.jsx
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import useSpaceReservations from '../hooks/useSpaceReservations';
+import styles from './SpaceReservationList.module.css';
+
+function StatusBadge({ status }) {
+  const map = {
+    PENDING: { label: '대기', cls: styles.statusPending },
+    CONFIRMED: { label: '확정', cls: styles.statusConfirmed },
+    CANCELLED: { label: '취소됨', cls: styles.statusCancelled },
+    COMPLETED: { label: '완료', cls: styles.statusCompleted },
+  };
+  const s = map[status] ?? { label: status ?? '-', cls: styles.statusPending };
+  return <span className={`${styles.statusBadge} ${s.cls}`}>{s.label}</span>;
+}
+
+function SpaceCard({ item, onCancel }) {
+  const id = item.reservationId ?? item.id;
+  const startAt = item.srStartAt ?? item.startAt ?? '-';
+  const endAt = item.srEndAt ?? item.endAt ?? '-';
+  const fmt = (s) => (s && s !== '-' ? s.replace('T', ' ').slice(0, 16) : '-');
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTop}>
+        <div>
+          <p className={styles.cardSpaceId}>공용공간 #{item.spaceId ?? '-'}</p>
+          <p className={styles.cardTime}>
+            {fmt(startAt)} ~ {fmt(endAt).slice(11)}
+          </p>
+        </div>
+        <StatusBadge status={item.status} />
+      </div>
+      <div className={styles.cardBody}>
+        <span className={styles.metaItem}>
+          👥 {item.srNoPeople ?? item.noPeople ?? '-'}명
+        </span>
+        {item.buildingNm && (
+          <span className={styles.metaItem}>🏢 {item.buildingNm}</span>
+        )}
+        {item.spaceNm && (
+          <span className={styles.metaItem}>🛋️ {item.spaceNm}</span>
+        )}
+      </div>
+      <div className={styles.cardBottom}>
+        <span className={styles.cardId}>예약 #{id}</span>
+        {item.status !== 'CANCELLED' && item.status !== 'COMPLETED' && (
+          <button
+            className={styles.cancelBtn}
+            type="button"
+            onClick={() => onCancel(id)}
+          >
+            예약 취소
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function SpaceReservationList() {
+  const nav = useNavigate();
   const { myQuery, setMyQuery, myPage, myLoading, myError, reloadMy, cancel } =
     useSpaceReservations();
-
   const items = myPage?.content ?? [];
 
   const onCancel = async (reservationId) => {
-    if (!window.confirm('예약 취소할래?')) return;
+    if (!window.confirm('예약을 취소하시겠습니까?')) return;
     try {
       await cancel(reservationId);
       alert('취소 완료');
@@ -21,98 +77,90 @@ export default function SpaceReservationList() {
   };
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: 16 }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 12,
-        }}
-      >
-        <h2>내 공용공간 예약</h2>
-        <Link to="/reservations/space/create">+ 예약 생성</Link>
+    <div className={styles.page}>
+      <div className={styles.topBar}>
+        <button
+          className={styles.backBtn}
+          type="button"
+          onClick={() => nav(-1)}
+        >
+          ←
+        </button>
+        <h1 className={styles.pageTitle}>내 공용공간 예약</h1>
+        <div className={styles.topActions}>
+          <button
+            className={styles.refreshBtn}
+            type="button"
+            onClick={reloadMy}
+            disabled={myLoading}
+          >
+            새로고침
+          </button>
+          <button
+            className={styles.createLink}
+            type="button"
+            onClick={() => nav('/reservations/space/create')}
+          >
+            + 예약 생성
+          </button>
+        </div>
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          gap: 8,
-          alignItems: 'center',
-          marginBottom: 12,
-        }}
-      >
+      {/* 페이지네이션 상단 */}
+      <div className={styles.paginationRow}>
         <button
+          className={styles.pageBtn}
+          type="button"
+          disabled={(myQuery.page ?? 1) <= 1}
           onClick={() =>
             setMyQuery((p) => ({ ...p, page: Math.max(1, p.page - 1) }))
           }
         >
           이전
         </button>
-        <div>page: {myQuery.page}</div>
-        <button onClick={() => setMyQuery((p) => ({ ...p, page: p.page + 1 }))}>
+        <span className={styles.pageInfo}>{myQuery.page}페이지</span>
+        <button
+          className={styles.pageBtn}
+          type="button"
+          disabled={items.length < (myQuery.size ?? 10)}
+          onClick={() => setMyQuery((p) => ({ ...p, page: p.page + 1 }))}
+        >
           다음
         </button>
-        <button onClick={reloadMy} style={{ marginLeft: 'auto' }}>
-          새로고침
-        </button>
       </div>
 
-      {myLoading && <div>로딩중...</div>}
-      {myError && <div style={{ color: 'crimson' }}>{myError}</div>}
+      {myLoading && (
+        <div className={styles.centerBox}>
+          <span className={styles.spinner} />
+        </div>
+      )}
+      {myError && <p className={styles.errMsg}>{myError}</p>}
 
-      <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
-        {items.map((it) => {
-          const id = it.reservationId ?? it.id;
-          return (
-            <div
-              key={id}
-              style={{
-                border: '1px solid #eee',
-                borderRadius: 12,
-                padding: 12,
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 10,
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 700 }}>
-                    spaceId: {it.spaceId ?? '-'} /{' '}
-                    {it.srStartAt ?? it.startAt ?? '-'} ~{' '}
-                    {it.srEndAt ?? it.endAt ?? '-'}
-                  </div>
-                  <div style={{ opacity: 0.8, marginTop: 6 }}>
-                    인원: {it.srNoPeople ?? it.noPeople ?? '-'} / 상태:{' '}
-                    {it.status ?? '-'}
-                  </div>
-                </div>
-                <button
-                  onClick={() => onCancel(id)}
-                  style={{ padding: '8px 10px' }}
-                >
-                  취소
-                </button>
-              </div>
+      {!myLoading && items.length === 0 && (
+        <div className={styles.empty}>
+          <span className={styles.emptyIcon}>🛋️</span>
+          <p>예약 내역이 없습니다.</p>
+          <button
+            className={styles.goCreateBtn}
+            type="button"
+            onClick={() => nav('/reservations/space/create')}
+          >
+            공용공간 예약하기
+          </button>
+        </div>
+      )}
 
-              <pre
-                style={{
-                  marginTop: 10,
-                  background: '#fafafa',
-                  padding: 10,
-                  borderRadius: 12,
-                }}
-              >
-                {JSON.stringify(it, null, 2)}
-              </pre>
-            </div>
-          );
-        })}
-      </div>
+      {!myLoading && items.length > 0 && (
+        <div className={styles.cardList}>
+          {items.map((it) => (
+            <SpaceCard
+              key={it.reservationId ?? it.id}
+              item={it}
+              onCancel={onCancel}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
