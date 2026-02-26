@@ -138,7 +138,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             }
 
             if (existing.getOrderSt() != OrderStatus.ordered) {
-                throw new BusinessException(ErrorCode.ORDER_CANNOT_CANCEL);
+                throw new BusinessException(ErrorCode.ORDER_INVALID_STATUS); 
             }
 
             return existing;
