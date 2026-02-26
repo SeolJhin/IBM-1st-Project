@@ -103,7 +103,6 @@ export default function AdminSpaceReservationList() {
 
   return (
     <div className={styles.mainInner}>
-      {/* 타이틀 */}
       <div className={styles.topRow}>
         <div className={styles.titleArea}>
           <h1 className={styles.pageTitle}>🛋️ 공용공간 예약 관리</h1>
@@ -125,7 +124,6 @@ export default function AdminSpaceReservationList() {
 
       {error && <div className={styles.errorBox}>{error}</div>}
 
-      {/* 검색 필터 */}
       <form className={styles.searchBar} onSubmit={handleSearch}>
         <input
           className={styles.searchInput}
@@ -183,7 +181,6 @@ export default function AdminSpaceReservationList() {
         </select>
       </form>
 
-      {/* 테이블 */}
       {loading ? (
         <div className={styles.centerBox}>
           <div className={styles.spinner} />
@@ -200,9 +197,9 @@ export default function AdminSpaceReservationList() {
             <thead>
               <tr>
                 <th>예약 ID</th>
-                <th>건물 ID</th>
-                <th>공간 ID</th>
-                <th>사용자 ID</th>
+                <th>건물명</th>
+                <th>공간명</th>
+                <th>예약자</th>
                 <th>시작</th>
                 <th>종료</th>
                 <th>인원</th>
@@ -214,9 +211,9 @@ export default function AdminSpaceReservationList() {
               {items.map((item) => (
                 <tr key={item.reservationId}>
                   <td className={styles.tdId}>#{item.reservationId}</td>
-                  <td>{item.buildingId ?? '-'}</td>
-                  <td>{item.spaceId ?? '-'}</td>
-                  <td className={styles.tdName}>{item.userId ?? '-'}</td>
+                  <td>{item.buildingNm ?? '-'}</td>
+                  <td>{item.spaceNm ?? '-'}</td>
+                  <td className={styles.tdName}>{item.userNm ?? '-'}</td>
                   <td className={styles.tdDate}>{fmtDt(item.srStartAt)}</td>
                   <td className={styles.tdDate}>{fmtDt(item.srEndAt)}</td>
                   <td>{item.srNoPeople ?? '-'}명</td>
@@ -239,7 +236,6 @@ export default function AdminSpaceReservationList() {
         </div>
       )}
 
-      {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
@@ -268,7 +264,6 @@ export default function AdminSpaceReservationList() {
         </div>
       )}
 
-      {/* 상세/관리 모달 */}
       {detailModal && (
         <div
           className={styles.modalOverlay}
@@ -288,9 +283,9 @@ export default function AdminSpaceReservationList() {
               <div className={styles.detailGrid}>
                 {[
                   ['예약 ID', `#${detailModal.reservationId}`],
-                  ['건물 ID', detailModal.buildingId ?? '-'],
-                  ['공간 ID', detailModal.spaceId ?? '-'],
-                  ['사용자 ID', detailModal.userId ?? '-'],
+                  ['건물명', detailModal.buildingNm ?? '-'],
+                  ['공간명', detailModal.spaceNm ?? '-'],
+                  ['예약자', detailModal.userNm ?? '-'],
                   ['이용 시작', fmtDt(detailModal.srStartAt)],
                   ['이용 종료', fmtDt(detailModal.srEndAt)],
                   ['이용 인원', `${detailModal.srNoPeople ?? '-'}명`],
