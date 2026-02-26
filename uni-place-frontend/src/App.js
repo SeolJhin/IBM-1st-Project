@@ -1,4 +1,3 @@
-// App.js — property 페이지 라우트 추가
 import React from 'react';
 import './app/styles/globals.css';
 
@@ -15,16 +14,20 @@ import SpaceReservationList from './features/reservation/pages/SpaceReservationL
 import TourReservationCreate from './features/reservation/pages/TourReservationCreate';
 import TourReservationList from './features/reservation/pages/TourReservationList';
 
-// ✅ Property 페이지
-import RoomList from './features/property/pages/RoomList';
-import RoomDetail from './features/property/pages/RoomDetail';
-import SpaceDetail from './features/property/pages/SpaceDetail';
-import BuildingDetail from './features/property/pages/BuildingDetail';
+// App.jsx (admin 라우트 부분만 발췌)
+import RequireAuth from './app/router/guards/RequireAuth';
+import RequireRole from './app/router/guards/RequireRole';
 
-// ✅ Review 페이지
-import ReviewWrite from './features/review/pages/ReviewWrite';
-import MyReviewsList from './features/review/pages/MyReviewsList';
-import MyReviewsDetail from './features/review/pages/MyReviewsDetail';
+import AdminShell from './features/admin/components/AdminShell';
+import AdminInfo from './features/admin/pages/AdminInfo';
+
+// ✅ 연결될 리스트 페이지들 (너가 말한 파일들)
+import AdminUserList from './features/admin/pages/user/AdminUserList';
+import AdminSpaceList from './features/admin/pages/property/AdminSpaceList';
+import AdminTourReservationList from './features/admin/pages/reservation/AdminTourReservationList';
+import AdminContractList from './features/admin/pages/contract/AdminContractList';
+import AdminBannerList from './features/admin/pages/system/AdminBannerList';
+import AdminRoomServiceOrderList from './features/admin/pages/roomservice/AdminRoomServiceOrderList';
 
 export default function App() {
   return (
@@ -39,28 +42,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/me" element={<MemberInfo />} />
-
-        {/* ✅ 방 찾기 (헤더 메뉴 "방찾기" 클릭 시 진입) */}
-        <Route path="/rooms" element={<RoomList />} />
-        <Route path="/rooms/:roomId" element={<RoomDetail />} />
-
-        {/* ✅ 공용공간 상세 */}
-        <Route path="/spaces/:spaceId" element={<SpaceDetail />} />
-
-        {/* ✅ 건물 목록 (/buildings → /rooms 건물 탭으로) */}
-        <Route
-          path="/buildings"
-          element={
-            <Navigate to="/rooms" state={{ tab: 'buildings' }} replace />
-          }
-        />
-
-        {/* ✅ 빌딩 상세 */}
-        <Route path="/buildings/:buildingId" element={<BuildingDetail />} />
-
-        {/* /membership → /rooms 리다이렉트 (기존 헤더에 /membership으로 되어있어서) */}
-        <Route path="/membership" element={<Navigate to="/rooms" replace />} />
-
+        <Route path="*" element={<Navigate to="/" replace />} />
         <Route
           path="/reservations/space/create"
           element={<SpaceReservationCreate />}
@@ -78,13 +60,38 @@ export default function App() {
           element={<TourReservationList />}
         />
 
-        {/* ✅ 리뷰 */}
-        <Route path="/reviews/write" element={<ReviewWrite />} />
-        <Route path="/reviews/:reviewId/edit" element={<ReviewWrite />} />
-        <Route path="/reviews/my" element={<MyReviewsList />} />
-        <Route path="/reviews/:reviewId" element={<MyReviewsDetail />} />
+        <Route element={<RequireAuth />}>
+          <Route element={<RequireRole allow={['admin']} />}>
+            {/* ✅ /admin 이하 공통 레이아웃 */}
+            <Route path="/admin" element={<AdminShell />}>
+              <Route index element={<AdminInfo />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+              {/* 사이드바 메뉴 1: 회원관리 */}
+              <Route path="users" element={<AdminUserList />} />
+
+              {/* 사이드바 메뉴 2: 시설관리 -> 공용공간 리스트 */}
+              <Route path="property/spaces" element={<AdminSpaceList />} />
+
+              {/* 사이드바 메뉴 3: 사전방문 관리 -> 투어 예약 리스트 */}
+              <Route
+                path="reservations/tours"
+                element={<AdminTourReservationList />}
+              />
+
+              {/* 사이드바 메뉴 4: 계약 관리 -> 계약 리스트 */}
+              <Route path="contracts" element={<AdminContractList />} />
+
+              {/* 사이드바 메뉴 5: 배너관리 -> 배너 리스트 */}
+              <Route path="system/banners" element={<AdminBannerList />} />
+
+              {/* 사이드바 메뉴 6: 룸서비스 관리 -> 룸서비스 주문 리스트 */}
+              <Route
+                path="roomservice/orders"
+                element={<AdminRoomServiceOrderList />}
+              />
+            </Route>
+          </Route>
+        </Route>
       </Routes>
     </>
   );

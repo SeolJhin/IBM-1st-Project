@@ -1,0 +1,136 @@
+.wrap {
+  width: 100%;
+}
+
+.table {
+  border: 1px solid rgba(31, 35, 40, 0.18);
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.thead {
+  display: grid;
+  grid-template-columns: 1.1fr 1.2fr 1.4fr 1.2fr 0.9fr 0.6fr 0.8fr;
+  padding: 14px 14px;
+  font-weight: 800;
+  font-size: 13px;
+  color: #1f2328;
+  background: rgba(202, 162, 90, 0.1);
+  border-bottom: 1px solid rgba(31, 35, 40, 0.12);
+}
+
+.trow {
+  display: grid;
+  grid-template-columns: 1.1fr 1.2fr 1.4fr 1.2fr 0.9fr 0.6fr 0.8fr;
+  padding: 14px 14px;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(31, 35, 40, 0.08);
+  font-size: 13px;
+  color: #1f2328;
+}
+
+.trow:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.cellStrong {
+  font-weight: 800;
+}
+
+.center {
+  text-align: center;
+}
+
+/* ===== modal ===== */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 35, 40, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 9999;
+}
+
+.modal {
+  width: min(640px, 100%);
+  background: #f3efe6;
+  border: 1px solid rgba(31, 35, 40, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.18);
+  padding: 18px;
+}
+
+.modalTitle {
+  font-size: 16px;
+  font-weight: 900;
+  margin-bottom: 12px;
+  color: #1f2328;
+}
+
+.formGrid {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(31, 35, 40, 0.12);
+  border-radius: 14px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.label {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.input,
+.select {
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 35, 40, 0.16);
+  padding: 0 12px;
+  background: #fff;
+  outline: none;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.btnGhost {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 35, 40, 0.18);
+  background: rgba(255, 255, 255, 0.55);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btnPrimary {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(202, 162, 90, 0.55);
+  background: rgba(202, 162, 90, 0.2);
+  box-shadow: 0 10px 22px rgba(202, 162, 90, 0.18);
+  font-weight: 900;
+  cursor: pointer;
+}

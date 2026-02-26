@@ -9,6 +9,7 @@
 //   ② 주문 생성    (POST /orders)          → Order 생성 (상품/결제 단위)
 //   ③ 룸서비스 요청 (POST /room-services)  → RoomServiceOrder 생성 (어느 방으로 배달할지)
 //      - orderId: 부모 Order ID (선택, null 가능)
+//        → 백엔드가 해당 Order의 totalPrice를 자동으로 복사하므로 프론트에서 totalPrice 전송 불필요
 //      - roomId: 배달 받을 방 ID
 //
 // [엔드포인트 목록]
@@ -31,7 +32,8 @@
 // PATCH /orders/{orderId}/cancel          → 주문 취소
 //
 // ── RoomServiceOrder ─────────────────────────────────────────
-// POST  /room-services                    → 룸서비스 주문 생성 { orderId?, roomId, roomServiceDesc }
+// POST  /room-services                    → 룸서비스 주문 생성 { orderId?, roomId, roomServiceDesc? }
+//                                           ※ totalPrice는 백엔드가 parentOrder에서 자동 복사
 // GET   /room-services/me                 → 내 룸서비스 주문 목록
 // PATCH /room-services/{orderId}/cancel   → 룸서비스 주문 취소
 
@@ -157,7 +159,7 @@ export const commerceApi = {
    * 주문 생성 (상품 결제 단위)
    * @param {{ items: Array<{ prodId: number, orderQuantity: number }> }} body — OrderCreateRequest
    * @returns {Promise<OrderResponse>}
-   * OrderResponse: { orderId, userId, orderSt, paymentId, orderCreatedAt,
+   * OrderResponse: { orderId, userId, orderSt, totalPrice, paymentId, orderCreatedAt,
    *                  orderItems[], roomServiceOrders[] }
    */
   createOrder: (body) =>
@@ -188,17 +190,28 @@ export const commerceApi = {
 
   /**
    * 룸서비스 주문 생성 (어느 방으로 배달할지)
+   *
+   * ✅ totalPrice 자동 처리:
+   *   백엔드가 orderId → parentOrder.totalPrice를 자동으로 복사하므로
+   *   프론트에서 totalPrice를 전송할 필요 없음
+   *
    * @param {{
    *   orderId?: number,        — 부모 Order ID (선택, null 가능)
-   *   roomId: number,          — 배달 받을 방 ID
-   *   roomServiceDesc?: string — 요청사항/설명
+   *                              null이면 백엔드가 빈 Order를 자동 생성
+   *   roomId: number,          — 배달 받을 방 ID ✱ 필수
+   *   roomServiceDesc?: string — 요청사항/설명 (선택)
    * }} body — RoomServiceOrderCreateRequest
    * @returns {Promise<RoomServiceOrderResponse>}
    * RoomServiceOrderResponse: { orderId, parentOrderId, userId, roomId, roomNo,
-   *                             orderSt, roomServiceDesc, createdAt, updatedAt }
+   *                             totalPrice, orderSt, roomServiceDesc, createdAt, updatedAt }
    */
-  createRoomServiceOrder: (body) =>
-    request('/room-services', { method: 'POST', body, auth: true }),
+  createRoomServiceOrder: ({ orderId, roomId, roomServiceDesc } = {}) =>
+    request('/room-services', {
+      method: 'POST',
+      // totalPrice 제거 — 백엔드가 parentOrder에서 자동 복사
+      body: { orderId, roomId, roomServiceDesc },
+      auth: true,
+    }),
 
   /**
    * 내 룸서비스 주문 목록 조회
@@ -212,8 +225,5 @@ export const commerceApi = {
    * @returns {Promise<RoomServiceOrderResponse>}
    */
   cancelRoomServiceOrder: (orderId) =>
-    request(`/room-services/${orderId}/cancel`, {
-      method: 'PATCH',
-      auth: true,
-    }),
+    request(`/room-services/${orderId}/cancel`, { method: 'PATCH', auth: true }),
 };
