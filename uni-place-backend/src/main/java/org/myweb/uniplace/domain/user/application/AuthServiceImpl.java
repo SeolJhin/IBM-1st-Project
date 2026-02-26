@@ -1,6 +1,8 @@
 package org.myweb.uniplace.domain.user.application;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.myweb.uniplace.domain.user.api.dto.request.KakaoSignupCompleteRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.LogoutRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.RefreshTokenRequest;
@@ -28,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -83,15 +86,21 @@ public class AuthServiceImpl implements AuthService {
         }
         String userEmail = normalizeEmail(req.getUserEmail());
 
-        User user = userRepository.findByUserEmail(userEmail)
-            .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+        User user = userRepository.findByUserEmail(userEmail).orElse(null);
+        if (user == null) {
+            log.warn("[LOGIN_FAIL] reason=USER_NOT_FOUND email={}", userEmail);
+            throw new BusinessException(ErrorCode.BAD_REQUEST); /*INVALID_CREDENTIALS로 변경*/
+        }
 
         if (!passwordEncoder.matches(req.getUserPwd(), user.getUserPwd())) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+            log.warn("[LOGIN_FAIL] reason=PASSWORD_MISMATCH userId={}", user.getUserId());
+            throw new BusinessException(ErrorCode.BAD_REQUEST); /*INVALID_CREDENTIALS로 변경*/
         }
 
         if (!user.canLogin()) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+            log.warn("[LOGIN_FAIL] reason=USER_CANNOT_LOGIN userId={} status={} deleteYn={}",
+                    user.getUserId(), user.getUserSt(), user.getDeleteYN());
+            throw new BusinessException(ErrorCode.BAD_REQUEST); /*INVALID_CREDENTIALS로 변경*/
         }
 
         user.markLoginNow();
