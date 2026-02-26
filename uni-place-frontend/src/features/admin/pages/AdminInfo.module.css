@@ -1,0 +1,192 @@
+/* src/features/admin/pages/AdminInfo.module.css */
+
+.page {
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+.body {
+  display: flex;
+  align-items: stretch;
+}
+
+/* LEFT SIDEBAR */
+.sidebar {
+  width: 260px;
+  padding: 90px 0 0 0; /* Header 높이 감안(대충) */
+}
+
+.sideBox {
+  margin-left: 24px;
+  width: 210px;
+  background: #d9d9d9;
+  border: 1px solid #111;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.sideItem {
+  width: 100%;
+  text-align: left;
+  padding: 12px 12px;
+  margin: 6px 0;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  color: #111;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.sideItem:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.sideItemActive {
+  background: rgba(255, 255, 255, 0.65);
+  font-weight: 700;
+}
+
+/* MAIN */
+.main {
+  flex: 1;
+  padding: 90px 28px 40px 28px; /* Header 공간 */
+}
+
+.mainInner {
+  max-width: 1180px;
+}
+
+.topRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #111;
+}
+
+.pageSub {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.refreshBtn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #111;
+  background: #f3eadc; /* 살짝 베이지 */
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.errorBox {
+  margin: 12px 0 18px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #c33;
+  background: #fff0f0;
+  color: #9a1b1b;
+  font-size: 13px;
+}
+
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 320px);
+  gap: 26px;
+  padding-top: 10px;
+}
+
+.card {
+  height: 200px;
+  background: #d9d9d9;
+  border: 1px solid #111;
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  text-align: left;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+}
+
+.cardTitle {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111;
+  text-align: center;
+  margin-top: 6px;
+}
+
+.cardBottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding-bottom: 10px;
+}
+
+.icon {
+  font-size: 46px;
+  line-height: 1;
+  filter: grayscale(100%);
+}
+
+.cardValue {
+  font-size: 40px;
+  font-weight: 900;
+  color: #111;
+}
+
+/* 반응형 */
+@media (max-width: 1180px) {
+  .grid {
+    grid-template-columns: repeat(2, 320px);
+  }
+}
+@media (max-width: 780px) {
+  .sidebar {
+    display: none;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    width: 100%;
+  }
+}
