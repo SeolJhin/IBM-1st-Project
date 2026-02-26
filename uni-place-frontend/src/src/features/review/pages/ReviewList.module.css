@@ -1,0 +1,267 @@
+/* ReviewList.module.css */
+
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 0 48px;
+  min-height: 100vh;
+  background: #0b0e12;
+  color: #f4ecd8;
+}
+
+/* ─── Header ─── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #0b0e12;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.backBtn {
+  background: none;
+  border: none;
+  color: #d9ad5b;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.backBtn:hover {
+  background: rgba(217, 173, 91, 0.12);
+}
+.title {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+.writeBtn {
+  background: #d9ad5b;
+  border: none;
+  color: #201812;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.writeBtn:hover {
+  background: #ffd993;
+}
+
+/* ─── List ─── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+/* ─── Card ─── */
+.card {
+  background: #161a22;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.card:hover {
+  border-color: rgba(217, 173, 91, 0.35);
+  background: #1c2130;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.roomInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.buildingNm {
+  font-size: 13px;
+  font-weight: 700;
+  color: #d9ad5b;
+}
+.roomNo {
+  font-size: 12px;
+  color: rgba(215, 206, 188, 0.55);
+  background: rgba(217, 173, 91, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 2px;
+}
+.starOn {
+  color: #d9ad5b;
+  font-size: 15px;
+}
+.starOff {
+  color: rgba(215, 206, 188, 0.15);
+  font-size: 15px;
+}
+
+.thumbnail {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.reviewTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+.reviewCtnt {
+  margin: 0;
+  font-size: 13px;
+  color: #d7cebc;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.date {
+  font-size: 12px;
+  color: rgba(215, 206, 188, 0.35);
+}
+.actions {
+  display: flex;
+  gap: 6px;
+}
+.editBtn {
+  background: none;
+  border: 1px solid rgba(217, 173, 91, 0.4);
+  color: #d9ad5b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.editBtn:hover {
+  background: rgba(217, 173, 91, 0.12);
+}
+.deleteBtn {
+  background: none;
+  border: 1px solid rgba(224, 112, 112, 0.4);
+  color: #e07070;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.deleteBtn:hover {
+  background: rgba(224, 112, 112, 0.1);
+}
+
+/* ─── Pagination ─── */
+.paging {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+}
+.pageBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d7cebc;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pageBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.pageBtn:not(:disabled):hover {
+  background: rgba(217, 173, 91, 0.12);
+  color: #d9ad5b;
+}
+.pageInfo {
+  font-size: 13px;
+  color: rgba(215, 206, 188, 0.4);
+}
+
+/* ─── States ─── */
+.loadingWrap {
+  display: flex;
+  justify-content: center;
+  padding: 60px;
+}
+.spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(217, 173, 91, 0.2);
+  border-top-color: #d9ad5b;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 80px 16px;
+  color: rgba(215, 206, 188, 0.35);
+  font-size: 14px;
+}
+.emptyIcon {
+  font-size: 40px;
+}
+
+.errorMsg {
+  padding: 20px 16px;
+  color: #e07070;
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 999;
+}

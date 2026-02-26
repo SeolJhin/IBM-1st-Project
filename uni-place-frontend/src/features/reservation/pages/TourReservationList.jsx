@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useTourReservations from '../hooks/useTourReservations';
+import Header from '../../../app/layouts/components/Header';
+import Footer from '../../../app/layouts/components/Footer';
 import styles from './TourReservationList.module.css';
 
 function StatusBadge({ status }) {
@@ -94,6 +96,7 @@ export default function TourReservationList() {
 
   return (
     <div className={styles.page}>
+      <Header />
       {/* 상단 바 */}
       <div className={styles.topBar}>
         <button
@@ -103,7 +106,7 @@ export default function TourReservationList() {
         >
           ←
         </button>
-        <h1 className={styles.pageTitle}>방문 예약 조회</h1>
+        <h1 className={styles.pageTitle}>📋 방문 예약 조회</h1>
         <button
           className={styles.createLink}
           type="button"
@@ -200,6 +203,7 @@ export default function TourReservationList() {
           )}
         </>
       )}
+      <Footer />
     </div>
   );
 }

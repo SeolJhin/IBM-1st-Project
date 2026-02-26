@@ -1,6 +1,6 @@
 // features/property/pages/RoomList.jsx
 import { useState, useEffect, useCallback, useReducer } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
@@ -214,7 +214,7 @@ function SpaceCard({ space, onClick }) {
 }
 
 // ─── 방 필터 패널 ─────────────────────────────────────────────
-function FilterPanel({ query, dispatch }) {
+function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
   const [local, setLocal] = useState({
     minRentPrice: '',
     maxRentPrice: '',
@@ -222,7 +222,6 @@ function FilterPanel({ query, dispatch }) {
     maxDeposit: '',
     minRoomCapacity: '',
     maxRoomCapacity: '',
-    buildingNm: '',
   });
   useEffect(() => {
     setLocal({
@@ -232,7 +231,6 @@ function FilterPanel({ query, dispatch }) {
       maxDeposit: query.maxDeposit ?? '',
       minRoomCapacity: query.minRoomCapacity ?? '',
       maxRoomCapacity: query.maxRoomCapacity ?? '',
-      buildingNm: query.buildingNm ?? '',
     });
   }, [
     query.minRentPrice,
@@ -241,7 +239,6 @@ function FilterPanel({ query, dispatch }) {
     query.maxDeposit,
     query.minRoomCapacity,
     query.maxRoomCapacity,
-    query.buildingNm,
   ]);
 
   const sel = (key) => (e) =>
@@ -260,17 +257,6 @@ function FilterPanel({ query, dispatch }) {
   };
   const kNum = (key) => (e) => {
     if (e.key === 'Enter') cNum(key)();
-  };
-  const setLT = (key) => (e) =>
-    setLocal((p) => ({ ...p, [key]: e.target.value }));
-  const cTxt = (key) => () => {
-    dispatch({
-      type: 'SET_FILTER',
-      payload: { [key]: local[key]?.trim() || undefined },
-    });
-  };
-  const kTxt = (key) => (e) => {
-    if (e.key === 'Enter') cTxt(key)();
   };
 
   return (
@@ -408,16 +394,29 @@ function FilterPanel({ query, dispatch }) {
       </section>
       <section className={styles.filterSection}>
         <h3 className={styles.filterLabel}>건물명</h3>
-        <input
-          className={styles.filterInput}
-          type="text"
-          placeholder="건물명 검색 후 Enter"
-          value={local.buildingNm}
-          onChange={setLT('buildingNm')}
-          onBlur={cTxt('buildingNm')}
-          onKeyDown={kTxt('buildingNm')}
-          style={{ width: '100%' }}
-        />
+        {buildingLoading ? (
+          <p style={{ fontSize: 12, color: '#9a8c70', margin: 0 }}>
+            건물 목록 로딩 중...
+          </p>
+        ) : (
+          <select
+            className={styles.filterSelect}
+            value={query.buildingNm || ''}
+            onChange={(e) => {
+              dispatch({
+                type: 'SET_FILTER',
+                payload: { buildingNm: e.target.value || undefined },
+              });
+            }}
+          >
+            <option value="">전체 건물</option>
+            {buildings.map((b) => (
+              <option key={b.buildingId} value={b.buildingNm}>
+                {b.buildingNm}
+              </option>
+            ))}
+          </select>
+        )}
       </section>
     </aside>
   );
@@ -484,8 +483,11 @@ function SpaceFilterPanel({ query, dispatch, buildings, buildingLoading }) {
 // ─── 메인 페이지 ─────────────────────────────────────────────
 export default function RoomList() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState('rooms'); // 'rooms' | 'spaces' | 'buildings'
+  const [activeTab, setActiveTab] = useState(() => {
+    return location.state?.tab || 'rooms';
+  });
 
   // 건물 목록 상태
   const [buildingsList, setBuildingsList] = useState([]);
@@ -605,9 +607,9 @@ export default function RoomList() {
     }
   }, [activeTab, buildingsPage]);
 
-  /* 건물 목록 – 공용공간 탭 첫 진입 시 1회 */
+  /* 건물 목록 – 공용공간 탭 또는 방 탭 첫 진입 시 1회 */
   useEffect(() => {
-    if (activeTab === 'spaces' && !bldgLoaded) {
+    if ((activeTab === 'spaces' || activeTab === 'rooms') && !bldgLoaded) {
       setBL(true);
       propertyApi
         .getBuildings({ page: 1, size: 50 })
@@ -658,7 +660,12 @@ export default function RoomList() {
       <div className={styles.layout}>
         {/* 필터 패널 */}
         {activeTab === 'rooms' ? (
-          <FilterPanel query={query} dispatch={dispatch} />
+          <FilterPanel
+            query={query}
+            dispatch={dispatch}
+            buildings={buildings}
+            buildingLoading={bldgLoading}
+          />
         ) : activeTab === 'spaces' ? (
           <SpaceFilterPanel
             query={spaceQ}

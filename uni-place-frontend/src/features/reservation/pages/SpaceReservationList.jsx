@@ -2,6 +2,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSpaceReservations from '../hooks/useSpaceReservations';
+import Header from '../../../app/layouts/components/Header';
+import Footer from '../../../app/layouts/components/Footer';
 import styles from './SpaceReservationList.module.css';
 
 function StatusBadge({ status }) {
@@ -78,6 +80,7 @@ export default function SpaceReservationList() {
 
   return (
     <div className={styles.page}>
+      <Header />
       <div className={styles.topBar}>
         <button
           className={styles.backBtn}
@@ -86,7 +89,7 @@ export default function SpaceReservationList() {
         >
           ←
         </button>
-        <h1 className={styles.pageTitle}>내 공용공간 예약</h1>
+        <h1 className={styles.pageTitle}>🛋️ 내 공용공간 예약</h1>
         <div className={styles.topActions}>
           <button
             className={styles.refreshBtn}
@@ -161,6 +164,7 @@ export default function SpaceReservationList() {
           ))}
         </div>
       )}
+      <Footer />
     </div>
   );
 }

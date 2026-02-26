@@ -4,6 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { propertyApi } from '../../property/api/propertyApi';
 import { reservationApi } from '../api/reservationApi';
+import Header from '../../../app/layouts/components/Header';
+import Footer from '../../../app/layouts/components/Footer';
 
 import BuildingSlotButtons from '../components/BuildingSlotButtons';
 import TimeSlotButtons from '../components/TimeSlotButtons';
@@ -186,6 +188,7 @@ export default function TourReservationCreate() {
 
   return (
     <div className={styles.page}>
+      <Header />
       {/* 헤더 */}
       <div className={styles.topBar}>
         <button
@@ -195,7 +198,7 @@ export default function TourReservationCreate() {
         >
           ←
         </button>
-        <h1 className={styles.pageTitle}>방문 예약</h1>
+        <h1 className={styles.pageTitle}>📅 방문 예약</h1>
         <button
           className={styles.listLink}
           type="button"
@@ -381,6 +384,7 @@ export default function TourReservationCreate() {
           </button>
         </div>
       </form>
+      <Footer />
     </div>
   );
 }
