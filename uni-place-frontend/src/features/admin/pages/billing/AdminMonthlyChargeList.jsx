@@ -1,5 +1,17 @@
 import React from 'react';
+import { AdminEndpointListProbe } from '../../components/AdminEndpointProbe';
+import { adminApi } from '../../api/adminApi';
 
 export default function AdminMonthlyChargeList() {
-  return <div>월간 요금 관리 목록 (AdminMonthlyChargeList)</div>;
+  return (
+    <AdminEndpointListProbe
+      title="Admin Monthly Charges"
+      fetcher={(filters) => adminApi.getMonthlyCharges(filters.contractId)}
+      controls={[{ name: 'contractId', label: 'Contract ID', type: 'number' }]}
+      initialFilters={{ contractId: '' }}
+      normalizeFilters={(f) => ({
+        contractId: f.contractId === '' ? '' : Number(f.contractId),
+      })}
+    />
+  );
 }

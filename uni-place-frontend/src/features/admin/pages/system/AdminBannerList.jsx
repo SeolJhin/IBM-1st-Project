@@ -1,5 +1,7 @@
 import React from 'react';
+import { AdminEndpointListProbe } from '../../components/AdminEndpointProbe';
+import { adminApi } from '../../api/adminApi';
 
 export default function AdminBannerList() {
-  return <div>배너 관리 목록 (AdminBannerList)</div>;
+  return <AdminEndpointListProbe title="Admin Banners" fetcher={() => adminApi.getBanners()} />;
 }

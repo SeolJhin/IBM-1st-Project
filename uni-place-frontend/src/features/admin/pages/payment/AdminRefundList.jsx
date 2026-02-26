@@ -1,5 +1,7 @@
 import React from 'react';
+import { AdminEndpointListProbe } from '../../components/AdminEndpointProbe';
+import { adminApi } from '../../api/adminApi';
 
 export default function AdminRefundList() {
-  return <div>환불 관리 목록 (AdminRefundList)</div>;
+  return <AdminEndpointListProbe title="Admin Refunds" fetcher={() => adminApi.getRefunds()} />;
 }
