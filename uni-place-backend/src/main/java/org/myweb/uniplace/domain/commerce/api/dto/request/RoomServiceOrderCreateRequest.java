@@ -1,13 +1,13 @@
 package org.myweb.uniplace.domain.commerce.api.dto.request;
 
 import lombok.Getter;
-
-import java.math.BigDecimal;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
 public class RoomServiceOrderCreateRequest {
-    private Integer    orderId;         // ✅ 추가: 부모 Order ID (선택값, null 가능)
-    private Integer    roomId;
-    private BigDecimal totalPrice;
-    private String     roomServiceDesc;
+
+    private Integer roomId;
+    private Integer orderId;   // 기존 Order에 연결할 경우
+    private String roomServiceDesc;
 }
