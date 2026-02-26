@@ -115,4 +115,8 @@ export const adminApi = {
       auth: true,
       body: reason ? { cancelReason: reason } : undefined,
     }),
+
+  // ===== 유저 단건 조회 (이름 표시용) =====
+  // GET /admin/users/{userId}
+  getUserDetail: (userId) => request(`/admin/users/${userId}`, { auth: true }),
 };
