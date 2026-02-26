@@ -2,6 +2,10 @@ package org.myweb.uniplace.domain.user.application;
 
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.user.api.dto.request.KakaoSignupCompleteRequest;
 import org.myweb.uniplace.domain.user.api.dto.response.UserTokenResponse;
 import org.myweb.uniplace.domain.user.domain.entity.RefreshToken;
@@ -27,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.HexFormat;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class OAuthCompleteServiceImpl implements OAuthCompleteService {
@@ -36,6 +41,7 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
     private final SocialAccountRepository socialAccountRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationService notificationService;
 
     @Value("${jwt.refresh-exp:86400000}")
     private long refreshExpMillis;
@@ -106,6 +112,7 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
             .build();
 
         socialAccountRepository.save(sa);
+        notifySocialLinked(user.getUserId(), providerUpper);
 
         String accessToken = jwtProvider.createAccessToken(userId, user.getUserRole().name());
         String refreshToken = jwtProvider.createRefreshToken(userId);
@@ -163,6 +170,25 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
             return HexFormat.of().formatHex(digested);
         } catch (Exception e) {
             throw new IllegalStateException("sha256 failed", e);
+        }
+    }
+
+    private void notifySocialLinked(String userId, String provider) {
+        if (!hasText(userId)) {
+            return;
+        }
+        try {
+            notificationService.notifyUser(
+                userId,
+                NotificationType.SEC_SOCIAL_LINK.name(),
+                "Social account linked. (provider=" + provider + ")",
+                null,
+                TargetType.notice,
+                null,
+                "/mypage/security"
+            );
+        } catch (Exception e) {
+            log.warn("[AUTH][NOTIFY] social link notify failed userId={} reason={}", userId, e.getMessage());
         }
     }
 }

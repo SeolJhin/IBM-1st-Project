@@ -11,6 +11,9 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import lombok.RequiredArgsConstructor;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.payment.application.PaymentWebhookService;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.KakaoPayProperties;
 import org.myweb.uniplace.domain.payment.application.gateway.toss.TossProperties;
@@ -32,6 +35,7 @@ public class PaymentWebhookController {
     private final KakaoPayProperties kakaoPayProperties;
     private final TossProperties tossProperties;
     private final PaymentWebhookService paymentWebhookService;
+    private final NotificationService notificationService;
 
     @PostMapping("/kakao")
     public ResponseEntity<String> kakaoWebhook(
@@ -42,6 +46,9 @@ public class PaymentWebhookController {
     ) {
         if (!isValidKakaoWebhook(authorization, resourceId, userAgent)) {
             log.warn("[SECURITY][ALERT][WEBHOOK] kakao webhook rejected resourceId={}", mask(resourceId));
+            notifyWebhookFail(
+                "KAKAO webhook 검증 실패 resourceId=" + mask(resourceId) + ", userAgent=" + userAgent
+            );
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("invalid kakao webhook");
         }
         paymentWebhookService.handleKakaoWebhook(payload);
@@ -56,19 +63,23 @@ public class PaymentWebhookController {
     ) {
         // 서명 없는 요청은 신뢰할 수 없으므로 거부
         if (signature == null || signature.isBlank()) {
+            notifyWebhookFail("TOSS webhook 검증 실패 missing signature");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("missing signature");
         }
 
         if (transmissionTime == null || transmissionTime.isBlank()) {
+            notifyWebhookFail("TOSS webhook 검증 실패 missing transmission time");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("missing transmission time");
         }
         if (!isFreshTransmissionTime(transmissionTime)) {
             log.warn("[SECURITY][ALERT][WEBHOOK] toss timestamp rejected transmissionTime={}", transmissionTime);
+            notifyWebhookFail("TOSS webhook 검증 실패 stale transmission time=" + transmissionTime);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("stale transmission time");
         }
 
         String secret = tossProperties.getWebhook_secret();
         if (secret == null || secret.isBlank()) {
+            notifyWebhookFail("TOSS webhook 검증 실패 missing webhook secret");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("missing webhook secret");
         }
 
@@ -83,7 +94,23 @@ public class PaymentWebhookController {
         }
 
         log.warn("[SECURITY][ALERT][WEBHOOK] toss signature rejected transmissionTime={}", transmissionTime);
+        notifyWebhookFail("TOSS webhook 검증 실패 invalid signature transmissionTime=" + transmissionTime);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("invalid signature");
+    }
+
+    private void notifyWebhookFail(String message) {
+        try {
+            notificationService.notifyAdmins(
+                NotificationType.PAY_WEBHOOK_FAIL.name(),
+                message,
+                null,
+                TargetType.payment,
+                null,
+                "/admin/payments"
+            );
+        } catch (Exception e) {
+            log.warn("[PAYMENT][NOTIFY][ADMIN] webhook fail notify error={}", e.getMessage());
+        }
     }
 
     private boolean isValidKakaoWebhook(String authorization, String resourceId, String userAgent) {

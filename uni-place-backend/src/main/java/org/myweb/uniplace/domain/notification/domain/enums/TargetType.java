@@ -7,5 +7,6 @@ public enum TargetType {
     notice,
     tour,
     space,
-    review   
+    review,
+    payment
 }
