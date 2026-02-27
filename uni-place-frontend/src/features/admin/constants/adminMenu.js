@@ -9,29 +9,8 @@ export const adminMenu = [
   { key: 'roomservice', label: '룸서비스 관리', path: '/admin/roomservice' },
   { key: 'pay', label: '결제/정산', path: '/admin/pay' },
   {
-    key: 'property',
-    label: '시설 관리',
-    path: '/admin/property/spaces',
-  },
-  {
-    key: 'tours',
-    label: '투어예약 관리',
-    path: '/admin/reservation/tours',
-  },
-  {
     key: 'spaces',
     label: '공용공간예약 관리',
-    path: '/admin/reservation/spaces',
-  },
-  {
-    key: 'contracts',
-    label: '계약 관리',
-    path: '/admin/contract/contracts',
-  },
-  { key: 'banners', label: '배너관리', path: '/admin/system/banners' },
-  {
-    key: 'roomservice',
-    label: '룸서비스 관리',
-    path: '/admin/roomservice/orders',
+    path: '/admin/reservations/spaces',
   },
 ];

@@ -1,12 +1,12 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import styles from './AdminUserHub.module.css';
+import styles from './AdminPayHub.module.css';
 
-export default function AdminUserHub() {
+export default function AdminPayHub() {
   return (
     <div className={styles.wrap}>
       <div className={styles.topRow}>
-        <h1 className={styles.title}>회원관리</h1>
+        <h1 className={styles.title}>결제 관리</h1>
 
         {/* (원하면) 검색 아이콘/검색창 자리 */}
         <div className={styles.right} />
@@ -14,22 +14,22 @@ export default function AdminUserHub() {
 
       <div className={styles.tabs}>
         <NavLink
-          to="/admin/users"
+          to="/admin/payments"
           end
           className={({ isActive }) =>
             `${styles.tab} ${isActive ? styles.tabActive : ''}`
           }
         >
-          회원
+          결제
         </NavLink>
 
         <NavLink
-          to="/admin/users/residents"
+          to="/admin/payments/refunds"
           className={({ isActive }) =>
             `${styles.tab} ${isActive ? styles.tabActive : ''}`
           }
         >
-          입주자
+          환불
         </NavLink>
       </div>
 
