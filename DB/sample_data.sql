@@ -102,7 +102,37 @@ VALUES
 ('user17', 'user17', 'user17@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-17', '010-2100-0017', 'user', NOW(), 'N', 'active', 'N'),
 ('user18', 'user18', 'user18@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-18', '010-2100-0018', 'user', NOW(), 'N', 'active', 'N'),
 ('user19', 'user19', 'user19@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-19', '010-2100-0019', 'user', NOW(), 'N', 'active', 'N'),
-('user20', 'user20', 'user20@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-20', '010-2100-0020', 'user', NOW(), 'N', 'active', 'N');
+('user20', 'user20', 'user20@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-20', '010-2100-0020', 'user', NOW(), 'N', 'active', 'N'),
+('user21', 'user21', 'user21@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-21', '010-2100-0021', 'user', NOW(), 'N', 'active', 'N'),
+('user22', 'user22', 'user22@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-22', '010-2100-0022', 'user', NOW(), 'N', 'active', 'N'),
+('user23', 'user23', 'user23@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-23', '010-2100-0023', 'user', NOW(), 'N', 'active', 'N'),
+('user24', 'user24', 'user24@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-24', '010-2100-0024', 'user', NOW(), 'N', 'active', 'N'),
+('user25', 'user25', 'user25@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-25', '010-2100-0025', 'user', NOW(), 'N', 'active', 'N'),
+('user26', 'user26', 'user26@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-26', '010-2100-0026', 'user', NOW(), 'N', 'active', 'N'),
+('user27', 'user27', 'user27@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-27', '010-2100-0027', 'user', NOW(), 'N', 'active', 'N'),
+('user28', 'user28', 'user28@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-28', '010-2100-0028', 'user', NOW(), 'N', 'active', 'N'),
+('user29', 'user29', 'user29@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-29', '010-2100-0029', 'user', NOW(), 'N', 'active', 'N'),
+('user30', 'user30', 'user30@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-30', '010-2100-0030', 'user', NOW(), 'N', 'active', 'N'),
+('user31', 'user31', 'user31@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-01-31', '010-2100-0031', 'user', NOW(), 'N', 'active', 'N'),
+('user32', 'user32', 'user32@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-01', '010-2100-0032', 'user', NOW(), 'N', 'active', 'N'),
+('user33', 'user33', 'user33@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-02', '010-2100-0033', 'user', NOW(), 'N', 'active', 'N'),
+('user34', 'user34', 'user34@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-03', '010-2100-0034', 'user', NOW(), 'N', 'active', 'N'),
+('user35', 'user35', 'user35@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-04', '010-2100-0035', 'user', NOW(), 'N', 'active', 'N'),
+('user36', 'user36', 'user36@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-05', '010-2100-0036', 'user', NOW(), 'N', 'active', 'N'),
+('user37', 'user37', 'user37@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-06', '010-2100-0037', 'user', NOW(), 'N', 'active', 'N'),
+('user38', 'user38', 'user38@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-07', '010-2100-0038', 'user', NOW(), 'N', 'active', 'N'),
+('user39', 'user39', 'user39@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-08', '010-2100-0039', 'user', NOW(), 'N', 'active', 'N'),
+('user40', 'user40', 'user40@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-09', '010-2100-0040', 'user', NOW(), 'N', 'active', 'N'),
+('user41', 'user41', 'user41@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-10', '010-2100-0041', 'user', NOW(), 'N', 'active', 'N'),
+('user42', 'user42', 'user42@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-11', '010-2100-0042', 'user', NOW(), 'N', 'active', 'N'),
+('user43', 'user43', 'user43@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-12', '010-2100-0043', 'user', NOW(), 'N', 'active', 'N'),
+('user44', 'user44', 'user44@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-13', '010-2100-0044', 'user', NOW(), 'N', 'active', 'N'),
+('user45', 'user45', 'user45@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-14', '010-2100-0045', 'user', NOW(), 'N', 'active', 'N'),
+('user46', 'user46', 'user46@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-15', '010-2100-0046', 'user', NOW(), 'N', 'active', 'N'),
+('user47', 'user47', 'user47@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-16', '010-2100-0047', 'user', NOW(), 'N', 'active', 'N'),
+('user48', 'user48', 'user48@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-17', '010-2100-0048', 'user', NOW(), 'N', 'active', 'N'),
+('user49', 'user49', 'user49@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-18', '010-2100-0049', 'user', NOW(), 'N', 'active', 'N'),
+('user50', 'user50', 'user50@uniplace.com', '$2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze', '1996-02-19', '010-2100-0050', 'user', NOW(), 'N', 'active', 'N');
 
 /* 3) auth-related child tables */
 INSERT INTO refresh_tokens (refresh_token_id, user_id, token_hash, device_id, user_agent, ip, issued_at, expires_at, revoked, revoked_at, last_used_at)
@@ -125,7 +155,12 @@ INSERT INTO building (building_id, building_nm, building_addr, building_desc, la
 VALUES
 (1, 'Uniplace A', 'Seoul A-ro 101', 'Main building A', 'commercial', 123.45, 'residence', 'Y', 45, 'N'),
 (2, 'Uniplace B', 'Seoul B-ro 202', 'Main building B', 'commercial', 98.10, 'residence', 'Y', 20, 'N'),
-(3, 'Uniplace C', 'Seoul C-ro 303', 'Main building C', 'commercial', 88.80, 'mixed', 'N', 12, 'N');
+(3, 'Uniplace C', 'Seoul C-ro 303', 'Main building C', 'commercial', 88.80, 'mixed', 'N', 12, 'N'),
+(4, 'Uniplace D', 'Seoul D-ro 404', 'Extension building D', 'commercial', 132.50, 'residence', 'Y', 36, 'N'),
+(5, 'Uniplace E', 'Seoul E-ro 505', 'Extension building E', 'commercial', 145.20, 'residence', 'Y', 42, 'N'),
+(6, 'Uniplace F', 'Seoul F-ro 606', 'Extension building F', 'commercial', 118.30, 'mixed', 'Y', 28, 'N'),
+(7, 'Uniplace G', 'Seoul G-ro 707', 'Extension building G', 'commercial', 152.80, 'residence', 'N', 34, 'N'),
+(8, 'Uniplace H', 'Seoul H-ro 808', 'Extension building H', 'commercial', 167.10, 'mixed', 'Y', 40, 'N');
 
 INSERT INTO rooms (room_id, room_no, floor, room_size, building_id, deposit, rent_price, manage_fee, rent_type, room_st, room_options, room_capacity, rent_min, sun_direction, room_desc, delete_yn)
 VALUES
@@ -135,6 +170,60 @@ VALUES
 (4, 301, 3, 10.00, 2, 800000, 420000, 40000, 'stay', 'available', 'single-bed', 1, 1, 'w', 'B-301', 'N'),
 (5, 401, 4, 18.50, 2, 2000000, 700000, 70000, 'monthly_rent', 'reserved', 'double-bed', 2, 1, 'n', 'B-401', 'N'),
 (6, 501, 5, 20.00, 3, 2500000, 850000, 80000, 'monthly_rent', 'repair', 'suite', 2, 1, 'e', 'C-501', 'N');
+
+/* keep existing rooms and add missing ones:
+   each building has floors 1~15, each floor has 20 rooms */
+DROP TEMPORARY TABLE IF EXISTS tmp_floor15;
+CREATE TEMPORARY TABLE tmp_floor15 (floor_no INT PRIMARY KEY);
+INSERT INTO tmp_floor15 (floor_no)
+WITH RECURSIVE seq AS (
+  SELECT 1 AS n
+  UNION ALL
+  SELECT n + 1 FROM seq WHERE n < 15
+)
+SELECT n FROM seq;
+
+DROP TEMPORARY TABLE IF EXISTS tmp_unit20;
+CREATE TEMPORARY TABLE tmp_unit20 (unit_no INT PRIMARY KEY);
+INSERT INTO tmp_unit20 (unit_no)
+WITH RECURSIVE seq AS (
+  SELECT 1 AS n
+  UNION ALL
+  SELECT n + 1 FROM seq WHERE n < 20
+)
+SELECT n FROM seq;
+
+INSERT INTO rooms
+(room_no, floor, room_size, building_id, deposit, rent_price, manage_fee, rent_type, room_st, room_options, room_capacity, rent_min, sun_direction, room_desc, delete_yn)
+SELECT
+  (f.floor_no * 100) + u.unit_no AS room_no,
+  f.floor_no AS floor,
+  12.00 + (u.unit_no * 0.35) AS room_size,
+  b.building_id,
+  1000000 + (f.floor_no * 30000) + (u.unit_no * 20000) AS deposit,
+  450000 + (f.floor_no * 10000) + (u.unit_no * 3000) AS rent_price,
+  50000 + (u.unit_no * 1000) AS manage_fee,
+  CASE WHEN u.unit_no % 6 = 0 THEN 'stay' ELSE 'monthly_rent' END AS rent_type,
+  'available' AS room_st,
+  CONCAT('desk,aircon,option-', f.floor_no, '-', u.unit_no) AS room_options,
+  CASE WHEN u.unit_no % 4 = 0 THEN 2 ELSE 1 END AS room_capacity,
+  1 + (u.unit_no % 6) AS rent_min,
+  CASE (u.unit_no % 4) WHEN 0 THEN 'n' WHEN 1 THEN 's' WHEN 2 THEN 'e' ELSE 'w' END AS sun_direction,
+  CONCAT('Auto generated room ', b.building_id, '-', f.floor_no, '-', u.unit_no) AS room_desc,
+  'N' AS delete_yn
+FROM building b
+CROSS JOIN tmp_floor15 f
+CROSS JOIN tmp_unit20 u
+WHERE b.building_id BETWEEN 1 AND 8
+  AND NOT EXISTS (
+    SELECT 1
+    FROM rooms r
+    WHERE r.building_id = b.building_id
+      AND r.room_no = (f.floor_no * 100) + u.unit_no
+  );
+
+DROP TEMPORARY TABLE IF EXISTS tmp_floor15;
+DROP TEMPORARY TABLE IF EXISTS tmp_unit20;
 
 INSERT INTO common_space (space_id, space_nm, building_id, space_capacity, space_floor, space_options, space_desc)
 VALUES
@@ -371,5 +460,3 @@ VALUES
 (8, 8, 'tosspay', 'APPROVE_OK', 'pref_008', 'uniplace://pay', 'https://example.com/return/8', JSON_OBJECT('state','returned'), JSON_OBJECT('ready',true), JSON_OBJECT('approved',true), NULL, NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;
-
-
