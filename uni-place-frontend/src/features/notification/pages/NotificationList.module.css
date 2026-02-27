@@ -1,3 +1,5 @@
+/* src/features/notification/pages/NotificationList.module.css */
+
 .container {
   max-width: 640px;
   margin: 0 auto;
@@ -7,7 +9,7 @@
   color: #f4ecd8;
 }
 
-/* ─── Header ─── */
+/* ── 헤더 ── */
 .pageHeader {
   position: sticky;
   top: 0;
@@ -39,7 +41,15 @@
   margin: 0;
   font-size: 18px;
   font-weight: 800;
-  color: #ffffff;
+  color: #fff;
+}
+
+/* ✅ 헤더 오른쪽 버튼 그룹 */
+.headerBtns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .readAllBtn {
@@ -51,13 +61,35 @@
   padding: 6px 12px;
   border-radius: 8px;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.15s;
 }
 .readAllBtn:hover {
   background: rgba(217, 173, 91, 0.12);
 }
 
-/* ─── Unread Banner ─── */
+/* ✅ 읽은 알림 삭제 버튼 */
+.deleteReadBtn {
+  background: none;
+  border: 1px solid rgba(224, 112, 112, 0.5);
+  color: #e07070;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.deleteReadBtn:hover:not(:disabled) {
+  background: rgba(224, 112, 112, 0.1);
+}
+.deleteReadBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── 읽지 않은 건수 배너 ── */
 .unreadBanner {
   padding: 10px 16px;
   font-size: 13px;
@@ -69,7 +101,7 @@
   color: #d9ad5b;
 }
 
-/* ─── List ─── */
+/* ── 목록 ── */
 .list {
   display: flex;
   flex-direction: column;
@@ -84,21 +116,28 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   cursor: pointer;
   transition: background 0.15s;
-  background: transparent;
-}
-.item:hover {
-  background: rgba(255, 255, 255, 0.04);
 }
 .item:focus-visible {
   outline: 2px solid #d9ad5b;
   outline-offset: -2px;
 }
 
+/* 읽지 않음: 약한 금색 강조 */
 .item.unread {
   background: rgba(217, 173, 91, 0.05);
 }
 .item.unread:hover {
   background: rgba(217, 173, 91, 0.1);
+}
+
+/* ✅ 읽음: 회색으로 흐리게 */
+.item.read {
+  background: transparent;
+  opacity: 0.45;
+}
+.item.read:hover {
+  background: rgba(255, 255, 255, 0.03);
+  opacity: 0.6;
 }
 
 .itemLeft {
@@ -119,6 +158,11 @@
   padding: 2px 6px;
   width: fit-content;
 }
+/* ✅ 읽음 배지 회색 */
+.typeBadge.badgeRead {
+  color: #666;
+  background: rgba(140, 140, 140, 0.15);
+}
 
 .message {
   margin: 0;
@@ -129,13 +173,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* ✅ 읽음 메시지 회색 */
+.message.messageRead {
+  color: #777;
+}
 
 .time {
   font-size: 12px;
   color: rgba(215, 206, 188, 0.5);
 }
 
-/* 읽지 않음 점 */
 .dot {
   flex-shrink: 0;
   width: 8px;
@@ -145,7 +192,7 @@
   box-shadow: 0 0 6px rgba(217, 173, 91, 0.6);
 }
 
-/* ─── Empty ─── */
+/* ── 빈 상태 ── */
 .empty {
   display: flex;
   flex-direction: column;
@@ -159,7 +206,7 @@
   font-size: 40px;
 }
 
-/* ─── Loading ─── */
+/* ── 로딩 ── */
 .loadingWrap {
   display: flex;
   justify-content: center;

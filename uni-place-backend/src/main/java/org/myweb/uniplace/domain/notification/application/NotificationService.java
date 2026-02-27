@@ -1,4 +1,5 @@
 // 경로: org/myweb/uniplace/domain/notification/application/NotificationService.java
+// ✅ 변경사항: deleteRead(String userId) 메서드 추가
 package org.myweb.uniplace.domain.notification.application;
 
 import org.myweb.uniplace.domain.notification.api.dto.response.NotificationListResponse;
@@ -14,6 +15,8 @@ public interface NotificationService {
     void markRead(String userId, Integer notificationId);
 
     int markAllRead(String userId);
+
+    int deleteRead(String userId);
 
     void notifyUser(String receiverId,
                     String code,
