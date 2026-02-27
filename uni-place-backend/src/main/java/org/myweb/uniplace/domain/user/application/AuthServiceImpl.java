@@ -303,6 +303,15 @@ public class AuthServiceImpl implements AuthService {
         return oAuthCompleteService.kakaoComplete(req, userAgent, ip);
     }
 
+    @Override
+    @Transactional
+    public UserTokenResponse googleComplete(KakaoSignupCompleteRequest req, String userAgent, String ip) {
+        if (req == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        return oAuthCompleteService.googleComplete(req, userAgent, ip);
+    }
+
     private String sha256Hex(String raw) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");

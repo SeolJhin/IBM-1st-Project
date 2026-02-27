@@ -1,0 +1,32 @@
+.page {
+  min-height: 100vh;
+  background: #f6eee6;
+}
+
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px 72px;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e8ded4;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 6px 18px rgba(11, 14, 18, 0.06);
+}
+
+.heading {
+  margin: 0 0 12px;
+  font-size: 28px;
+  line-height: 1.2;
+  color: #0b0e12;
+}
+
+.body {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #362f20;
+}

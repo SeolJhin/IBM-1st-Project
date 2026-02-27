@@ -5,9 +5,11 @@ import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 @Getter
+@Setter
 @NoArgsConstructor
 public class RoomStatusUpdateRequest {
 

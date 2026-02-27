@@ -1,5 +1,7 @@
 import React from 'react';
+import { AdminEndpointListProbe } from '../../components/AdminEndpointProbe';
+import { adminApi } from '../../api/adminApi';
 
 export default function AdminAffiliateList() {
-  return <div>제휴 관리 목록 (AdminAffiliateList)</div>;
+  return <AdminEndpointListProbe title="Admin Affiliates" fetcher={() => adminApi.getAffiliates()} />;
 }

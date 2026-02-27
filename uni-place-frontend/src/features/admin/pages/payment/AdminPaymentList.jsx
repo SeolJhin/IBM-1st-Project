@@ -1,5 +1,7 @@
 import React from 'react';
+import { AdminEndpointListProbe } from '../../components/AdminEndpointProbe';
+import { adminApi } from '../../api/adminApi';
 
 export default function AdminPaymentList() {
-  return <div>결제 관리 목록 (AdminPaymentList)</div>;
+  return <AdminEndpointListProbe title="Admin Payments" fetcher={() => adminApi.getPayments()} />;
 }

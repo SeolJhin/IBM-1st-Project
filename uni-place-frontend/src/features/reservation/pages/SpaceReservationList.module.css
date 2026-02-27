@@ -1,0 +1,301 @@
+/* SpaceReservationList.module.css — UNI PLACE 브랜드 스타일 */
+
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 0 80px;
+  min-height: 100vh;
+  background: #f9f5ef;
+  color: #2d2416;
+}
+
+.centerBox {
+  display: flex;
+  justify-content: center;
+  padding: 80px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(186, 128, 55, 0.2);
+  border-top-color: #ba8037;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── 상단 바 ── */
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 28px;
+  background: #fff;
+  border-bottom: 2px solid #e8dfd0;
+  box-shadow: 0 2px 12px rgba(58, 46, 32, 0.06);
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: #ba8037;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  line-height: 1;
+}
+.backBtn:hover {
+  background: rgba(186, 128, 55, 0.1);
+}
+
+.pageTitle {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #3a2e20;
+  letter-spacing: -0.3px;
+}
+
+.topActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.refreshBtn {
+  background: #f5f0e8;
+  border: 1px solid #d7cebc;
+  color: #7a6a50;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.refreshBtn:hover:not(:disabled) {
+  background: #e8dfd0;
+  color: #3a2e20;
+}
+.refreshBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.createLink {
+  background: linear-gradient(135deg, #c4923f, #ba8037);
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(186, 128, 55, 0.3);
+}
+.createLink:hover {
+  background: linear-gradient(135deg, #d4a24f, #ca9047);
+  box-shadow: 0 4px 12px rgba(186, 128, 55, 0.4);
+}
+
+/* ── 페이지네이션 행 ── */
+.paginationRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 28px;
+  background: #fff;
+  border-bottom: 1px solid #f0ece5;
+}
+
+.pageBtn {
+  background: #f5f0e8;
+  border: 1px solid #e0d5c5;
+  color: #7a6a50;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pageBtn:not(:disabled):hover {
+  background: #ba8037;
+  border-color: #ba8037;
+  color: #fff;
+}
+.pageBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.pageInfo {
+  font-size: 12px;
+  color: #9a8c70;
+  font-weight: 500;
+}
+
+.errMsg {
+  padding: 0 28px;
+  font-size: 13px;
+  color: #c0392b;
+}
+
+/* ── 카드 리스트 ── */
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px 28px;
+}
+
+.card {
+  background: #fff;
+  border: 1.5px solid #e8dfd0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(58, 46, 32, 0.04);
+  transition:
+    box-shadow 0.2s,
+    transform 0.15s;
+}
+.card:hover {
+  box-shadow: 0 6px 20px rgba(58, 46, 32, 0.09);
+  transform: translateY(-1px);
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.cardSpaceId {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ba8037;
+}
+.cardTime {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #3a2e20;
+}
+.cardBody {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.metaItem {
+  font-size: 13px;
+  color: #7a6a50;
+  background: #f5f0e8;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.cardBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #f0ece5;
+  padding-top: 12px;
+}
+.cardId {
+  font-size: 11px;
+  color: #c5b99a;
+}
+.cancelBtn {
+  background: none;
+  border: 1.5px solid rgba(192, 57, 43, 0.4);
+  color: #c0392b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cancelBtn:hover {
+  background: rgba(192, 57, 43, 0.08);
+  border-color: #c0392b;
+}
+
+/* ── 상태 배지 ── */
+.statusBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.statusPending {
+  background: rgba(186, 128, 55, 0.12);
+  color: #ba8037;
+  border: 1px solid rgba(186, 128, 55, 0.25);
+}
+.statusConfirmed {
+  background: rgba(39, 174, 96, 0.12);
+  color: #27ae60;
+  border: 1px solid rgba(39, 174, 96, 0.25);
+}
+.statusCancelled {
+  background: rgba(192, 57, 43, 0.1);
+  color: #c0392b;
+  border: 1px solid rgba(192, 57, 43, 0.2);
+}
+.statusCompleted {
+  background: rgba(120, 100, 70, 0.1);
+  color: #9a8c70;
+  border: 1px solid rgba(120, 100, 70, 0.2);
+}
+
+/* ── 빈 상태 ── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 80px 20px;
+  color: #b0a080;
+  font-size: 14px;
+  text-align: center;
+}
+.emptyIcon {
+  font-size: 48px;
+}
+
+.goCreateBtn {
+  background: linear-gradient(135deg, #c4923f, #ba8037);
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.2s;
+  box-shadow: 0 3px 10px rgba(186, 128, 55, 0.3);
+}
+.goCreateBtn:hover {
+  box-shadow: 0 5px 16px rgba(186, 128, 55, 0.4);
+  transform: translateY(-1px);
+}

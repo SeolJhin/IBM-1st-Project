@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.*;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

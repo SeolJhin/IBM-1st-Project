@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import styles from './Header.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../features/user/hooks/useAuth';
+import NotificationBell from './NotificationBell';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -81,6 +82,7 @@ export default function Header() {
         </nav>
 
         <div className={styles.icons}>
+          {/* 검색 - 항상 표시 */}
           <button
             className={styles.iconBtn}
             type="button"
@@ -90,7 +92,7 @@ export default function Header() {
             검색
           </button>
 
-          {/* ✅ 로그인 상태에 따라 우측 버튼 변경 */}
+          {/* 로그인 상태에 따라 변경 */}
           {loading ? null : user ? (
             <>
               <button
@@ -120,6 +122,9 @@ export default function Header() {
               로그인
             </button>
           )}
+
+          {/* 알림 - 로그인 시에만 표시, 로그인 오른쪽 */}
+          {!loading && user && <NotificationBell />}
         </div>
       </div>
     </header>
