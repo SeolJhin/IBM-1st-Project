@@ -39,6 +39,15 @@ import ReviewWrite from './features/review/pages/ReviewWrite';
 import MyReviewsList from './features/review/pages/MyReviewsList';
 import MyReviewsDetail from './features/review/pages/MyReviewsDetail';
 
+// ── support ──────────────────────────────────────────────────────
+import Support from './features/support/pages/Support';
+import ComplainList from './features/support/pages/ComplainList';
+import ComplainWrite from './features/support/pages/ComplainWrite';
+import ComplainDetail from './features/support/pages/ComplainDetail';
+import ComplainEdit from './features/support/pages/ComplainEdit';
+import { Outlet, useLocation } from 'react-router-dom';
+import FaqList from './features/support/pages/FaqList';
+
 // ── 어드민 ────────────────────────────────────────────────────
 import RequireAuth from './app/router/guards/RequireAuth';
 import RequireRole from './app/router/guards/RequireRole';
@@ -138,6 +147,26 @@ export default function App() {
         <Route path="/commerce/orders" element={<OrderList />} />
         <Route path="/commerce/orders/:orderId" element={<OrderDetail />} />
         <Route path="/commerce/checkout" element={<Checkout />} />
+
+        {/* ── support 민원 ── */}
+        <Route path="/support" element={<Support />}>
+          <Route path="faq" element={<FaqList />} /> {/* FAQ 연결 */}
+          <Route path="notice" element={<div>공지사항 페이지</div>} />
+          <Route path="qna" element={<div>1:1 문의 페이지</div>} />
+          <Route path="complain" element={<ComplainList />} />
+          <Route path="complain/write" element={<ComplainWrite />} />
+          <Route path="complain/:id" element={<ComplainDetail />} />
+          <Route path="complain/edit/:id" element={<ComplainEdit />} />
+          <Route index element={<Navigate to="faq" replace />} />
+        </Route>
+        <Route path="/support" element={<Support />}>
+          <Route path="faq" element={<FaqList />} /> {/* 여기를 교체 */}
+          <Route path="notice" element={<div>공지사항 페이지</div>} />
+          <Route path="qna" element={<div>1:1 문의 페이지</div>} />
+          <Route path="complain" element={<ComplainList />} />
+          ...
+          <Route index element={<Navigate to="faq" replace />} />
+        </Route>
 
         {/* ── 어드민 (로그인 + ADMIN 역할 필요) ── */}
         <Route element={<RequireAuth />}>

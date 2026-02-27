@@ -241,21 +241,21 @@ export default function MemberInfo() {
             <button
               type="button"
               className={styles.sideItem}
-              onClick={() => navigate('/facilities')}
+              onClick={() => navigate('/reservations/space/list')}
             >
               공용 시설
             </button>
             <button
               type="button"
               className={styles.sideItem}
-              onClick={() => navigate('/reservations/space/list')}
+              onClick={() => navigate('/reservations/tour/list')}
             >
               사전 방문
             </button>
             <button
               type="button"
               className={styles.sideItem}
-              onClick={() => navigate('/reservations/room/list')}
+              onClick={() => navigate('/commerce/room-service')}
             >
               룸서비스
             </button>

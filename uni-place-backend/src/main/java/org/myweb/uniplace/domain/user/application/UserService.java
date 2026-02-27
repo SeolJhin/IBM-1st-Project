@@ -1,5 +1,8 @@
 package org.myweb.uniplace.domain.user.application;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import org.myweb.uniplace.domain.user.api.admin.dto.request.AdminUserRoleUpdateRequest;
 import org.myweb.uniplace.domain.user.api.admin.dto.request.AdminUserStatusUpdateRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.UserUpdateRequest;
@@ -10,6 +13,7 @@ public interface UserService {
     UserResponse updateMe(String userId, UserUpdateRequest req);
     UserResponse getByIdForAdmin(String userId);
     
+    Page<UserResponse> listForAdmin(Pageable pageable);
     // ✅ 관리자 - 상태 변경
     UserResponse updateStatus(String userId, AdminUserStatusUpdateRequest req);
 

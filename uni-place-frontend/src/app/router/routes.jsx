@@ -22,6 +22,20 @@ import ReviewWrite from '../../features/review/pages/ReviewWrite';
 import MyReviewsList from '../../features/review/pages/MyReviewsList';
 import MyReviewsDetail from '../../features/review/pages/MyReviewsDetail';
 
+// ── supoort ────────────────────────────────────────────────────
+import NoticeList from '../../features/support/pages/NoticeList';
+import NoticeDetail from '../../features/support/pages/NoticeDetail';
+import FaqList from '../../features/support/pages/FaqList';
+import QnaList from '../../features/support/pages/QnaList';
+import QnaDetail from '../../features/support/pages/QnaDetail';
+import QnaWrite from '../../features/support/pages/QnaWrite';
+import ComplainList from '../../features/support/pages/ComplainList';
+import ComplainDetail from '../../features/support/pages/ComplainDetail';
+import ComplainWrite from '../../features/support/pages/ComplainWrite';
+
+// ── 권한 필요 ────────────────────────────────────────────────────
+import RequireAuth from '../../app/router/guards/RequireAuth';
+
 // ── admin ─────────────────────────────────────────────────────
 import AdminInfo from '../../features/admin/pages/AdminInfo';
 import AdminTourReservationList from '../../features/admin/pages/reservation/AdminTourReservationList';
@@ -52,6 +66,45 @@ export const router = createBrowserRouter([
   { path: '/reviews/:reviewId/edit', element: <ReviewWrite /> },
   { path: '/reviews/my', element: <MyReviewsList /> },
   { path: '/reviews/:reviewId', element: <MyReviewsDetail /> },
+
+  // ── support ──
+  { path: '/support/notice', element: <NoticeList /> },
+  { path: '/support/notice/:noticeId', element: <NoticeDetail /> },
+  { path: '/support/faq', element: <FaqList /> },
+  { path: '/support/qna', element: <QnaList /> },
+  { path: '/support/qna/:qnaId', element: <QnaDetail /> },
+  {
+    path: '/support/qna/write',
+    element: (
+      <RequireAuth>
+        <QnaWrite />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/support/complain',
+    element: (
+      <RequireAuth>
+        <ComplainList />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/support/complain/:compId',
+    element: (
+      <RequireAuth>
+        <ComplainDetail />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/support/complain/write',
+    element: (
+      <RequireAuth>
+        <ComplainWrite />
+      </RequireAuth>
+    ),
+  },
 
   // admin
   { path: '/admin', element: <AdminInfo /> },
