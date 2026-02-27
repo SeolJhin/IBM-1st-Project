@@ -1,4 +1,5 @@
 // 경로: org/myweb/uniplace/domain/notification/application/NotificationServiceImpl.java
+// ✅ 변경사항: deleteRead() 메서드 구현 추가
 package org.myweb.uniplace.domain.notification.application;
 
 import java.util.List;
@@ -67,6 +68,13 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationRepository.markAllRead(userId);
     }
 
+    // ✅ 추가: 읽은 알림 전체 삭제
+    @Override
+    @Transactional
+    public int deleteRead(String userId) {
+        return notificationRepository.deleteAllReadByReceiverId(userId);
+    }
+
     @Override
     @Transactional
     public void notifyUser(String receiverId,
@@ -80,7 +88,6 @@ public class NotificationServiceImpl implements NotificationService {
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 탈퇴 유저면 저장 스킵
         if ("Y".equalsIgnoreCase(receiver.getDeleteYN())) return;
 
         Notification n = notificationFactory.create(receiverId, code, message, senderId, target, targetId, urlPath);

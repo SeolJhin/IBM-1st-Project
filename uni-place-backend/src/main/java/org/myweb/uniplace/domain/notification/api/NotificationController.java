@@ -1,4 +1,5 @@
 // 경로: org/myweb/uniplace/domain/notification/api/NotificationController.java
+// ✅ 변경사항: DELETE /notifications/read 엔드포인트 추가
 package org.myweb.uniplace.domain.notification.api;
 
 import org.myweb.uniplace.domain.notification.api.dto.request.MarkNotificationReadRequest;
@@ -50,5 +51,11 @@ public class NotificationController {
     @PatchMapping("/read-all")
     public ApiResponse<Integer> markAllRead(@AuthenticationPrincipal AuthUser me) {
         return ApiResponse.ok(notificationService.markAllRead(me.getUserId()));
+    }
+
+    // ✅ 추가: 읽은 알림 전체 삭제
+    @DeleteMapping("/read")
+    public ApiResponse<Integer> deleteRead(@AuthenticationPrincipal AuthUser me) {
+        return ApiResponse.ok(notificationService.deleteRead(me.getUserId()));
     }
 }

@@ -1,4 +1,3 @@
-// CartItemResponse.java
 package org.myweb.uniplace.domain.commerce.api.dto.response;
 
 import java.math.BigDecimal;
@@ -13,11 +12,10 @@ public class CartItemResponse {
 
     private Integer cartItemId;
     private Integer prodId;
-    private String prodNm;
-
+    private String  prodNm;
+    private Integer buildingId;    // ← 추가
     private BigDecimal orderPrice;
     private Integer orderQuantity;
     private BigDecimal lineTotal;
-
     private String thumbnailPath;
 }
