@@ -14,7 +14,7 @@ export default function AdminPayHub() {
 
       <div className={styles.tabs}>
         <NavLink
-          to="/admin/payments"
+          to="/admin/pay/payments"
           end
           className={({ isActive }) =>
             `${styles.tab} ${isActive ? styles.tabActive : ''}`
@@ -24,7 +24,7 @@ export default function AdminPayHub() {
         </NavLink>
 
         <NavLink
-          to="/admin/payments/refunds"
+          to="/admin/pay/refunds"
           className={({ isActive }) =>
             `${styles.tab} ${isActive ? styles.tabActive : ''}`
           }

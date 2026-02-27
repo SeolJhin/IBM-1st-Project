@@ -3,8 +3,10 @@ package org.myweb.uniplace.domain.property.domain.entity;
 
 import java.math.BigDecimal;
 
+import org.myweb.uniplace.domain.property.domain.enums.PetAllowedYn;
 import org.myweb.uniplace.domain.property.domain.enums.RentType;
 import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
+import org.myweb.uniplace.domain.property.domain.enums.RoomType;
 import org.myweb.uniplace.domain.property.domain.enums.SunDirection;
 
 import jakarta.persistence.*;
@@ -42,6 +44,14 @@ public class Room {
 
     @Column(name = "room_size", nullable = false, precision = 5, scale = 2)
     private BigDecimal roomSize;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "room_type", nullable = false, length = 20)
+    private RoomType roomType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pet_allowed_yn", nullable = false, length = 1)
+    private PetAllowedYn petAllowedYn;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "building_id", nullable = false)
@@ -99,6 +109,8 @@ public class Room {
     public void prePersist() {
         if (rentType == null)     rentType = RentType.monthly_rent;
         if (roomSt == null)       roomSt = RoomStatus.available;
+        if (roomType == null)     roomType = RoomType.one_room;
+        if (petAllowedYn == null) petAllowedYn = PetAllowedYn.N;
         if (roomCapacity == null) roomCapacity = 1;
         if (deleteYn == null)     deleteYn = "N";
     }
