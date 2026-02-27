@@ -65,6 +65,7 @@ export default function Header() {
           >
             회사소개
           </button>
+
           <button
             className={styles.linkBtn}
             type="button"
@@ -72,6 +73,15 @@ export default function Header() {
           >
             커뮤니티
           </button>
+
+          <button
+            className={styles.linkBtn}
+            type="button"
+            onClick={() => navigate('/support')}
+          >
+            고객센터
+          </button>
+
           <button
             className={styles.linkBtn}
             type="button"

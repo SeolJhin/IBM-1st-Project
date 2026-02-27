@@ -69,7 +69,7 @@ export function useQnas(initialParams = {}) {
   }, [fetchQnas, params]);
 
   return {
-    qnas,         // QnaResponse[]
+    qnas, // QnaResponse[]
     pagination,
     loading,
     error,
