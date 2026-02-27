@@ -142,7 +142,7 @@ export default function App() {
 
               <Route path="reservations" element={<AdminReservationHub />}>
                 <Route path="tours" element={<AdminTourReservationList />} />
-                <Route path="space" element={<AdminSpaceReservationList />} />
+                <Route path="spaces" element={<AdminSpaceReservationList />} />
                 <Route index element={<Navigate to="tours" replace />} />
               </Route>
 
