@@ -7,6 +7,9 @@ import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import { useReviewActions } from '../../review/hooks/useReviews';
 import styles from './RoomDetail.module.css';
+import Modal from '../../../shared/components/Modal/Modal';
+import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
+import TourReservationList from '../../reservation/pages/TourReservationList';
 
 function StarRating({ value = 0, size = 'md' }) {
   return (
@@ -160,6 +163,8 @@ export default function RoomDetail() {
   const inlineFileRef = useRef(null);
   const [inlineHover, setInlineHover] = useState(0);
   const [permError, setPermError] = useState('');
+  const [tourCreateOpen, setTourCreateOpen] = useState(false);
+  const [tourListOpen, setTourListOpen] = useState(false);
 
   const [room, setRoom] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -231,11 +236,9 @@ export default function RoomDetail() {
     fetchReviews(reviewPage);
   }, [fetchReviews, reviewPage]);
 
-  // 방 예약 버튼 클릭 → 로그인 불필요 (예약 페이지에서 비로그인도 가능)
+  // 방 예약 버튼 클릭 → 팝업 오픈
   const handleTourReservation = () => {
-    navigate(
-      `/reservations/tour/create?roomId=${roomId}&buildingId=${room?.buildingId}&roomNo=${encodeURIComponent(room?.roomNo || '')}`
-    );
+    setTourCreateOpen(true);
   };
 
   // 리뷰 작성 → 인라인 폼 표시
@@ -1088,6 +1091,46 @@ export default function RoomDetail() {
       </div>
 
       <Footer />
+
+      {/* ── 사전방문 예약 팝업 ── */}
+      <Modal
+        open={tourCreateOpen}
+        onClose={() => setTourCreateOpen(false)}
+        title="📅 사전 방문 예약"
+        size="lg"
+      >
+        <TourReservationCreate
+          inlineMode
+          initRoomId={String(roomId)}
+          initBuildingId={room?.buildingId ? Number(room.buildingId) : null}
+          onSuccess={() => {
+            setTourCreateOpen(false);
+            setTourListOpen(true);
+          }}
+          onClose={() => setTourCreateOpen(false)}
+          onGoList={() => {
+            setTourCreateOpen(false);
+            setTourListOpen(true);
+          }}
+        />
+      </Modal>
+
+      {/* ── 사전방문 조회 팝업 ── */}
+      <Modal
+        open={tourListOpen}
+        onClose={() => setTourListOpen(false)}
+        title="📋 방문 예약 조회"
+        size="lg"
+      >
+        <TourReservationList
+          inlineMode
+          onGoCreate={() => {
+            setTourListOpen(false);
+            setTourCreateOpen(true);
+          }}
+          onClose={() => setTourListOpen(false)}
+        />
+      </Modal>
     </div>
   );
 }

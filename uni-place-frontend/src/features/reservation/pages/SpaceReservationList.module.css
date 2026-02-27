@@ -299,3 +299,23 @@
   box-shadow: 0 5px 16px rgba(186, 128, 55, 0.4);
   transform: translateY(-1px);
 }
+
+/* ── 인라인 래퍼 ── */
+.inlineWrap {
+  padding: 0;
+}
+
+/* ── 인라인 상단 액션 ── */
+.topActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 0 12px;
+}
+
+/* ── 독립 페이지 상단 액션 (topBar 안) ── */
+.topActionsHeader {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}

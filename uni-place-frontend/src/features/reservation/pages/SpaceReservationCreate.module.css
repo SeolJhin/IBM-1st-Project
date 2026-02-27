@@ -331,3 +331,11 @@
     text-align: center;
   }
 }
+
+/* ── 인라인 모드 (마이페이지 탭 내부) ── */
+.formInline {
+  padding: 4px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

@@ -5,6 +5,9 @@ import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import styles from './RoomList.module.css';
+import Modal from '../../../shared/components/Modal/Modal';
+import TourReservationList from '../../reservation/pages/TourReservationList';
+import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
 
 // ─── 방 쿼리 ──────────────────────────────────────────────────
 const INIT_QUERY = {
@@ -485,6 +488,9 @@ export default function RoomList() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [tourListOpen, setTourListOpen] = useState(false);
+  const [tourCreateOpen, setTourCreateOpen] = useState(false);
+
   const [activeTab, setActiveTab] = useState(() => {
     return location.state?.tab || 'rooms';
   });
@@ -748,7 +754,7 @@ export default function RoomList() {
                       alignItems: 'center',
                       gap: '4px',
                     }}
-                    onClick={() => navigate('/reservations/tour/list')}
+                    onClick={() => setTourListOpen(true)}
                   >
                     📋 방문예약 조회
                   </button>
@@ -867,7 +873,7 @@ export default function RoomList() {
                     alignItems: 'center',
                     gap: '4px',
                   }}
-                  onClick={() => navigate('/reservations/space/list')}
+                  onClick={() => navigate('/me?tab=space')}
                 >
                   📋 공용공간예약 조회
                 </button>
@@ -1055,6 +1061,37 @@ export default function RoomList() {
       </div>
 
       <Footer />
+
+      <Modal
+        open={tourListOpen}
+        onClose={() => setTourListOpen(false)}
+        title="📋 방문 예약 조회"
+        size="lg"
+      >
+        <TourReservationList
+          inlineMode
+          onGoCreate={() => {
+            setTourListOpen(false);
+            setTourCreateOpen(true);
+          }}
+          onClose={() => setTourListOpen(false)}
+        />
+      </Modal>
+      <Modal
+        open={tourCreateOpen}
+        onClose={() => setTourCreateOpen(false)}
+        title="📅 사전 방문 예약"
+        size="lg"
+      >
+        <TourReservationCreate
+          inlineMode
+          onSuccess={() => {
+            setTourCreateOpen(false);
+            setTourListOpen(true);
+          }}
+          onClose={() => setTourCreateOpen(false)}
+        />
+      </Modal>
     </div>
   );
 }

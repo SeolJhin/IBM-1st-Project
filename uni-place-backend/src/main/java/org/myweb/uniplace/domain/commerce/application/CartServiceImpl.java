@@ -32,6 +32,7 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final CartFileQueryRepository cartFileQueryRepository;
+    private final ProductBuildingStockRepository productBuildingStockRepository;  // ← 추가
 
     // ===================== 조회 =====================
 
@@ -74,7 +75,22 @@ public class CartServiceImpl implements CartService {
 
         Cart cart = getOrCreateCart(userId);
         int qty = Math.max(1, Optional.ofNullable(request.getQuantity()).orElse(1));
-        Integer buildingId = request.getBuildingId();   // null 허용 (비로그인 등 예외 방어)
+        Integer buildingId = request.getBuildingId();
+
+        // ── 재고 검증 ──────────────────────────────────────────────────
+        if (buildingId != null) {
+            productBuildingStockRepository
+                .findByProdIdAndBuildingId(product.getProdId(), buildingId)
+                .ifPresent(stock -> {
+                    int currentCartQty = cartItemRepository
+                        .findByCartIdAndProdIdAndBuildingId(cart.getCartId(), product.getProdId(), buildingId)
+                        .map(CartItem::getOrderQuantity)
+                        .orElse(0);
+                    if (currentCartQty + qty > stock.getStock()) {
+                        throw new BusinessException(ErrorCode.PRODUCT_OUT_OF_STOCK);
+                    }
+                });
+        }
 
         try {
             CartItem item = cartItemRepository
@@ -126,7 +142,19 @@ public class CartServiceImpl implements CartService {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
-        item.changeQuantity(request.getQuantity());
+        // ── 재고 검증 ──────────────────────────────────────────────────
+        int newQty = request.getQuantity();
+        if (item.getBuildingId() != null) {
+            productBuildingStockRepository
+                .findByProdIdAndBuildingId(item.getProdId(), item.getBuildingId())
+                .ifPresent(stock -> {
+                    if (newQty > stock.getStock()) {
+                        throw new BusinessException(ErrorCode.PRODUCT_OUT_OF_STOCK);
+                    }
+                });
+        }
+
+        item.changeQuantity(newQty);
         return buildResponse(cart);
     }
 
@@ -246,7 +274,7 @@ public class CartServiceImpl implements CartService {
                     .cartItemId(ci.getCartItemId())
                     .prodId(p.getProdId())
                     .prodNm(p.getProdNm())
-                    .buildingId(ci.getBuildingId())        // ← 빌딩 포함
+                    .buildingId(ci.getBuildingId())
                     .orderPrice(ci.getOrderPrice())
                     .orderQuantity(ci.getOrderQuantity())
                     .lineTotal(lineTotal)

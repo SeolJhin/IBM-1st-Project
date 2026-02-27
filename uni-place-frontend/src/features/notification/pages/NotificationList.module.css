@@ -246,3 +246,11 @@
   font-size: 13px;
   color: rgba(215, 206, 188, 0.3);
 }
+
+/* ── 인라인(팝업 내부) 컨테이너 ── */
+.containerInline {
+  background: #0b0e12;
+  color: #f4ecd8;
+  min-height: 300px;
+  padding-bottom: 16px;
+}

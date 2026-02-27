@@ -258,3 +258,34 @@
     gap: 8px;
   }
 }
+
+/* ── 공용시설 서브탭 (추가) ── */
+.subTabRow {
+  display: flex;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+}
+
+.subTab {
+  padding: 10px 20px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  margin-bottom: -2px;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.subTab:hover {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.subTabActive {
+  color: #c58a3a;
+  border-bottom-color: #c58a3a;
+}

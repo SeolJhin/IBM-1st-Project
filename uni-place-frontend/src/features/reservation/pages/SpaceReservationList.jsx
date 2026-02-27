@@ -61,7 +61,14 @@ function SpaceCard({ item, onCancel }) {
   );
 }
 
-export default function SpaceReservationList() {
+/**
+ * inlineMode=true  → Header/Footer/topBar 없이 컨텐츠만 (마이페이지 탭 용)
+ * onGoCreate       → inlineMode에서 "예약 생성" 버튼 클릭 시 콜백
+ */
+export default function SpaceReservationList({
+  inlineMode = false,
+  onGoCreate,
+}) {
   const nav = useNavigate();
   const { myQuery, setMyQuery, myPage, myLoading, myError, reloadMy, cancel } =
     useSpaceReservations();
@@ -78,38 +85,30 @@ export default function SpaceReservationList() {
     }
   };
 
-  return (
-    <div className={styles.page}>
-      <Header />
-      <div className={styles.topBar}>
+  const listContent = (
+    <>
+      {/* 상단 액션 */}
+      <div className={styles.topActions}>
         <button
-          className={styles.backBtn}
+          className={styles.refreshBtn}
           type="button"
-          onClick={() => nav(-1)}
+          onClick={reloadMy}
+          disabled={myLoading}
         >
-          ←
+          새로고침
         </button>
-        <h1 className={styles.pageTitle}>🛋️ 내 공용공간 예약</h1>
-        <div className={styles.topActions}>
-          <button
-            className={styles.refreshBtn}
-            type="button"
-            onClick={reloadMy}
-            disabled={myLoading}
-          >
-            새로고침
-          </button>
-          <button
-            className={styles.createLink}
-            type="button"
-            onClick={() => nav('/reservations/space/create')}
-          >
-            + 예약 생성
-          </button>
-        </div>
+        <button
+          className={styles.createLink}
+          type="button"
+          onClick={() =>
+            inlineMode && onGoCreate ? onGoCreate() : nav('/me?tab=space')
+          }
+        >
+          + 예약 생성
+        </button>
       </div>
 
-      {/* 페이지네이션 상단 */}
+      {/* 페이지네이션 */}
       <div className={styles.paginationRow}>
         <button
           className={styles.pageBtn}
@@ -146,7 +145,9 @@ export default function SpaceReservationList() {
           <button
             className={styles.goCreateBtn}
             type="button"
-            onClick={() => nav('/reservations/space/create')}
+            onClick={() =>
+              inlineMode && onGoCreate ? onGoCreate() : nav('/me?tab=space')
+            }
           >
             공용공간 예약하기
           </button>
@@ -164,6 +165,42 @@ export default function SpaceReservationList() {
           ))}
         </div>
       )}
+    </>
+  );
+
+  if (inlineMode) return <div className={styles.inlineWrap}>{listContent}</div>;
+
+  return (
+    <div className={styles.page}>
+      <Header />
+      <div className={styles.topBar}>
+        <button
+          className={styles.backBtn}
+          type="button"
+          onClick={() => nav(-1)}
+        >
+          ←
+        </button>
+        <h1 className={styles.pageTitle}>🛋️ 내 공용공간 예약</h1>
+        <div className={styles.topActionsHeader}>
+          <button
+            className={styles.refreshBtn}
+            type="button"
+            onClick={reloadMy}
+            disabled={myLoading}
+          >
+            새로고침
+          </button>
+          <button
+            className={styles.createLink}
+            type="button"
+            onClick={() => nav('/me?tab=space')}
+          >
+            + 예약 생성
+          </button>
+        </div>
+      </div>
+      {listContent}
       <Footer />
     </div>
   );

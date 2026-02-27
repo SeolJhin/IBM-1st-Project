@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notificationApi } from '../../../features/notification/api/notificationApi';
+import Modal from '../../../shared/components/Modal/Modal';
+import NotificationList from '../../../features/notification/pages/NotificationList';
 import styles from './NotificationBell.module.css';
 
 const TARGET_LABEL = {
@@ -23,59 +25,55 @@ function timeAgo(dateStr) {
   return `${Math.floor(h / 24)}일 전`;
 }
 
-/**
- * 헤더에 삽입하는 알림 벨 버튼 + 드롭다운 미리보기
- * props 없이 독립적으로 동작 (내부에서 API 직접 호출)
- */
 export default function NotificationBell() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [notiModalOpen, setNotiModalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [deletingRead, setDeletingRead] = useState(false);
   const dropRef = useRef(null);
 
-  // 읽지 않은 건수 폴링 (30초)
-  const fetchUnread = useCallback(async () => {
+  const fetchUnreadCount = useCallback(async () => {
     try {
-      const res = await notificationApi.getUnread({ page: 0, size: 5 });
+      const res = await notificationApi.getUnread({ page: 0, size: 1 });
       setUnreadCount(res?.unreadCount ?? 0);
-      // 드롭다운이 열려있지 않을 때만 미리 저장
-      if (!open) setItems(res?.notifications?.content ?? []);
     } catch {
-      // 로그인 안 된 상태 등 무시
+      /* 로그인 안 된 상태 등 무시 */
     }
-  }, [open]);
+  }, []);
 
   useEffect(() => {
-    fetchUnread();
-    const id = setInterval(fetchUnread, 30000);
+    fetchUnreadCount();
+    const id = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(id);
-  }, [fetchUnread]);
+  }, [fetchUnreadCount]);
 
-  // 드롭다운 열 때 최신 목록 로드
-  const handleOpen = useCallback(async () => {
-    setOpen((v) => !v);
-    if (open) return;
+  const loadDropdown = useCallback(async () => {
     setLoading(true);
     try {
       const res = await notificationApi.getList({ page: 0, size: 5 });
       setItems(res?.notifications?.content ?? []);
       setUnreadCount(res?.unreadCount ?? 0);
     } catch {
-      // ignore
+      /* ignore */
     } finally {
       setLoading(false);
     }
-  }, [open]);
+  }, []);
 
-  // 외부 클릭 시 닫기
+  const handleOpen = useCallback(() => {
+    const next = !open;
+    setOpen(next);
+    if (next) loadDropdown();
+  }, [open, loadDropdown]);
+
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (dropRef.current && !dropRef.current.contains(e.target)) {
+      if (dropRef.current && !dropRef.current.contains(e.target))
         setOpen(false);
-      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -92,7 +90,7 @@ export default function NotificationBell() {
       );
       setUnreadCount((c) => Math.max(0, c - 1));
     } catch {
-      // ignore
+      /* ignore */
     }
   }, []);
 
@@ -110,7 +108,7 @@ export default function NotificationBell() {
           );
           setUnreadCount((c) => Math.max(0, c - 1));
         } catch {
-          // ignore
+          /* ignore */
         }
       }
       setOpen(false);
@@ -119,114 +117,167 @@ export default function NotificationBell() {
     [navigate]
   );
 
-  const handleMarkAllRead = useCallback(async () => {
-    try {
-      await notificationApi.markAllRead();
-      setItems((prev) => prev.map((n) => ({ ...n, isRead: 'Y' })));
-      setUnreadCount(0);
-    } catch {
-      // ignore
-    }
-  }, []);
+  const handleDeleteRead = useCallback(
+    async (e) => {
+      e.stopPropagation();
+      if (!window.confirm('읽은 알림을 모두 삭제할까요?')) return;
+      setDeletingRead(true);
+      try {
+        await notificationApi.deleteRead();
+        await loadDropdown();
+      } catch {
+        /* ignore */
+      } finally {
+        setDeletingRead(false);
+      }
+    },
+    [loadDropdown]
+  );
 
+  const hasReadItems = items.some((n) => n.isRead === 'Y');
+
+  // "알림 전체 보기" → 팝업으로
   const goToAll = () => {
     setOpen(false);
-    navigate('/notifications');
+    setNotiModalOpen(true);
   };
 
   return (
-    <div className={styles.wrap} ref={dropRef}>
-      {/* 벨 버튼 */}
-      <button
-        className={styles.bellBtn}
-        type="button"
-        aria-label="알림"
-        aria-expanded={open}
-        onClick={handleOpen}
-      >
-        <BellIcon />
-        {unreadCount > 0 && (
-          <span className={styles.badge}>
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </button>
-
-      {/* 드롭다운 */}
-      {open && (
-        <div className={styles.dropdown}>
-          <div className={styles.dropHeader}>
-            <span className={styles.dropTitle}>알림</span>
-            {unreadCount > 0 && (
-              <button
-                className={styles.readAllBtn}
-                type="button"
-                onClick={handleMarkAllRead}
-              >
-                모두 읽음
-              </button>
-            )}
-          </div>
-
-          {loading ? (
-            <div className={styles.loadingWrap}>
-              <span className={styles.spinner} />
-            </div>
-          ) : items.length === 0 ? (
-            <div className={styles.empty}>새로운 알림이 없어요</div>
-          ) : (
-            <ul className={styles.dropList}>
-              {items.map((item) => {
-                const isUnread = item.isRead !== 'Y';
-                return (
-                  <li
-                    key={item.notificationId}
-                    className={`${styles.dropItem} ${isUnread ? styles.unread : ''}`}
-                    onClick={() => handleItemClick(item)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) =>
-                      e.key === 'Enter' && handleItemClick(item)
-                    }
-                  >
-                    <div className={styles.dropItemLeft}>
-                      <span className={styles.typeBadge}>
-                        {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
-                      </span>
-                      <p className={styles.dropMsg}>{item.message}</p>
-                      <span className={styles.dropTime}>
-                        {timeAgo(item.createdAt)}
-                      </span>
-                    </div>
-                    <div className={styles.dropItemRight}>
-                      {isUnread && (
-                        <>
-                          <span className={styles.dot} />
-                          <button
-                            className={styles.readBtn}
-                            type="button"
-                            aria-label="읽음 처리"
-                            onClick={(e) =>
-                              handleMarkRead(item.notificationId, e)
-                            }
-                          >
-                            ✓
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+    <>
+      <div className={styles.wrap} ref={dropRef}>
+        <button
+          className={styles.bellBtn}
+          type="button"
+          aria-label="알림"
+          aria-expanded={open}
+          onClick={handleOpen}
+        >
+          <BellIcon />
+          {unreadCount > 0 && (
+            <span className={styles.badge}>
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
           )}
+        </button>
 
-          <button className={styles.viewAllBtn} type="button" onClick={goToAll}>
-            알림 전체 보기
-          </button>
-        </div>
-      )}
-    </div>
+        {open && (
+          <div className={styles.dropdown}>
+            <div className={styles.dropHeader}>
+              <span className={styles.dropTitle}>알림</span>
+              {unreadCount > 0 && (
+                <button
+                  className={styles.readAllBtn}
+                  type="button"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      await notificationApi.markAllRead();
+                      setItems((prev) =>
+                        prev.map((n) => ({ ...n, isRead: 'Y' }))
+                      );
+                      setUnreadCount(0);
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                >
+                  모두 읽음
+                </button>
+              )}
+            </div>
+
+            {loading ? (
+              <div className={styles.loadingWrap}>
+                <span className={styles.spinner} />
+              </div>
+            ) : items.length === 0 ? (
+              <div className={styles.empty}>새로운 알림이 없어요</div>
+            ) : (
+              <ul className={styles.dropList}>
+                {items.map((item) => {
+                  const isUnread = item.isRead !== 'Y';
+                  return (
+                    <li
+                      key={item.notificationId}
+                      className={`${styles.dropItem} ${isUnread ? styles.unread : styles.read}`}
+                      onClick={() => handleItemClick(item)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' && handleItemClick(item)
+                      }
+                    >
+                      <div className={styles.dropItemLeft}>
+                        <span
+                          className={`${styles.typeBadge} ${!isUnread ? styles.badgeRead : ''}`}
+                        >
+                          {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
+                        </span>
+                        <p
+                          className={`${styles.dropMsg} ${!isUnread ? styles.msgRead : ''}`}
+                        >
+                          {item.message}
+                        </p>
+                        <span className={styles.dropTime}>
+                          {timeAgo(item.createdAt)}
+                        </span>
+                      </div>
+                      <div className={styles.dropItemRight}>
+                        {isUnread && (
+                          <>
+                            <span className={styles.dot} />
+                            <button
+                              className={styles.readBtn}
+                              type="button"
+                              aria-label="읽음 처리"
+                              onClick={(e) =>
+                                handleMarkRead(item.notificationId, e)
+                              }
+                            >
+                              ✓
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className={styles.dropFooter}>
+              {hasReadItems && (
+                <button
+                  className={styles.deleteReadBtn}
+                  type="button"
+                  onClick={handleDeleteRead}
+                  disabled={deletingRead}
+                >
+                  {deletingRead ? '삭제 중…' : '읽은 알림 지우기'}
+                </button>
+              )}
+              <button
+                className={styles.viewAllBtn}
+                type="button"
+                onClick={goToAll}
+              >
+                알림 전체 보기
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 알림 전체보기 팝업 */}
+      <Modal
+        open={notiModalOpen}
+        onClose={() => setNotiModalOpen(false)}
+        title="🔔 알림 전체보기"
+        size="md"
+      >
+        <NotificationList inlineMode />
+      </Modal>
+    </>
   );
 }
 

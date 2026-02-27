@@ -226,3 +226,49 @@
   font-size: 13px;
   color: rgba(215, 206, 188, 0.4);
 }
+
+/* ── 읽음 아이템 ── */
+.dropItem.read {
+  opacity: 0.45;
+}
+.dropItem.read:hover {
+  background: rgba(255, 255, 255, 0.03);
+  opacity: 0.6;
+}
+
+.typeBadge.badgeRead {
+  color: #666;
+  background: rgba(140, 140, 140, 0.15);
+}
+
+.dropMsg.msgRead {
+  color: #888;
+}
+
+/* ── Footer (읽은 알림 지우기 + 전체보기) ── */
+.dropFooter {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+}
+
+.deleteReadBtn {
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #e07070;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s;
+}
+.deleteReadBtn:hover:not(:disabled) {
+  background: rgba(224, 112, 112, 0.08);
+}
+.deleteReadBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

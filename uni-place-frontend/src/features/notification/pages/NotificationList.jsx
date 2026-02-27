@@ -1,12 +1,8 @@
 // src/features/notification/pages/NotificationList.jsx
-// 변경사항:
-//  1. 읽은 알림 → 회색(.read 클래스)
-//  2. "읽은 알림 삭제" 버튼 추가 → DELETE /notifications/read 호출
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Header from '../../../app/layouts/components/Header';
 import { useNotifications } from '../hooks/useNotifications';
-import { notificationApi } from '../api/notificationApi';
 import styles from './NotificationList.module.css';
 
 const TARGET_LABEL = {
@@ -33,15 +29,12 @@ function timeAgo(dateStr) {
 
 function NotificationItem({ item, onRead, onNavigate }) {
   const isUnread = item.isRead !== 'Y';
-
   const handleClick = () => {
     if (isUnread) onRead(item.notificationId);
     if (item.urlPath) onNavigate(item.urlPath);
   };
-
   return (
     <div
-      // ✅ 읽음 여부에 따라 클래스 다르게 적용
       className={`${styles.item} ${isUnread ? styles.unread : styles.read}`}
       onClick={handleClick}
       role="button"
@@ -66,7 +59,10 @@ function NotificationItem({ item, onRead, onNavigate }) {
   );
 }
 
-export default function NotificationList() {
+/**
+ * inlineMode=true → Header 없이 컨텐츠만 (Modal 안에서 사용)
+ */
+export default function NotificationList({ inlineMode = false }) {
   const navigate = useNavigate();
   const [deletingRead, setDeletingRead] = useState(false);
 
@@ -80,15 +76,14 @@ export default function NotificationList() {
     markRead,
     markAllRead,
     refresh,
+    deleteRead,
   } = useNotifications({ autoFetch: true });
 
-  // ✅ 읽은 알림 전체 삭제
   const handleDeleteRead = async () => {
     if (!window.confirm('읽은 알림을 모두 삭제할까요?')) return;
     setDeletingRead(true);
     try {
-      await notificationApi.deleteRead();
-      refresh(); // 목록 새로고침
+      await deleteRead();
     } catch (e) {
       alert(e.message || '삭제에 실패했습니다.');
     } finally {
@@ -98,7 +93,6 @@ export default function NotificationList() {
 
   const hasReadItems = items.some((n) => n.isRead === 'Y');
 
-  // 무한 스크롤 sentinel
   const sentinelRef = useRef(null);
   useEffect(() => {
     const el = sentinelRef.current;
@@ -113,22 +107,22 @@ export default function NotificationList() {
     return () => obs.disconnect();
   }, [loadMore]);
 
-  return (
-    <div className={styles.container}>
-      {/* ── 헤더 ── */}
+  const content = (
+    <div className={inlineMode ? styles.containerInline : styles.container}>
       <div className={styles.pageHeader}>
-        <button
-          className={styles.backBtn}
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label="뒤로"
-        >
-          ←
-        </button>
-
-        <h1 className={styles.title}>알림</h1>
-
-        {/* ✅ 버튼 두 개: 모두 읽음 / 읽은 알림 삭제 */}
+        {!inlineMode && (
+          <button
+            className={styles.backBtn}
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="뒤로"
+          >
+            ←
+          </button>
+        )}
+        <h1 className={styles.title} style={inlineMode ? { fontSize: 15 } : {}}>
+          알림
+        </h1>
         <div className={styles.headerBtns}>
           {unreadCount > 0 && (
             <button
@@ -152,17 +146,14 @@ export default function NotificationList() {
         </div>
       </div>
 
-      {/* ── 읽지 않은 건수 배너 ── */}
       {unreadCount > 0 && (
         <div className={styles.unreadBanner}>
           읽지 않은 알림 <strong>{unreadCount}개</strong>
         </div>
       )}
 
-      {/* ── 에러 ── */}
       {error && <p className={styles.errorMsg}>{error}</p>}
 
-      {/* ── 빈 상태 ── */}
       {!loading && items.length === 0 && !error && (
         <div className={styles.empty}>
           <span className={styles.emptyIcon}>🔔</span>
@@ -170,7 +161,6 @@ export default function NotificationList() {
         </div>
       )}
 
-      {/* ── 목록 ── */}
       <div className={styles.list}>
         {items.map((item) => (
           <NotificationItem
@@ -194,5 +184,14 @@ export default function NotificationList() {
         <p className={styles.endMsg}>모든 알림을 확인했어요</p>
       )}
     </div>
+  );
+
+  if (inlineMode) return content;
+
+  return (
+    <>
+      <Header />
+      {content}
+    </>
   );
 }

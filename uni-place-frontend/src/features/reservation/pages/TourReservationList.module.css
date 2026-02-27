@@ -348,3 +348,15 @@
     padding: 0 16px 12px;
   }
 }
+
+/* ── 인라인 래퍼 ── */
+.inlineWrap {
+  padding: 0;
+}
+
+/* ── 인라인 상단 생성 버튼 ── */
+.topBarInline {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}

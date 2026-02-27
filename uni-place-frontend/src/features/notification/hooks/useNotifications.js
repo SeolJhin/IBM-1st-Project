@@ -92,6 +92,17 @@ export function useNotifications({ autoFetch = true } = {}) {
     }
   }, []);
 
+  /** 읽은 알림 전체 삭제 */
+  const deleteRead = useCallback(async () => {
+    try {
+      await notificationApi.deleteRead();
+      await fetchPage(0, true); // 삭제 후 목록 새로고침
+    } catch (e) {
+      console.error('deleteRead 실패', e);
+      throw e;
+    }
+  }, [fetchPage]);
+
   return {
     items,
     unreadCount,
@@ -102,5 +113,6 @@ export function useNotifications({ autoFetch = true } = {}) {
     refresh,
     markRead,
     markAllRead,
+    deleteRead,
   };
 }
