@@ -1,16 +1,17 @@
 // src/app/http/request.js
 import axios from 'axios';
+import { withApiPrefix } from './apiBase';
 
-/**
- * ✅ CRA proxy 사용 시 baseURL은 "" 유지
- * package.json에 "proxy": "http://localhost:8080"
- */
 const instance = axios.create({
   baseURL: '',
 });
 
 instance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken'); // 토큰 키 다르면 여기만 수정
+  if (config.url) {
+    config.url = withApiPrefix(config.url);
+  }
+
+  const token = localStorage.getItem('accessToken');
   if (token) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
@@ -18,13 +19,8 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
-/**
- * 백엔드 공통 응답 ApiResponse<T> 언랩
- * { success, data, errorCode, message }
- */
 export function unwrapApi(resData) {
   if (!resData) return resData;
-  // axios가 이미 data만 반환할 때도 있으니 방어
   if (typeof resData === 'object' && 'success' in resData) {
     if (resData.success) return resData.data;
     throw new Error(resData.message || 'API error');
@@ -32,7 +28,6 @@ export function unwrapApi(resData) {
   return resData;
 }
 
-/** 공통 GET/POST/PUT */
 export const http = {
   async get(url, config) {
     const { data } = await instance.get(url, config);
@@ -47,3 +42,4 @@ export const http = {
     return unwrapApi(data);
   },
 };
+

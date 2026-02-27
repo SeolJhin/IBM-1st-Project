@@ -1,6 +1,5 @@
 // src/features/admin/api/adminApi.js
-
-const DEFAULT_BASE_URL = '';
+import { withApiPrefix } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
@@ -51,7 +50,7 @@ async function request(
 ) {
   const isFormData = body instanceof FormData;
 
-  const res = await fetch(`${DEFAULT_BASE_URL}${path}`, {
+  const res = await fetch(withApiPrefix(path), {
     method,
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
@@ -75,7 +74,7 @@ async function requestForm(
   path,
   { method = 'POST', formData, headers = {}, auth = false } = {}
 ) {
-  const res = await fetch(`${DEFAULT_BASE_URL}${path}`, {
+  const res = await fetch(withApiPrefix(path), {
     method,
     headers: {
       ...(auth && getAccessToken()
