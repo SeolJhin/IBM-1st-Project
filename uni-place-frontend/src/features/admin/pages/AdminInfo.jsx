@@ -103,6 +103,49 @@ export default function AdminInfo() {
   }, [fetchDashboard]);
 
   const cards = useMemo(
+<<<<<<< HEAD
+    () => [
+      {
+        title: '입주자 수',
+        icon: 'resident',
+        value: `${data.residentCount}명`,
+        // ✅ 현재 App.js에 있는 라우트로 연결 (임시)
+        onClick: () => navigate('/admin/contracts'),
+      },
+      {
+        title: '시설',
+        icon: 'facility',
+        value: `${data.facilityCount}명`,
+        // ✅ 현재 App.js에 있는 라우트로 연결 (spaces가 등록돼 있음)
+        onClick: () => navigate('/admin/property/spaces'),
+      },
+      {
+        title: '투어',
+        icon: 'tour',
+        value: `${data.tourCount}개`,
+        onClick: () => navigate('/admin/reservations/tours'),
+      },
+      {
+        title: '계약',
+        icon: 'contract',
+        value: `${data.contractCount}건`,
+        onClick: () => navigate('/admin/contracts'),
+      },
+      {
+        title: '배너',
+        icon: 'banner',
+        value: `${data.bannerViewCount}건`,
+        onClick: () => navigate('/admin/system/banners'),
+      },
+      {
+        title: '룸서비스',
+        icon: 'roomservice',
+        value: `${data.roomServiceOrderCount}건`,
+        onClick: () => navigate('/admin/roomservice/orders'),
+      },
+    ],
+    [data, navigate]
+=======
     () =>
       CARD_CONFIG.map((config) => {
         const raw = Number(data[config.key] ?? 0);
@@ -135,6 +178,7 @@ export default function AdminInfo() {
             : Math.max(12, (card.rawValue / maxValue) * 100),
       })),
     [cards, maxValue]
+>>>>>>> 4df9241956bd97e5b2980b764de5f293f9b9c645
   );
 
   return (
