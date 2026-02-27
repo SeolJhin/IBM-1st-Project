@@ -200,7 +200,7 @@ export default function RoomDetail() {
 
   useEffect(() => {
     if (!roomId) return;
-    fetch(`/reviews/rooms/${roomId}/summary`)
+    fetch(`/api/reviews/rooms/${roomId}/summary`)
       .then((r) => r.json())
       .then((r) => setReviewSummary(r.data))
       .catch(() => {});
@@ -212,7 +212,7 @@ export default function RoomDetail() {
       setReviewLoading(true);
       try {
         const res = await fetch(
-          `/reviews?roomId=${roomId}&page=${p - 1}&size=5&sort=reviewId&direction=DESC`
+          `/api/reviews?roomId=${roomId}&page=${p - 1}&size=5&sort=reviewId&direction=DESC`
         );
         const json = await res.json();
         const data = json.data;

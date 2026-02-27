@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = '';
+import { withApiPrefix } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
@@ -8,7 +8,7 @@ async function request(
   path,
   { method = 'GET', body, headers = {}, auth = false } = {}
 ) {
-  const res = await fetch(`${DEFAULT_BASE_URL}${path}`, {
+  const res = await fetch(withApiPrefix(path), {
     method,
     headers: {
       'Content-Type': 'application/json',

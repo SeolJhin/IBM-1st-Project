@@ -3,7 +3,7 @@
 // - 모든 응답은 ApiResponse<T> 형태: { success, data, errorCode, message }
 // - buildingId 추가: 상품 목록은 buildingStocks 맵 포함, 주문 생성 시 buildingId 필수
 
-const DEFAULT_BASE_URL = '';
+import { withApiPrefix } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
@@ -13,7 +13,7 @@ async function request(
   path,
   { method = 'GET', body, headers = {}, auth = false } = {}
 ) {
-  const res = await fetch(`${DEFAULT_BASE_URL}${path}`, {
+  const res = await fetch(withApiPrefix(path), {
     method,
     headers: {
       'Content-Type': 'application/json',
