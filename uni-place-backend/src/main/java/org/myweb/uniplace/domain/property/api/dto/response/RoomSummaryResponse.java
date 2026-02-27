@@ -1,15 +1,19 @@
-// 경로: org/myweb/uniplace/domain/property/api/dto/response/RoomSummaryResponse.java
 package org.myweb.uniplace.domain.property.api.dto.response;
 
 import java.math.BigDecimal;
 
 import org.myweb.uniplace.domain.property.domain.entity.Building;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
+import org.myweb.uniplace.domain.property.domain.enums.PetAllowedYn;
 import org.myweb.uniplace.domain.property.domain.enums.RentType;
 import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
+import org.myweb.uniplace.domain.property.domain.enums.RoomType;
 import org.myweb.uniplace.domain.property.domain.enums.SunDirection;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
@@ -19,7 +23,6 @@ public class RoomSummaryResponse {
 
     private Integer roomId;
 
-    // ✅ building 정보(요구사항)
     private Integer buildingId;
     private String buildingNm;
     private String buildingAddr;
@@ -29,6 +32,9 @@ public class RoomSummaryResponse {
     private Integer roomNo;
     private Integer floor;
     private BigDecimal roomSize;
+
+    private RoomType roomType;
+    private PetAllowedYn petAllowedYn;
 
     private BigDecimal deposit;
     private BigDecimal rentPrice;
@@ -41,27 +47,25 @@ public class RoomSummaryResponse {
     private Integer rentMin;
     private SunDirection sunDirection;
 
-    // 추가: 목록에서 바로 미리보기용(첫 번째 이미지)
-    private Integer thumbnailFileId; // 없으면 null
-    private String thumbnailUrl;     // 없으면 null (예: /files/{id}/view)
+    private Integer thumbnailFileId;
+    private String thumbnailUrl;
 
-    // 기존 fromEntity는 유지(썸네일 없는 버전)
     public static RoomSummaryResponse fromEntity(Room e) {
 
         Building b = e.getBuilding();
 
         return RoomSummaryResponse.builder()
                 .roomId(e.getRoomId())
-
                 .buildingId(b != null ? b.getBuildingId() : null)
                 .buildingNm(b != null ? b.getBuildingNm() : null)
                 .buildingAddr(b != null ? b.getBuildingAddr() : null)
                 .buildingDesc(b != null ? b.getBuildingDesc() : null)
                 .parkingCapacity(b != null ? b.getParkingCapacity() : null)
-
                 .roomNo(e.getRoomNo())
                 .floor(e.getFloor())
                 .roomSize(e.getRoomSize())
+                .roomType(e.getRoomType())
+                .petAllowedYn(e.getPetAllowedYn())
                 .deposit(e.getDeposit())
                 .rentPrice(e.getRentPrice())
                 .manageFee(e.getManageFee())
@@ -73,10 +77,8 @@ public class RoomSummaryResponse {
                 .build();
     }
 
-    // ✅ 썸네일까지 채우는 버전
     public static RoomSummaryResponse fromEntity(Room e, Integer thumbnailFileId, String thumbnailUrl) {
         RoomSummaryResponse base = fromEntity(e);
-
         return RoomSummaryResponse.builder()
                 .roomId(base.getRoomId())
                 .buildingId(base.getBuildingId())
@@ -87,6 +89,8 @@ public class RoomSummaryResponse {
                 .roomNo(base.getRoomNo())
                 .floor(base.getFloor())
                 .roomSize(base.getRoomSize())
+                .roomType(base.getRoomType())
+                .petAllowedYn(base.getPetAllowedYn())
                 .deposit(base.getDeposit())
                 .rentPrice(base.getRentPrice())
                 .manageFee(base.getManageFee())
@@ -95,7 +99,6 @@ public class RoomSummaryResponse {
                 .roomCapacity(base.getRoomCapacity())
                 .rentMin(base.getRentMin())
                 .sunDirection(base.getSunDirection())
-
                 .thumbnailFileId(thumbnailFileId)
                 .thumbnailUrl(thumbnailUrl)
                 .build();

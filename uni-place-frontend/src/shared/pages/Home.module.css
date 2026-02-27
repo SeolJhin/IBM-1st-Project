@@ -693,3 +693,90 @@
 
 
 
+
+.typeChipActive{
+  background: #0B0E12;
+  color: #fff;
+  border-color: #0B0E12;
+}
+
+.typeSelectRow{
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.typeSelect{
+  min-width: 180px;
+  border: 1px solid #D7CEBC;
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #201812;
+}
+
+.quickRoomGrid{
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quickRoomCard{
+  text-align: left;
+  border: 1px solid #D7CEBC;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.quickRoomName{
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0B0E12;
+}
+
+.quickRoomMeta{
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #5f5240;
+}
+
+.quickRoomPrice{
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #201812;
+}
+
+.typeHint{
+  margin: 12px 0 0;
+  color: #5f5240;
+  font-size: 13px;
+}
+
+.typeHintError{
+  margin: 12px 0 0;
+  color: #9f2b2b;
+  font-size: 13px;
+}
+
+@media (max-width: 1024px) {
+  .quickRoomGrid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .typeSelect{
+    min-width: 100%;
+  }
+
+  .quickRoomGrid{
+    grid-template-columns: 1fr;
+  }
+}

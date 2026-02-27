@@ -188,7 +188,7 @@ CREATE TABLE building (
 ) ENGINE=InnoDB;
 
 
--- ✅ delete_yn 추가 (soft delete 지원)
+-- delete_yn 추가 (soft delete 지원)
 CREATE TABLE rooms (
   room_id       INT           AUTO_INCREMENT PRIMARY KEY,
   room_no       INT           NOT NULL,
