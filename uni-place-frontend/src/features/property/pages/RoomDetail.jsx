@@ -570,16 +570,44 @@ export default function RoomDetail() {
             )}
 
             {/* ── 방 예약 버튼 ── */}
-            <button
-              className={styles.tourReservationBtn}
-              onClick={handleTourReservation}
-              type="button"
-            >
-              📅 방 사전 방문 예약하기
-            </button>
-            <p className={styles.tourReservationHint}>
-              방문 예약 후 현장에서 직접 확인해보세요
-            </p>
+            {room?.roomSt !== 'available' ? (
+              <>
+                <button
+                  className={styles.tourReservationBtn}
+                  type="button"
+                  disabled
+                  style={{ opacity: 0.45, cursor: 'not-allowed' }}
+                >
+                  📅 방 사전 방문 예약하기
+                </button>
+                <p
+                  className={styles.tourReservationHint}
+                  style={{ color: '#c0392b' }}
+                >
+                  현재 이 방은 예약이 불가합니다 (
+                  {{
+                    reserved: '예약 중',
+                    contracted: '계약 중',
+                    repair: '수리 중',
+                    cleaning: '청소 중',
+                  }[room?.roomSt] || room?.roomSt}
+                  )
+                </p>
+              </>
+            ) : (
+              <>
+                <button
+                  className={styles.tourReservationBtn}
+                  onClick={handleTourReservation}
+                  type="button"
+                >
+                  📅 방 사전 방문 예약하기
+                </button>
+                <p className={styles.tourReservationHint}>
+                  방문 예약 후 현장에서 직접 확인해보세요
+                </p>
+              </>
+            )}
           </div>
         </div>
 

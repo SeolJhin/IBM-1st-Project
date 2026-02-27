@@ -1,6 +1,8 @@
+// src/features/notification/api/notificationApi.js
+// ✅ 변경사항: deleteRead() 추가 — DELETE /notifications/read
+
 import { api } from '../../../app/http/axiosInstance';
 
-/** 백엔드 ApiResponse<T> { success, data, ... } 언랩 */
 const unwrap = (res) => {
   const d = res.data;
   if (d && typeof d === 'object' && 'success' in d) {
@@ -11,10 +13,7 @@ const unwrap = (res) => {
 };
 
 export const notificationApi = {
-  /**
-   * GET /notifications
-   * → { notifications: { content, page, size, totalElements, totalPages }, unreadCount }
-   */
+  /** GET /notifications */
   getList: (params = {}) =>
     api
       .get('/notifications', {
@@ -22,10 +21,7 @@ export const notificationApi = {
       })
       .then(unwrap),
 
-  /**
-   * GET /notifications/unread
-   * → { notifications: PageResponse, unreadCount }
-   */
+  /** GET /notifications/unread */
   getUnread: (params = {}) =>
     api
       .get('/notifications/unread', {
@@ -33,15 +29,16 @@ export const notificationApi = {
       })
       .then(unwrap),
 
-  /**
-   * PATCH /notifications/read  body: { notificationId }
-   */
+  /** PATCH /notifications/read  { notificationId } */
   markRead: (notificationId) =>
     api.patch('/notifications/read', { notificationId }).then(unwrap),
 
-  /**
-   * PATCH /notifications/read-all
-   * → number (읽음 처리된 건수)
-   */
+  /** PATCH /notifications/read-all */
   markAllRead: () => api.patch('/notifications/read-all').then(unwrap),
+
+  /**
+   * ✅ DELETE /notifications/read
+   * 읽은 알림 전체 삭제 → 삭제된 건수(Integer) 반환
+   */
+  deleteRead: () => api.delete('/notifications/read').then(unwrap),
 };

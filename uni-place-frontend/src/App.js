@@ -7,6 +7,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from './shared/components/ScrollToTop';
 import Home from './shared/pages/Home';
 import About from './shared/pages/About';
+import CompanyInfo from './shared/pages/CompanyInfo';
 
 // ── 유저 ──────────────────────────────────────────────────────
 import Login from './features/user/pages/Login';
@@ -18,6 +19,13 @@ import RoomList from './features/property/pages/RoomList';
 import RoomDetail from './features/property/pages/RoomDetail';
 import SpaceDetail from './features/property/pages/SpaceDetail';
 import BuildingDetail from './features/property/pages/BuildingDetail';
+
+// ── Commerce ──────────────────────────────────────────────────
+import ProductList from './features/commerce/pages/ProductList';
+import Cart from './features/commerce/pages/Cart';
+import OrderList from './features/commerce/pages/OrderList';
+import OrderDetail from './features/commerce/pages/OrderDetail';
+import Checkout from './features/commerce/pages/Checkout';
 
 // ── 예약 ──────────────────────────────────────────────────────
 import SpaceReservationCreate from './features/reservation/pages/SpaceReservationCreate';
@@ -75,6 +83,7 @@ export default function App() {
       <Routes>
         {/* ── 공통 ── */}
         <Route path="/" element={<Home />} />
+        <Route path="/company_info" element={<CompanyInfo />} />
         <Route path="/about" element={<About variant="about" />} />
         <Route path="/community" element={<About variant="community" />} />
         <Route path="/guide" element={<About variant="guide" />} />
@@ -121,6 +130,12 @@ export default function App() {
         <Route path="/reviews/:reviewId/edit" element={<ReviewWrite />} />
         <Route path="/reviews/my" element={<MyReviewsList />} />
         <Route path="/reviews/:reviewId" element={<MyReviewsDetail />} />
+        {/* ── 커머스 ── */}
+        <Route path="/commerce/room-service" element={<ProductList />} />
+        <Route path="/commerce/cart" element={<Cart />} />
+        <Route path="/commerce/orders" element={<OrderList />} />
+        <Route path="/commerce/orders/:orderId" element={<OrderDetail />} />
+        <Route path="/commerce/checkout" element={<Checkout />} />
 
         {/* ── 어드민 (로그인 + ADMIN 역할 필요) ── */}
         <Route element={<RequireAuth />}>
