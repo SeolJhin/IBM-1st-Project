@@ -69,7 +69,7 @@ export function useFaqs(initialParams = {}) {
   }, [fetchFaqs, params]);
 
   return {
-    faqs,         // FaqResponse[]
+    faqs, // FaqResponse[]
     pagination,
     loading,
     error,

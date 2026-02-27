@@ -71,7 +71,7 @@ export function useNotices(initialParams = {}) {
   }, [fetchNotices, params]);
 
   return {
-    notices,      // NoticeResponse[]
+    notices, // NoticeResponse[]
     pagination,
     loading,
     error,
