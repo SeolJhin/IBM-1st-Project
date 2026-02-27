@@ -41,16 +41,17 @@ export default function Login() {
     }
   };
 
+  const backendBaseUrl =
+    process.env.REACT_APP_BACKEND_BASE_URL || 'http://localhost:8080';
+
   // ✅ 버튼만 존재(기능 없음) / 나중에 연결
   const goSignup = () => navigate('/signup');
   const goFind = () => alert('ID/PW 찾기 기능은 추후 연결 예정입니다.');
   const goKakao = () => {
-    // 소셜 로그인 연결 시, 백엔드 OAuth 엔드포인트로 이동
-    // 예: window.location.href = "/oauth2/authorization/kakao" 또는 "/auth/oauth2/kakao"
-    alert('카카오 로그인은 추후 연결 예정입니다.');
+    window.location.href = `${backendBaseUrl}/oauth2/authorization/kakao`;
   };
   const goGoogle = () => {
-    alert('Google 로그인은 추후 연결 예정입니다.');
+    window.location.href = `${backendBaseUrl}/oauth2/authorization/google`;
   };
 
   return (

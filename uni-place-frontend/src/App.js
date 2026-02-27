@@ -13,6 +13,7 @@ import CompanyInfo from './shared/pages/CompanyInfo';
 import Login from './features/user/pages/Login';
 import Signup from './features/user/pages/Signup';
 import MemberInfo from './features/user/pages/MemberInfo';
+import OAuth2Success from './features/user/pages/OAuth2Success';
 
 // ── Property ──────────────────────────────────────────────────
 import RoomList from './features/property/pages/RoomList';
@@ -92,6 +93,7 @@ export default function App() {
         {/* ── 유저 ── */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/oauth2/success" element={<OAuth2Success />} />
         <Route path="/me" element={<MemberInfo />} />
 
         {/* ── Property ── */}

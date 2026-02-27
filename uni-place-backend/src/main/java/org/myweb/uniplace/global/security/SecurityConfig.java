@@ -3,6 +3,7 @@ package org.myweb.uniplace.global.security;
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.security.oauth.CustomOAuth2UserService;
+import org.myweb.uniplace.global.security.oauth.OAuth2FailureHandler;
 import org.myweb.uniplace.global.security.oauth.OAuth2SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +29,7 @@ public class SecurityConfig {
     private final UserRepository userRepository;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
 
@@ -50,6 +52,8 @@ public class SecurityConfig {
                 .requestMatchers("/auth/logout").permitAll()
                 .requestMatchers("/auth/oauth2/kakao/complete").permitAll()
                 .requestMatchers("/auth/oauth2/google/complete").permitAll()
+                .requestMatchers("/error").permitAll()
+                .requestMatchers("/member/login").permitAll()
                 .requestMatchers("/login/**").permitAll()
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/v4/api-docs/**").permitAll()
@@ -88,8 +92,9 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/member/login")
+                .loginPage("/login")
                 .successHandler(oAuth2SuccessHandler)
+                .failureHandler(oAuth2FailureHandler)
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                 .permitAll()
             )
