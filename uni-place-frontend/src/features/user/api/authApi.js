@@ -85,6 +85,18 @@ export const authApi = {
       body: { refreshToken, deviceId },
     }),
 
+  kakaoComplete: ({ signupToken, userNm, userBirth, userTel }) =>
+    request('/auth/oauth2/kakao/complete', {
+      method: 'POST',
+      body: { signupToken, userNm, userBirth, userTel },
+    }),
+
+  googleComplete: ({ signupToken, userNm, userBirth, userTel }) =>
+    request('/auth/oauth2/google/complete', {
+      method: 'POST',
+      body: { signupToken, userNm, userBirth, userTel },
+    }),
+
   // ===== UserController (/users) =====
   me: () => request('/users/me', { auth: true }),
 

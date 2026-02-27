@@ -20,6 +20,12 @@ bin/
 # local secret configs
 **/src/main/resources/application-local.properties
 **/src/main/resources/application-*.secret.properties
+*.env*
+*env
+.env
+.env.*
+!.env.example
+
 
 ### IntelliJ IDEA ###
 .idea
@@ -42,4 +48,3 @@ out/
 /.metadata/
 # application 관련 파일/폴더 무시
 .application/
-

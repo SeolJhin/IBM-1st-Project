@@ -1,0 +1,57 @@
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fdf7ec 0%, #ffffff 100%);
+}
+
+.wrap {
+  min-height: calc(100vh - 80px);
+  display: grid;
+  place-items: center;
+  padding: 40px 20px;
+}
+
+.card {
+  width: min(520px, 100%);
+  background: #fff;
+  border: 1px solid #d7cebc;
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.card p {
+  margin: 0 0 18px;
+  color: #5a4e3f;
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+}
+
+.form input {
+  height: 42px;
+  border: 1px solid #d7cebc;
+  border-radius: 10px;
+  padding: 0 12px;
+}
+
+.form button,
+.card button {
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: #201812;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.error {
+  color: #b42318;
+  font-size: 13px;
+}
