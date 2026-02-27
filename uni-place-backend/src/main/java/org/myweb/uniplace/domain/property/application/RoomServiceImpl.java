@@ -90,6 +90,9 @@ public class RoomServiceImpl implements RoomService {
                 request.getMinRoomSize(),
                 request.getMaxRoomSize(),
 
+                request.getRoomType(),
+                request.getPetAllowedYn(),
+
                 request.getMinDeposit(),
                 request.getMaxDeposit(),
 
@@ -145,6 +148,8 @@ public class RoomServiceImpl implements RoomService {
                 .roomNo(request.getRoomNo())
                 .floor(request.getFloor())
                 .roomSize(request.getRoomSize())
+                .roomType(request.getRoomType())
+                .petAllowedYn(request.getPetAllowedYn())
                 .deposit(request.getDeposit())
                 .rentPrice(request.getRentPrice())
                 .manageFee(request.getManageFee())
@@ -190,6 +195,8 @@ public class RoomServiceImpl implements RoomService {
         if (request.getRoomNo() != null)       room.setRoomNo(request.getRoomNo());
         if (request.getFloor() != null)         room.setFloor(request.getFloor());
         if (request.getRoomSize() != null)      room.setRoomSize(request.getRoomSize());
+        if (request.getRoomType() != null)      room.setRoomType(request.getRoomType());
+        if (request.getPetAllowedYn() != null)  room.setPetAllowedYn(request.getPetAllowedYn());
 
         if (request.getDeposit() != null)       room.setDeposit(request.getDeposit());
         if (request.getRentPrice() != null)     room.setRentPrice(request.getRentPrice());

@@ -1,17 +1,20 @@
-// DTO
-// 경로: org/myweb/uniplace/domain/property/api/dto/request/RoomUpdateRequest.java
 package org.myweb.uniplace.domain.property.api.dto.request;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.myweb.uniplace.domain.property.domain.enums.PetAllowedYn;
 import org.myweb.uniplace.domain.property.domain.enums.RentType;
 import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
+import org.myweb.uniplace.domain.property.domain.enums.RoomType;
 import org.myweb.uniplace.domain.property.domain.enums.SunDirection;
-
 import org.springframework.web.multipart.MultipartFile;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -25,6 +28,9 @@ public class RoomUpdateRequest {
     private Integer roomNo;
     private Integer floor;
     private BigDecimal roomSize;
+
+    private RoomType roomType;
+    private PetAllowedYn petAllowedYn;
 
     private BigDecimal deposit;
     private BigDecimal rentPrice;
