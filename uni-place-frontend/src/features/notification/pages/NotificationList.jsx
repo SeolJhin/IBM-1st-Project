@@ -1,9 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+// src/features/notification/pages/NotificationList.jsx
+// 변경사항:
+//  1. 읽은 알림 → 회색(.read 클래스)
+//  2. "읽은 알림 삭제" 버튼 추가 → DELETE /notifications/read 호출
+
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../hooks/useNotifications';
+import { notificationApi } from '../api/notificationApi';
 import styles from './NotificationList.module.css';
 
-/** TargetType → 한국어 레이블 */
 const TARGET_LABEL = {
   board: '게시글',
   reply: '댓글',
@@ -13,7 +18,6 @@ const TARGET_LABEL = {
   review: '리뷰',
 };
 
-/** 경과 시간 표시 */
 function timeAgo(dateStr) {
   if (!dateStr) return '';
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -37,17 +41,24 @@ function NotificationItem({ item, onRead, onNavigate }) {
 
   return (
     <div
-      className={`${styles.item} ${isUnread ? styles.unread : ''}`}
+      // ✅ 읽음 여부에 따라 클래스 다르게 적용
+      className={`${styles.item} ${isUnread ? styles.unread : styles.read}`}
       onClick={handleClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
     >
       <div className={styles.itemLeft}>
-        <span className={styles.typeBadge}>
+        <span
+          className={`${styles.typeBadge} ${!isUnread ? styles.badgeRead : ''}`}
+        >
           {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
         </span>
-        <p className={styles.message}>{item.message}</p>
+        <p
+          className={`${styles.message} ${!isUnread ? styles.messageRead : ''}`}
+        >
+          {item.message}
+        </p>
         <span className={styles.time}>{timeAgo(item.createdAt)}</span>
       </div>
       {isUnread && <span className={styles.dot} aria-label="읽지 않음" />}
@@ -57,6 +68,8 @@ function NotificationItem({ item, onRead, onNavigate }) {
 
 export default function NotificationList() {
   const navigate = useNavigate();
+  const [deletingRead, setDeletingRead] = useState(false);
+
   const {
     items,
     unreadCount,
@@ -66,7 +79,24 @@ export default function NotificationList() {
     loadMore,
     markRead,
     markAllRead,
+    refresh,
   } = useNotifications({ autoFetch: true });
+
+  // ✅ 읽은 알림 전체 삭제
+  const handleDeleteRead = async () => {
+    if (!window.confirm('읽은 알림을 모두 삭제할까요?')) return;
+    setDeletingRead(true);
+    try {
+      await notificationApi.deleteRead();
+      refresh(); // 목록 새로고침
+    } catch (e) {
+      alert(e.message || '삭제에 실패했습니다.');
+    } finally {
+      setDeletingRead(false);
+    }
+  };
+
+  const hasReadItems = items.some((n) => n.isRead === 'Y');
 
   // 무한 스크롤 sentinel
   const sentinelRef = useRef(null);
@@ -85,7 +115,7 @@ export default function NotificationList() {
 
   return (
     <div className={styles.container}>
-      {/* 헤더 */}
+      {/* ── 헤더 ── */}
       <div className={styles.pageHeader}>
         <button
           className={styles.backBtn}
@@ -95,28 +125,44 @@ export default function NotificationList() {
         >
           ←
         </button>
+
         <h1 className={styles.title}>알림</h1>
-        {unreadCount > 0 && (
-          <button
-            className={styles.readAllBtn}
-            type="button"
-            onClick={markAllRead}
-          >
-            모두 읽음
-          </button>
-        )}
+
+        {/* ✅ 버튼 두 개: 모두 읽음 / 읽은 알림 삭제 */}
+        <div className={styles.headerBtns}>
+          {unreadCount > 0 && (
+            <button
+              className={styles.readAllBtn}
+              type="button"
+              onClick={markAllRead}
+            >
+              모두 읽음
+            </button>
+          )}
+          {hasReadItems && (
+            <button
+              className={styles.deleteReadBtn}
+              type="button"
+              onClick={handleDeleteRead}
+              disabled={deletingRead}
+            >
+              {deletingRead ? '삭제 중…' : '읽은 알림 삭제'}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* 읽지 않은 건수 */}
+      {/* ── 읽지 않은 건수 배너 ── */}
       {unreadCount > 0 && (
         <div className={styles.unreadBanner}>
           읽지 않은 알림 <strong>{unreadCount}개</strong>
         </div>
       )}
 
-      {/* 목록 */}
+      {/* ── 에러 ── */}
       {error && <p className={styles.errorMsg}>{error}</p>}
 
+      {/* ── 빈 상태 ── */}
       {!loading && items.length === 0 && !error && (
         <div className={styles.empty}>
           <span className={styles.emptyIcon}>🔔</span>
@@ -124,6 +170,7 @@ export default function NotificationList() {
         </div>
       )}
 
+      {/* ── 목록 ── */}
       <div className={styles.list}>
         {items.map((item) => (
           <NotificationItem
@@ -135,7 +182,6 @@ export default function NotificationList() {
         ))}
       </div>
 
-      {/* 무한 스크롤 sentinel */}
       <div ref={sentinelRef} className={styles.sentinel} />
 
       {loading && (
