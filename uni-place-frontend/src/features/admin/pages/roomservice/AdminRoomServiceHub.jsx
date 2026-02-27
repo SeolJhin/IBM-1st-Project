@@ -14,7 +14,7 @@ export default function AdminServiceHub() {
 
       <div className={styles.tabs}>
         <NavLink
-          to="/admin/roomservice/orders"
+          to="/admin/roomservice/room_orders"
           end
           className={({ isActive }) =>
             `${styles.tab} ${isActive ? styles.tabActive : ''}`
@@ -24,7 +24,7 @@ export default function AdminServiceHub() {
         </NavLink>
 
         <NavLink
-          to="/admin/roomservice/products"
+          to="/admin/roomservice/room_products"
           className={({ isActive }) =>
             `${styles.tab} ${isActive ? styles.tabActive : ''}`
           }

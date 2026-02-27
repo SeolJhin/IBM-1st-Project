@@ -4,8 +4,10 @@ package org.myweb.uniplace.domain.property.repository;
 import java.math.BigDecimal;
 
 import org.myweb.uniplace.domain.property.domain.entity.Room;
+import org.myweb.uniplace.domain.property.domain.enums.PetAllowedYn;
 import org.myweb.uniplace.domain.property.domain.enums.RentType;
 import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
+import org.myweb.uniplace.domain.property.domain.enums.RoomType;
 import org.myweb.uniplace.domain.property.domain.enums.SunDirection;
 
 import org.springframework.data.domain.Page;
@@ -32,6 +34,9 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
 
            and (:minRoomSize is null or r.roomSize >= :minRoomSize)
            and (:maxRoomSize is null or r.roomSize <= :maxRoomSize)
+
+           and (:roomType is null or r.roomType = :roomType)
+           and (:petAllowedYn is null or r.petAllowedYn = :petAllowedYn)
            
            and (:minDeposit is null or r.deposit is null or r.deposit >= :minDeposit)
            and (:maxDeposit is null or r.deposit is null or r.deposit <= :maxDeposit)
@@ -65,6 +70,9 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
 
             @Param("minRoomSize") BigDecimal minRoomSize,
             @Param("maxRoomSize") BigDecimal maxRoomSize,
+
+            @Param("roomType") RoomType roomType,
+            @Param("petAllowedYn") PetAllowedYn petAllowedYn,
 
             @Param("minDeposit") BigDecimal minDeposit,
             @Param("maxDeposit") BigDecimal maxDeposit,
