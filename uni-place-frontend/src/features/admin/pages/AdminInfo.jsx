@@ -103,7 +103,6 @@ export default function AdminInfo() {
   }, [fetchDashboard]);
 
   const cards = useMemo(
-<<<<<<< HEAD
     () => [
       {
         title: '입주자 수',
@@ -144,8 +143,7 @@ export default function AdminInfo() {
         onClick: () => navigate('/admin/roomservice/orders'),
       },
     ],
-    [data, navigate]
-=======
+    [data, navigate],
     () =>
       CARD_CONFIG.map((config) => {
         const raw = Number(data[config.key] ?? 0);
@@ -178,7 +176,6 @@ export default function AdminInfo() {
             : Math.max(12, (card.rawValue / maxValue) * 100),
       })),
     [cards, maxValue]
->>>>>>> 4df9241956bd97e5b2980b764de5f293f9b9c645
   );
 
   return (
