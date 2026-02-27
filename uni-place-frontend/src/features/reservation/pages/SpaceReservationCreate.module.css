@@ -1,0 +1,333 @@
+/* SpaceReservationCreate.module.css — UNI PLACE 브랜드 스타일 */
+
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 0 80px;
+  min-height: 100vh;
+  background: #f9f5ef;
+  color: #2d2416;
+  font-family: inherit;
+}
+
+.centerBox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.spinner {
+  display: inline-block;
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(186, 128, 55, 0.2);
+  border-top-color: #ba8037;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── 상단 바 ── */
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 28px;
+  background: #fff;
+  border-bottom: 2px solid #e8dfd0;
+  box-shadow: 0 2px 12px rgba(58, 46, 32, 0.06);
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: #ba8037;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  line-height: 1;
+}
+.backBtn:hover {
+  background: rgba(186, 128, 55, 0.1);
+}
+
+.pageTitle {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #3a2e20;
+  letter-spacing: -0.3px;
+}
+
+.listLink {
+  background: none;
+  border: 1.5px solid #ba8037;
+  color: #ba8037;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.listLink:hover {
+  background: #ba8037;
+  color: #fff;
+}
+
+/* ── 폼 ── */
+.form {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── 섹션 카드 ── */
+.section {
+  background: #fff;
+  border: 1.5px solid #e8dfd0;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(58, 46, 32, 0.04);
+  transition: box-shadow 0.2s;
+}
+.section:hover {
+  box-shadow: 0 4px 16px rgba(58, 46, 32, 0.08);
+}
+
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #3a2e20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sectionTitle::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: #ba8037;
+  border-radius: 2px;
+}
+
+.refreshBtn {
+  background: #f5f0e8;
+  border: 1px solid #d7cebc;
+  color: #7a6a50;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.refreshBtn:hover:not(:disabled) {
+  background: #ba8037;
+  color: #fff;
+  border-color: #ba8037;
+}
+.refreshBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── 폼 요소 ── */
+.rowGroup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #7a6a50;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.input,
+.select {
+  background: #faf7f3;
+  border: 1.5px solid #e8dfd0;
+  border-radius: 10px;
+  color: #3a2e20;
+  font-size: 14px;
+  padding: 11px 14px;
+  outline: none;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.input::placeholder {
+  color: #c5b99a;
+}
+.input:focus,
+.select:focus {
+  border-color: #ba8037;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(186, 128, 55, 0.1);
+}
+.input:disabled,
+.select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f0ece5;
+}
+.select {
+  cursor: pointer;
+}
+
+.autoSelectedBadge {
+  margin: 0;
+  font-size: 12px;
+  color: #ba8037;
+  background: rgba(186, 128, 55, 0.1);
+  border: 1px solid rgba(186, 128, 55, 0.25);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-weight: 600;
+}
+.selectedHint {
+  margin: 0;
+  font-size: 13px;
+  color: #9a8c70;
+}
+.selectedHint strong {
+  color: #ba8037;
+}
+.mutedMsg {
+  margin: 0;
+  font-size: 13px;
+  color: #b0a080;
+}
+.errMsg {
+  margin: 0;
+  font-size: 13px;
+  color: #c0392b;
+}
+
+/* ── 예약 요약 ── */
+.summaryBox {
+  background: linear-gradient(135deg, #fff8ef 0%, #fff3e0 100%);
+  border: 1.5px solid rgba(186, 128, 55, 0.3);
+  border-radius: 14px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 12px rgba(186, 128, 55, 0.08);
+}
+.summaryTitle {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #ba8037;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.summaryGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 24px;
+  font-size: 13px;
+}
+.summaryGrid span:nth-child(odd) {
+  color: #9a8c70;
+  font-weight: 600;
+}
+.summaryGrid span:nth-child(even) {
+  color: #3a2e20;
+  font-weight: 500;
+}
+
+/* ── 버튼 행 ── */
+.btnRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+.cancelBtn {
+  background: none;
+  border: 1.5px solid #d7cebc;
+  color: #9a8c70;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cancelBtn:hover {
+  border-color: #9a8c70;
+  color: #5a4a30;
+}
+.submitBtn {
+  background: linear-gradient(135deg, #c4923f, #ba8037);
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 12px 32px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 3px 12px rgba(186, 128, 55, 0.35);
+  letter-spacing: 0.3px;
+}
+.submitBtn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d4a24f, #ca9047);
+  box-shadow: 0 5px 18px rgba(186, 128, 55, 0.45);
+  transform: translateY(-1px);
+}
+.submitBtn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.submitBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (max-width: 600px) {
+  .form {
+    padding: 16px;
+  }
+  .rowGroup {
+    grid-template-columns: 1fr;
+  }
+  .btnRow {
+    flex-direction: column-reverse;
+  }
+  .submitBtn,
+  .cancelBtn {
+    width: 100%;
+    text-align: center;
+  }
+}

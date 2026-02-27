@@ -12,4 +12,5 @@ public interface AuthService {
     
     // ✅ 카카오 소셜 로그인 "추가정보 입력 완료" 처리
     UserTokenResponse kakaoComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
+    UserTokenResponse googleComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
 }

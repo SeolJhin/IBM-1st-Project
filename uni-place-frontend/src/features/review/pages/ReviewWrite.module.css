@@ -1,0 +1,253 @@
+/* ReviewWrite.module.css */
+
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 0 48px;
+  min-height: 100vh;
+  background: #0b0e12;
+  color: #f4ecd8;
+}
+
+/* ─── Header ─── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #0b0e12;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.backBtn {
+  background: none;
+  border: none;
+  color: #d9ad5b;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.backBtn:hover {
+  background: rgba(217, 173, 91, 0.12);
+}
+.title {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* ─── Form ─── */
+.form {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #d7cebc;
+}
+.required {
+  color: #e07070;
+  margin-left: 2px;
+}
+
+/* ─── 별점 ─── */
+.starPicker {
+  display: flex;
+  gap: 6px;
+}
+.starPickBtn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s;
+  line-height: 1;
+}
+.starPickBtn:hover {
+  transform: scale(1.15);
+}
+.starOn {
+  color: #d9ad5b;
+}
+.starOff {
+  color: rgba(215, 206, 188, 0.15);
+}
+.ratingLabel {
+  font-size: 12px;
+  color: #d9ad5b;
+  font-weight: 600;
+}
+
+/* ─── Input / Textarea ─── */
+.input,
+.textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #161a22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #f4ecd8;
+  font-size: 14px;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.input::placeholder,
+.textarea::placeholder {
+  color: rgba(215, 206, 188, 0.25);
+}
+.input:focus,
+.textarea:focus {
+  border-color: #d9ad5b;
+}
+.textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+.charCount {
+  font-size: 11px;
+  color: rgba(215, 206, 188, 0.3);
+  text-align: right;
+}
+
+/* ─── 이미지 업로드 ─── */
+.imageUploadArea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.imagePreview {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.previewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.removeImgBtn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e07070;
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+}
+.addImageBtn {
+  width: 80px;
+  height: 80px;
+  background: #161a22;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  color: rgba(215, 206, 188, 0.35);
+  font-size: 11px;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.addImageBtn:hover {
+  border-color: #d9ad5b;
+  color: #d9ad5b;
+}
+.addImageIcon {
+  font-size: 22px;
+}
+
+.deleteFilesRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.deleteFilesRow input[type='checkbox'] {
+  accent-color: #d9ad5b;
+  width: 16px;
+  height: 16px;
+}
+.deleteFilesRow label {
+  font-size: 13px;
+  color: rgba(215, 206, 188, 0.55);
+  cursor: pointer;
+}
+
+/* ─── Error ─── */
+.errorMsg {
+  font-size: 13px;
+  color: #e07070;
+  padding: 4px 0;
+  margin: 0;
+}
+
+/* ─── Submit ─── */
+.submitBtn {
+  width: 100%;
+  padding: 14px;
+  background: #d9ad5b;
+  border: none;
+  border-radius: 12px;
+  color: #201812;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.submitBtn:hover:not(:disabled) {
+  background: #ffd993;
+}
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Loading ─── */
+.loadingWrap {
+  display: flex;
+  justify-content: center;
+  padding: 80px;
+}
+.spinner {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(217, 173, 91, 0.2);
+  border-top-color: #d9ad5b;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

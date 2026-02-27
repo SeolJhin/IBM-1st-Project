@@ -119,6 +119,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public void createReview(ReviewCreateRequest request, List<MultipartFile> files) {
         String userId = requireCurrentUserId();
+        requireTenantRole();
 
         // 방 존재 여부 + 삭제 여부 확인
         Room reviewRoom = roomRepository.findById(request.getRoomId())
@@ -167,6 +168,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public void updateReview(int reviewId, ReviewUpdateRequest request, boolean deleteFiles, List<MultipartFile> files) {
         String me = requireCurrentUserId();
+        requireTenantRole();
         Review review = findReviewOrThrow(reviewId);
 
         if (!me.equals(review.getUserId())) {
@@ -194,6 +196,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public void deleteReview(int reviewId) {
         String me = requireCurrentUserId();
+        requireTenantRole();
         Review review = findReviewOrThrow(reviewId);
 
         if (!me.equals(review.getUserId())) {
@@ -258,5 +261,13 @@ public class ReviewServiceImpl implements ReviewService {
         Object p = auth.getPrincipal();
         if (p instanceof AuthUser au) return au.getUserId();
         throw new BusinessException(ErrorCode.UNAUTHORIZED);
+    }
+
+    private void requireTenantRole() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        boolean isTenant = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_TENANT"));
+        if (!isTenant) throw new BusinessException(ErrorCode.REVIEW_TENANT_ONLY);
     }
 }

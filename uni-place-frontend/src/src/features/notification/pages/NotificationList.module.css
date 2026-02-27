@@ -1,0 +1,201 @@
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 0 48px;
+  min-height: 100vh;
+  background: #0b0e12;
+  color: #f4ecd8;
+}
+
+/* ─── Header ─── */
+.pageHeader {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #0b0e12;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: #d9ad5b;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.backBtn:hover {
+  background: rgba(217, 173, 91, 0.12);
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.readAllBtn {
+  background: none;
+  border: 1px solid rgba(217, 173, 91, 0.5);
+  color: #d9ad5b;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.readAllBtn:hover {
+  background: rgba(217, 173, 91, 0.12);
+}
+
+/* ─── Unread Banner ─── */
+.unreadBanner {
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #d7cebc;
+  background: rgba(217, 173, 91, 0.08);
+  border-bottom: 1px solid rgba(217, 173, 91, 0.15);
+}
+.unreadBanner strong {
+  color: #d9ad5b;
+}
+
+/* ─── List ─── */
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: background 0.15s;
+  background: transparent;
+}
+.item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.item:focus-visible {
+  outline: 2px solid #d9ad5b;
+  outline-offset: -2px;
+}
+
+.item.unread {
+  background: rgba(217, 173, 91, 0.05);
+}
+.item.unread:hover {
+  background: rgba(217, 173, 91, 0.1);
+}
+
+.itemLeft {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.typeBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #d9ad5b;
+  background: rgba(217, 173, 91, 0.15);
+  border-radius: 4px;
+  padding: 2px 6px;
+  width: fit-content;
+}
+
+.message {
+  margin: 0;
+  font-size: 14px;
+  color: #f4ecd8;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time {
+  font-size: 12px;
+  color: rgba(215, 206, 188, 0.5);
+}
+
+/* 읽지 않음 점 */
+.dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d9ad5b;
+  box-shadow: 0 0 6px rgba(217, 173, 91, 0.6);
+}
+
+/* ─── Empty ─── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 80px 16px;
+  color: rgba(215, 206, 188, 0.4);
+  font-size: 14px;
+}
+.emptyIcon {
+  font-size: 40px;
+}
+
+/* ─── Loading ─── */
+.loadingWrap {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(217, 173, 91, 0.2);
+  border-top-color: #d9ad5b;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sentinel {
+  height: 1px;
+}
+
+.errorMsg {
+  padding: 20px 16px;
+  color: #e07070;
+  font-size: 14px;
+  text-align: center;
+}
+
+.endMsg {
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+  color: rgba(215, 206, 188, 0.3);
+}

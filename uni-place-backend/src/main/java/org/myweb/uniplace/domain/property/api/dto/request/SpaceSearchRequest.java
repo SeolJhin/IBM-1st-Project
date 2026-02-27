@@ -4,6 +4,7 @@ package org.myweb.uniplace.domain.property.api.dto.request;
 
 import lombok.*;
 
+@Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor

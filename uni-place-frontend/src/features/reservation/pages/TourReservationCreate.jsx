@@ -1,14 +1,27 @@
+// features/reservation/pages/TourReservationCreate.jsx
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { propertyApi } from '../../property/api/propertyApi';
 import { reservationApi } from '../api/reservationApi';
+import Header from '../../../app/layouts/components/Header';
+import Footer from '../../../app/layouts/components/Footer';
 
 import BuildingSlotButtons from '../components/BuildingSlotButtons';
 import TimeSlotButtons from '../components/TimeSlotButtons';
+import styles from './TourReservationCreate.module.css';
 
 export default function TourReservationCreate() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // URL에서 자동 선택값 읽기
+  const initRoomId = searchParams.get('roomId')
+    ? String(searchParams.get('roomId'))
+    : '';
+  const initBuildingId = searchParams.get('buildingId')
+    ? Number(searchParams.get('buildingId'))
+    : null;
 
   // 빌딩 목록
   const [buildings, setBuildings] = useState([]);
@@ -24,7 +37,7 @@ export default function TourReservationCreate() {
 
   // slot
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [roomId, setRoomId] = useState('');
+  const [roomId, setRoomId] = useState(initRoomId);
   const [slots, setSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsError, setSlotsError] = useState('');
@@ -32,6 +45,7 @@ export default function TourReservationCreate() {
 
   const [form, setForm] = useState({ tourNm: '', tourTel: '', tourPwd: '' });
 
+  // 빌딩 목록 로드
   const loadBuildings = async () => {
     setBLoading(true);
     setBError('');
@@ -55,6 +69,17 @@ export default function TourReservationCreate() {
     loadBuildings();
   }, []);
 
+  // 빌딩 목록 로드 후 URL buildingId로 자동 선택
+  useEffect(() => {
+    if (!initBuildingId || !buildings.length) return;
+    const found = buildings.find(
+      (b) => Number(b.buildingId) === initBuildingId
+    );
+    if (found && !selectedBuilding) setSelectedBuilding(found);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buildings, initBuildingId]);
+
+  // 빌딩 선택 → 방 목록 로드
   const loadRooms = async (buildingId) => {
     if (!buildingId) return;
     setRoomsLoading(true);
@@ -63,7 +88,7 @@ export default function TourReservationCreate() {
       const page = await reservationApi.reservableRooms({
         buildingId,
         page: 1,
-        size: 10,
+        size: 50,
         sort: 'roomId',
         direct: 'DESC',
       });
@@ -94,22 +119,34 @@ export default function TourReservationCreate() {
     }
   };
 
-  // 빌딩 선택 -> 방 조회
+  // 빌딩 선택 → 방 목록 로드
   useEffect(() => {
     if (!selectedBuilding?.buildingId) return;
-    setRoomId('');
     setSelectedSlot(null);
     setSlots([]);
     loadRooms(Number(selectedBuilding.buildingId));
+    // URL에서 온 roomId는 유지, 다른 건물 수동 선택 시 초기화
+    if (
+      initBuildingId &&
+      Number(selectedBuilding.buildingId) !== initBuildingId
+    ) {
+      setRoomId('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBuilding]);
 
-  // rooms 로드되면 첫 room 자동 선택
+  // rooms 로드 후 URL roomId 자동 선택 (없으면 첫 번째)
   useEffect(() => {
-    const first = rooms?.[0];
-    if (first && !roomId) setRoomId(String(first.roomId));
-  }, [rooms, roomId]);
+    if (!rooms.length) return;
+    if (initRoomId && rooms.find((r) => String(r.roomId) === initRoomId)) {
+      setRoomId(initRoomId);
+    } else if (!roomId) {
+      setRoomId(String(rooms[0].roomId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rooms]);
 
-  // room/date/building 변경 -> slots 조회
+  // roomId/date/building 변경 → slots 조회
   useEffect(() => {
     if (!selectedBuilding?.buildingId || !roomId || !date) return;
     setSelectedSlot(null);
@@ -129,9 +166,9 @@ export default function TourReservationCreate() {
     return true;
   }, [selectedBuilding, roomId, selectedSlot, form]);
 
-  const onSubmit = async () => {
-    if (!canSubmit) return alert('필수값 확인 (비번 4자리 포함)');
-
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!canSubmit) return;
     try {
       await reservationApi.createTourReservation({
         buildingId: Number(selectedBuilding.buildingId),
@@ -142,161 +179,215 @@ export default function TourReservationCreate() {
         tourTel: form.tourTel,
         tourPwd: form.tourPwd,
       });
-      alert('투어 예약 생성 완료');
       nav('/reservations/tour/list');
     } catch (e) {
       alert(e?.message || '생성 실패');
     }
   };
 
+  const selectedRoomInfo = rooms.find(
+    (r) => String(r.roomId) === String(roomId)
+  );
+
   return (
-    <div style={{ maxWidth: 980, margin: '0 auto', padding: 16 }}>
-      <h2>투어 예약</h2>
-
-      <section
-        style={{ border: '1px solid #eee', borderRadius: 12, padding: 12 }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 12,
-          }}
+    <div className={styles.page}>
+      <Header />
+      {/* 헤더 */}
+      <div className={styles.topBar}>
+        <button
+          className={styles.backBtn}
+          type="button"
+          onClick={() => nav(-1)}
         >
-          <h3 style={{ margin: 0 }}>1) 빌딩 선택</h3>
-          <button onClick={loadBuildings} disabled={bLoading}>
-            {bLoading ? '조회중...' : '새로고침'}
-          </button>
-        </div>
+          ←
+        </button>
+        <h1 className={styles.pageTitle}>📅 방문 예약</h1>
+        <button
+          className={styles.listLink}
+          type="button"
+          onClick={() => nav('/reservations/tour/list')}
+        >
+          내 예약 조회
+        </button>
+      </div>
 
-        {bError && (
-          <div style={{ marginTop: 8, color: 'crimson' }}>{bError}</div>
-        )}
-
-        <div style={{ marginTop: 10 }}>
+      <form className={styles.form} onSubmit={onSubmit}>
+        {/* ── 1. 건물 선택 ── */}
+        <section className={styles.section}>
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>1. 건물 선택</h2>
+            <button
+              className={styles.refreshBtn}
+              type="button"
+              onClick={loadBuildings}
+              disabled={bLoading}
+            >
+              {bLoading ? '조회중…' : '새로고침'}
+            </button>
+          </div>
+          {bError && <p className={styles.errMsg}>{bError}</p>}
           <BuildingSlotButtons
             buildings={buildings}
             selectedId={selectedBuilding?.buildingId}
             onSelect={setSelectedBuilding}
           />
-        </div>
-
-        {selectedBuilding && (
-          <div style={{ marginTop: 10, opacity: 0.85 }}>
-            선택됨: {selectedBuilding.buildingNm} (#
-            {selectedBuilding.buildingId})
-          </div>
-        )}
-      </section>
-
-      <section
-        style={{
-          border: '1px solid #eee',
-          borderRadius: 12,
-          padding: 12,
-          marginTop: 12,
-        }}
-      >
-        <h3 style={{ marginTop: 0 }}>2) 방 / 슬롯 선택</h3>
-
-        <div
-          style={{
-            display: 'flex',
-            gap: 12,
-            flexWrap: 'wrap',
-            alignItems: 'center',
-          }}
-        >
-          <label>
-            날짜&nbsp;
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              disabled={!selectedBuilding}
-            />
-          </label>
-        </div>
-
-        {roomsLoading && <div style={{ marginTop: 8 }}>로딩중...</div>}
-        {roomsError && (
-          <div style={{ marginTop: 8, color: 'crimson' }}>{roomsError}</div>
-        )}
-
-        <div style={{ marginTop: 12 }}>
-          <div style={{ marginBottom: 6 }}>방 선택</div>
-          <select
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-            disabled={!selectedBuilding}
-          >
-            <option value="">선택</option>
-            {rooms.map((r) => (
-              <option key={r.roomId} value={r.roomId}>
-                {r.roomNm ?? 'Room'} (#{r.roomId})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ marginTop: 12 }}>
-          <div style={{ marginBottom: 6 }}>
-            슬롯 선택 {slotsLoading ? '(조회중...)' : ''}
-          </div>
-          {slotsError && (
-            <div style={{ color: 'crimson', marginBottom: 6 }}>
-              {slotsError}
-            </div>
+          {selectedBuilding && (
+            <p className={styles.selectedHint}>
+              선택됨: <strong>{selectedBuilding.buildingNm}</strong>
+            </p>
           )}
-          <TimeSlotButtons
-            slots={slots}
-            selectedKey={selectedSlot ? String(selectedSlot.startAt) : ''}
-            onSelect={setSelectedSlot}
-          />
-        </div>
+        </section>
 
-        <h3 style={{ marginTop: 16 }}>3) 예약자 정보</h3>
-        <div
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}
-        >
-          <input
-            placeholder="tourNm"
-            value={form.tourNm}
-            onChange={(e) => setForm((p) => ({ ...p, tourNm: e.target.value }))}
-            disabled={!selectedBuilding}
-          />
-          <input
-            placeholder="tourTel"
-            value={form.tourTel}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, tourTel: e.target.value }))
-            }
-            disabled={!selectedBuilding}
-          />
-          <input
-            placeholder="tourPwd (숫자 4자리)"
-            value={form.tourPwd}
-            onChange={(e) =>
-              setForm((p) => ({ ...p, tourPwd: e.target.value }))
-            }
-            disabled={!selectedBuilding}
-          />
-        </div>
+        {/* ── 2. 방 · 날짜 · 슬롯 ── */}
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>2. 방 · 날짜 · 시간 선택</h2>
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+          <div className={styles.rowGroup}>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>날짜</label>
+              <input
+                className={styles.input}
+                type="date"
+                value={date}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setDate(e.target.value)}
+                disabled={!selectedBuilding}
+              />
+            </div>
+          </div>
+
+          {roomsLoading && <p className={styles.mutedMsg}>방 목록 조회 중…</p>}
+          {roomsError && <p className={styles.errMsg}>{roomsError}</p>}
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>방 선택</label>
+            {selectedRoomInfo && (
+              <p className={styles.autoSelectedBadge}>
+                🏠 자동 선택:{' '}
+                {selectedRoomInfo.roomNm ?? `Room #${selectedRoomInfo.roomId}`}
+              </p>
+            )}
+            <select
+              className={styles.select}
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              disabled={!selectedBuilding}
+            >
+              <option value="">선택하세요</option>
+              {rooms.map((r) => (
+                <option key={r.roomId} value={r.roomId}>
+                  {r.roomNm ?? 'Room'} (#{r.roomId})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              예약 가능 시간{' '}
+              {slotsLoading && (
+                <span className={styles.mutedInline}>(조회중…)</span>
+              )}
+            </label>
+            {slotsError && <p className={styles.errMsg}>{slotsError}</p>}
+            <TimeSlotButtons
+              slots={slots}
+              selectedKey={selectedSlot ? String(selectedSlot.startAt) : ''}
+              onSelect={setSelectedSlot}
+            />
+          </div>
+        </section>
+
+        {/* ── 3. 예약자 정보 ── */}
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>3. 예약자 정보</h2>
+          <div className={styles.rowGroup}>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>이름 *</label>
+              <input
+                className={styles.input}
+                type="text"
+                placeholder="방문자 이름"
+                value={form.tourNm}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, tourNm: e.target.value }))
+                }
+                disabled={!selectedBuilding}
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>연락처 *</label>
+              <input
+                className={styles.input}
+                type="tel"
+                placeholder="010-0000-0000"
+                value={form.tourTel}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, tourTel: e.target.value }))
+                }
+                disabled={!selectedBuilding}
+              />
+            </div>
+          </div>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>예약 비밀번호 (숫자 4자리) *</label>
+            <input
+              className={styles.input}
+              type="password"
+              placeholder="조회·취소 시 사용"
+              value={form.tourPwd}
+              maxLength={4}
+              pattern="\d{4}"
+              onChange={(e) =>
+                setForm((p) => ({ ...p, tourPwd: e.target.value }))
+              }
+              disabled={!selectedBuilding}
+              style={{ maxWidth: 180 }}
+            />
+            <p className={styles.inputHint}>예약 조회 및 취소 시 사용합니다.</p>
+          </div>
+        </section>
+
+        {/* 예약 요약 */}
+        {selectedSlot && selectedRoomInfo && (
+          <div className={styles.summaryBox}>
+            <p className={styles.summaryTitle}>📋 예약 요약</p>
+            <div className={styles.summaryGrid}>
+              <span>건물</span>
+              <span>{selectedBuilding.buildingNm}</span>
+              <span>방</span>
+              <span>
+                {selectedRoomInfo.roomNm ?? `#${selectedRoomInfo.roomId}`}
+              </span>
+              <span>날짜</span>
+              <span>{date}</span>
+              <span>시간</span>
+              <span>
+                {selectedSlot.startAt?.slice(11, 16)} ~{' '}
+                {selectedSlot.endAt?.slice(11, 16)}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className={styles.btnRow}>
           <button
-            onClick={onSubmit}
-            disabled={!canSubmit}
-            style={{ padding: '10px 12px' }}
+            type="button"
+            className={styles.cancelBtn}
+            onClick={() => nav(-1)}
           >
-            예약 생성
+            취소
           </button>
-          <button onClick={() => nav(-1)} style={{ padding: '10px 12px' }}>
-            뒤로
+          <button
+            type="submit"
+            className={styles.submitBtn}
+            disabled={!canSubmit}
+          >
+            📅 예약 신청
           </button>
         </div>
-      </section>
+      </form>
+      <Footer />
     </div>
   );
 }

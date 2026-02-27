@@ -1,9 +1,62 @@
-// src/features/reservation/pages/TourReservationList.jsx
+// features/reservation/pages/TourReservationList.jsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import useTourReservations from '../hooks/useTourReservations';
+import Header from '../../../app/layouts/components/Header';
+import Footer from '../../../app/layouts/components/Footer';
+import styles from './TourReservationList.module.css';
+
+function StatusBadge({ status }) {
+  const map = {
+    PENDING: { label: '대기', cls: styles.statusPending },
+    CONFIRMED: { label: '확정', cls: styles.statusConfirmed },
+    CANCELLED: { label: '취소됨', cls: styles.statusCancelled },
+    COMPLETED: { label: '완료', cls: styles.statusCompleted },
+  };
+  const s = map[status] ?? { label: status ?? '-', cls: styles.statusPending };
+  return <span className={`${styles.statusBadge} ${s.cls}`}>{s.label}</span>;
+}
+
+function TourCard({ item, onCancel }) {
+  const id = item.tourId ?? item.id;
+  const startAt = item.tourStartAt ?? item.startAt ?? '-';
+  const endAt = item.tourEndAt ?? item.endAt ?? '-';
+  const formatDt = (s) =>
+    s && s !== '-' ? s.replace('T', ' ').slice(0, 16) : '-';
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTop}>
+        <div>
+          <p className={styles.cardRoomId}>방 #{item.roomId ?? '-'}</p>
+          <p className={styles.cardTime}>
+            {formatDt(startAt)} ~ {formatDt(endAt).slice(11)}
+          </p>
+        </div>
+        <StatusBadge status={item.status} />
+      </div>
+      <div className={styles.cardBody}>
+        <span className={styles.metaItem}>👤 {item.tourNm ?? '-'}</span>
+        <span className={styles.metaItem}>📞 {item.tourTel ?? '-'}</span>
+      </div>
+      <div className={styles.cardBottom}>
+        <span className={styles.cardId}>예약 #{id}</span>
+        {item.status !== 'CANCELLED' && item.status !== 'COMPLETED' && (
+          <button
+            className={styles.cancelBtn}
+            type="button"
+            onClick={() => onCancel(id)}
+          >
+            예약 취소
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function TourReservationList() {
+  const nav = useNavigate();
   const { lookup, lookupPage, lookupLoading, lookupError, cancel } =
     useTourReservations();
 
@@ -13,23 +66,23 @@ export default function TourReservationList() {
   const items = lookupPage?.content ?? [];
 
   const onLookup = async (page = 1) => {
-    if (!tourTel || !tourPwd) return alert('tourTel / tourPwd 입력');
-    if (!/^[0-9]{4}$/.test(tourPwd)) return alert('tourPwd는 숫자 4자리');
-
+    if (!tourTel.trim()) return alert('연락처를 입력해주세요.');
+    if (!/^[0-9]{4}$/.test(tourPwd))
+      return alert('비밀번호는 숫자 4자리입니다.');
     try {
       await lookup(
-        { tourTel, tourPwd },
+        { tourTel: tourTel.trim(), tourPwd },
         { page, size: 10, sort: 'tourId', direct: 'DESC' }
       );
     } catch {
-      // hook에서 error 처리
+      /* hook에서 error 처리 */
     }
   };
 
   const onCancel = async (tourId) => {
-    if (!window.confirm('취소할래?')) return;
+    if (!window.confirm('예약을 취소하시겠습니까?')) return;
     try {
-      await cancel(tourId, { tourTel, tourPwd });
+      await cancel(tourId, { tourTel: tourTel.trim(), tourPwd });
       alert('취소 완료');
       onLookup(lookupPage?.page ?? 1);
     } catch (e) {
@@ -37,122 +90,120 @@ export default function TourReservationList() {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') onLookup(1);
+  };
+
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: 16 }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 12,
-        }}
-      >
-        <h2>투어 예약 조회/취소</h2>
-        <Link to="/reservations/tour/create">+ 예약 생성</Link>
+    <div className={styles.page}>
+      <Header />
+      {/* 상단 바 */}
+      <div className={styles.topBar}>
+        <button
+          className={styles.backBtn}
+          type="button"
+          onClick={() => nav(-1)}
+        >
+          ←
+        </button>
+        <h1 className={styles.pageTitle}>📋 방문 예약 조회</h1>
+        <button
+          className={styles.createLink}
+          type="button"
+          onClick={() => nav('/reservations/tour/create')}
+        >
+          + 예약 생성
+        </button>
       </div>
 
-      <section
-        style={{
-          border: '1px solid #eee',
-          borderRadius: 12,
-          padding: 12,
-          marginTop: 12,
-        }}
-      >
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+      {/* 조회 폼 */}
+      <div className={styles.lookupBox}>
+        <p className={styles.lookupDesc}>
+          예약 시 입력한 연락처와 비밀번호로 조회합니다.
+        </p>
+        <div className={styles.lookupRow}>
           <input
-            placeholder="tourTel"
+            className={styles.input}
+            type="tel"
+            placeholder="연락처 (예: 010-0000-0000)"
             value={tourTel}
             onChange={(e) => setTourTel(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
           <input
-            placeholder="tourPwd(숫자4자리)"
+            className={styles.input}
+            type="password"
+            placeholder="비밀번호 4자리"
             value={tourPwd}
+            maxLength={4}
+            pattern="\d{4}"
             onChange={(e) => setTourPwd(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={{ maxWidth: 160 }}
           />
-          <button onClick={() => onLookup(1)} disabled={lookupLoading}>
-            {lookupLoading ? '조회중...' : '조회'}
+          <button
+            className={styles.lookupBtn}
+            type="button"
+            onClick={() => onLookup(1)}
+            disabled={lookupLoading}
+          >
+            {lookupLoading ? '조회 중…' : '🔍 조회'}
           </button>
         </div>
-
-        {lookupError && (
-          <div style={{ marginTop: 8, color: 'crimson' }}>{lookupError}</div>
-        )}
-
-        {lookupPage && (
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              alignItems: 'center',
-              marginTop: 12,
-            }}
-          >
-            <button
-              onClick={() => onLookup(Math.max(1, (lookupPage.page ?? 1) - 1))}
-            >
-              이전
-            </button>
-            <div>page: {lookupPage.page}</div>
-            <button onClick={() => onLookup((lookupPage.page ?? 1) + 1)}>
-              다음
-            </button>
-          </div>
-        )}
-      </section>
-
-      <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
-        {items.map((it) => {
-          const id = it.tourId ?? it.id;
-          return (
-            <div
-              key={id}
-              style={{
-                border: '1px solid #eee',
-                borderRadius: 12,
-                padding: 12,
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: 10,
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 700 }}>
-                    roomId: {it.roomId ?? '-'} /{' '}
-                    {it.tourStartAt ?? it.startAt ?? '-'} ~{' '}
-                    {it.tourEndAt ?? it.endAt ?? '-'}
-                  </div>
-                  <div style={{ opacity: 0.8, marginTop: 6 }}>
-                    이름: {it.tourNm ?? it.name ?? '-'} / 전화:{' '}
-                    {it.tourTel ?? it.phone ?? '-'} / 상태: {it.status ?? '-'}
-                  </div>
-                </div>
-                <button
-                  onClick={() => onCancel(id)}
-                  style={{ padding: '8px 10px' }}
-                >
-                  취소
-                </button>
-              </div>
-
-              <pre
-                style={{
-                  marginTop: 10,
-                  background: '#fafafa',
-                  padding: 10,
-                  borderRadius: 12,
-                }}
-              >
-                {JSON.stringify(it, null, 2)}
-              </pre>
-            </div>
-          );
-        })}
+        {lookupError && <p className={styles.errMsg}>{lookupError}</p>}
       </div>
+
+      {/* 결과 */}
+      {lookupPage && (
+        <>
+          <div className={styles.resultHeader}>
+            <span className={styles.resultCount}>
+              총 <strong>{lookupPage.totalElements ?? items.length}</strong>건
+            </span>
+            <div className={styles.paging}>
+              <button
+                className={styles.pageBtn}
+                type="button"
+                disabled={(lookupPage.page ?? 1) <= 1}
+                onClick={() =>
+                  onLookup(Math.max(1, (lookupPage.page ?? 1) - 1))
+                }
+              >
+                이전
+              </button>
+              <span className={styles.pageInfo}>
+                {lookupPage.page ?? 1}페이지
+              </span>
+              <button
+                className={styles.pageBtn}
+                type="button"
+                disabled={items.length < 10}
+                onClick={() => onLookup((lookupPage.page ?? 1) + 1)}
+              >
+                다음
+              </button>
+            </div>
+          </div>
+
+          {items.length === 0 ? (
+            <div className={styles.empty}>
+              <span className={styles.emptyIcon}>🗓️</span>
+              <p>조회된 예약이 없습니다.</p>
+            </div>
+          ) : (
+            <div className={styles.cardList}>
+              {items.map((it) => (
+                <TourCard
+                  key={it.tourId ?? it.id}
+                  item={it}
+                  onCancel={onCancel}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+      <Footer />
     </div>
   );
 }
