@@ -343,3 +343,19 @@
   color: #b0a080;
   font-weight: 400;
 }
+
+/* ── 인라인(팝업) 모드 추가 스타일 ── */
+.formInline {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 24px 48px; /* 사방 여백 넉넉하게 */
+}
+
+.inlineTopBar {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e8dfd0;
+  margin-bottom: 4px;
+}

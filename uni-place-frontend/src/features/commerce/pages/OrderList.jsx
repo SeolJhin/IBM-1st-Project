@@ -6,13 +6,16 @@ import Header from '../../../app/layouts/components/Header';
 import { useOrders } from '../hooks/useOrders';
 import styles from './OrderList.module.css';
 import layoutStyles from '../../user/pages/MemberInfo.module.css';
+import Modal from '../../../shared/components/Modal/Modal';
+import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
+import TourReservationList from '../../reservation/pages/TourReservationList';
 
 const SIDE_MENUS = [
   { label: '내 정보', path: '/me' },
   { label: '마이룸', path: '/myroom' },
   { label: '작성 목록', path: '/my/posts' },
-  { label: '공용 시설', path: '/reservations/space/list' },
-  { label: '사전 방문', path: '/tour' },
+  { label: '공용 시설', path: '/me?tab=space' },
+  { label: '사전 방문', path: '__TOUR_POPUP__' },
   { label: '룸서비스', path: '/commerce/room-service' },
 ];
 
@@ -37,6 +40,8 @@ function fmtDate(d) {
 
 export default function OrderList() {
   const navigate = useNavigate();
+  const [tourCreateOpen, setTourCreateOpen] = useState(false);
+  const [tourListOpen, setTourListOpen] = useState(false);
   const location = useLocation();
   const { orders, loading, error, refetch } = useOrders();
 
@@ -59,9 +64,13 @@ export default function OrderList() {
           <div className={layoutStyles.sideBox}>
             {SIDE_MENUS.map((m) => (
               <button
-                key={m.path}
+                key={m.label}
                 className={`${layoutStyles.sideItem} ${isActive(m.path) ? layoutStyles.sideItemActive : ''}`}
-                onClick={() => navigate(m.path)}
+                onClick={() =>
+                  m.path === '__TOUR_POPUP__'
+                    ? setTourCreateOpen(true)
+                    : navigate(m.path)
+                }
               >
                 {m.label}
               </button>
@@ -185,6 +194,41 @@ export default function OrderList() {
 
       {/* 완료 토스트 */}
       {toast && <div className={styles.toast}>{toast}</div>}
+      {/* ── 사전방문 팝업 ── */}
+      <Modal
+        open={tourCreateOpen}
+        onGoList={() => {
+          setTourCreateOpen(false);
+          setTourListOpen(true);
+        }}
+        onClose={() => setTourCreateOpen(false)}
+        title="📅 사전 방문 예약"
+        size="lg"
+      >
+        <TourReservationCreate
+          inlineMode
+          onSuccess={() => {
+            setTourCreateOpen(false);
+            setTourListOpen(true);
+          }}
+          onClose={() => setTourCreateOpen(false)}
+        />
+      </Modal>
+      <Modal
+        open={tourListOpen}
+        onClose={() => setTourListOpen(false)}
+        title="📋 방문 예약 조회"
+        size="lg"
+      >
+        <TourReservationList
+          inlineMode
+          onGoCreate={() => {
+            setTourListOpen(false);
+            setTourCreateOpen(true);
+          }}
+          onClose={() => setTourListOpen(false)}
+        />
+      </Modal>
     </div>
   );
 }

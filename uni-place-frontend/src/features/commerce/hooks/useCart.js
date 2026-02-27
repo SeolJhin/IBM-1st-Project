@@ -33,13 +33,13 @@ export function useCart() {
     setLoading(true);
     setError(null);
     try {
-      // CartResponse: { cartId, userId, items[], totalAmount, totalQuantity }
-      // CartItemResponse: { cartItemId, prodId, prodNm, orderPrice, orderQuantity, lineTotal, thumbnailPath }
       const data = await commerceApi.getCart();
       setCart(data ?? null);
+      return data ?? null; // ← 반환값 추가
     } catch (err) {
       setError(err?.message || '장바구니를 불러오는 데 실패했습니다.');
       setCart(null);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -69,8 +69,10 @@ export function useCart() {
   // ─── 상품 추가 ─────────────────────────────────────────────────────────────
   // CartAddRequest: { prodId, quantity }
   const addItem = useCallback(
-    ({ prodId, quantity }) =>
-      runAction(() => commerceApi.addCartItem({ prodId, quantity })),
+    ({ prodId, quantity, buildingId }) =>
+      runAction(() =>
+        commerceApi.addCartItem({ prodId, quantity, buildingId })
+      ),
     [runAction]
   );
 
@@ -84,8 +86,7 @@ export function useCart() {
 
   // ─── 아이템 삭제 ───────────────────────────────────────────────────────────
   const removeItem = useCallback(
-    (cartItemId) =>
-      runAction(() => commerceApi.removeCartItem(cartItemId)),
+    (cartItemId) => runAction(() => commerceApi.removeCartItem(cartItemId)),
     [runAction]
   );
 
@@ -108,16 +109,16 @@ export function useCart() {
   }, []);
 
   return {
-    cart,          // CartResponse | null
-                   // { cartId, userId, items[], totalAmount, totalQuantity }
-    loading,       // 최초 조회 로딩
-    error,         // 최초 조회 에러
+    cart, // CartResponse | null
+    // { cartId, userId, items[], totalAmount, totalQuantity }
+    loading, // 최초 조회 로딩
+    error, // 최초 조회 에러
     actionLoading, // 추가/수정/삭제 중 로딩
-    actionError,   // 추가/수정/삭제 에러
-    addItem,       // addItem({ prodId, quantity })
-    updateItem,    // updateItem(cartItemId, { quantity })
-    removeItem,    // removeItem(cartItemId)
-    clear,         // clear()
+    actionError, // 추가/수정/삭제 에러
+    addItem, // addItem({ prodId, quantity })
+    updateItem, // updateItem(cartItemId, { quantity })
+    removeItem, // removeItem(cartItemId)
+    clear, // clear()
     refetch: fetchCart,
   };
 }

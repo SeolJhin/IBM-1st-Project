@@ -1,4 +1,5 @@
 // features/reservation/pages/TourReservationList.jsx
+// 팝업 내부 + 독립 페이지 겸용
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useTourReservations from '../hooks/useTourReservations';
@@ -55,7 +56,16 @@ function TourCard({ item, onCancel }) {
   );
 }
 
-export default function TourReservationList() {
+/**
+ * inlineMode=true  → Header/Footer/topBar 없이 (Modal 안에서 사용)
+ * onGoCreate       → "예약 생성" 버튼 클릭 콜백
+ * onClose          → "닫기" 콜백
+ */
+export default function TourReservationList({
+  inlineMode = false,
+  onGoCreate,
+  onClose,
+}) {
   const nav = useNavigate();
   const { lookup, lookupPage, lookupLoading, lookupError, cancel } =
     useTourReservations();
@@ -75,7 +85,7 @@ export default function TourReservationList() {
         { page, size: 10, sort: 'tourId', direct: 'DESC' }
       );
     } catch {
-      /* hook에서 error 처리 */
+      /* hook에서 처리 */
     }
   };
 
@@ -94,23 +104,18 @@ export default function TourReservationList() {
     if (e.key === 'Enter') onLookup(1);
   };
 
-  return (
-    <div className={styles.page}>
-      <Header />
-      {/* 상단 바 */}
-      <div className={styles.topBar}>
-        <button
-          className={styles.backBtn}
-          type="button"
-          onClick={() => nav(-1)}
-        >
-          ←
-        </button>
-        <h1 className={styles.pageTitle}>📋 방문 예약 조회</h1>
+  const mainContent = (
+    <>
+      {/* 상단 "예약 생성" 링크 */}
+      <div className={styles.topBarInline}>
         <button
           className={styles.createLink}
           type="button"
-          onClick={() => nav('/reservations/tour/create')}
+          onClick={() =>
+            inlineMode && onGoCreate
+              ? onGoCreate()
+              : nav('/reservations/tour/create')
+          }
         >
           + 예약 생성
         </button>
@@ -184,7 +189,6 @@ export default function TourReservationList() {
               </button>
             </div>
           </div>
-
           {items.length === 0 ? (
             <div className={styles.empty}>
               <span className={styles.emptyIcon}>🗓️</span>
@@ -203,6 +207,32 @@ export default function TourReservationList() {
           )}
         </>
       )}
+    </>
+  );
+
+  if (inlineMode) return <div className={styles.inlineWrap}>{mainContent}</div>;
+
+  return (
+    <div className={styles.page}>
+      <Header />
+      <div className={styles.topBar}>
+        <button
+          className={styles.backBtn}
+          type="button"
+          onClick={() => nav(-1)}
+        >
+          ←
+        </button>
+        <h1 className={styles.pageTitle}>📋 방문 예약 조회</h1>
+        <button
+          className={styles.createLink}
+          type="button"
+          onClick={() => nav('/reservations/tour/create')}
+        >
+          + 예약 생성
+        </button>
+      </div>
+      {mainContent}
       <Footer />
     </div>
   );

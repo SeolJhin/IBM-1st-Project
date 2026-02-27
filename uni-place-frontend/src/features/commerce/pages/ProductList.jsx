@@ -19,6 +19,9 @@ import { useCart } from '../hooks/useCart';
 import { buildingApi } from '../../../app/http/buildingApi';
 import styles from './ProductList.module.css';
 import layoutStyles from '../../user/pages/MemberInfo.module.css';
+import Modal from '../../../shared/components/Modal/Modal';
+import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
+import TourReservationList from '../../reservation/pages/TourReservationList';
 
 const TABS = [
   { key: 'all', label: '전체' },
@@ -30,8 +33,8 @@ const SIDE_MENUS = [
   { label: '내 정보', path: '/me' },
   { label: '마이룸', path: '/myroom' },
   { label: '작성 목록', path: '/my/posts' },
-  { label: '공용 시설', path: '/reservations/space/list' },
-  { label: '사전 방문', path: '/tour' },
+  { label: '공용 시설', path: '/me?tab=space' },
+  { label: '사전 방문', path: '__TOUR_POPUP__' },
   { label: '룸서비스', path: '/commerce/room-service' },
 ];
 
@@ -226,6 +229,8 @@ function ProductCard({
 // ── 메인 ──────────────────────────────────────────────────────────────────
 export default function ProductList() {
   const navigate = useNavigate();
+  const [tourCreateOpen, setTourCreateOpen] = useState(false);
+  const [tourListOpen, setTourListOpen] = useState(false);
   const location = useLocation();
 
   const { products, loading: prodLoading, error: prodError } = useProducts();
@@ -235,6 +240,7 @@ export default function ProductList() {
     updateItem,
     clear: clearCart,
     actionLoading,
+    refetch: refetchCart,
   } = useCart();
 
   const [activeTab, setActiveTab] = useState('all');
@@ -267,7 +273,21 @@ export default function ProductList() {
   }, []);
 
   // 빌딩 바뀌면 pending 초기화
-  const handleSelectBuilding = (id) => {
+  const handleSelectBuilding = async (id) => {
+    if (id === selectedBuildingId) return;
+    const cartItems = cart?.items ?? [];
+    if (cartItems.length > 0) {
+      const confirmed = window.confirm(
+        '빌딩을 변경하면 장바구니가 초기화됩니다.\n계속하시겠습니까?'
+      );
+      if (!confirmed) return;
+      try {
+        await clearCart();
+      } catch (e) {
+        alert('장바구니 초기화에 실패했습니다.');
+        return;
+      }
+    }
     setSelectedBuildingId(id);
     setPendingMap({});
   };
@@ -330,12 +350,22 @@ export default function ProductList() {
       }
     }
 
-    // 재고 초과 검증
+    // 교체
+    // 최신 카트 데이터로 재고 검증
+    const freshCart = await refetchCart();
+    const freshCartMap = {};
+    ((freshCart ?? cart)?.items ?? []).forEach((i) => {
+      freshCartMap[`${i.prodId}_${i.buildingId}`] = i;
+    });
+
     for (const p of toAdd) {
       const pending = pendingMap[p.prodId] ?? 0;
       const cartQty =
-        cartMap[`${p.prodId}_${selectedBuildingId}`]?.orderQuantity ?? 0;
-      const stock = p.buildingStocks?.[selectedBuildingId] ?? null;
+        freshCartMap[`${p.prodId}_${selectedBuildingId}`]?.orderQuantity ?? 0;
+      const stock =
+        p.buildingStocks?.[Number(selectedBuildingId)] ??
+        p.buildingStocks?.[selectedBuildingId] ??
+        null;
       if (stock !== null && pending + cartQty > stock) {
         alert(
           `[${p.prodNm}] 재고 초과입니다.\n현재 카트: ${cartQty}개, 추가 요청: ${pending}개, 재고: ${stock}개`
@@ -387,7 +417,7 @@ export default function ProductList() {
   );
 
   // 하단 바 — 카트에 담긴 것 기준
-  const cartItems = cart?.items ?? [];
+  const cartItems = useMemo(() => cart?.items ?? [], [cart]);
   const cartTotalQty = cart?.totalQuantity ?? 0;
   const cartTotalAmt = cart?.totalAmount ?? 0;
 
@@ -413,9 +443,13 @@ export default function ProductList() {
           <div className={layoutStyles.sideBox}>
             {SIDE_MENUS.map((m) => (
               <button
-                key={m.path}
+                key={m.label}
                 className={`${layoutStyles.sideItem} ${isActive(m.path) ? layoutStyles.sideItemActive : ''}`}
-                onClick={() => navigate(m.path)}
+                onClick={() =>
+                  m.path === '__TOUR_POPUP__'
+                    ? setTourCreateOpen(true)
+                    : navigate(m.path)
+                }
               >
                 {m.label}
               </button>
@@ -470,7 +504,9 @@ export default function ProductList() {
                 {filtered.map((p) => {
                   const stock =
                     selectedBuildingId != null && p.buildingStocks
-                      ? (p.buildingStocks[selectedBuildingId] ?? null)
+                      ? (p.buildingStocks[Number(selectedBuildingId)] ??
+                        p.buildingStocks[selectedBuildingId] ??
+                        null)
                       : null;
                   const cartQty =
                     cartMap[`${p.prodId}_${selectedBuildingId}`]
@@ -548,6 +584,41 @@ export default function ProductList() {
           </div>
         </section>
       </main>
+      {/* ── 사전방문 팝업 ── */}
+      <Modal
+        open={tourCreateOpen}
+        onGoList={() => {
+          setTourCreateOpen(false);
+          setTourListOpen(true);
+        }}
+        onClose={() => setTourCreateOpen(false)}
+        title="📅 사전 방문 예약"
+        size="lg"
+      >
+        <TourReservationCreate
+          inlineMode
+          onSuccess={() => {
+            setTourCreateOpen(false);
+            setTourListOpen(true);
+          }}
+          onClose={() => setTourCreateOpen(false)}
+        />
+      </Modal>
+      <Modal
+        open={tourListOpen}
+        onClose={() => setTourListOpen(false)}
+        title="📋 방문 예약 조회"
+        size="lg"
+      >
+        <TourReservationList
+          inlineMode
+          onGoCreate={() => {
+            setTourListOpen(false);
+            setTourCreateOpen(true);
+          }}
+          onClose={() => setTourListOpen(false)}
+        />
+      </Modal>
     </div>
   );
 }

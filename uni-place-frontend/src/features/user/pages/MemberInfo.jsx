@@ -10,9 +10,22 @@ import { useAuth } from '../hooks/useAuth';
 // 경로가 다르면 아래 import 경로만 맞춰줘.
 import { getOrCreateDeviceId } from '../../../app/http/tokenStore'; // 프로젝트 경로에 맞게 조정
 
+// ── 추가된 import ──────────────────────────────────────────────
+import Modal from '../../../shared/components/Modal/Modal';
+import SpaceReservationCreate from '../../reservation/pages/SpaceReservationCreate';
+import SpaceReservationList from '../../reservation/pages/SpaceReservationList';
+import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
+import TourReservationList from '../../reservation/pages/TourReservationList';
+
 export default function MemberInfo() {
   const navigate = useNavigate();
   const { user, loading, refresh, logout } = useAuth();
+
+  // ── 추가된 state ───────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState('me'); // 'me' | 'space'
+  const [spaceSubTab, setSpaceSubTab] = useState('create'); // 'create' | 'list'
+  const [tourCreateOpen, setTourCreateOpen] = useState(false);
+  const [tourListOpen, setTourListOpen] = useState(false);
 
   const [meLoading, setMeLoading] = useState(true);
 
@@ -217,6 +230,7 @@ export default function MemberInfo() {
       <main className={styles.container}>
         <aside className={styles.side}>
           <div className={styles.sideBox}>
+            {/* 내 정보 ~ 작성 목록: 기존 그대로 */}
             <button
               type="button"
               className={`${styles.sideItem} ${styles.sideItemActive}`}
@@ -238,20 +252,26 @@ export default function MemberInfo() {
             >
               작성 목록
             </button>
+
+            {/* 공용 시설: 탭 전환으로 변경 */}
             <button
               type="button"
-              className={styles.sideItem}
-              onClick={() => navigate('/reservations/space/list')}
+              className={`${styles.sideItem} ${activeTab === 'space' ? styles.sideItemActive : ''}`}
+              onClick={() => setActiveTab('space')}
             >
               공용 시설
             </button>
+
+            {/* 사전 방문: 팝업으로 변경 */}
             <button
               type="button"
               className={styles.sideItem}
-              onClick={() => navigate('/reservations/tour/list')}
+              onClick={() => setTourCreateOpen(true)}
             >
               사전 방문
             </button>
+
+            {/* 룸서비스: 기존 그대로 */}
             <button
               type="button"
               className={styles.sideItem}
@@ -263,111 +283,189 @@ export default function MemberInfo() {
         </aside>
 
         <section className={styles.content}>
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h1 className={styles.title}>본인 정보</h1>
-            </div>
+          {/* ── 내 정보 탭 ── */}
+          {activeTab === 'me' && (
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h1 className={styles.title}>본인 정보</h1>
+              </div>
 
-            {meLoading ? (
-              <div className={styles.loading}>불러오는 중…</div>
-            ) : (
-              <form className={styles.form} onSubmit={onSubmitUpdate}>
-                <div className={styles.panel}>
-                  <Field label="이름">
-                    <input
-                      className={styles.input}
-                      name="userNm"
-                      value={form.userNm}
-                      placeholder="이름"
-                      readOnly
-                      disabled
-                    />
-                  </Field>
+              {meLoading ? (
+                <div className={styles.loading}>불러오는 중…</div>
+              ) : (
+                <form className={styles.form} onSubmit={onSubmitUpdate}>
+                  <div className={styles.panel}>
+                    <Field label="이름">
+                      <input
+                        className={styles.input}
+                        name="userNm"
+                        value={form.userNm}
+                        placeholder="이름"
+                        readOnly
+                        disabled
+                      />
+                    </Field>
 
-                  <Field label="이메일">
-                    <input
-                      className={styles.input}
-                      name="userEmail"
-                      value={form.userEmail}
-                      onChange={onChange}
-                      placeholder="이메일"
-                      disabled={submitting}
-                    />
-                  </Field>
+                    <Field label="이메일">
+                      <input
+                        className={styles.input}
+                        name="userEmail"
+                        value={form.userEmail}
+                        onChange={onChange}
+                        placeholder="이메일"
+                        disabled={submitting}
+                      />
+                    </Field>
 
-                  <Field label="전화번호">
-                    <input
-                      className={styles.input}
-                      name="userTel"
-                      value={form.userTel}
-                      onChange={onChange}
-                      placeholder="전화번호"
-                      disabled={submitting}
-                    />
-                  </Field>
+                    <Field label="전화번호">
+                      <input
+                        className={styles.input}
+                        name="userTel"
+                        value={form.userTel}
+                        onChange={onChange}
+                        placeholder="전화번호"
+                        disabled={submitting}
+                      />
+                    </Field>
 
-                  <Field label="아이디">
-                    <input
-                      className={styles.input}
-                      name="userId"
-                      value={form.userId}
-                      readOnly
-                      disabled
-                    />
-                  </Field>
+                    <Field label="아이디">
+                      <input
+                        className={styles.input}
+                        name="userId"
+                        value={form.userId}
+                        readOnly
+                        disabled
+                      />
+                    </Field>
 
-                  {/* 기존 비밀번호는 표시하지 않음(공백처럼 보이게) */}
-                  <Field label="비밀번호">
-                    <input
-                      className={styles.input}
-                      type="password"
-                      value={currentPwd}
-                      onChange={(e) => setCurrentPwd(e.target.value)}
-                      placeholder="현재 비밀번호를 입력해주세요"
-                      autoComplete="current-password"
-                      disabled={submitting}
-                    />
-                  </Field>
+                    {/* 기존 비밀번호는 표시하지 않음(공백처럼 보이게) */}
+                    <Field label="비밀번호">
+                      <input
+                        className={styles.input}
+                        type="password"
+                        value={currentPwd}
+                        onChange={(e) => setCurrentPwd(e.target.value)}
+                        placeholder="현재 비밀번호를 입력해주세요"
+                        autoComplete="current-password"
+                        disabled={submitting}
+                      />
+                    </Field>
 
-                  <Field label="변경할 비밀번호">
-                    <input
-                      className={styles.input}
-                      type="password"
-                      value={newPwd}
-                      onChange={(e) => setNewPwd(e.target.value)}
-                      placeholder="변경할 비밀번호 (선택)"
-                      autoComplete="new-password"
-                      disabled={submitting}
-                    />
-                  </Field>
+                    <Field label="변경할 비밀번호">
+                      <input
+                        className={styles.input}
+                        type="password"
+                        value={newPwd}
+                        onChange={(e) => setNewPwd(e.target.value)}
+                        placeholder="변경할 비밀번호 (선택)"
+                        autoComplete="new-password"
+                        disabled={submitting}
+                      />
+                    </Field>
 
-                  {error ? <div className={styles.error}>{error}</div> : null}
-                  {msg ? <div className={styles.msg}>{msg}</div> : null}
+                    {error ? <div className={styles.error}>{error}</div> : null}
+                    {msg ? <div className={styles.msg}>{msg}</div> : null}
 
-                  <div className={styles.actions}>
-                    <button
-                      type="submit"
-                      className={styles.submitBtn}
-                      disabled={submitting || meLoading}
-                    >
-                      {submitting ? '수정 중…' : '수정'}
-                    </button>
+                    <div className={styles.actions}>
+                      <button
+                        type="submit"
+                        className={styles.submitBtn}
+                        disabled={submitting || meLoading}
+                      >
+                        {submitting ? '수정 중…' : '수정'}
+                      </button>
 
-                    <button
-                      type="button"
-                      className={styles.withdrawBtn}
-                      onClick={onWithdraw}
-                      disabled={submitting || meLoading}
-                    >
-                      탈퇴
-                    </button>
+                      <button
+                        type="button"
+                        className={styles.withdrawBtn}
+                        onClick={onWithdraw}
+                        disabled={submitting || meLoading}
+                      >
+                        탈퇴
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </form>
-            )}
-          </div>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* ── 공용 시설 탭 ── */}
+          {activeTab === 'space' && (
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h1 className={styles.title}>🛋️ 공용 시설 예약</h1>
+              </div>
+              <div className={styles.subTabRow}>
+                <button
+                  type="button"
+                  className={`${styles.subTab} ${spaceSubTab === 'create' ? styles.subTabActive : ''}`}
+                  onClick={() => setSpaceSubTab('create')}
+                >
+                  예약 생성
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.subTab} ${spaceSubTab === 'list' ? styles.subTabActive : ''}`}
+                  onClick={() => setSpaceSubTab('list')}
+                >
+                  내 예약 조회
+                </button>
+              </div>
+              {spaceSubTab === 'create' && (
+                <SpaceReservationCreate
+                  inlineMode
+                  onSuccess={() => setSpaceSubTab('list')}
+                />
+              )}
+              {spaceSubTab === 'list' && (
+                <SpaceReservationList
+                  inlineMode
+                  onGoCreate={() => setSpaceSubTab('create')}
+                />
+              )}
+            </div>
+          )}
         </section>
       </main>
+
+      {/* ── 사전 방문 예약 생성 팝업 ── */}
+      <Modal
+        open={tourCreateOpen}
+        onClose={() => setTourCreateOpen(false)}
+        title="📅 사전 방문 예약"
+        size="lg"
+      >
+        <TourReservationCreate
+          inlineMode
+          onGoList={() => {
+            setTourCreateOpen(false);
+            setTourListOpen(true);
+          }}
+          onSuccess={() => {
+            setTourCreateOpen(false);
+            setTourListOpen(true);
+          }}
+          onClose={() => setTourCreateOpen(false)}
+        />
+      </Modal>
+
+      {/* ── 사전 방문 예약 조회 팝업 ── */}
+      <Modal
+        open={tourListOpen}
+        onClose={() => setTourListOpen(false)}
+        title="📋 방문 예약 조회"
+        size="lg"
+      >
+        <TourReservationList
+          inlineMode
+          onGoCreate={() => {
+            setTourListOpen(false);
+            setTourCreateOpen(true);
+          }}
+          onClose={() => setTourListOpen(false)}
+        />
+      </Modal>
     </div>
   );
 }
