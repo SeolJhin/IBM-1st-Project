@@ -24,7 +24,7 @@ export default function AdminSystemHub() {
         </NavLink>
 
         <NavLink
-          to="/admin/affiliates"
+          to="/admin/system/affiliates"
           className={({ isActive }) =>
             `${styles.tab} ${isActive ? styles.tabActive : ''}`
           }
@@ -33,7 +33,7 @@ export default function AdminSystemHub() {
         </NavLink>
 
         <NavLink
-          to="/admin/users/company"
+          to="/admin/system/company_info"
           className={({ isActive }) =>
             `${styles.tab} ${isActive ? styles.tabActive : ''}`
           }

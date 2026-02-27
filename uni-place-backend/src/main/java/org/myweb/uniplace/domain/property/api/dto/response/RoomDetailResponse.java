@@ -1,4 +1,3 @@
-// 경로: org/myweb/uniplace/domain/property/api/dto/response/RoomDetailResponse.java
 package org.myweb.uniplace.domain.property.api.dto.response;
 
 import java.math.BigDecimal;
@@ -7,11 +6,16 @@ import java.util.List;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.property.domain.entity.Building;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
+import org.myweb.uniplace.domain.property.domain.enums.PetAllowedYn;
 import org.myweb.uniplace.domain.property.domain.enums.RentType;
 import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
+import org.myweb.uniplace.domain.property.domain.enums.RoomType;
 import org.myweb.uniplace.domain.property.domain.enums.SunDirection;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
@@ -21,7 +25,6 @@ public class RoomDetailResponse {
 
     private Integer roomId;
 
-    // ✅ building 정보(요구사항)
     private Integer buildingId;
     private String buildingNm;
     private String buildingAddr;
@@ -31,6 +34,9 @@ public class RoomDetailResponse {
     private Integer roomNo;
     private Integer floor;
     private BigDecimal roomSize;
+
+    private RoomType roomType;
+    private PetAllowedYn petAllowedYn;
 
     private BigDecimal deposit;
     private BigDecimal rentPrice;
@@ -46,7 +52,6 @@ public class RoomDetailResponse {
 
     private String roomDesc;
 
-    // ✅ 다형성 파일(ROOM, roomId)
     private List<FileResponse> files;
 
     public static RoomDetailResponse fromEntity(Room e, List<FileResponse> files) {
@@ -55,16 +60,16 @@ public class RoomDetailResponse {
 
         return RoomDetailResponse.builder()
                 .roomId(e.getRoomId())
-
                 .buildingId(b != null ? b.getBuildingId() : null)
                 .buildingNm(b != null ? b.getBuildingNm() : null)
                 .buildingAddr(b != null ? b.getBuildingAddr() : null)
                 .buildingDesc(b != null ? b.getBuildingDesc() : null)
                 .parkingCapacity(b != null ? b.getParkingCapacity() : null)
-
                 .roomNo(e.getRoomNo())
                 .floor(e.getFloor())
                 .roomSize(e.getRoomSize())
+                .roomType(e.getRoomType())
+                .petAllowedYn(e.getPetAllowedYn())
                 .deposit(e.getDeposit())
                 .rentPrice(e.getRentPrice())
                 .manageFee(e.getManageFee())
