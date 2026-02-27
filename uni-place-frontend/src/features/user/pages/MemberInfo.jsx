@@ -255,7 +255,7 @@ export default function MemberInfo() {
             <button
               type="button"
               className={styles.sideItem}
-              onClick={() => navigate('/room-services')}
+              onClick={() => navigate('/commerce/room-service')}
             >
               룸서비스
             </button>
