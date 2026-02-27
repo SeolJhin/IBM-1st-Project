@@ -1,10 +1,44 @@
-services:
+﻿services:
   mysql:
-    image: 'mysql:latest'
+    image: mysql:8.4
+    container_name: uniplace-mysql
+    restart: unless-stopped
     environment:
-      - 'MYSQL_DATABASE=mydatabase'
-      - 'MYSQL_PASSWORD=secret'
-      - 'MYSQL_ROOT_PASSWORD=verysecret'
-      - 'MYSQL_USER=myuser'
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-student123}
+      MYSQL_USER: ${MYSQL_USER:-student123}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-student123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root1234}
     ports:
-      - '3306'
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: uniplace-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      DB_URL: ${DB_URL:-jdbc:mysql://mysql:3306/student123?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+      DB_USERNAME: ${DB_USERNAME:-student123}
+      DB_PASSWORD: ${DB_PASSWORD:-student123}
+      JWT_ACCESS_EXP: ${JWT_ACCESS_EXP:-86400000}
+      JWT_REFRESH_EXP: ${JWT_REFRESH_EXP:-86400000}
+      APP_OAUTH2_REDIRECT_URI: ${APP_OAUTH2_REDIRECT_URI:-http://localhost:3000/oauth2/success}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

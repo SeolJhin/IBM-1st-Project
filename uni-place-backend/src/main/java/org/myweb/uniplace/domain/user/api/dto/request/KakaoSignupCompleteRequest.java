@@ -2,6 +2,7 @@ package org.myweb.uniplace.domain.user.api.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,15 +12,19 @@ import java.time.LocalDate;
 @Setter
 public class KakaoSignupCompleteRequest {
 
-    @NotBlank(message = "signupToken은 필수입니다.")
+    @NotBlank(message = "signupToken is required")
     private String signupToken;
 
-    @NotBlank(message = "이름(userNm)은 필수입니다.")
+    @NotBlank(message = "userNm is required")
     private String userNm;
 
-    @NotNull(message = "생년월일(userBirth)는 필수입니다.")
+    @NotNull(message = "userBirth is required")
     private LocalDate userBirth;
 
-    @NotBlank(message = "전화번호(userTel)는 필수입니다.")
+    @NotBlank(message = "userTel is required")
     private String userTel;
+
+    @NotBlank(message = "userPwd is required")
+    @Size(min = 8, message = "userPwd must be at least 8 characters")
+    private String userPwd;
 }

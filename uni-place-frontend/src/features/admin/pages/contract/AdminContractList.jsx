@@ -4,7 +4,7 @@ import { adminApi } from '../../api/adminApi';
 import styles from '../reservation/AdminReservation.module.css';
 
 const CONTRACT_STATUS_OPTIONS = [
-  { value: '', label: '전체 상태' },
+  { value: '', label: '상태' },
   { value: 'requested', label: '요청됨' },
   { value: 'active', label: '활성' },
   { value: 'ended', label: '종료' },
