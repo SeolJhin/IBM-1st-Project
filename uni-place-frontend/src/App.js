@@ -33,38 +33,38 @@ import MyReviewsDetail from './features/review/pages/MyReviewsDetail';
 // ── 어드민 ────────────────────────────────────────────────────
 import RequireAuth from './app/router/guards/RequireAuth';
 import RequireRole from './app/router/guards/RequireRole';
+
 import AdminShell from './features/admin/components/AdminShell';
 import AdminInfo from './features/admin/pages/AdminInfo';
-<<<<<<< HEAD
 
-// ✅ 연결될 리스트 페이지들 (너가 말한 파일들)
 import AdminMonthlyChargeList from './features/admin/pages/billing/AdminMonthlyChargeList';
-=======
-import AdminUserList from './features/admin/pages/user/AdminUserList';
-import AdminSpaceList from './features/admin/pages/property/AdminSpaceList';
-import AdminTourReservationList from './features/admin/pages/reservation/AdminTourReservationList';
-import AdminSpaceReservationList from './features/admin/pages/reservation/AdminSpaceReservationList';
->>>>>>> 4df9241956bd97e5b2980b764de5f293f9b9c645
 import AdminContractList from './features/admin/pages/contract/AdminContractList';
 import AdminResidentList from './features/admin/pages/contract/AdminResidentList';
+
 import AdminPayHub from './features/admin/pages/payment/AdminPayHub';
-import AdminOrderList from './features/admin/pages/commerce/AdminOrderList';
-import AdminProductList from './features/admin/pages/commerce/AdminProductList';
 import AdminPaymentList from './features/admin/pages/payment/AdminPaymentList';
 import AdminRefundList from './features/admin/pages/payment/AdminRefundList';
+
+import AdminOrderList from './features/admin/pages/commerce/AdminOrderList';
+import AdminProductList from './features/admin/pages/commerce/AdminProductList';
+
 import AdminPropertyHub from './features/admin/pages/property/AdminPropertyHub';
 import AdminBuildingList from './features/admin/pages/property/AdminBuildingList';
 import AdminRoomList from './features/admin/pages/property/AdminRoomList';
 import AdminSpaceList from './features/admin/pages/property/AdminSpaceList';
+
 import AdminReservationHub from './features/admin/pages/reservation/AdminReservationHub';
-import AdminSpaceReservationList from './features/admin/pages/reservation/AdminSpaceReservationList';
 import AdminTourReservationList from './features/admin/pages/reservation/AdminTourReservationList';
+import AdminSpaceReservationList from './features/admin/pages/reservation/AdminSpaceReservationList';
+
 import AdminRoomServiceHub from './features/admin/pages/roomservice/AdminRoomServiceHub';
 import AdminRoomServiceOrderList from './features/admin/pages/roomservice/AdminRoomServiceOrderList';
+
 import AdminSystemHub from './features/admin/pages/system/AdminSystemHub';
 import AdminAffiliateList from './features/admin/pages/system/AdminAffiliateList';
 import AdminBannerList from './features/admin/pages/system/AdminBannerList';
 import AdminCompanyInfoDetail from './features/admin/pages/system/AdminCompanyInfoDetail';
+
 import AdminUserHub from './features/admin/pages/user/AdminUserHub';
 import AdminUserList from './features/admin/pages/user/AdminUserList';
 
@@ -79,6 +79,8 @@ export default function App() {
         <Route path="/community" element={<About variant="community" />} />
         <Route path="/guide" element={<About variant="guide" />} />
         <Route path="/news" element={<About variant="news" />} />
+
+        {/* ── 유저 ── */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/me" element={<MemberInfo />} />
@@ -88,14 +90,12 @@ export default function App() {
         <Route path="/rooms/:roomId" element={<RoomDetail />} />
         <Route path="/spaces/:spaceId" element={<SpaceDetail />} />
         <Route path="/buildings/:buildingId" element={<BuildingDetail />} />
-        {/* /buildings → /rooms 건물 탭으로 리다이렉트 */}
         <Route
           path="/buildings"
           element={
             <Navigate to="/rooms" state={{ tab: 'buildings' }} replace />
           }
         />
-        {/* /membership → /rooms 리다이렉트 */}
         <Route path="/membership" element={<Navigate to="/rooms" replace />} />
 
         {/* ── 예약 ── */}
@@ -127,7 +127,6 @@ export default function App() {
           <Route element={<RequireRole allow={['admin']} />}>
             <Route path="/admin" element={<AdminShell />}>
               <Route index element={<AdminInfo />} />
-<<<<<<< HEAD
 
               <Route path="users" element={<AdminUserHub />}>
                 <Route index element={<AdminUserList />} />
@@ -174,37 +173,13 @@ export default function App() {
                 <Route path="refunds" element={<AdminRefundList />} />
                 <Route path="orders" element={<AdminOrderList />} />
                 <Route path="products" element={<AdminProductList />} />
-                {/* ✅ 여기 수정! payment -> payments */}
                 <Route index element={<Navigate to="payments" replace />} />
               </Route>
             </Route>
           </Route>
         </Route>
-=======
-              <Route path="users" element={<AdminUserList />} />
-              <Route path="property/spaces" element={<AdminSpaceList />} />
-              <Route
-                path="reservation/tours"
-                element={<AdminTourReservationList />}
-              />
-              <Route
-                path="reservation/spaces"
-                element={<AdminSpaceReservationList />}
-              />
-              <Route
-                path="contract/contracts"
-                element={<AdminContractList />}
-              />
-              <Route path="system/banners" element={<AdminBannerList />} />
-              <Route
-                path="roomservice/orders"
-                element={<AdminRoomServiceOrderList />}
-              />
-            </Route>
-          </Route>
-        </Route>
 
->>>>>>> 4df9241956bd97e5b2980b764de5f293f9b9c645
+        {/* ── 나머지 ── */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
