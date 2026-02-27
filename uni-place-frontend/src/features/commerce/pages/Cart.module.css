@@ -4,7 +4,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   padding-bottom: 16px;
   border-bottom: 1.5px solid rgba(0, 0, 0, 0.07);
 }
@@ -51,6 +51,21 @@
   cursor: not-allowed;
 }
 
+/* ── 빌딩 배지 ── */
+.buildingBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fdf3e3;
+  border: 1.5px solid #e8c87a;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #a07020;
+  margin-bottom: 16px;
+}
+
 /* ── 목록 ── */
 .list {
   display: flex;
@@ -75,7 +90,6 @@
 .item:hover {
   background: #fdfaf6;
 }
-
 .itemInfo {
   flex: 1;
   display: flex;
@@ -96,7 +110,6 @@
   color: #bbb;
 }
 
-/* 수량 증감 */
 .qtyWrap {
   display: flex;
   align-items: center;
@@ -136,7 +149,6 @@
   font-weight: 800;
   color: #1a1a1a;
 }
-
 .itemTotal {
   font-size: 14px;
   font-weight: 800;
@@ -145,7 +157,6 @@
   min-width: 76px;
   text-align: right;
 }
-
 .removeBtn {
   width: 28px;
   height: 28px;

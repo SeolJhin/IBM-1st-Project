@@ -12,7 +12,7 @@ const SIDE_MENUS = [
   { label: '내 정보', path: '/me' },
   { label: '마이룸', path: '/myroom' },
   { label: '작성 목록', path: '/my/posts' },
-  { label: '공용 시설', path: '/facilities' },
+  { label: '공용 시설', path: '/reservations/space/list' },
   { label: '사전 방문', path: '/tour' },
   { label: '룸서비스', path: '/commerce/room-service' },
 ];

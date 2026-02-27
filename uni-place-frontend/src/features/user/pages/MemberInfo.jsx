@@ -248,14 +248,14 @@ export default function MemberInfo() {
             <button
               type="button"
               className={styles.sideItem}
-              onClick={() => navigate('/tour')}
+              onClick={() => navigate('/reservations/space/list')}
             >
               사전 방문
             </button>
             <button
               type="button"
               className={styles.sideItem}
-              onClick={() => navigate('/commerce/room-service')}
+              onClick={() => navigate('/reservations/room/list')}
             >
               룸서비스
             </button>
