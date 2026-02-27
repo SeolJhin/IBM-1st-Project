@@ -14,6 +14,8 @@ import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.security.AuthUser;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -101,6 +103,13 @@ public class UserServiceImpl implements UserService {
         notifyIfChanged(user, emailChanged, telChanged, pwdChanged);
 
         return UserResponse.from(user);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<UserResponse> listForAdmin(Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(UserResponse::from);
     }
 
     @Override

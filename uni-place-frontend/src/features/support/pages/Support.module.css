@@ -1,0 +1,102 @@
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 60px 20px 100px;
+}
+
+.sectionTitle {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 32px;
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 14px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  margin-bottom: 18px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.cardMeta {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.buttonPrimary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.buttonPrimary:hover {
+  background: var(--accent);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 30px;
+}
+
+.table th {
+  background: var(--b-5);
+  padding: 14px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--line);
+}
+
+.table td {
+  padding: 16px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.table tr:hover {
+  background: var(--cream);
+}
+
+.statusBadge {
+  background: var(--primary-weak);
+  color: var(--ink-soft);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
