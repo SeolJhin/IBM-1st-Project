@@ -63,13 +63,15 @@ export default function AdminInfo() {
         title: '입주자 수',
         icon: 'resident',
         value: `${data.residentCount}명`,
-        onClick: () => navigate('/admin/contract/residents'),
+        // ✅ 현재 App.js에 있는 라우트로 연결 (임시)
+        onClick: () => navigate('/admin/contracts'),
       },
       {
         title: '시설',
         icon: 'facility',
         value: `${data.facilityCount}명`,
-        onClick: () => navigate('/admin/property/buildings'),
+        // ✅ 현재 App.js에 있는 라우트로 연결 (spaces가 등록돼 있음)
+        onClick: () => navigate('/admin/property/spaces'),
       },
       {
         title: '투어',
