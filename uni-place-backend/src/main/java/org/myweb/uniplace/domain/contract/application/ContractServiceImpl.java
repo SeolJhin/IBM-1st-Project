@@ -129,6 +129,14 @@ public class ContractServiceImpl implements ContractService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public ContractResponse getContractForAdmin(Integer contractId) {
+        Contract c = contractRepository.findById(contractId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CONTRACT_NOT_FOUND));
+        return ContractResponse.fromEntity(c);
+    }
+    
+    @Override
     public ContractResponse updateContractForAdmin(Integer contractId, ContractUpdateRequest request) {
         Contract c = contractRepository.findById(contractId)
             .orElseThrow(() -> new BusinessException(ErrorCode.CONTRACT_NOT_FOUND));

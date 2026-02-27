@@ -1,0 +1,200 @@
+/* src/features/commerce/pages/OrderDetail.module.css */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.07);
+}
+.backBtn {
+  background: none;
+  border: 1.5px solid #c9b89a;
+  color: #7a6a54;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.backBtn:hover {
+  background: rgba(197, 138, 58, 0.08);
+}
+.title {
+  flex: 1;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  text-align: center;
+  color: #1a1a1a;
+}
+
+/* ── body ── */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ── 주문 요약 ── */
+.summaryBox {
+  background: #faf7f2;
+  border: 1.5px solid #ede5d8;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sumRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sumLabel {
+  font-size: 13px;
+  color: #999;
+  font-weight: 600;
+}
+.sumVal {
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+.sumTotal {
+  font-size: 20px;
+  font-weight: 900;
+  color: #c58a3a;
+}
+
+.statusChip {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ── 섹션 ── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sectionTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.07);
+}
+
+/* ── 상품 목록 ── */
+.itemList {
+  border: 1.5px solid #ede5d8;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: #fff;
+}
+.item:last-child {
+  border-bottom: none;
+}
+.itemName {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.itemQty {
+  font-size: 13px;
+  color: #aaa;
+  white-space: nowrap;
+}
+.itemAmt {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c58a3a;
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* ── 룸서비스 ── */
+.rsBox {
+  background: rgba(197, 138, 58, 0.05);
+  border: 1.5px solid rgba(197, 138, 58, 0.2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── 취소 버튼 ── */
+.cancelWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+.cancelBtn {
+  background: none;
+  border: 1.5px solid rgba(192, 57, 43, 0.5);
+  color: #c0392b;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cancelBtn:hover:not(:disabled) {
+  background: rgba(192, 57, 43, 0.06);
+}
+.cancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 공통 */
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 60px;
+}
+.spin {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(197, 138, 58, 0.2);
+  border-top-color: #c58a3a;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.errMsg {
+  color: #c0392b;
+  font-size: 13px;
+  padding: 8px;
+}

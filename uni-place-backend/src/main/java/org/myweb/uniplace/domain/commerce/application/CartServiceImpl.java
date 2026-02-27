@@ -1,4 +1,3 @@
-// org/myweb/uniplace/domain/commerce/application/CartServiceImpl.java
 package org.myweb.uniplace.domain.commerce.application;
 
 import java.math.BigDecimal;
@@ -36,11 +35,6 @@ public class CartServiceImpl implements CartService {
 
     // ===================== 조회 =====================
 
-    /**
-     * 내 카트 조회
-     * - 카트가 없어도 생성하지 않음
-     * - readOnly 안전
-     */
     @Override
     @Transactional(readOnly = true)
     public CartResponse getMyCart(String userId) {
@@ -68,10 +62,6 @@ public class CartServiceImpl implements CartService {
 
     // ===================== 담기 =====================
 
-    /**
-     * 상품 담기
-     * - 여기서만 카트 자동 생성
-     */
     @Override
     public CartResponse addItem(String userId, CartAddRequest request) {
 
@@ -84,10 +74,11 @@ public class CartServiceImpl implements CartService {
 
         Cart cart = getOrCreateCart(userId);
         int qty = Math.max(1, Optional.ofNullable(request.getQuantity()).orElse(1));
+        Integer buildingId = request.getBuildingId();   // null 허용 (비로그인 등 예외 방어)
 
         try {
             CartItem item = cartItemRepository
-                .findByCartIdAndProdId(cart.getCartId(), product.getProdId())
+                .findByCartIdAndProdIdAndBuildingId(cart.getCartId(), product.getProdId(), buildingId)
                 .orElse(null);
 
             if (item == null) {
@@ -95,6 +86,7 @@ public class CartServiceImpl implements CartService {
                     CartItem.builder()
                         .cartId(cart.getCartId())
                         .prodId(product.getProdId())
+                        .buildingId(buildingId)
                         .orderQuantity(qty)
                         .orderPrice(product.getProdPrice())
                         .build()
@@ -105,7 +97,7 @@ public class CartServiceImpl implements CartService {
         } catch (DataIntegrityViolationException e) {
             // 동시성 대응
             cartItemRepository
-                .findByCartIdAndProdId(cart.getCartId(), product.getProdId())
+                .findByCartIdAndProdIdAndBuildingId(cart.getCartId(), product.getProdId(), buildingId)
                 .ifPresent(i -> i.increase(qty));
         }
 
@@ -169,18 +161,13 @@ public class CartServiceImpl implements CartService {
             .findTop1ByUserIdOrderByCartCreatedAtDesc(userId)
             .orElse(null);
 
-        if (cart == null) {
-            return; // 비어있으면 아무 것도 안 함
-        }
+        if (cart == null) return;
 
         cartItemRepository.deleteByCartId(cart.getCartId());
     }
 
     // ===================== private =====================
 
-    /**
-     * 담기 전용
-     */
     private Cart getOrCreateCart(String userId) {
 
         if (userId == null || userId.isBlank()) {
@@ -190,17 +177,10 @@ public class CartServiceImpl implements CartService {
         return cartRepository
             .findTop1ByUserIdOrderByCartCreatedAtDesc(userId)
             .orElseGet(() ->
-                cartRepository.save(
-                    Cart.builder()
-                        .userId(userId)
-                        .build()
-                )
+                cartRepository.save(Cart.builder().userId(userId).build())
             );
     }
 
-    /**
-     * 수정/삭제 전용
-     */
     private Cart getCartOrThrow(String userId) {
 
         if (userId == null || userId.isBlank()) {
@@ -266,6 +246,7 @@ public class CartServiceImpl implements CartService {
                     .cartItemId(ci.getCartItemId())
                     .prodId(p.getProdId())
                     .prodNm(p.getProdNm())
+                    .buildingId(ci.getBuildingId())        // ← 빌딩 포함
                     .orderPrice(ci.getOrderPrice())
                     .orderQuantity(ci.getOrderQuantity())
                     .lineTotal(lineTotal)

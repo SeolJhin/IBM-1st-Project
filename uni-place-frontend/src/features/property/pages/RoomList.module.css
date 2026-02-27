@@ -488,3 +488,22 @@
   background: #d9ad5b;
   color: #fff;
 }
+
+/* ── SpaceCard 옵션 태그 (room 스타일) ── */
+.spaceTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 4px;
+}
+.spaceTag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f0e8d8;
+  color: #7a5c2e;
+  border: 1px solid #e0cc9f;
+  letter-spacing: 0.02em;
+}
