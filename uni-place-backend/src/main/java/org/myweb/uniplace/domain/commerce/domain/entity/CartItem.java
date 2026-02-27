@@ -1,4 +1,3 @@
-// org/myweb/uniplace/domain/commerce/domain/entity/CartItem.java
 package org.myweb.uniplace.domain.commerce.domain.entity;
 
 import java.math.BigDecimal;
@@ -14,7 +13,8 @@ import lombok.*;
 @Table(
     name = "cart_items",
     uniqueConstraints = {
-        @UniqueConstraint(name = "uq_cart_item", columnNames = {"cart_id", "prod_id"})
+        // 빌딩이 다르면 같은 상품도 별개 아이템
+        @UniqueConstraint(name = "uq_cart_item", columnNames = {"cart_id", "prod_id", "building_id"})
     }
 )
 public class CartItem {
@@ -29,6 +29,10 @@ public class CartItem {
 
     @Column(name = "prod_id", nullable = false)
     private Integer prodId;
+
+    /** 어느 빌딩에서 담은 상품인지 */
+    @Column(name = "building_id")
+    private Integer buildingId;
 
     @Column(name = "order_quantity", nullable = false)
     private Integer orderQuantity;

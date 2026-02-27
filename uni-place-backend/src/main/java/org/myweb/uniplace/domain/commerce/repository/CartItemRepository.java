@@ -1,4 +1,3 @@
-// org/myweb/uniplace/domain/commerce/repository/CartItemRepository.java
 package org.myweb.uniplace.domain.commerce.repository;
 
 import java.util.List;
@@ -11,7 +10,8 @@ public interface CartItemRepository extends JpaRepository<CartItem, Integer> {
 
     List<CartItem> findByCartId(Integer cartId);
 
-    Optional<CartItem> findByCartIdAndProdId(Integer cartId, Integer prodId);
+    /** 빌딩까지 포함해서 중복 여부 확인 */
+    Optional<CartItem> findByCartIdAndProdIdAndBuildingId(Integer cartId, Integer prodId, Integer buildingId);
 
     void deleteByCartId(Integer cartId);
 }
