@@ -1,4 +1,4 @@
-package org.myweb.uniplace.domain.contract.api.admin;
+	package org.myweb.uniplace.domain.contract.api.admin;
 
 import org.myweb.uniplace.domain.contract.api.dto.request.ContractAdminSearchRequest;
 import org.myweb.uniplace.domain.contract.api.dto.request.ContractUpdateRequest;
@@ -24,6 +24,7 @@ public class AdminContractController {
 
     // ======================================
     // 관리자: 계약 목록 조회 (검색 + 페이징)
+    // GET /admin/contracts?keyword=...&contractStatus=...&buildingId=...&roomNo=...&startFrom=...&endTo=...
     // ======================================
     @GetMapping
     public ApiResponse<PageResponse<AdminContractSummaryResponse>> list(
@@ -33,7 +34,6 @@ public class AdminContractController {
             @RequestParam(name = "sort", defaultValue = "contractId") String sort,
             @RequestParam(name = "direct", defaultValue = "DESC") String direct
     ) {
-
         if (page < 1) page = 1;
         if (size < 1) size = 10;
 
@@ -48,7 +48,19 @@ public class AdminContractController {
     }
 
     // ======================================
+    // ✅ 관리자: 계약 단건 조회
+    // GET /admin/contracts/{contractId}
+    // ======================================
+    @GetMapping("/{contractId}")
+    public ApiResponse<ContractResponse> get(
+            @PathVariable("contractId") Integer contractId
+    ) {
+        return ApiResponse.ok(contractService.getContractForAdmin(contractId));
+    }
+
+    // ======================================
     // 관리자: 계약 수정 (상태 + PDF + 기타)
+    // PUT /admin/contracts/{contractId} (multipart/form-data)
     // ======================================
     @PutMapping(value = "/{contractId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<ContractResponse> updateContract(

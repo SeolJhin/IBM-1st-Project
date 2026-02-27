@@ -49,17 +49,22 @@ async function request(
   path,
   { method = 'GET', body, headers = {}, auth = false } = {}
 ) {
+  const isFormData = body instanceof FormData;
+
   const res = await fetch(`${DEFAULT_BASE_URL}${path}`, {
     method,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+
       ...(auth && getAccessToken()
         ? { Authorization: `Bearer ${getAccessToken()}` }
         : {}),
+
       ...headers,
     },
     credentials: 'same-origin',
-    body: body ? JSON.stringify(body) : undefined,
+
+    body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
   });
 
   const payload = await parsePayload(res);
@@ -90,18 +95,27 @@ export const adminApi = {
   // dashboard
   dashboard: () => request('/admin/dashboard', { auth: true }),
 
-  // users
+  users: (params) => {
+    const q = new URLSearchParams();
+
+    q.set('page', String(params?.page ?? 1));
+    q.set('size', String(params?.size ?? 10));
+    q.set('sort', params?.sort ?? 'userId');
+    q.set('direct', params?.direct ?? 'DESC');
+
+    return request(`/admin/users?${q.toString()}`, { auth: true });
+  },
   getUserDetail: (userId) => request(`/admin/users/${userId}`, { auth: true }),
-  updateUserStatus: (userId, body) =>
+  updateUserStatus: (userId, userStatus) =>
     request(`/admin/users/${userId}/status`, {
       method: 'PATCH',
-      body,
+      body: { userStatus },
       auth: true,
     }),
-  updateUserRole: (userId, body) =>
+  updateUserRole: (userId, userRole) =>
     request(`/admin/users/${userId}/role`, {
       method: 'PATCH',
-      body,
+      body: { userRole },
       auth: true,
     }),
   getResidents: () => request('/admin/residents', { auth: true }),
@@ -174,28 +188,24 @@ export const adminApi = {
 
   // contracts
   getContracts: ({
-    contractId,
-    userId,
-    roomId,
-    contractSt,
-    startDateFrom,
-    startDateTo,
-    endDateFrom,
-    endDateTo,
+    keyword,
+    contractStatus,
+    buildingId,
+    roomNo,
+    startFrom,
+    endTo,
     page = 1,
     size = 10,
     sort = 'contractId',
     direct = 'DESC',
   } = {}) => {
     const q = buildQuery({
-      contractId,
-      userId,
-      roomId,
-      contractSt,
-      startDateFrom,
-      startDateTo,
-      endDateFrom,
-      endDateTo,
+      keyword,
+      contractStatus,
+      buildingId,
+      roomNo,
+      startFrom,
+      endTo,
       page,
       size,
       sort,
@@ -203,12 +213,20 @@ export const adminApi = {
     });
     return request(`/admin/contracts${q}`, { auth: true });
   },
-  getContractById: async (contractId) => {
-    const data = await request(
-      `/admin/contracts${buildQuery({ contractId, page: 1, size: 1, sort: 'contractId', direct: 'DESC' })}`,
-      { auth: true }
-    );
-    return data?.content?.[0] ?? null;
+  getContractById: (contractId) => {
+    return request(`/admin/contracts/${contractId}`, { auth: true });
+  },
+  updateContract: (contractId, { contractStatus, moveinAt, pdfFile } = {}) => {
+    const fd = new FormData();
+    if (contractStatus != null) fd.append('contractStatus', contractStatus);
+    if (moveinAt != null) fd.append('moveinAt', moveinAt);
+    if (pdfFile != null) fd.append('pdfFile', pdfFile);
+
+    return request(`/admin/contracts/${contractId}`, {
+      method: 'PUT',
+      body: fd,
+      auth: true,
+    });
   },
 
   // monthly charge
@@ -225,9 +243,10 @@ export const adminApi = {
   getRefundDetail: async (refundId) => {
     const items = await request('/api/admin/refunds', { auth: true });
     if (!Array.isArray(items)) return null;
-    return items.find(
-      (it) => Number(it.refundId ?? it.id) === Number(refundId)
-    ) ?? null;
+    return (
+      items.find((it) => Number(it.refundId ?? it.id) === Number(refundId)) ??
+      null
+    );
   },
 
   // orders
@@ -281,6 +300,14 @@ export const adminApi = {
       body: fileIds,
       auth: true,
     }),
+  getProductBuildingStocks: (prodId) =>
+    request(`/admin/products/${prodId}/building-stocks`, { auth: true }),
+  upsertProductBuildingStock: (prodId, buildingId, stock) =>
+    request(`/admin/products/${prodId}/building-stocks/${buildingId}`, {
+      method: 'PUT',
+      body: { stock },
+      auth: true,
+    }),
 
   // room service orders
   getAllRoomServiceOrders: ({ page = 0, size = 20, sort = 'createdAt' } = {}) =>
@@ -303,7 +330,12 @@ export const adminApi = {
   },
 
   // affiliates
-  getAffiliates: ({ page = 0, size = 20, sort = 'affiliateId', direct = 'DESC' } = {}) =>
+  getAffiliates: ({
+    page = 0,
+    size = 20,
+    sort = 'affiliateId',
+    direct = 'DESC',
+  } = {}) =>
     request(`/admin/affiliates${buildQuery({ page, size, sort, direct })}`, {
       auth: true,
     }),
@@ -312,9 +344,12 @@ export const adminApi = {
 
   // banners
   getBanners: ({ page = 0, size = 10, sort = 'banId', direct = 'DESC' } = {}) =>
-    request(`/admin/banners${buildQuery({ page, size, sort, direction: direct })}`, {
-      auth: true,
-    }),
+    request(
+      `/admin/banners${buildQuery({ page, size, sort, direction: direct })}`,
+      {
+        auth: true,
+      }
+    ),
   getBannerDetail: async (banId) => {
     const data = await request(
       `/admin/banners${buildQuery({ page: 0, size: 200, sort: 'banId', direction: 'DESC' })}`,
@@ -334,20 +369,40 @@ export const adminApi = {
     }),
 
   // property list/detail
-  getBuildings: ({ page = 1, size = 10, sort = 'buildingId', direct = 'DESC' } = {}) =>
-    request(`/buildings${buildQuery({ page, size, sort, direct })}`),
-  getBuildingDetail: (buildingId) => request(`/admin/buildings/${buildingId}`, { auth: true }),
+  getBuildings: ({
+    page = 1,
+    size = 10,
+    sort = 'buildingId',
+    direct = 'DESC',
+  } = {}) => request(`/buildings${buildQuery({ page, size, sort, direct })}`),
+  getBuildingDetail: (buildingId) =>
+    request(`/admin/buildings/${buildingId}`, { auth: true }),
 
-  getRooms: ({ page = 1, size = 10, sort = 'roomId', direct = 'DESC', ...filters } = {}) =>
+  getRooms: ({
+    page = 1,
+    size = 10,
+    sort = 'roomId',
+    direct = 'DESC',
+    ...filters
+  } = {}) =>
     request(`/rooms${buildQuery({ page, size, sort, direct, ...filters })}`),
   getRoomDetail: (roomId) => request(`/admin/rooms/${roomId}`, { auth: true }),
 
-  getSpaces: ({ page = 1, size = 10, sort = 'spaceId', direct = 'DESC', ...filters } = {}) =>
+  getSpaces: ({
+    page = 1,
+    size = 10,
+    sort = 'spaceId',
+    direct = 'DESC',
+    ...filters
+  } = {}) =>
     request(`/spaces${buildQuery({ page, size, sort, direct, ...filters })}`),
-  getSpaceDetail: (spaceId) => request(`/admin/spaces/${spaceId}`, { auth: true }),
+  getSpaceDetail: (spaceId) =>
+    request(`/admin/spaces/${spaceId}`, { auth: true }),
 
   // support detail
-  getComplainDetail: (compId) => request(`/complains/${compId}`, { auth: true }),
+  getComplainDetail: (compId) =>
+    request(`/complains/${compId}`, { auth: true }),
   getFaqDetail: (faqId) => request(`/faqs/${faqId}`, { auth: true }),
-  getNoticeDetail: (noticeId) => request(`/notices/${noticeId}`, { auth: true }),
+  getNoticeDetail: (noticeId) =>
+    request(`/notices/${noticeId}`, { auth: true }),
 };
