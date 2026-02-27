@@ -20,6 +20,13 @@ import RoomDetail from './features/property/pages/RoomDetail';
 import SpaceDetail from './features/property/pages/SpaceDetail';
 import BuildingDetail from './features/property/pages/BuildingDetail';
 
+// ── Commerce ──────────────────────────────────────────────────
+import ProductList from './features/commerce/pages/ProductList';
+import Cart from './features/commerce/pages/Cart';
+import OrderList from './features/commerce/pages/OrderList';
+import OrderDetail from './features/commerce/pages/OrderDetail';
+import Checkout from './features/commerce/pages/Checkout';
+
 // ── 예약 ──────────────────────────────────────────────────────
 import SpaceReservationCreate from './features/reservation/pages/SpaceReservationCreate';
 import SpaceReservationList from './features/reservation/pages/SpaceReservationList';
@@ -123,6 +130,12 @@ export default function App() {
         <Route path="/reviews/:reviewId/edit" element={<ReviewWrite />} />
         <Route path="/reviews/my" element={<MyReviewsList />} />
         <Route path="/reviews/:reviewId" element={<MyReviewsDetail />} />
+        {/* ── 커머스 ── */}
+        <Route path="/commerce/room-service" element={<ProductList />} />
+        <Route path="/commerce/cart" element={<Cart />} />
+        <Route path="/commerce/orders" element={<OrderList />} />
+        <Route path="/commerce/orders/:orderId" element={<OrderDetail />} />
+        <Route path="/commerce/checkout" element={<Checkout />} />
 
         {/* ── 어드민 (로그인 + ADMIN 역할 필요) ── */}
         <Route element={<RequireAuth />}>
