@@ -18,4 +18,6 @@ public interface BoardService {
     void updateBoard(int boardId, BoardUpdateRequest request, boolean deleteFlag, MultipartFile file);
 
     void deleteBoard(int boardId);
+    
+    PageResponse<BoardResponse> getMyBoards(String boardType, Pageable pageable);
 }

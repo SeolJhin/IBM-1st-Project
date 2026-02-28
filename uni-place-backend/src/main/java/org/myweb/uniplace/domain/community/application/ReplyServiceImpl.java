@@ -21,6 +21,10 @@ import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.myweb.uniplace.global.response.PageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +38,23 @@ public class ReplyServiceImpl implements ReplyService {
     private final ReplyLikeRepository replyLikeRepository;
     private final NotificationService notificationService;
 
+    
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<ReplyResponse> getMyReplies(Pageable pageable) {
+        String userId = requireCurrentUserId();
+        Pageable pageReq = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        Page<Reply> page = replyRepository.findByUserIdOrderByReplyIdDesc(userId, pageReq);
+
+        String me = userId;
+        Page<ReplyResponse> mapped = page.map(r -> {
+            long cnt = replyLikeRepository.countByIdReplyId(r.getReplyId());
+            boolean liked = replyLikeRepository.existsByIdUserIdAndIdReplyId(me, r.getReplyId());
+            return ReplyResponse.fromEntity(r, cnt, liked);
+        });
+        return PageResponse.of(mapped);
+    }
+    
     @Override
     @Transactional(readOnly = true)
     public List<ReplyResponse> getRepliesByBoard(int boardId) {
