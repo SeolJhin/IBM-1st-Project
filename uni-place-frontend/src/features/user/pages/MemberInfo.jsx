@@ -15,6 +15,11 @@ import { getOrCreateDeviceId } from '../../../app/http/tokenStore';
 // ── 탭 컴포넌트 import ────────────────────────────────────────
 import MyContractView from '../../contract/pages/MyContractView';
 import MyPosts from '../../community/pages/MyPosts';
+import ProductList from '../../commerce/pages/ProductList';
+import Cart from '../../commerce/pages/Cart';
+import Checkout from '../../commerce/pages/Checkout';
+import OrderList from '../../commerce/pages/OrderList';
+import OrderDetail from '../../commerce/pages/OrderDetail';
 
 import Modal from '../../../shared/components/Modal/Modal';
 import SpaceReservationCreate from '../../reservation/pages/SpaceReservationCreate';
@@ -251,6 +256,66 @@ function MeTab() {
 }
 
 // ── 공용 시설 탭 (로컬) ───────────────────────────────────────
+// ── 룸서비스 탭 (서브뷰: product → cart → checkout → orders → orderDetail) ─
+function RoomServiceTab() {
+  const [view, setView] = React.useState('product'); // 'product'|'cart'|'checkout'|'orders'|'orderDetail'
+  const [navState, setNavState] = React.useState({});
+  const [toastMsg, setToastMsg] = React.useState('');
+
+  const handleNav = (path, state = {}) => {
+    setNavState(state);
+    if (
+      path === '/commerce/room-service' ||
+      path.startsWith('/commerce/room-service')
+    )
+      setView('product');
+    else if (path === '/commerce/cart') setView('cart');
+    else if (path === '/commerce/checkout') setView('checkout');
+    else if (path === '/commerce/orders') {
+      if (state?.toastMsg) setToastMsg(state.toastMsg);
+      setView('orders');
+    } else if (path.startsWith('/commerce/orders/')) {
+      const id = Number(path.split('/').pop());
+      setNavState((prev) => ({ ...prev, orderId: id }));
+      setView('orderDetail');
+    }
+  };
+
+  return (
+    <div>
+      {view === 'product' && (
+        <ProductList
+          inlineMode
+          onNav={handleNav}
+          initialBuildingId={navState.selectedBuildingId}
+        />
+      )}
+      {view === 'cart' && (
+        <Cart
+          inlineMode
+          onNav={handleNav}
+          buildingId={navState.selectedBuildingId}
+          buildingNm={navState.selectedBuildingNm}
+        />
+      )}
+      {view === 'checkout' && (
+        <Checkout
+          inlineMode
+          onNav={handleNav}
+          buildingId={navState.selectedBuildingId}
+          buildingNm={navState.selectedBuildingNm}
+        />
+      )}
+      {view === 'orders' && (
+        <OrderList inlineMode onNav={handleNav} toastMsg={toastMsg} />
+      )}
+      {view === 'orderDetail' && (
+        <OrderDetail inlineMode onNav={handleNav} orderId={navState.orderId} />
+      )}
+    </div>
+  );
+}
+
 function SpaceTab({ spaceSubTab, setSpaceSubTab, setSearchParams }) {
   return (
     <div className={styles.card}>
@@ -338,10 +403,6 @@ export default function MemberInfo() {
   };
 
   const handleSideClick = (key) => {
-    if (key === TAB.ROOMSERVICE) {
-      navigate('/commerce/room-service');
-      return;
-    }
     if (key === TAB.TOUR) {
       setTourCreateOpen(true);
       return;
@@ -362,9 +423,7 @@ export default function MemberInfo() {
                 key={item.key}
                 type="button"
                 className={`${styles.sideItem} ${
-                  activeTab === item.key &&
-                  item.key !== TAB.ROOMSERVICE &&
-                  item.key !== TAB.TOUR
+                  activeTab === item.key && item.key !== TAB.TOUR
                     ? styles.sideItemActive
                     : ''
                 }`}
@@ -404,6 +463,12 @@ export default function MemberInfo() {
               setSpaceSubTab={setSpaceSubTab}
               setSearchParams={setSearchParams}
             />
+          )}
+
+          {activeTab === TAB.ROOMSERVICE && (
+            <div className={styles.card}>
+              <RoomServiceTab />
+            </div>
           )}
         </section>
       </main>
