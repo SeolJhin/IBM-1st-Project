@@ -14,7 +14,8 @@ function StatusBadge({ status }) {
     CANCELLED: { label: '취소됨', cls: styles.statusCancelled },
     COMPLETED: { label: '완료', cls: styles.statusCompleted },
   };
-  const s = map[status] ?? { label: status ?? '-', cls: styles.statusPending };
+  const s = map[status];
+  if (!s) return null;
   return <span className={`${styles.statusBadge} ${s.cls}`}>{s.label}</span>;
 }
 

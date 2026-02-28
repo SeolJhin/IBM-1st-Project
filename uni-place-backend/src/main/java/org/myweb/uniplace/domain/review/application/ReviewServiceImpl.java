@@ -219,8 +219,12 @@ public class ReviewServiceImpl implements ReviewService {
 
         List<String> imageExts = List.of(".png", ".jpg", ".jpeg", ".gif", ".webp");
         return all.stream()
-                .filter(f -> f.getFileType() != null
-                        && imageExts.contains(f.getFileType().toLowerCase()))
+                .filter(f -> {
+                    if (f.getFileType() == null) return false;
+                    String t = f.getFileType().toLowerCase();
+                    // 확장자 형식 (.jpg) 또는 mime 형식 (image/jpeg) 모두 허용
+                    return imageExts.contains(t) || t.startsWith("image/");
+                })
                 .limit(1)
                 .toList();
     }

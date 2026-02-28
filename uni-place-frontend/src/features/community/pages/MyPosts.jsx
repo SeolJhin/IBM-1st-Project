@@ -174,7 +174,7 @@ export default function MyPosts() {
             <div
               key={r.reviewId}
               className={styles.reviewCard}
-              onClick={() => navigate(`/reviews/${r.reviewId}`)}
+              onClick={() => navigate(`/rooms/${r.roomId}`)}
             >
               {r.thumbnailUrl && (
                 <div className={styles.reviewThumb}>

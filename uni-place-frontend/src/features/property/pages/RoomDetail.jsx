@@ -6,10 +6,343 @@ import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import { useReviewActions } from '../../review/hooks/useReviews';
+import { reviewApi } from '../../review/api/reviewApi';
 import styles from './RoomDetail.module.css';
 import Modal from '../../../shared/components/Modal/Modal';
 import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
 import TourReservationList from '../../reservation/pages/TourReservationList';
+
+// ── 리뷰 수정 팝업 ──────────────────────────────────────────────────────────
+function ReviewEditModal({ review, onClose, onSuccess }) {
+  const { update, submitting } = useReviewActions();
+  const [rating, setRating] = React.useState(review.rating ?? 0);
+  const [hover, setHover] = React.useState(0);
+  const [title, setTitle] = React.useState(review.reviewTitle ?? '');
+  const [ctnt, setCtnt] = React.useState(review.reviewCtnt ?? '');
+  const [files, setFiles] = React.useState([]);
+  const [previews, setPreviews] = React.useState([]);
+  const [deleteOld, setDeleteOld] = React.useState(false);
+  const [err, setErr] = React.useState('');
+  const fileRef = React.useRef(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!rating) {
+      setErr('별점을 선택해 주세요.');
+      return;
+    }
+    const ok = await update(
+      review.reviewId,
+      { rating, reviewTitle: title, reviewCtnt: ctnt },
+      deleteOld,
+      files
+    );
+    if (ok) onSuccess();
+    else setErr('수정 실패');
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9000,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 16,
+          padding: 28,
+          width: '100%',
+          maxWidth: 480,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 20,
+          }}
+        >
+          <h3
+            style={{
+              margin: 0,
+              fontSize: 17,
+              fontWeight: 800,
+              color: '#3a2e20',
+            }}
+          >
+            ✏️ 리뷰 수정
+          </h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: 22,
+              cursor: 'pointer',
+              color: '#9a8c70',
+            }}
+          >
+            ×
+          </button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 16 }}>
+            <p
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#5a4a30',
+                marginBottom: 8,
+              }}
+            >
+              별점 *
+            </p>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: 28,
+                    cursor: 'pointer',
+                    padding: 0,
+                    color: s <= (hover || rating) ? '#f6b93b' : '#d7cebc',
+                  }}
+                  onMouseEnter={() => setHover(s)}
+                  onMouseLeave={() => setHover(0)}
+                  onClick={() => setRating(s)}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#5a4a30',
+                marginBottom: 6,
+              }}
+            >
+              제목
+            </label>
+            <input
+              type="text"
+              placeholder="제목 (선택)"
+              maxLength={100}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #e8dfd0',
+                borderRadius: 8,
+                fontSize: 14,
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#5a4a30',
+                marginBottom: 6,
+              }}
+            >
+              내용
+            </label>
+            <textarea
+              placeholder="내용 (선택)"
+              maxLength={3000}
+              rows={4}
+              value={ctnt}
+              onChange={(e) => setCtnt(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #e8dfd0',
+                borderRadius: 8,
+                fontSize: 14,
+                resize: 'vertical',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+          {review.fileCk === 'Y' && (
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                marginBottom: 12,
+                fontSize: 13,
+                color: '#7a6a54',
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={deleteOld}
+                onChange={(e) => setDeleteOld(e.target.checked)}
+              />
+              기존 이미지 삭제
+            </label>
+          )}
+          <div style={{ marginBottom: 16 }}>
+            <p
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#5a4a30',
+                marginBottom: 8,
+              }}
+            >
+              새 이미지 ({files.length}/5)
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {previews.map((url, idx) => (
+                <div
+                  key={idx}
+                  style={{ position: 'relative', width: 64, height: 64 }}
+                >
+                  <img
+                    src={url}
+                    alt=""
+                    style={{
+                      width: 64,
+                      height: 64,
+                      objectFit: 'cover',
+                      borderRadius: 6,
+                      border: '1px solid #e8dfd0',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const f = files.filter((_, i) => i !== idx);
+                      setFiles(f);
+                      setPreviews(f.map((x) => URL.createObjectURL(x)));
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: -6,
+                      right: -6,
+                      background: '#3a2e20',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: 18,
+                      height: 18,
+                      cursor: 'pointer',
+                      fontSize: 11,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              {files.length < 5 && (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  style={{
+                    width: 64,
+                    height: 64,
+                    border: '2px dashed #d7cebc',
+                    borderRadius: 6,
+                    background: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#9a8c70',
+                    fontSize: 11,
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>＋</span>추가
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const sel = Array.from(e.target.files);
+                const m = [...files, ...sel].slice(0, 5);
+                setFiles(m);
+                setPreviews(m.map((f) => URL.createObjectURL(f)));
+                e.target.value = '';
+              }}
+            />
+          </div>
+          {err && (
+            <p style={{ color: '#e53e3e', fontSize: 13, marginBottom: 12 }}>
+              {err}
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                background: '#ba8037',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 24px',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: submitting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {submitting ? '저장 중...' : '수정 완료'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                background: '#f5f0e8',
+                color: '#5a4a30',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 20px',
+                fontSize: 14,
+                cursor: 'pointer',
+              }}
+            >
+              취소
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function StarRating({ value = 0, size = 'md' }) {
   return (
@@ -26,12 +359,19 @@ function StarRating({ value = 0, size = 'md' }) {
   );
 }
 
-function ReviewCard({ review }) {
+function ReviewCard({ review, currentUserId, onEdit, onDelete }) {
+  const isOwn = currentUserId && review.userId === currentUserId;
   return (
     <article className={styles.reviewCard}>
       {review.thumbnailUrl && (
         <div className={styles.reviewThumb}>
-          <img src={review.thumbnailUrl} alt="리뷰 이미지" />
+          <img
+            src={review.thumbnailUrl}
+            alt="리뷰 이미지"
+            onError={(e) => {
+              e.target.parentElement.style.display = 'none';
+            }}
+          />
         </div>
       )}
       <div className={styles.reviewBody}>
@@ -43,6 +383,40 @@ function ReviewCard({ review }) {
               ? new Date(review.createdAt).toLocaleDateString('ko-KR')
               : ''}
           </span>
+          {isOwn && (
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => onEdit(review)}
+                style={{
+                  background: 'none',
+                  border: '1px solid #c9b89a',
+                  color: '#7a6a50',
+                  fontSize: 12,
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                }}
+              >
+                수정
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(review.reviewId)}
+                style={{
+                  background: 'none',
+                  border: '1px solid #f5b8b8',
+                  color: '#c05050',
+                  fontSize: 12,
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                }}
+              >
+                삭제
+              </button>
+            </div>
+          )}
         </div>
         <h4 className={styles.reviewTitle}>{review.reviewTitle}</h4>
         <p className={styles.reviewCtnt}>
@@ -150,6 +524,18 @@ export default function RoomDetail() {
     error: reviewApiError,
   } = useReviewActions();
   const [findMenuOpen, setFindMenuOpen] = useState(false);
+  const [reviewEditTarget, setReviewEditTarget] = useState(null);
+
+  // 내 리뷰 삭제
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('리뷰를 삭제할까요?')) return;
+    try {
+      await reviewApi.remove(reviewId);
+      fetchReviews(reviewPage);
+    } catch (e) {
+      alert(e?.message || '삭제 실패');
+    }
+  };
 
   // 인라인 리뷰 작성 상태
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -1054,7 +1440,13 @@ export default function RoomDetail() {
           {!reviewLoading && reviews.length > 0 && (
             <div className={styles.reviewList}>
               {reviews.map((r) => (
-                <ReviewCard key={r.reviewId} review={r} />
+                <ReviewCard
+                  key={r.reviewId}
+                  review={r}
+                  currentUserId={user?.userId}
+                  onEdit={(rev) => setReviewEditTarget(rev)}
+                  onDelete={handleDeleteReview}
+                />
               ))}
             </div>
           )}
@@ -1131,6 +1523,18 @@ export default function RoomDetail() {
           onClose={() => setTourListOpen(false)}
         />
       </Modal>
+
+      {/* ── 리뷰 수정 팝업 ── */}
+      {reviewEditTarget && (
+        <ReviewEditModal
+          review={reviewEditTarget}
+          onClose={() => setReviewEditTarget(null)}
+          onSuccess={() => {
+            setReviewEditTarget(null);
+            fetchReviews(reviewPage);
+          }}
+        />
+      )}
     </div>
   );
 }

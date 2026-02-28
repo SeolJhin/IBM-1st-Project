@@ -338,11 +338,11 @@
 }
 .qtyBtn:disabled,
 .qtyBtnDisabled {
-  opacity: 0.28;
+  opacity: 0.45;
   cursor: not-allowed;
-  background: #fff !important;
-  color: #7a6a54 !important;
-  border-color: #c9b89a !important;
+  background: #f5f0e8 !important;
+  color: #b0a090 !important;
+  border-color: #ddd0bc !important;
 }
 
 .qtyInput {
