@@ -4,7 +4,7 @@
 // - 인증이 필요한 요청은 Authorization: Bearer <accessToken> 헤더 사용
 // - 로그인/리프레시/로그아웃에는 deviceId + refreshToken 관리 필요
 
-const DEFAULT_BASE_URL = ''; // 필요하면 Vite env로 교체: import.meta.env.VITE_API_BASE_URL
+import { withApiPrefix } from '../../../app/http/apiBase'; // 필요하면 Vite env로 교체: import.meta.env.VITE_API_BASE_URL
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
@@ -14,7 +14,7 @@ async function request(
   path,
   { method = 'GET', body, headers = {}, auth = false } = {}
 ) {
-  const res = await fetch(`${DEFAULT_BASE_URL}${path}`, {
+  const res = await fetch(withApiPrefix(path), {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -83,6 +83,18 @@ export const authApi = {
     request('/auth/logout', {
       method: 'POST',
       body: { refreshToken, deviceId },
+    }),
+
+  kakaoComplete: ({ signupToken, userNm, userBirth, userTel }) =>
+    request('/auth/oauth2/kakao/complete', {
+      method: 'POST',
+      body: { signupToken, userNm, userBirth, userTel },
+    }),
+
+  googleComplete: ({ signupToken, userNm, userBirth, userTel }) =>
+    request('/auth/oauth2/google/complete', {
+      method: 'POST',
+      body: { signupToken, userNm, userBirth, userTel },
     }),
 
   // ===== UserController (/users) =====

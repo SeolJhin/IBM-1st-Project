@@ -85,13 +85,13 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
             resolvedEmail = fallbackEmail;
         }
 
-        String dummyPwd = passwordEncoder.encode(IdGenerator.generate("PWD"));
+        String encodedPwd = passwordEncoder.encode(req.getUserPwd());
 
         User user = User.builder()
             .userId(userId)
             .userNm(name)
             .userEmail(resolvedEmail)
-            .userPwd(dummyPwd)
+            .userPwd(encodedPwd)
             .userBirth(req.getUserBirth())
             .userTel(userTel)
             .userRole(UserRole.user)
