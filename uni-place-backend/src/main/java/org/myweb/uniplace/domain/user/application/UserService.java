@@ -7,13 +7,14 @@ import org.myweb.uniplace.domain.user.api.admin.dto.request.AdminUserRoleUpdateR
 import org.myweb.uniplace.domain.user.api.admin.dto.request.AdminUserStatusUpdateRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.UserUpdateRequest;
 import org.myweb.uniplace.domain.user.api.dto.response.UserResponse;
+import org.myweb.uniplace.domain.user.domain.enums.UserRole;
 
 public interface UserService {
     UserResponse me(String userId);
     UserResponse updateMe(String userId, UserUpdateRequest req);
     UserResponse getByIdForAdmin(String userId);
     
-    Page<UserResponse> listForAdmin(Pageable pageable);
+    Page<UserResponse> listForAdmin(Pageable pageable, UserRole role);
     // ✅ 관리자 - 상태 변경
     UserResponse updateStatus(String userId, AdminUserStatusUpdateRequest req);
 
