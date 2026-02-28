@@ -222,7 +222,7 @@ export default function AdminContractList() {
       <form className={styles.searchBar} onSubmit={handleSearch}>
         <input
           className={styles.searchInput}
-          placeholder="키워드(건물명/임대인명/임차인ID)"
+          placeholder="건물명/임대인/임차인"
           value={filter.keyword}
           onChange={(e) =>
             setFilter((f) => ({ ...f, keyword: e.target.value }))
@@ -327,13 +327,13 @@ export default function AdminContractList() {
             <thead>
               <tr>
                 <th>계약 ID</th>
-                <th>건물</th>
+                <th>건물 ID</th>
                 <th>방</th>
                 <th>임차인</th>
-                <th>임대인명</th>
-                <th>기간</th>
+                <th>임대인</th>
+                <th>계약기간</th>
                 <th>유형</th>
-                <th>임대료</th>
+                <th>임대료(원)</th>
                 <th>상태</th>
                 <th>계약서</th>
                 <th>관리</th>
@@ -345,17 +345,11 @@ export default function AdminContractList() {
                   <td className={styles.tdId}>#{c.contractId}</td>
 
                   <td>
-                    <div className={styles.tdName}>{c.buildingNm ?? '-'}</div>
-                    <div style={{ fontSize: 12, opacity: 0.7 }}>
-                      ID: {c.buildingId ?? '-'}
-                    </div>
+                    <div className={styles.tdName}>{c.buildingId ?? '-'}</div>
                   </td>
 
                   <td>
-                    <div>RoomNo: {c.roomNo ?? '-'}</div>
-                    <div style={{ fontSize: 12, opacity: 0.7 }}>
-                      RoomId: {c.roomId ?? '-'}
-                    </div>
+                    <div>{c.roomNo ?? '-'}호</div>
                   </td>
 
                   <td className={styles.tdName}>{c.tenantUserId ?? '-'}</td>
