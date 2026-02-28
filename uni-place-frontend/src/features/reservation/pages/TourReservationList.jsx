@@ -106,8 +106,9 @@ export default function TourReservationList({
 
   const mainContent = (
     <>
-      {/* 상단 "예약 생성" 링크 */}
+      {/* 상단 바 */}
       <div className={styles.topBarInline}>
+        <span className={styles.inlineTitle}>📋 방문 예약 조회</span>
         <button
           className={styles.createLink}
           type="button"

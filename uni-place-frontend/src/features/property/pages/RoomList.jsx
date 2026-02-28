@@ -538,7 +538,9 @@ export default function RoomList() {
       const enriched = await Promise.all(
         content.map(async (room) => {
           try {
-            const res = await fetch(`/api/reviews/rooms/${room.roomId}/summary`);
+            const res = await fetch(
+              `/api/reviews/rooms/${room.roomId}/summary`
+            );
             const json = await res.json();
             return {
               ...room,
@@ -873,7 +875,7 @@ export default function RoomList() {
                     alignItems: 'center',
                     gap: '4px',
                   }}
-                  onClick={() => navigate('/me?tab=space')}
+                  onClick={() => navigate('/me?tab=space&sub=list')}
                 >
                   📋 공용공간예약 조회
                 </button>
