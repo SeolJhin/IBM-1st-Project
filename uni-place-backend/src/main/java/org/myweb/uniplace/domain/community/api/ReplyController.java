@@ -9,6 +9,10 @@ import org.myweb.uniplace.domain.community.application.LikeService;
 import org.myweb.uniplace.domain.community.application.ReplyService;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.security.AuthUser;
+import org.myweb.uniplace.global.response.PageResponse;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,6 +27,15 @@ public class ReplyController {
     private final ReplyService replyService;
     private final LikeService likeService;
 
+ // 내가 작성한 댓글 목록
+    @GetMapping("/replies/me")
+    public ResponseEntity<ApiResponse<PageResponse<ReplyResponse>>> myReplies(
+            @PageableDefault(size = 10, sort = "replyId", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(replyService.getMyReplies(pageable)));
+    }
+    
     // 댓글 조회
     @GetMapping("/boards/{boardId}/replies")
     public ResponseEntity<ApiResponse<List<ReplyResponse>>> getRepliesByBoard(@PathVariable("boardId") int boardId) {

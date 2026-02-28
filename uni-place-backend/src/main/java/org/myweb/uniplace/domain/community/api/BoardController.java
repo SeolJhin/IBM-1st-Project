@@ -26,7 +26,19 @@ public class BoardController {
 
     private final BoardService boardService;
     private final LikeService likeService;
-
+    
+    
+    // 내가 작성한 게시글 목록
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<PageResponse<BoardResponse>>> myBoardList(
+            @RequestParam(name = "boardType", required = false) String boardType,
+            @PageableDefault(size = 10, sort = "boardId", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(boardService.getMyBoards(boardType, pageable)));
+    }
+    
+    
     // 게시판 조회
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<BoardResponse>>> boardList(

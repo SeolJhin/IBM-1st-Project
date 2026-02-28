@@ -6,6 +6,8 @@ import org.myweb.uniplace.domain.community.domain.entity.Reply;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface ReplyRepository extends JpaRepository<Reply, Integer> {
@@ -24,4 +26,5 @@ public interface ReplyRepository extends JpaRepository<Reply, Integer> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from Reply r where r.boardId = :boardId")
     int deleteByBoardId(@Param("boardId") Integer boardId);
+    Page<Reply> findByUserIdOrderByReplyIdDesc(String userId, Pageable pageable);
 }

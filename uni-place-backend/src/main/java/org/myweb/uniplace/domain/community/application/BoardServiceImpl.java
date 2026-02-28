@@ -92,6 +92,28 @@ public class BoardServiceImpl implements BoardService {
         Page<BoardResponse> mappedPage = new PageImpl<>(merged, pageReq, page.getTotalElements());
         return PageResponse.of(mappedPage);
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<BoardResponse> getMyBoards(String boardType, Pageable pageable) {
+        String userId = requireCurrentUserId();
+        Pageable pageReq = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+
+        Page<Board> page;
+        if (boardType != null && !boardType.isBlank() && !"ALL".equalsIgnoreCase(boardType)) {
+            page = boardRepository.findByUserIdAndCodeOrderByBoardIdDesc(userId, boardType, pageReq);
+        } else {
+            page = boardRepository.findByUserIdOrderByBoardIdDesc(userId, pageReq);
+        }
+
+        String me = userId;
+        Page<BoardResponse> mapped = page.map(b -> {
+            long cnt = boardLikeRepository.countByIdBoardId(b.getBoardId());
+            boolean liked = boardLikeRepository.existsByIdUserIdAndIdBoardId(me, b.getBoardId());
+            return BoardResponse.fromEntity(b, cnt, liked);
+        });
+        return PageResponse.of(mapped);
+    }
 
     @Override
     public BoardResponse getBoardDetail(int boardId) {
