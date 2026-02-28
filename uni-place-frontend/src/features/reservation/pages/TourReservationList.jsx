@@ -14,7 +14,8 @@ function StatusBadge({ status }) {
     CANCELLED: { label: '취소됨', cls: styles.statusCancelled },
     COMPLETED: { label: '완료', cls: styles.statusCompleted },
   };
-  const s = map[status] ?? { label: status ?? '-', cls: styles.statusPending };
+  const s = map[status];
+  if (!s) return null;
   return <span className={`${styles.statusBadge} ${s.cls}`}>{s.label}</span>;
 }
 
@@ -106,20 +107,19 @@ export default function TourReservationList({
 
   const mainContent = (
     <>
-      {/* 상단 "예약 생성" 링크 */}
-      <div className={styles.topBarInline}>
-        <button
-          className={styles.createLink}
-          type="button"
-          onClick={() =>
-            inlineMode && onGoCreate
-              ? onGoCreate()
-              : nav('/reservations/tour/create')
-          }
-        >
-          + 예약 생성
-        </button>
-      </div>
+      {/* 상단 바 - 인라인 모드에서는 숨김 (Modal headerAction으로 이동) */}
+      {!inlineMode && (
+        <div className={styles.topBarInline}>
+          <span className={styles.inlineTitle}>📋 방문 예약 조회</span>
+          <button
+            className={styles.createLink}
+            type="button"
+            onClick={() => nav('/reservations/tour/create')}
+          >
+            + 예약 생성
+          </button>
+        </div>
+      )}
 
       {/* 조회 폼 */}
       <div className={styles.lookupBox}>

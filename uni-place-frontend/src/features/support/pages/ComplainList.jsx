@@ -1,66 +1,95 @@
-import { useEffect, useState } from 'react';
-import { supportApi } from '../api/supportApi';
-import { Link } from 'react-router-dom';
+// features/support/pages/ComplainList.jsx
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useComplains } from '../hooks/useComplains';
 import styles from './Support.module.css';
 
+const STATUS_MAP = {
+  in_progress: '처리중',
+  resolved: '처리완료',
+};
+
 export default function ComplainList() {
-  const [complains, setComplains] = useState([]);
+  const { complains, pagination, loading, error, goToPage } = useComplains();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
+  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
-  const fetchData = async () => {
-    try {
-      const res = await supportApi.getMyComplains();
-      console.log('🔥 응답:', res);
-
-      // res가 이미 data를 반환하므로
-      setComplains(res?.content ?? []);
-    } catch (e) {
-      console.error(e);
-      setComplains([]);
-    }
-  };
-
-  const statusMap = {
-    in_progress: '처리중',
-    resolved: '처리완료',
-  };
-  console.log('🔥 complains 상태:', complains);
   return (
     <div className={styles.container}>
-      <Link to="/support/complain/write">
-        <button className={styles.buttonPrimary}>민원 작성</button>
-      </Link>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <button
+          className={styles.buttonPrimary}
+          onClick={() => navigate('/support/complain/write')}
+        >
+          민원 작성
+        </button>
+      </div>
 
       <table className={styles.table}>
-        {' '}
         <thead>
           <tr>
-            <th>ID</th>
+            <th style={{ width: 60 }}>번호</th>
             <th>제목</th>
-            <th>상태</th>
+            <th style={{ width: 120 }}>상태</th>
+            <th style={{ width: 120 }}>날짜</th>
           </tr>
         </thead>
         <tbody>
-          {complains.map((item) => (
-            <tr key={item.compId}>
-              <td>{item.compId}</td>
-              <td>
-                <Link to={`/support/complain/${item.compId}`}>
-                  {item.compTitle}
-                </Link>
-              </td>
-              <td>
-                <span className={styles.statusBadge}>
-                  {statusMap[item.compSt]}
-                </span>
+          {complains.length === 0 ? (
+            <tr>
+              <td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--muted)' }}>
+                접수된 민원이 없습니다.
               </td>
             </tr>
-          ))}
+          ) : (
+            complains.map((item) => (
+              <tr key={item.compId}>
+                <td style={{ textAlign: 'center', color: 'var(--muted)' }}>{item.compId}</td>
+                <td>
+                  <Link to={`/support/complain/${item.compId}`} className={styles.tableLink}>
+                    {item.compTitle}
+                  </Link>
+                </td>
+                <td style={{ textAlign: 'center' }}>
+                  <span
+                    className={styles.statusBadge}
+                    style={item.compSt === 'resolved' ? { background: 'var(--highlight)' } : {}}
+                  >
+                    {STATUS_MAP[item.compSt] ?? item.compSt}
+                  </span>
+                </td>
+                <td style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                  {item.createdAt ? item.createdAt.slice(0, 10) : '-'}
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
+
+      {pagination.totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            className={styles.pageBtn}
+            disabled={pagination.isFirst}
+            onClick={() => goToPage(pagination.page - 1)}
+          >
+            이전
+          </button>
+          <span className={styles.pageInfo}>
+            {pagination.page} / {pagination.totalPages}
+          </span>
+          <button
+            className={styles.pageBtn}
+            disabled={pagination.isLast}
+            onClick={() => goToPage(pagination.page + 1)}
+          >
+            다음
+          </button>
+        </div>
+      )}
     </div>
   );
 }

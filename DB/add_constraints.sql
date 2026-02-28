@@ -280,8 +280,6 @@ ALTER TABLE reviews
     FOREIGN KEY (user_id) REFERENCES users(user_id),
   ADD CONSTRAINT fk_reviews_room
     FOREIGN KEY (room_id) REFERENCES rooms(room_id),
-  ADD CONSTRAINT fk_reviews_code
-    FOREIGN KEY (code) REFERENCES common_code(code);
 
 -- ===============================
 -- 27) notification

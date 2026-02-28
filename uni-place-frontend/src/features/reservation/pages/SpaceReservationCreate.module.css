@@ -158,8 +158,9 @@
 /* ── 폼 요소 ── */
 .rowGroup {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 160px;
   gap: 16px;
+  align-items: start;
 }
 .formGroup {
   display: flex;

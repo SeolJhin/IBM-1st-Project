@@ -351,12 +351,28 @@
 
 /* ── 인라인 래퍼 ── */
 .inlineWrap {
-  padding: 0;
+  padding: 0 0 16px;
 }
 
 /* ── 인라인 상단 생성 버튼 ── */
 .topBarInline {
   display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 4px 0;
+}
+
+.inlineTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: #3a2e20;
+}
+
+/* ── 카드리스트 여백 (목록 갯수 맞게) ── */
+.cardListInline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 28px 24px;
 }

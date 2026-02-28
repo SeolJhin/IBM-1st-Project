@@ -367,7 +367,7 @@ CREATE TABLE reviews (
   review_ctnt  VARCHAR(3000),
   created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  code         VARCHAR(20)  NOT NULL,
+  code         VARCHAR(20),
   file_ck      VARCHAR(1)   NOT NULL DEFAULT 'N',
   reply_ck     VARCHAR(1)   NOT NULL DEFAULT 'N'
 );

@@ -1,0 +1,598 @@
+/* MyContractView.module.css */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 4px 0;
+}
+
+/* ── 상태 박스 (로딩 / 빈 계약 / 에러) ── */
+.stateBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 80px 20px;
+  text-align: center;
+  color: #9a8c70;
+}
+.stateIcon {
+  font-size: 52px;
+}
+.stateMsg {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #3a2e20;
+}
+.stateSub {
+  margin: 0;
+  font-size: 13px;
+  color: #9a8c70;
+  line-height: 1.6;
+}
+.stateError {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #c0392b;
+}
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e8e0d4;
+  border-top-color: #d9ad5b;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── 계약 카드 ── */
+.contractCard {
+  background: #fff;
+  border: 1.5px solid #e8dfd0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 3px 14px rgba(58, 46, 32, 0.07);
+  transition: box-shadow 0.2s;
+}
+.contractCard:hover {
+  box-shadow: 0 6px 22px rgba(58, 46, 32, 0.11);
+}
+
+/* 카드 헤더 버튼 */
+.cardHeadBtn {
+  width: 100%;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #faf7f3;
+  border: 0;
+  cursor: pointer;
+  border-bottom: 1.5px solid #f0ece5;
+  gap: 12px;
+  transition: background 0.15s;
+}
+.cardHeadBtn:hover {
+  background: #f5f0e8;
+}
+
+.cardHeadLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cardHeadRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cardIdChip {
+  font-size: 12px;
+  font-weight: 800;
+  color: #c58a3a;
+  background: rgba(197, 138, 58, 0.12);
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+.cardBuilding {
+  font-size: 14px;
+  font-weight: 700;
+  color: #3a2e20;
+}
+.chevron {
+  font-size: 11px;
+  color: #9a8c70;
+}
+
+/* 상태 칩 */
+.statusChip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+.chipActive {
+  background: rgba(39, 174, 96, 0.12);
+  color: #27ae60;
+  border: 1px solid rgba(39, 174, 96, 0.25);
+}
+.chipPending {
+  background: rgba(186, 128, 55, 0.12);
+  color: #ba8037;
+  border: 1px solid rgba(186, 128, 55, 0.25);
+}
+.chipExpired {
+  background: rgba(120, 100, 70, 0.1);
+  color: #9a8c70;
+  border: 1px solid rgba(120, 100, 70, 0.2);
+}
+
+/* 카드 바디 */
+.cardBody {
+  padding: 28px 28px 24px;
+}
+
+/* ── 방 정보 2단 레이아웃 ── */
+.roomGrid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+@media (max-width: 860px) {
+  .roomGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 이미지 갤러리 ── */
+.galleryMain {
+  border-radius: 14px;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: #e8e0d4;
+  margin-bottom: 10px;
+}
+.galleryMain img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.galleryThumbs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.galleryThumb {
+  width: 72px;
+  height: 52px;
+  border-radius: 7px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  background: #e8e0d4;
+  transition: border-color 0.15s;
+}
+.galleryThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.galleryThumbActive {
+  border-color: #d9ad5b;
+}
+.galleryEmpty {
+  aspect-ratio: 4 / 3;
+  border-radius: 14px;
+  background: #f0ece5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9a8c70;
+  gap: 8px;
+  font-size: 42px;
+}
+.galleryEmpty p {
+  font-size: 13px;
+  margin: 0;
+}
+
+/* ── 방 정보 패널 ── */
+.roomPanel {
+  background: #fff;
+  border: 1.5px solid #f0ece5;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(58, 46, 32, 0.07);
+}
+
+.roomTitleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.roomName {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: #2d2416;
+  letter-spacing: -0.02em;
+  flex: 1;
+}
+.statusBadge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.statusAvailable {
+  background: #d9f7d9;
+  color: #1a7a1a;
+}
+.statusContracted {
+  background: #ffe8e8;
+  color: #c0392b;
+}
+.statusOther {
+  background: #fff3cc;
+  color: #a07800;
+}
+
+.buildingAddr {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #9a8c70;
+}
+
+/* 계약 기간 배너 */
+.contractBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: #fdf8f0;
+  border: 1px solid #f0d8a0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+.contractBannerLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #a07030;
+}
+.contractBannerValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3a2e20;
+  flex: 1;
+}
+.contractStatusChip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+/* 금액 블록 */
+.priceBlock {
+  background: #fdfaf6;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid #f0eae0;
+}
+.priceType {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ba8037;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.priceMain {
+  font-size: 20px;
+  font-weight: 400;
+  color: #2d2416;
+  margin-bottom: 4px;
+}
+.priceMain strong {
+  font-size: 24px;
+  font-weight: 900;
+}
+.priceSub {
+  font-size: 12px;
+  color: #9a8c70;
+}
+
+/* 스펙 그리드 */
+.specGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.specItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: #fdfaf6;
+  border-radius: 8px;
+  border: 1px solid #f0eae0;
+}
+.specLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9a8c70;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.specValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2d2416;
+}
+
+/* 옵션 태그 */
+.optionBlock {
+  margin-bottom: 12px;
+}
+.optionTitle {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #9a8c70;
+}
+.optionTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.optionTag {
+  padding: 4px 10px;
+  background: #f6eee6;
+  border: 1px solid #e8e0d4;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #3a2e20;
+}
+
+/* 방 설명 */
+.descBlock {
+  border-top: 1px solid #f0ece5;
+  padding-top: 14px;
+  margin-top: 4px;
+}
+.descTitle {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #9a8c70;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.descText {
+  margin: 0;
+  font-size: 13px;
+  color: #7a6a50;
+  line-height: 1.7;
+}
+
+/* ── 계약서 PDF 버튼 ── */
+.pdfRow {
+  border-top: 1px solid #f0ece5;
+  padding-top: 18px;
+  margin-top: 4px;
+}
+.pdfBtn {
+  padding: 11px 22px;
+  border-radius: 10px;
+  border: 0;
+  background: linear-gradient(135deg, #c4923f, #ba8037);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(186, 128, 55, 0.3);
+  transition: all 0.2s;
+}
+.pdfBtn:hover {
+  background: linear-gradient(135deg, #d4a24f, #ca9047);
+  box-shadow: 0 5px 16px rgba(186, 128, 55, 0.4);
+  transform: translateY(-1px);
+}
+
+/* ── 로딩 / 에러 ── */
+.roomLoading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #9a8c70;
+  font-size: 13px;
+  padding: 32px 0;
+}
+.roomError {
+  color: #c0392b;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 20px 0;
+}
+
+/* ── 비밀번호 모달 ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modalBox {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 28px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: min(360px, 100%);
+}
+.modalTitle {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #2d2416;
+}
+.modalDesc {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: #7a6a50;
+  line-height: 1.5;
+}
+.pwdInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #e0d5c5;
+  background: #faf7f3;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.15s;
+  margin-bottom: 6px;
+}
+.pwdInput:focus {
+  border-color: #c58a3a;
+  background: #fff;
+}
+.pwdError {
+  color: #c0392b;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+.modalBtns {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+.btnCancel {
+  min-width: 76px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1.5px solid #e0d5c5;
+  background: #fff;
+  color: #7a6a50;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btnCancel:hover {
+  background: #f5f0e8;
+}
+.btnConfirm {
+  min-width: 76px;
+  height: 40px;
+  border-radius: 8px;
+  border: 0;
+  background: linear-gradient(135deg, #c4923f, #ba8037);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btnConfirm:hover {
+  background: linear-gradient(135deg, #d4a24f, #ca9047);
+}
+.btnConfirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── PDF 뷰어 ── */
+.pdfOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.pdfModal {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  width: min(900px, 100%);
+  height: min(85vh, 720px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+.pdfHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: #f5f0e8;
+  border-bottom: 1px solid #e0d5c5;
+  font-weight: 700;
+  font-size: 14px;
+  color: #3a2e20;
+}
+.pdfClose {
+  background: none;
+  border: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #7a6a50;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.pdfClose:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+.pdfFrame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+}
+.pdfDownload {
+  display: block;
+  text-align: center;
+  padding: 11px;
+  background: linear-gradient(135deg, #c4923f, #ba8037);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.pdfDownload:hover {
+  background: linear-gradient(135deg, #d4a24f, #ca9047);
+}

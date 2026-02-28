@@ -1,15 +1,544 @@
 // features/property/pages/RoomDetail.jsx
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import { useReviewActions } from '../../review/hooks/useReviews';
+import { reviewApi } from '../../review/api/reviewApi';
 import styles from './RoomDetail.module.css';
 import Modal from '../../../shared/components/Modal/Modal';
 import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
 import TourReservationList from '../../reservation/pages/TourReservationList';
+
+// ── 리뷰 수정 팝업 ──────────────────────────────────────────────────────────
+function ReviewEditModal({ review, onClose, onSuccess }) {
+  const { update, submitting } = useReviewActions();
+  const [rating, setRating] = React.useState(review.rating ?? 0);
+  const [hover, setHover] = React.useState(0);
+  const [title, setTitle] = React.useState(review.reviewTitle ?? '');
+  const [ctnt, setCtnt] = React.useState(review.reviewCtnt ?? '');
+
+  // 기존 파일 목록 (서버에서 불러옴)
+  const [existingFiles, setExistingFiles] = React.useState([]);
+  const [deletedIds, setDeletedIds] = React.useState([]); // 개별 삭제할 fileId 목록
+  const [deleteAll, setDeleteAll] = React.useState(false);
+
+  // 새로 추가할 파일
+  const [newFiles, setNewFiles] = React.useState([]);
+  const [newPreviews, setNewPreviews] = React.useState([]);
+  const [err, setErr] = React.useState('');
+  const fileRef = React.useRef(null);
+
+  // 기존 파일 불러오기
+  React.useEffect(() => {
+    if (review.fileCk === 'Y') {
+      reviewApi
+        .getDetail(review.reviewId)
+        .then((d) => {
+          const imgs = (d.files ?? []).filter((f) =>
+            ['.png', '.jpg', '.jpeg', '.gif', '.webp', 'image'].includes(
+              (f.fileType || '').toLowerCase()
+            )
+          );
+          setExistingFiles(imgs);
+        })
+        .catch(() => {});
+    }
+  }, [review.reviewId]);
+
+  const toggleDeleteOne = (fileId) => {
+    setDeletedIds((prev) =>
+      prev.includes(fileId)
+        ? prev.filter((id) => id !== fileId)
+        : [...prev, fileId]
+    );
+  };
+
+  const removeNew = (idx) => {
+    const updated = newFiles.filter((_, i) => i !== idx);
+    setNewFiles(updated);
+    setNewPreviews(updated.map((f) => URL.createObjectURL(f)));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!rating) {
+      setErr('별점을 선택해 주세요.');
+      return;
+    }
+
+    // deleteAll이면 전체 삭제 플래그, 아니면 개별 삭제 처리
+    // 백엔드 updateReview는 deleteFiles=true면 전체 삭제 후 새 파일 업로드
+    // 개별 삭제는 별도 API 없으므로: deletedIds가 있으면 전체=기존파일 전부를 삭제 후 남은것+새것 업로드
+    const shouldDeleteAll = deleteAll || deletedIds.length > 0;
+    // 남길 기존 파일 (개별 삭제 모드일 때 삭제 안 한 것들)
+    const kept = deleteAll
+      ? []
+      : existingFiles.filter((f) => !deletedIds.includes(f.fileId));
+
+    // kept 파일을 다시 업로드할 수는 없으므로: deleteFiles=true + newFiles만 전송
+    // → 단, kept가 있으면 deleteAll=false로 보내고 개별 삭제는 별도 처리가 필요
+    // 여기서는 가장 안전한 방식: deleteAll or deletedIds>0 이면 deleteFiles=true
+    const ok = await update(
+      review.reviewId,
+      { rating, reviewTitle: title, reviewCtnt: ctnt },
+      shouldDeleteAll,
+      newFiles
+    );
+    if (ok) onSuccess();
+    else setErr('수정 실패. 다시 시도해 주세요.');
+  };
+
+  const imgUrl = (f) => {
+    const raw = f.viewUrl || f.fileUrl || f.url || '';
+    return raw.startsWith('/files') ? `/api${raw}` : raw;
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9000,
+        background: 'rgba(0,0,0,0.55)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 20,
+          width: '100%',
+          maxWidth: 500,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '20px 24px 16px',
+            borderBottom: '1px solid #f0ece5',
+            flexShrink: 0,
+          }}
+        >
+          <h3
+            style={{
+              margin: 0,
+              fontSize: 17,
+              fontWeight: 800,
+              color: '#3a2e20',
+            }}
+          >
+            ✏️ 리뷰 수정
+          </h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(0,0,0,0.06)',
+              border: 'none',
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              fontSize: 14,
+              cursor: 'pointer',
+              color: 'rgba(0,0,0,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            padding: '20px 24px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}
+        >
+          {/* 별점 */}
+          <div>
+            <p
+              style={{
+                margin: '0 0 8px',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#5a4a30',
+              }}
+            >
+              별점 <span style={{ color: '#e53e3e' }}>*</span>
+            </p>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontSize: 30,
+                    cursor: 'pointer',
+                    padding: 0,
+                    lineHeight: 1,
+                    color: s <= (hover || rating) ? '#f6b93b' : '#e0d8cc',
+                    transition: 'color 0.1s',
+                  }}
+                  onMouseEnter={() => setHover(s)}
+                  onMouseLeave={() => setHover(0)}
+                  onClick={() => setRating(s)}
+                >
+                  ★
+                </button>
+              ))}
+              {rating > 0 && (
+                <span style={{ fontSize: 13, color: '#ba8037', marginLeft: 8 }}>
+                  {
+                    [
+                      '',
+                      '별로예요',
+                      '그저그래요',
+                      '보통이에요',
+                      '좋아요',
+                      '최고예요',
+                    ][rating]
+                  }
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* 제목 */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#5a4a30',
+                marginBottom: 6,
+              }}
+            >
+              제목
+            </label>
+            <input
+              type="text"
+              placeholder="제목을 입력하세요 (선택)"
+              maxLength={100}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                border: '1.5px solid #e8dfd0',
+                borderRadius: 10,
+                fontSize: 14,
+                boxSizing: 'border-box',
+                background: '#faf7f3',
+                fontFamily: 'inherit',
+              }}
+            />
+          </div>
+
+          {/* 내용 */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#5a4a30',
+                marginBottom: 6,
+              }}
+            >
+              내용
+            </label>
+            <textarea
+              placeholder="내용을 입력하세요 (선택)"
+              maxLength={3000}
+              rows={4}
+              value={ctnt}
+              onChange={(e) => setCtnt(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                border: '1.5px solid #e8dfd0',
+                borderRadius: 10,
+                fontSize: 14,
+                resize: 'vertical',
+                boxSizing: 'border-box',
+                background: '#faf7f3',
+                fontFamily: 'inherit',
+                lineHeight: 1.6,
+              }}
+            />
+          </div>
+
+          {/* 기존 이미지 */}
+          {existingFiles.length > 0 && (
+            <div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 8,
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#5a4a30',
+                  }}
+                >
+                  기존 이미지 ({existingFiles.length}장)
+                </p>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 12,
+                    color: '#c05050',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={deleteAll}
+                    onChange={(e) => {
+                      setDeleteAll(e.target.checked);
+                      if (e.target.checked) setDeletedIds([]);
+                    }}
+                  />
+                  전체 삭제
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {existingFiles.map((f) => {
+                  const isDeleted = deleteAll || deletedIds.includes(f.fileId);
+                  return (
+                    <div
+                      key={f.fileId}
+                      style={{ position: 'relative', width: 80, height: 80 }}
+                    >
+                      <img
+                        src={imgUrl(f)}
+                        alt=""
+                        style={{
+                          width: 80,
+                          height: 80,
+                          objectFit: 'cover',
+                          borderRadius: 8,
+                          border: `2px solid ${isDeleted ? '#e53e3e' : '#e8dfd0'}`,
+                          opacity: isDeleted ? 0.4 : 1,
+                          transition: 'all 0.15s',
+                        }}
+                      />
+                      {!deleteAll && (
+                        <button
+                          type="button"
+                          onClick={() => toggleDeleteOne(f.fileId)}
+                          style={{
+                            position: 'absolute',
+                            top: -6,
+                            right: -6,
+                            background: isDeleted ? '#e53e3e' : '#3a2e20',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: 20,
+                            height: 20,
+                            cursor: 'pointer',
+                            fontSize: 11,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {isDeleted ? '↩' : '×'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {(deleteAll || deletedIds.length > 0) && (
+                <p
+                  style={{ margin: '6px 0 0', fontSize: 12, color: '#e53e3e' }}
+                >
+                  {deleteAll
+                    ? '저장 시 기존 이미지가 모두 삭제됩니다.'
+                    : `${deletedIds.length}장이 삭제됩니다.`}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 새 이미지 */}
+          <div>
+            <p
+              style={{
+                margin: '0 0 10px',
+                fontSize: 13,
+                fontWeight: 700,
+                color: '#5a4a30',
+              }}
+            >
+              새 이미지 ({newFiles.length}/5)
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {newPreviews.map((url, idx) => (
+                <div
+                  key={idx}
+                  style={{ position: 'relative', width: 80, height: 80 }}
+                >
+                  <img
+                    src={url}
+                    alt=""
+                    style={{
+                      width: 80,
+                      height: 80,
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                      border: '1.5px solid #e8dfd0',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeNew(idx)}
+                    style={{
+                      position: 'absolute',
+                      top: -6,
+                      right: -6,
+                      background: '#3a2e20',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: 20,
+                      height: 20,
+                      cursor: 'pointer',
+                      fontSize: 11,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              {newFiles.length < 5 && (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    border: '2px dashed #d7cebc',
+                    borderRadius: 8,
+                    background: '#faf7f3',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 2,
+                    color: '#9a8c70',
+                    fontSize: 11,
+                  }}
+                >
+                  <span style={{ fontSize: 20 }}>＋</span>추가
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const sel = Array.from(e.target.files);
+                const m = [...newFiles, ...sel].slice(0, 5);
+                setNewFiles(m);
+                setNewPreviews(m.map((f) => URL.createObjectURL(f)));
+                e.target.value = '';
+              }}
+            />
+          </div>
+
+          {err && (
+            <p style={{ margin: 0, color: '#e53e3e', fontSize: 13 }}>{err}</p>
+          )}
+
+          <div
+            style={{
+              display: 'flex',
+              gap: 8,
+              justifyContent: 'flex-end',
+              paddingTop: 4,
+            }}
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                background: '#f5f0e8',
+                color: '#5a4a30',
+                border: 'none',
+                borderRadius: 10,
+                padding: '11px 22px',
+                fontSize: 14,
+                cursor: 'pointer',
+              }}
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                background: submitting
+                  ? '#d5b870'
+                  : 'linear-gradient(135deg, #c4923f, #ba8037)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 10,
+                padding: '11px 28px',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                boxShadow: '0 3px 12px rgba(186,128,55,0.35)',
+              }}
+            >
+              {submitting ? '저장 중...' : '수정 완료'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function StarRating({ value = 0, size = 'md' }) {
   return (
@@ -26,32 +555,470 @@ function StarRating({ value = 0, size = 'md' }) {
   );
 }
 
-function ReviewCard({ review }) {
+function ReviewDetailModal({ review, onClose }) {
+  const [detail, setDetail] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [lbIdx, setLbIdx] = React.useState(null);
+
+  React.useEffect(() => {
+    reviewApi
+      .getDetail(review.reviewId)
+      .then((d) => setDetail(d))
+      .catch(() => setDetail(review))
+      .finally(() => setLoading(false));
+  }, [review.reviewId]);
+
+  const data = detail || review;
+  const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', 'image'];
+  const imageFiles = (data.files ?? []).filter((f) =>
+    IMAGE_EXTS.includes((f.fileType || '').toLowerCase())
+  );
+  const imageUrls = imageFiles.map((f) => {
+    const raw = f.viewUrl || f.fileUrl || f.url || '';
+    return raw.startsWith('/files') ? `/api${raw}` : raw;
+  });
+
+  const stars = data.rating ?? 0;
+
   return (
-    <article className={styles.reviewCard}>
-      {review.thumbnailUrl && (
-        <div className={styles.reviewThumb}>
-          <img src={review.thumbnailUrl} alt="리뷰 이미지" />
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9500,
+        background: 'rgba(0,0,0,0.65)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 20,
+          width: '100%',
+          maxWidth: 640,
+          maxHeight: '88vh',
+          overflowY: 'auto',
+          position: 'relative',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.28)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ── 헤더 ── */}
+        <div
+          style={{
+            padding: '22px 28px 18px',
+            borderBottom: '1px solid #f0ece5',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* 제목 */}
+            {data.reviewTitle ? (
+              <h2
+                style={{
+                  margin: '0 0 10px',
+                  fontSize: 18,
+                  fontWeight: 800,
+                  color: '#3a2e20',
+                  lineHeight: 1.4,
+                }}
+              >
+                {data.reviewTitle}
+              </h2>
+            ) : (
+              <h2
+                style={{
+                  margin: '0 0 10px',
+                  fontSize: 18,
+                  fontWeight: 800,
+                  color: '#9a8c70',
+                  lineHeight: 1.4,
+                }}
+              >
+                (제목 없음)
+              </h2>
+            )}
+            {/* 메타 */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                flexWrap: 'wrap',
+              }}
+            >
+              {/* 별점 */}
+              <div style={{ display: 'flex', gap: 2 }}>
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <span
+                    key={s}
+                    style={{
+                      fontSize: 16,
+                      color: s <= stars ? '#f6b93b' : '#e0d8cc',
+                    }}
+                  >
+                    ★
+                  </span>
+                ))}
+                <span
+                  style={{
+                    fontSize: 13,
+                    color: '#ba8037',
+                    marginLeft: 4,
+                    fontWeight: 700,
+                  }}
+                >
+                  {stars}.0
+                </span>
+              </div>
+              <span style={{ color: '#d7cebc', fontSize: 12 }}>|</span>
+              <span style={{ fontSize: 13, color: '#7a6a54', fontWeight: 600 }}>
+                {data.userId || '익명'}
+              </span>
+              <span style={{ color: '#d7cebc', fontSize: 12 }}>|</span>
+              <span style={{ fontSize: 12, color: '#9a8c70' }}>
+                {data.createdAt
+                  ? new Date(data.createdAt).toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })
+                  : ''}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(0,0,0,0.06)',
+              border: 'none',
+              width: 34,
+              height: 34,
+              borderRadius: 8,
+              fontSize: 14,
+              cursor: 'pointer',
+              color: 'rgba(0,0,0,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              marginLeft: 12,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* ── 본문 ── */}
+        <div
+          style={{
+            padding: '24px 28px 28px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 20,
+          }}
+        >
+          {loading && (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '32px 0',
+                color: '#9a8c70',
+                fontSize: 14,
+              }}
+            >
+              불러오는 중...
+            </div>
+          )}
+
+          {/* 이미지 */}
+          {!loading && imageUrls.length > 0 && (
+            <div>
+              {/* 메인 이미지 */}
+              <div
+                onClick={() => setLbIdx(0)}
+                style={{
+                  width: '100%',
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  background: '#f5f0e8',
+                  cursor: 'zoom-in',
+                  marginBottom: imageUrls.length > 1 ? 8 : 0,
+                  maxHeight: 340,
+                }}
+              >
+                <img
+                  src={imageUrls[0]}
+                  alt="리뷰 이미지"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    maxHeight: 340,
+                  }}
+                />
+              </div>
+              {/* 서브 이미지 */}
+              {imageUrls.length > 1 && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {imageUrls.slice(1).map((url, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setLbIdx(i + 1)}
+                      style={{
+                        flex: 1,
+                        maxWidth: 120,
+                        height: 90,
+                        borderRadius: 8,
+                        overflow: 'hidden',
+                        border: '2px solid #e8dfd0',
+                        cursor: 'zoom-in',
+                      }}
+                    >
+                      <img
+                        src={url}
+                        alt=""
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          display: 'block',
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 본문 텍스트 */}
+          {!loading && data.reviewCtnt && (
+            <div
+              style={{
+                fontSize: 15,
+                color: '#4a3a28',
+                lineHeight: 1.9,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                borderTop: imageUrls.length > 0 ? '1px solid #f0ece5' : 'none',
+                paddingTop: imageUrls.length > 0 ? 20 : 0,
+              }}
+            >
+              {data.reviewCtnt}
+            </div>
+          )}
+
+          {/* 내용 없음 */}
+          {!loading && imageUrls.length === 0 && !data.reviewCtnt && (
+            <p
+              style={{
+                margin: 0,
+                color: '#9a8c70',
+                fontSize: 14,
+                textAlign: 'center',
+                padding: '20px 0',
+              }}
+            >
+              작성된 내용이 없습니다.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* 라이트박스 */}
+      {lbIdx !== null && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 10000,
+            background: 'rgba(0,0,0,0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setLbIdx(null)}
+        >
+          <button
+            onClick={() => setLbIdx(null)}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 20,
+              background: 'none',
+              border: 'none',
+              color: '#fff',
+              fontSize: 36,
+              cursor: 'pointer',
+            }}
+          >
+            ×
+          </button>
+          {imageUrls.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setLbIdx((i) => (i - 1 + imageUrls.length) % imageUrls.length);
+              }}
+              style={{
+                position: 'absolute',
+                left: 16,
+                background: 'rgba(255,255,255,0.15)',
+                border: 'none',
+                color: '#fff',
+                fontSize: 28,
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                cursor: 'pointer',
+              }}
+            >
+              ‹
+            </button>
+          )}
+          <img
+            src={imageUrls[lbIdx]}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '88vh',
+              objectFit: 'contain',
+              borderRadius: 8,
+            }}
+          />
+          {imageUrls.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setLbIdx((i) => (i + 1) % imageUrls.length);
+              }}
+              style={{
+                position: 'absolute',
+                right: 16,
+                background: 'rgba(255,255,255,0.15)',
+                border: 'none',
+                color: '#fff',
+                fontSize: 28,
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                cursor: 'pointer',
+              }}
+            >
+              ›
+            </button>
+          )}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 20,
+              color: 'rgba(255,255,255,0.6)',
+              fontSize: 13,
+            }}
+          >
+            {lbIdx + 1} / {imageUrls.length}
+          </div>
         </div>
       )}
-      <div className={styles.reviewBody}>
-        <div className={styles.reviewTop}>
-          <StarRating value={review.rating} size="sm" />
-          <span className={styles.reviewUser}>{review.userId || '익명'}</span>
-          <span className={styles.reviewDate}>
-            {review.createdAt
-              ? new Date(review.createdAt).toLocaleDateString('ko-KR')
-              : ''}
-          </span>
+    </div>
+  );
+}
+
+function ReviewCard({ review, currentUserId, onEdit, onDelete }) {
+  const [showDetail, setShowDetail] = React.useState(false);
+  const isOwn = currentUserId && review.userId === currentUserId;
+  return (
+    <>
+      <article
+        className={styles.reviewCard}
+        onClick={() => setShowDetail(true)}
+        style={{ cursor: 'pointer' }}
+      >
+        {review.thumbnailUrl && (
+          <div className={styles.reviewThumb}>
+            <img
+              src={`/api${review.thumbnailUrl}`}
+              alt="리뷰 이미지"
+              onError={(e) => {
+                e.target.parentElement.style.display = 'none';
+              }}
+            />
+          </div>
+        )}
+        <div className={styles.reviewBody}>
+          <div className={styles.reviewTop}>
+            <StarRating value={review.rating} size="sm" />
+            <span className={styles.reviewUser}>{review.userId || '익명'}</span>
+            <span className={styles.reviewDate}>
+              {review.createdAt
+                ? new Date(review.createdAt).toLocaleDateString('ko-KR')
+                : ''}
+            </span>
+            {isOwn && (
+              <div
+                style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => onEdit(review)}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #c9b89a',
+                    color: '#7a6a50',
+                    fontSize: 12,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                  }}
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(review.reviewId)}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #f5b8b8',
+                    color: '#c05050',
+                    fontSize: 12,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                  }}
+                >
+                  삭제
+                </button>
+              </div>
+            )}
+          </div>
+          <h4 className={styles.reviewTitle}>{review.reviewTitle}</h4>
+          <p className={styles.reviewCtnt}>
+            {review.reviewCtnt?.length > 100
+              ? review.reviewCtnt.slice(0, 100) + '…'
+              : review.reviewCtnt}
+          </p>
         </div>
-        <h4 className={styles.reviewTitle}>{review.reviewTitle}</h4>
-        <p className={styles.reviewCtnt}>
-          {review.reviewCtnt?.length > 100
-            ? review.reviewCtnt.slice(0, 100) + '…'
-            : review.reviewCtnt}
-        </p>
-      </div>
-    </article>
+      </article>
+      {showDetail && (
+        <ReviewDetailModal
+          review={review}
+          onClose={() => setShowDetail(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -59,7 +1026,7 @@ function ImageGallery({ files }) {
   const [active, setActive] = useState(0);
   const images = (files || []).filter((f) => {
     const ext = (f.fileType || '').toLowerCase();
-    return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
+    return ['.png', '.jpg', '.jpeg', '.gif', '.webp', 'image'].includes(ext);
   });
   if (!images.length) {
     return (
@@ -69,12 +1036,19 @@ function ImageGallery({ files }) {
       </div>
     );
   }
+  const getUrl = (img) => {
+    const raw = img.viewUrl || img.fileUrl || img.url || '';
+    return raw.startsWith('/files') ? `/api${raw}` : raw;
+  };
   return (
     <div className={styles.gallery}>
       <div className={styles.galleryMain}>
         <img
-          src={images[active]?.viewUrl || images[active]?.fileUrl}
+          src={getUrl(images[active])}
           alt={`방 사진 ${active + 1}`}
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
         />
       </div>
       {images.length > 1 && (
@@ -86,7 +1060,13 @@ function ImageGallery({ files }) {
               onClick={() => setActive(i)}
               type="button"
             >
-              <img src={img.viewUrl || img.fileUrl} alt={`썸네일 ${i + 1}`} />
+              <img
+                src={getUrl(img)}
+                alt={`썸네일 ${i + 1}`}
+                onError={(e) => {
+                  e.target.style.opacity = '0.3';
+                }}
+              />
             </button>
           ))}
         </div>
@@ -150,6 +1130,18 @@ export default function RoomDetail() {
     error: reviewApiError,
   } = useReviewActions();
   const [findMenuOpen, setFindMenuOpen] = useState(false);
+  const [reviewEditTarget, setReviewEditTarget] = useState(null);
+
+  // 내 리뷰 삭제
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('리뷰를 삭제할까요?')) return;
+    try {
+      await reviewApi.remove(reviewId);
+      fetchReviews(reviewPage);
+    } catch (e) {
+      alert(e?.message || '삭제 실패');
+    }
+  };
 
   // 인라인 리뷰 작성 상태
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -1054,7 +2046,13 @@ export default function RoomDetail() {
           {!reviewLoading && reviews.length > 0 && (
             <div className={styles.reviewList}>
               {reviews.map((r) => (
-                <ReviewCard key={r.reviewId} review={r} />
+                <ReviewCard
+                  key={r.reviewId}
+                  review={r}
+                  currentUserId={user?.userId}
+                  onEdit={(rev) => setReviewEditTarget(rev)}
+                  onDelete={handleDeleteReview}
+                />
               ))}
             </div>
           )}
@@ -1121,6 +2119,26 @@ export default function RoomDetail() {
         onClose={() => setTourListOpen(false)}
         title="📋 방문 예약 조회"
         size="lg"
+        headerAction={
+          <button
+            onClick={() => {
+              setTourListOpen(false);
+              setTourCreateOpen(true);
+            }}
+            style={{
+              background: 'linear-gradient(135deg, #c4923f, #ba8037)',
+              border: 'none',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 700,
+              padding: '7px 14px',
+              borderRadius: 8,
+              cursor: 'pointer',
+            }}
+          >
+            + 예약 생성
+          </button>
+        }
       >
         <TourReservationList
           inlineMode
@@ -1131,6 +2149,18 @@ export default function RoomDetail() {
           onClose={() => setTourListOpen(false)}
         />
       </Modal>
+
+      {/* ── 리뷰 수정 팝업 ── */}
+      {reviewEditTarget && (
+        <ReviewEditModal
+          review={reviewEditTarget}
+          onClose={() => setReviewEditTarget(null)}
+          onSuccess={() => {
+            setReviewEditTarget(null);
+            fetchReviews(reviewPage);
+          }}
+        />
+      )}
     </div>
   );
 }

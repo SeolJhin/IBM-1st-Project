@@ -100,8 +100,11 @@ public class ReviewResponse {
         if (files == null || files.isEmpty()) return null;
         List<String> imageExts = List.of(".png", ".jpg", ".jpeg", ".gif", ".webp");
         return files.stream()
-                .filter(f -> f.getFileType() != null
-                        && imageExts.contains(f.getFileType().toLowerCase()))
+                .filter(f -> {
+                    if (f.getFileType() == null) return false;
+                    String t = f.getFileType().toLowerCase();
+                    return imageExts.contains(t) || t.startsWith("image/");
+                })
                 .map(FileResponse::getViewUrl)
                 .findFirst()
                 .orElse(null);

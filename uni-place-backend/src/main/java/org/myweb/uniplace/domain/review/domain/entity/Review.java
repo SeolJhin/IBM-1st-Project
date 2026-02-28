@@ -47,8 +47,7 @@ public class Review {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // FK: common_code(code)
-    @Column(name = "code", nullable = false, length = 20)
+    @Column(name = "code", nullable = true, length = 20)
     private String code;
 
     /** 파일(썸네일/이미지) 존재 여부: 'Y'/'N' */
