@@ -538,7 +538,7 @@ export default function RoomList() {
       const enriched = await Promise.all(
         content.map(async (room) => {
           try {
-            const res = await fetch(`/reviews/rooms/${room.roomId}/summary`);
+            const res = await fetch(`/api/reviews/rooms/${room.roomId}/summary`);
             const json = await res.json();
             return {
               ...room,
