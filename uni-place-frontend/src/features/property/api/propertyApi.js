@@ -14,7 +14,7 @@
 // GET /spaces                           → 공용공간 전체 목록 (페이징 + 필터)
 // GET /spaces/{spaceId}                 → 공용공간 상세
 
-const DEFAULT_BASE_URL = ''; // 필요하면 Vite env로 교체: import.meta.env.VITE_API_BASE_URL
+import { withApiPrefix } from '../../../app/http/apiBase'; // 필요하면 Vite env로 교체: import.meta.env.VITE_API_BASE_URL
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
@@ -24,7 +24,7 @@ async function request(
   path,
   { method = 'GET', body, headers = {}, auth = false } = {}
 ) {
-  const res = await fetch(`${DEFAULT_BASE_URL}${path}`, {
+  const res = await fetch(withApiPrefix(path), {
     method,
     headers: {
       'Content-Type': 'application/json',
