@@ -4,7 +4,11 @@ import java.time.LocalDateTime;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -15,7 +19,8 @@ public class BannerUpdateRequest {
 
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime startAt;
-	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime endAt;
 
     private String banTitle;
@@ -24,4 +29,6 @@ public class BannerUpdateRequest {
     private String banUrl;
 
     private Integer banOrder;
+    
+    private String banSt;
 }

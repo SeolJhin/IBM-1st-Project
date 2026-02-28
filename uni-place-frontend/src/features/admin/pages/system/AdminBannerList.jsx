@@ -34,17 +34,20 @@ export default function AdminBannerList() {
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  // ✅ 목록 쿼리
   const [query, setQuery] = useState({
-    page: 1,
+    page: 1, // 화면 1-base
     size: 10,
     sort: 'banId',
     direct: 'DESC',
   });
 
+  // ✅ 관리 모달
   const [detailModal, setDetailModal] = useState(null); // banId
   const [detailLoading, setDetailLoading] = useState(false);
   const [detail, setDetail] = useState(null);
 
+  // ✅ 수정 폼(모달 내부)
   const [editForm, setEditForm] = useState({
     banTitle: '',
     banUrl: '',
@@ -53,10 +56,11 @@ export default function AdminBannerList() {
     endAt: '',
     file: null,
     deleteImage: false,
-    banSt: 'active',
+    banSt: 'active', // ✅ 상태는 "저장 시"만 반영
   });
   const [saveLoading, setSaveLoading] = useState(false);
 
+  // ✅ 등록 모달
   const [createModal, setCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({
     banTitle: '',
@@ -68,13 +72,17 @@ export default function AdminBannerList() {
   });
   const [createLoading, setCreateLoading] = useState(false);
 
-  // ✅ fetchList는 "테이블 갱신" 용도로만
+  /**
+   * ✅ fetchList는 "state set"만 하지 말고, 반드시 list를 return 하게 만든다.
+   * 그래야 저장 직후 최신값을 state race 없이 바로 쓸 수 있음.
+   */
   const fetchList = useCallback(async () => {
     setLoading(true);
     setError('');
+
     try {
       const res = await adminApi.getBanners({
-        page: query.page - 1,
+        page: query.page - 1, // getBanners는 0-base
         size: query.size,
         sort: query.sort,
         direct: query.direct,
@@ -85,15 +93,18 @@ export default function AdminBannerList() {
       setTotalElements(res?.totalElements ?? 0);
       setTotalPages(res?.totalPages ?? 1);
 
-      // ✅ 모달이 열려있으면, "표시용 detail"만 list 기준으로 갱신 (폼값은 건드리지 않음)
+      // ✅ 모달이 열려있다면, 최신 list 기준으로 detail 갱신
       if (detailModal) {
         const refreshed = list.find(
           (it) => Number(it?.banId) === Number(detailModal)
         );
         if (refreshed) setDetail(refreshed);
       }
+
+      return list; // ✅ 핵심
     } catch (e) {
       setError(e?.message || '배너 목록 조회 실패');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -114,12 +125,20 @@ export default function AdminBannerList() {
     setDetailLoading(true);
 
     try {
-      // ✅ 단건 GET이 없으니, adminApi.getBannerDetail로 "확실히" 가져온다.
-      const found = await adminApi.getBannerDetail(banId);
+      // 1) 현재 state에서 먼저 찾고
+      let found =
+        items.find((it) => Number(it?.banId) === Number(banId)) ?? null;
+
+      // 2) 없으면 fetchList()가 return한 최신 리스트에서 찾는다 (state race 제거)
+      if (!found) {
+        const freshList = await fetchList();
+        found =
+          freshList.find((it) => Number(it?.banId) === Number(banId)) ?? null;
+      }
+
       if (!found) throw new Error('배너를 찾을 수 없습니다.');
 
       setDetail(found);
-
       setEditForm({
         banTitle: found?.banTitle ?? '',
         banUrl: found?.banUrl ?? '',
@@ -163,7 +182,7 @@ export default function AdminBannerList() {
     return '';
   };
 
-  // ✅ 저장: PUT → (상태 변경 시) PATCH → "단건 재조회(목록 find)"로 모달 갱신 → 목록 갱신
+  // ✅ 저장: PUT(정보) → 필요하면 PATCH(상태) → 최신 list로 detail/editForm 확정 갱신
   const handleSave = async () => {
     if (!detailModal) return;
 
@@ -175,12 +194,13 @@ export default function AdminBannerList() {
       editForm.banOrder === '' ||
       editForm.banOrder === null ||
       editForm.banOrder === undefined
-    )
+    ) {
       return alert('정렬 순서는 필수입니다.');
+    }
 
     setSaveLoading(true);
     try {
-      // 1) PUT 배너 정보 업데이트
+      // 1) PUT: 배너 정보 업데이트 (multipart/form-data)
       const fd = new FormData();
       fd.append('banTitle', editForm.banTitle);
       fd.append('banUrl', editForm.banUrl || '');
@@ -188,36 +208,35 @@ export default function AdminBannerList() {
       fd.append('startAt', `${editForm.startAt}:00`);
       fd.append('endAt', `${editForm.endAt}:00`);
       if (editForm.file) fd.append('file', editForm.file);
+      fd.append('banSt', editForm.banSt);
 
       await adminApi.updateBanner(detailModal, fd, editForm.deleteImage);
 
-      // 2) 상태 변경은 "저장 시에만" PATCH
-      const prevStatus = detail?.banSt ?? 'active';
-      const nextStatus = editForm.banSt ?? prevStatus;
-      if (nextStatus && nextStatus !== prevStatus) {
-        await adminApi.updateBannerStatus(detailModal, nextStatus);
-      }
+      // 3) ✅ 최신 목록을 "return 값"으로 받아서 최신 detail 확정
+      const freshList = await fetchList();
+      const latest =
+        freshList.find((it) => Number(it?.banId) === Number(detailModal)) ??
+        null;
 
-      // ✅ 핵심: items state를 믿지 말고, 확실하게 재조회해서 모달을 갱신
-      const refreshed = await adminApi.getBannerDetail(detailModal);
-
-      if (refreshed) {
-        setDetail(refreshed);
+      // 서버가 update 후 값을 내려주지 않는 구조라면,
+      // latest가 곧 “저장 이후 화면에 보여줘야 할 진짜 값”
+      if (latest) {
+        setDetail(latest);
         setEditForm((f) => ({
           ...f,
-          banTitle: refreshed?.banTitle ?? '',
-          banUrl: refreshed?.banUrl ?? '',
-          banOrder: refreshed?.banOrder ?? '',
-          startAt: toDatetimeLocal(refreshed?.startAt),
-          endAt: toDatetimeLocal(refreshed?.endAt),
-          banSt: refreshed?.banSt ?? f.banSt,
+          banTitle: latest?.banTitle ?? '',
+          banUrl: latest?.banUrl ?? '',
+          banOrder: latest?.banOrder ?? '',
+          startAt: toDatetimeLocal(latest?.startAt),
+          endAt: toDatetimeLocal(latest?.endAt),
+          banSt: latest?.banSt ?? f.banSt,
           file: null,
           deleteImage: false,
         }));
+      } else {
+        // 혹시 목록 페이지/size 때문에 최신이 안 들어오면 폼값 유지
+        setEditForm((f) => ({ ...f, file: null, deleteImage: false }));
       }
-
-      // 테이블도 갱신
-      await fetchList();
 
       alert('저장되었습니다.');
     } catch (e) {
@@ -277,8 +296,9 @@ export default function AdminBannerList() {
       createForm.banOrder === '' ||
       createForm.banOrder === null ||
       createForm.banOrder === undefined
-    )
+    ) {
       return alert('정렬 순서는 필수입니다.');
+    }
 
     setCreateLoading(true);
     try {
@@ -307,6 +327,7 @@ export default function AdminBannerList() {
 
   return (
     <div className={styles.mainInner}>
+      {/* 타이틀바 */}
       <div className={styles.topRow}>
         <div className={styles.titleArea}>
           <h1 className={styles.pageTitle}>🖼️ 배너 관리</h1>
@@ -337,6 +358,7 @@ export default function AdminBannerList() {
 
       {error && <div className={styles.errorBox}>{error}</div>}
 
+      {/* 옵션바 */}
       <div className={styles.searchBar}>
         <select
           className={styles.filterSelect}
@@ -352,6 +374,7 @@ export default function AdminBannerList() {
           ))}
         </select>
 
+        {/* 정렬: 최신/오래된 + 노출순서 */}
         <select
           className={styles.filterSelect}
           value={`${query.sort}|${query.direct}`}
@@ -367,6 +390,7 @@ export default function AdminBannerList() {
         </select>
       </div>
 
+      {/* 테이블 */}
       {loading ? (
         <div className={styles.centerBox}>
           <div className={styles.spinner} />
@@ -416,6 +440,7 @@ export default function AdminBannerList() {
         </div>
       )}
 
+      {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
@@ -448,6 +473,7 @@ export default function AdminBannerList() {
         </div>
       )}
 
+      {/* 등록 모달 */}
       {createModal && (
         <div className={styles.modalOverlay} onClick={closeCreate}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -564,6 +590,7 @@ export default function AdminBannerList() {
         </div>
       )}
 
+      {/* 상세/수정 모달 */}
       {detailModal && (
         <div className={styles.modalOverlay} onClick={closeDetail}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -590,6 +617,7 @@ export default function AdminBannerList() {
                     배너 <strong>#{detail.banId}</strong> 정보를 수정합니다.
                   </p>
 
+                  {/* 상태: 폼만 변경, 저장 시 반영 */}
                   <div className={styles.modalField}>
                     <label className={styles.modalLabel}>상태 변경</label>
                     <div className={styles.statusBtnGroup}>
@@ -613,11 +641,9 @@ export default function AdminBannerList() {
                         </button>
                       ))}
                     </div>
-                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      현재 상태: <StatusBadge status={detail.banSt} />
-                    </div>
                   </div>
 
+                  {/* 이미지 */}
                   <div className={styles.modalField}>
                     <label className={styles.modalLabel}>이미지</label>
                     {imageUrl ? (
@@ -739,11 +765,6 @@ export default function AdminBannerList() {
                       />
                       체크 시 저장하면 기존 이미지가 삭제됩니다.
                     </label>
-                  </div>
-
-                  <div className={styles.infoBox}>
-                    저장 시: 배너 정보/기간/이미지(삭제/교체) + 상태가 함께
-                    반영됩니다.
                   </div>
                 </>
               )}
