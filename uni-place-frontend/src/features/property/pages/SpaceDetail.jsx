@@ -456,7 +456,7 @@ export default function SpaceDetail() {
           initBuildingId={space?.buildingId ? Number(space.buildingId) : null}
           onSuccess={() => {
             setSpaceReserveOpen(false);
-            navigate('/me?tab=space');
+            navigate('/me?tab=space&sub=list');
           }}
         />
       </Modal>

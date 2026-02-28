@@ -546,16 +546,14 @@ CREATE TABLE reviews (
   review_ctnt  VARCHAR(3000),
   created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  code         VARCHAR(20)  NOT NULL,
+  code         VARCHAR(20),
   file_ck      VARCHAR(1)   NOT NULL DEFAULT 'N',
   reply_ck     VARCHAR(1)   NOT NULL DEFAULT 'N',
   UNIQUE KEY uq_reviews_user_room (user_id, room_id),
   CONSTRAINT chk_reviews_rating CHECK (rating BETWEEN 1 AND 5),
   KEY ix_reviews_room (room_id),
-  KEY ix_reviews_code (code),
   CONSTRAINT fk_reviews_user FOREIGN KEY (user_id) REFERENCES users(user_id),
   CONSTRAINT fk_reviews_room FOREIGN KEY (room_id) REFERENCES rooms(room_id),
-  CONSTRAINT fk_reviews_code FOREIGN KEY (code)    REFERENCES common_code(code)
 ) ENGINE=InnoDB;
 
 
