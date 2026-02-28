@@ -7,6 +7,7 @@ import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 import lombok.*;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

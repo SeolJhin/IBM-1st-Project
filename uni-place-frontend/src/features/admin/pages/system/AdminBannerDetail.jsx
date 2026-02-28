@@ -1,3 +1,4 @@
+// features/admin/pages/system/AdminBannerDetail.jsx
 import React from 'react';
 import { AdminEndpointDetailProbe } from '../../components/AdminEndpointProbe';
 import { adminApi } from '../../api/adminApi';
