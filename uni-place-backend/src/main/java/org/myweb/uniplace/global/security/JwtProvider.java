@@ -36,6 +36,12 @@ public class JwtProvider {
             @Value("${jwt.access-exp}") long accessExpMs,
             @Value("${jwt.refresh-exp}") long refreshExpMs
     ) {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("jwt.secret is required and must be at least 32 characters.");
+        }
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("jwt.secret must be at least 32 bytes for HS256.");
+        }
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessExpMs = accessExpMs;
         this.refreshExpMs = refreshExpMs;
