@@ -39,14 +39,18 @@ import ReviewWrite from './features/review/pages/ReviewWrite';
 import MyReviewsList from './features/review/pages/MyReviewsList';
 import MyReviewsDetail from './features/review/pages/MyReviewsDetail';
 
-// ── support ──────────────────────────────────────────────────────
+// ── support ───────────────────────────────────────────────────
 import Support from './features/support/pages/Support';
+import FaqList from './features/support/pages/FaqList';
+import NoticeList from './features/support/pages/NoticeList';
+import NoticeDetail from './features/support/pages/NoticeDetail';
+import QnaList from './features/support/pages/QnaList';
+import QnaDetail from './features/support/pages/QnaDetail';
+import QnaWrite from './features/support/pages/QnaWrite';
 import ComplainList from './features/support/pages/ComplainList';
 import ComplainWrite from './features/support/pages/ComplainWrite';
 import ComplainDetail from './features/support/pages/ComplainDetail';
 import ComplainEdit from './features/support/pages/ComplainEdit';
-import { Outlet, useLocation } from 'react-router-dom';
-import FaqList from './features/support/pages/FaqList';
 
 // ── 어드민 ────────────────────────────────────────────────────
 import RequireAuth from './app/router/guards/RequireAuth';
@@ -112,35 +116,22 @@ export default function App() {
         <Route path="/buildings/:buildingId" element={<BuildingDetail />} />
         <Route
           path="/buildings"
-          element={
-            <Navigate to="/rooms" state={{ tab: 'buildings' }} replace />
-          }
+          element={<Navigate to="/rooms" state={{ tab: 'buildings' }} replace />}
         />
         <Route path="/membership" element={<Navigate to="/rooms" replace />} />
 
         {/* ── 예약 ── */}
-        <Route
-          path="/reservations/space/create"
-          element={<SpaceReservationCreate />}
-        />
-        <Route
-          path="/reservations/space/list"
-          element={<SpaceReservationList />}
-        />
-        <Route
-          path="/reservations/tour/create"
-          element={<TourReservationCreate />}
-        />
-        <Route
-          path="/reservations/tour/list"
-          element={<TourReservationList />}
-        />
+        <Route path="/reservations/space/create" element={<SpaceReservationCreate />} />
+        <Route path="/reservations/space/list" element={<SpaceReservationList />} />
+        <Route path="/reservations/tour/create" element={<TourReservationCreate />} />
+        <Route path="/reservations/tour/list" element={<TourReservationList />} />
 
         {/* ── 리뷰 ── */}
         <Route path="/reviews/write" element={<ReviewWrite />} />
         <Route path="/reviews/:reviewId/edit" element={<ReviewWrite />} />
         <Route path="/reviews/my" element={<MyReviewsList />} />
         <Route path="/reviews/:reviewId" element={<MyReviewsDetail />} />
+
         {/* ── 커머스 ── */}
         <Route path="/commerce/room-service" element={<ProductList />} />
         <Route path="/commerce/cart" element={<Cart />} />
@@ -148,24 +139,19 @@ export default function App() {
         <Route path="/commerce/orders/:orderId" element={<OrderDetail />} />
         <Route path="/commerce/checkout" element={<Checkout />} />
 
-        {/* ── support 민원 ── */}
+        {/* ── support ── */}
         <Route path="/support" element={<Support />}>
-          <Route path="faq" element={<FaqList />} /> {/* FAQ 연결 */}
-          <Route path="notice" element={<div>공지사항 페이지</div>} />
-          <Route path="qna" element={<div>1:1 문의 페이지</div>} />
+          <Route index element={<Navigate to="faq" replace />} />
+          <Route path="faq" element={<FaqList />} />
+          <Route path="notice" element={<NoticeList />} />
+          <Route path="notice/:noticeId" element={<NoticeDetail />} />
+          <Route path="qna" element={<QnaList />} />
+          <Route path="qna/:qnaId" element={<QnaDetail />} />
+          <Route path="qna/write" element={<QnaWrite />} />
           <Route path="complain" element={<ComplainList />} />
           <Route path="complain/write" element={<ComplainWrite />} />
           <Route path="complain/:id" element={<ComplainDetail />} />
           <Route path="complain/edit/:id" element={<ComplainEdit />} />
-          <Route index element={<Navigate to="faq" replace />} />
-        </Route>
-        <Route path="/support" element={<Support />}>
-          <Route path="faq" element={<FaqList />} /> {/* 여기를 교체 */}
-          <Route path="notice" element={<div>공지사항 페이지</div>} />
-          <Route path="qna" element={<div>1:1 문의 페이지</div>} />
-          <Route path="complain" element={<ComplainList />} />
-          ...
-          <Route index element={<Navigate to="faq" replace />} />
         </Route>
 
         {/* ── 어드민 (로그인 + ADMIN 역할 필요) ── */}
@@ -197,18 +183,12 @@ export default function App() {
               <Route path="system" element={<AdminSystemHub />}>
                 <Route path="banners" element={<AdminBannerList />} />
                 <Route path="affiliates" element={<AdminAffiliateList />} />
-                <Route
-                  path="company_info"
-                  element={<AdminCompanyInfoDetail />}
-                />
+                <Route path="company_info" element={<AdminCompanyInfoDetail />} />
                 <Route index element={<Navigate to="banners" replace />} />
               </Route>
 
               <Route path="roomservice" element={<AdminRoomServiceHub />}>
-                <Route
-                  path="room_orders"
-                  element={<AdminRoomServiceOrderList />}
-                />
+                <Route path="room_orders" element={<AdminRoomServiceOrderList />} />
                 <Route path="room_products" element={<AdminProductList />} />
                 <Route index element={<Navigate to="room_orders" replace />} />
               </Route>
