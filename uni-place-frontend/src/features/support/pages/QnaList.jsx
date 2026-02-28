@@ -1,40 +1,95 @@
+// features/support/pages/QnaList.jsx
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQnas } from '../hooks/useQnas';
-import { Link } from 'react-router-dom';
+import styles from './Support.module.css';
+
+const STATUS_MAP = {
+  waiting: '답변대기',
+  complete: '답변완료',
+};
 
 export default function QnaList() {
   const { qnas, pagination, loading, error, goToPage } = useQnas();
+  const navigate = useNavigate();
 
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
-  if (error) return <div style={{ padding: 24 }}>{error}</div>;
+  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2>QnA</h2>
-      <ul>
-        {qnas.map((q) => (
-          <li key={q.qnaId}>
-            <Link to={`/support/qnas/${q.qnaId}`}>{q.qnaTitle}</Link>
-          </li>
-        ))}
-      </ul>
-
-      <div style={{ marginTop: 16 }}>
-        {!pagination.isFirst && (
-          <button onClick={() => goToPage(pagination.page - 1)}>이전</button>
-        )}
-        <span>
-          {' '}
-          {pagination.page} / {pagination.totalPages}{' '}
-        </span>
-        {!pagination.isLast && (
-          <button onClick={() => goToPage(pagination.page + 1)}>다음</button>
-        )}
+    <div className={styles.container}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <button
+          className={styles.buttonPrimary}
+          onClick={() => navigate('/support/qna/write')}
+        >
+          문의 작성
+        </button>
       </div>
 
-      <Link to="/support/qna/write">
-        <button style={{ marginTop: 16 }}>문의 작성</button>
-      </Link>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th style={{ width: 60 }}>번호</th>
+            <th>제목</th>
+            <th style={{ width: 120 }}>상태</th>
+            <th style={{ width: 120 }}>날짜</th>
+          </tr>
+        </thead>
+        <tbody>
+          {qnas.length === 0 ? (
+            <tr>
+              <td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--muted)' }}>
+                작성된 문의가 없습니다.
+              </td>
+            </tr>
+          ) : (
+            qnas.map((q) => (
+              <tr key={q.qnaId}>
+                <td style={{ textAlign: 'center', color: 'var(--muted)' }}>{q.qnaId}</td>
+                <td>
+                  <Link to={`/support/qna/${q.qnaId}`} className={styles.tableLink}>
+                    {q.qnaTitle}
+                  </Link>
+                </td>
+                <td style={{ textAlign: 'center' }}>
+                  <span
+                    className={styles.statusBadge}
+                    style={q.qnaSt === 'complete' ? { background: 'var(--highlight)', color: 'var(--ink-soft)' } : {}}
+                  >
+                    {STATUS_MAP[q.qnaSt] ?? q.qnaSt}
+                  </span>
+                </td>
+                <td style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                  {q.createdAt ? q.createdAt.slice(0, 10) : '-'}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
+      {pagination.totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            className={styles.pageBtn}
+            disabled={pagination.isFirst}
+            onClick={() => goToPage(pagination.page - 1)}
+          >
+            이전
+          </button>
+          <span className={styles.pageInfo}>
+            {pagination.page} / {pagination.totalPages}
+          </span>
+          <button
+            className={styles.pageBtn}
+            disabled={pagination.isLast}
+            onClick={() => goToPage(pagination.page + 1)}
+          >
+            다음
+          </button>
+        </div>
+      )}
     </div>
   );
 }
