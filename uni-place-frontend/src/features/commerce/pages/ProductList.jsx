@@ -609,6 +609,26 @@ export default function ProductList() {
         onClose={() => setTourListOpen(false)}
         title="📋 방문 예약 조회"
         size="lg"
+        headerAction={
+          <button
+            onClick={() => {
+              setTourListOpen(false);
+              setTourCreateOpen(true);
+            }}
+            style={{
+              background: 'linear-gradient(135deg, #c4923f, #ba8037)',
+              border: 'none',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 700,
+              padding: '7px 14px',
+              borderRadius: 8,
+              cursor: 'pointer',
+            }}
+          >
+            + 예약 생성
+          </button>
+        }
       >
         <TourReservationList
           inlineMode

@@ -209,6 +209,7 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  position: relative;
 }
 .cardTop {
   display: flex;
@@ -300,8 +301,10 @@
 /* ── 수량 컨트롤 ── */
 .qtyRow {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   margin-top: 4px;
+  min-height: 36px;
 }
 .qtyControl {
   display: flex;
@@ -383,7 +386,8 @@
   font-weight: 700;
   color: #c58a3a;
   white-space: nowrap;
-  margin-left: 4px;
+  min-width: 72px;
+  text-align: right;
 }
 
 /* ── 하단 바 ── */

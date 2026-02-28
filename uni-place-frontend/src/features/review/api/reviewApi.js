@@ -16,6 +16,26 @@
 //   buildingId, buildingNm, roomNo
 
 import { api } from '../../../app/http/axiosInstance';
+import { tokenStore } from '../../../app/http/tokenStore';
+
+// FormData 전송용 fetch 헬퍼 (axios 기본 Content-Type 우회)
+function fetchMultipart(method, path, form, params) {
+  const token = tokenStore.getAccess();
+  const headers = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const url = params
+    ? `/api${path}?${new URLSearchParams(params).toString()}`
+    : `/api${path}`;
+  return fetch(url, { method, headers, body: form })
+    .then((res) => res.json())
+    .then((d) => {
+      if (d && typeof d === 'object' && 'success' in d) {
+        if (d.success) return d.data;
+        throw new Error(d.message || 'API 오류');
+      }
+      return d;
+    });
+}
 
 const unwrap = (res) => {
   const d = res.data;
@@ -85,11 +105,7 @@ export const reviewApi = {
     if (body.reviewCtnt) form.append('reviewCtnt', body.reviewCtnt);
     if (body.code) form.append('code', body.code);
     files.forEach((f) => form.append('ofiles', f));
-    return api
-      .post('/reviews', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      .then(unwrap);
+    return fetchMultipart('POST', '/reviews', form);
   },
 
   /**
@@ -106,12 +122,7 @@ export const reviewApi = {
     if (body.reviewCtnt != null) form.append('reviewCtnt', body.reviewCtnt);
     if (body.code != null) form.append('code', body.code);
     files.forEach((f) => form.append('ofiles', f));
-    return api
-      .put(`/reviews/${reviewId}`, form, {
-        params: { deleteFiles },
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      .then(unwrap);
+    return fetchMultipart('PUT', `/reviews/${reviewId}`, form, { deleteFiles });
   },
 
   /**
