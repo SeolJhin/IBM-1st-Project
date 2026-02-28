@@ -27,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class BannerServiceImpl implements BannerService {
 
     private final BannerRepository bannerRepository;
@@ -36,10 +35,11 @@ public class BannerServiceImpl implements BannerService {
     private static final String PARENT_TYPE_BANNER = "BANNER";
 
     // =========================
-    // public
+    // public (조회는 readOnly)
     // =========================
 
     @Override
+    @Transactional(readOnly = true)
     public List<BannerResponse> getActiveBanners() {
         LocalDateTime now = LocalDateTime.now();
 
@@ -54,6 +54,7 @@ public class BannerServiceImpl implements BannerService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BannerResponse getBanner(Integer banId) {
         Banner banner = bannerRepository.findById(banId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BANNER_NOT_FOUND));
@@ -62,10 +63,11 @@ public class BannerServiceImpl implements BannerService {
     }
 
     // =========================
-    // admin
+    // admin (수정/삭제/등록은 readOnly 금지)
     // =========================
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<BannerResponse> bannerList(Pageable pageable) {
         Page<BannerResponse> page = bannerRepository.findAll(pageable)
                 .map(b -> BannerResponse.fromEntity(b, loadBannerFiles(b.getBanId())));
@@ -80,7 +82,6 @@ public class BannerServiceImpl implements BannerService {
         requireText(request.getBanTitle());
         requireNotNull(request.getBanOrder());
 
-        // ✅ banUrl = 클릭 이동 URL(임의 링크)
         Banner banner = Banner.builder()
                 .startAt(request.getStartAt())
                 .endAt(request.getEndAt())
@@ -90,11 +91,9 @@ public class BannerServiceImpl implements BannerService {
                 .banSt(BannerStatus.active)
                 .build();
 
-        Banner saved = bannerRepository.save(banner);
+        Banner saved = bannerRepository.saveAndFlush(banner); // ✅ flush
 
-        // ✅ 배너 이미지 파일은 files에 저장(parentType=BANNER, parentId=banId)
         if (file != null && !file.isEmpty()) {
-            // 배너는 대표 1장 정책이면 그냥 업로드
             uploadBannerFile(saved.getBanId(), file);
         }
     }
@@ -111,18 +110,16 @@ public class BannerServiceImpl implements BannerService {
             validatePeriod(request.getStartAt(), request.getEndAt());
         }
 
-        // ✅ 이미지 삭제 플래그면 files만 삭제(soft delete)
         if (deleteFlag) {
             softDeleteAllBannerFiles(banId);
         }
 
-        // ✅ 새 파일 업로드면 기존 이미지 soft delete 후 교체(대표 1장 정책)
         if (file != null && !file.isEmpty()) {
             softDeleteAllBannerFiles(banId);
             uploadBannerFile(banId, file);
         }
 
-        // ✅ 배너 자체 정보 수정 (banUrl은 클릭 이동 링크)
+        // ✅ 배너 정보 수정
         banner.update(
                 request.getStartAt(),
                 request.getEndAt(),
@@ -131,6 +128,21 @@ public class BannerServiceImpl implements BannerService {
                 request.getBanOrder(),
                 null
         );
+
+        // ✅ (선택) PUT에 banSt까지 받는다면 여기서 같이 반영 가능
+        // 프론트에서 PUT에 banSt를 같이 보낸다면 PATCH 없이 저장 1번으로 끝낼 수 있음
+        if (request.getBanSt() != null && !request.getBanSt().isBlank()) {
+            BannerStatus st;
+            try {
+                st = BannerStatus.valueOf(request.getBanSt());
+            } catch (Exception e) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST);
+            }
+            banner.changeStatus(st);
+        }
+
+        // ✅ 핵심: 더티체킹/flush 이슈를 강제로 제거
+        bannerRepository.saveAndFlush(banner);
     }
 
     @Override
@@ -140,10 +152,9 @@ public class BannerServiceImpl implements BannerService {
             throw new BusinessException(ErrorCode.BANNER_NOT_FOUND);
         }
 
-        // 배너 삭제 전에 파일 soft delete
         softDeleteAllBannerFiles(banId);
-
         bannerRepository.deleteById(banId);
+        bannerRepository.flush();
     }
 
     @Override
@@ -160,6 +171,9 @@ public class BannerServiceImpl implements BannerService {
         }
 
         banner.changeStatus(st);
+
+        // ✅ 상태도 강제 반영
+        bannerRepository.saveAndFlush(banner);
     }
 
     @Override
@@ -179,7 +193,12 @@ public class BannerServiceImpl implements BannerService {
                     .orElseThrow(() -> new BusinessException(ErrorCode.BANNER_NOT_FOUND));
 
             banner.changeOrder(o.getBanOrder());
+
+            // ✅ 반복문 안에서라도 flush로 확실히 반영 (원하면 마지막에 한번만 flush도 가능)
+            bannerRepository.save(banner);
         }
+
+        bannerRepository.flush();
     }
 
     // =========================
@@ -187,7 +206,6 @@ public class BannerServiceImpl implements BannerService {
     // =========================
 
     private List<FileResponse> loadBannerFiles(Integer banId) {
-        // ✅ delete_yn='N'만 (FileServiceImpl이 desc 정렬로 줌)
         return fileService.getActiveFiles(PARENT_TYPE_BANNER, banId);
     }
 
