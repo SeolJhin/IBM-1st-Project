@@ -171,7 +171,7 @@ export default function AdminResidentList() {
       <form className={styles.searchBar} onSubmit={handleSearch}>
         <input
           className={styles.searchInput}
-          placeholder="입주자 ID"
+          placeholder="입주 ID"
           value={filter.residentId}
           onChange={(e) =>
             setFilter((f) => ({ ...f, residentId: e.target.value }))
@@ -252,7 +252,7 @@ export default function AdminResidentList() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>입주자 ID</th>
+                <th>입주 ID</th>
                 <th>건물 ID</th>
                 <th>계약 ID</th>
                 <th>회원 ID</th>
@@ -332,11 +332,11 @@ export default function AdminResidentList() {
               ) : (
                 <>
                   <p className={styles.modalDesc}>
-                    입주자 <strong>#{detail.residentId}</strong> 정보입니다.
+                    입주 <strong>#{detail.residentId}</strong> 정보입니다.
                   </p>
 
                   <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>입주자 ID</label>
+                    <label className={styles.modalLabel}>입주 ID</label>
                     <div>#{detail.residentId ?? '-'}</div>
                   </div>
 

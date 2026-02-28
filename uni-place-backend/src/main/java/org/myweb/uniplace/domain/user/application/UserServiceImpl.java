@@ -10,6 +10,7 @@ import org.myweb.uniplace.domain.user.api.admin.dto.request.AdminUserStatusUpdat
 import org.myweb.uniplace.domain.user.api.dto.request.UserUpdateRequest;
 import org.myweb.uniplace.domain.user.api.dto.response.UserResponse;
 import org.myweb.uniplace.domain.user.domain.entity.User;
+import org.myweb.uniplace.domain.user.domain.enums.UserRole;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
@@ -107,9 +108,12 @@ public class UserServiceImpl implements UserService {
     
     @Override
     @Transactional(readOnly = true)
-    public Page<UserResponse> listForAdmin(Pageable pageable) {
-        return userRepository.findAll(pageable)
-                .map(UserResponse::from);
+    public Page<UserResponse> listForAdmin(Pageable pageable, UserRole role) {
+    	Page<User> page = (role == null)
+                ? userRepository.findAll(pageable)
+                : userRepository.findByUserRole(role, pageable);
+
+        return page.map(UserResponse::from);
     }
 
     @Override

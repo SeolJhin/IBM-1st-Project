@@ -49,6 +49,7 @@ export default function TourReservationCreate({
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   const [form, setForm] = useState({ tourNm: '', tourTel: '', tourPwd: '' });
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // 빌딩 목록 로드
   const loadBuildings = async () => {
@@ -171,9 +172,7 @@ export default function TourReservationCreate({
     return true;
   }, [selectedBuilding, roomId, selectedSlot, form]);
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    if (!canSubmit) return;
+  const doCreateTourReservation = async () => {
     try {
       await reservationApi.createTourReservation({
         buildingId: Number(selectedBuilding.buildingId),
@@ -192,6 +191,12 @@ export default function TourReservationCreate({
     } catch (e) {
       alert(e?.message || '생성 실패');
     }
+  };
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setConfirmOpen(true);
   };
 
   const selectedRoomInfo = rooms.find(
@@ -390,6 +395,99 @@ export default function TourReservationCreate({
             📅 예약 신청
           </button>
         </div>
+
+        {/* 예약 확인 다이얼로그 */}
+        {confirmOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.45)',
+              zIndex: 2000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: '16px',
+                padding: '32px 28px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                minWidth: '300px',
+                textAlign: 'center',
+              }}
+            >
+              <p
+                style={{
+                  margin: '0 0 8px',
+                  fontSize: '16px',
+                  fontWeight: '800',
+                  color: '#2d2416',
+                }}
+              >
+                예약을 신청하시겠습니까?
+              </p>
+              {selectedSlot && selectedRoomInfo && (
+                <p
+                  style={{
+                    margin: '0 0 20px',
+                    fontSize: '13px',
+                    color: '#7a6a50',
+                  }}
+                >
+                  {selectedRoomInfo.roomNm ?? `방 #${selectedRoomInfo.roomId}`}{' '}
+                  · {date} · {selectedSlot.startAt?.slice(11, 16)}~
+                  {selectedSlot.endAt?.slice(11, 16)}
+                </p>
+              )}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'center',
+                }}
+              >
+                <button
+                  type="button"
+                  style={{
+                    minWidth: '80px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #ccc',
+                    background: '#fff',
+                    color: '#666',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setConfirmOpen(false)}
+                >
+                  아니오
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    minWidth: '80px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: 0,
+                    background: '#c58a3a',
+                    color: '#fff',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    setConfirmOpen(false);
+                    doCreateTourReservation();
+                  }}
+                >
+                  예
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </form>
     );
   }
@@ -592,6 +690,99 @@ export default function TourReservationCreate({
             📅 예약 신청
           </button>
         </div>
+
+        {/* 예약 확인 다이얼로그 */}
+        {confirmOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.45)',
+              zIndex: 2000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: '16px',
+                padding: '32px 28px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                minWidth: '300px',
+                textAlign: 'center',
+              }}
+            >
+              <p
+                style={{
+                  margin: '0 0 8px',
+                  fontSize: '16px',
+                  fontWeight: '800',
+                  color: '#2d2416',
+                }}
+              >
+                예약을 신청하시겠습니까?
+              </p>
+              {selectedSlot && selectedRoomInfo && (
+                <p
+                  style={{
+                    margin: '0 0 20px',
+                    fontSize: '13px',
+                    color: '#7a6a50',
+                  }}
+                >
+                  {selectedRoomInfo.roomNm ?? `방 #${selectedRoomInfo.roomId}`}{' '}
+                  · {date} · {selectedSlot.startAt?.slice(11, 16)}~
+                  {selectedSlot.endAt?.slice(11, 16)}
+                </p>
+              )}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  justifyContent: 'center',
+                }}
+              >
+                <button
+                  type="button"
+                  style={{
+                    minWidth: '80px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #ccc',
+                    background: '#fff',
+                    color: '#666',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setConfirmOpen(false)}
+                >
+                  아니오
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    minWidth: '80px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    border: 0,
+                    background: '#c58a3a',
+                    color: '#fff',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    setConfirmOpen(false);
+                    doCreateTourReservation();
+                  }}
+                >
+                  예
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </form>
       <Footer />
     </div>

@@ -4,9 +4,16 @@ import styles from './Modal.module.css';
 
 /**
  * 공통 팝업 모달
- * props: open, onClose, title, size('sm'|'md'|'lg'|'xl'), children
+ * props: open, onClose, title, size('sm'|'md'|'lg'|'xl'), headerAction, children
  */
-export default function Modal({ open, onClose, title, size = 'md', children }) {
+export default function Modal({
+  open,
+  onClose,
+  title,
+  size = 'md',
+  headerAction,
+  children,
+}) {
   useEffect(() => {
     if (!open) return;
     const h = (e) => {
@@ -35,6 +42,9 @@ export default function Modal({ open, onClose, title, size = 'md', children }) {
       >
         <div className={styles.header}>
           <h2 className={styles.title}>{title}</h2>
+          {headerAction && (
+            <div className={styles.headerAction}>{headerAction}</div>
+          )}
           <button
             className={styles.closeBtn}
             type="button"

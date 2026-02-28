@@ -102,6 +102,11 @@ export const adminApi = {
     q.set('sort', params?.sort ?? 'userId');
     q.set('direct', params?.direct ?? 'DESC');
 
+    const role = String(params?.role ?? '').trim();
+    if (role && role !== 'all') {
+      q.set('role', role);
+    }
+
     return request(`/admin/users?${q.toString()}`, { auth: true });
   },
   getUserDetail: (userId) => request(`/admin/users/${userId}`, { auth: true }),
@@ -357,6 +362,41 @@ export const adminApi = {
     const items = data?.content ?? [];
     return items.find((it) => Number(it.banId) === Number(banId)) ?? null;
   },
+
+  createBanner: (formData) =>
+    requestForm(`/admin/banners`, {
+      method: 'POST',
+      formData,
+      auth: true,
+    }),
+
+  updateBanner: (banId, formData, deleteFlag = false) =>
+    requestForm(`/admin/banners/${banId}?deleteFlag=${deleteFlag}`, {
+      method: 'PUT',
+      formData,
+      auth: true,
+    }),
+
+  deleteBanner: (banId) =>
+    request(`/admin/banners/${banId}`, {
+      method: 'DELETE',
+      auth: true,
+    }),
+
+  updateBannerStatus: (banId, status) =>
+    request(
+      `/admin/banners/${banId}/status?status=${encodeURIComponent(status)}`,
+      {
+        method: 'PATCH',
+        auth: true,
+      }
+    ),
+  updateBannerOrder: (orders) =>
+    request(`/admin/banners/order`, {
+      method: 'PATCH',
+      body: orders,
+      auth: true,
+    }),
 
   // company info
   getCompanyInfo: () => request('/company-info', { auth: true }),

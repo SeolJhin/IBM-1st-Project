@@ -46,6 +46,7 @@
   border-radius: var(--radius);
   cursor: pointer;
   font-weight: 600;
+  font-size: 14px;
   transition: 0.2s;
 }
 
@@ -53,10 +54,16 @@
   background: var(--accent);
 }
 
+.buttonPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── 테이블 ── */
 .table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 30px;
+  margin-top: 8px;
 }
 
 .table th {
@@ -64,18 +71,32 @@
   padding: 14px;
   text-align: left;
   font-weight: 600;
+  font-size: 14px;
   border-bottom: 2px solid var(--line);
 }
 
 .table td {
   padding: 16px 14px;
   border-bottom: 1px solid var(--line);
+  font-size: 14px;
 }
 
-.table tr:hover {
+.table tr:hover td {
   background: var(--cream);
 }
 
+.tableLink {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.tableLink:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+/* ── 상태 뱃지 ── */
 .statusBadge {
   background: var(--primary-weak);
   color: var(--ink-soft);
@@ -83,20 +104,203 @@
   border-radius: 20px;
   font-size: 13px;
   font-weight: 600;
-  margin-left: 8px;
 }
 
-input,
-textarea {
+/* ── 페이지네이션 ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.pageBtn {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  transition: 0.2s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--primary-weak);
+  border-color: var(--primary);
+}
+
+.pageBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* ── 폼 공통 ── */
+.formLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+  margin-top: 16px;
+}
+
+.formInput {
   width: 100%;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  margin-bottom: 16px;
   font-size: 15px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
 }
 
-textarea {
-  min-height: 120px;
+.formInput:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.formTextarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-family: inherit;
+  min-height: 160px;
   resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.formTextarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.formSelect {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-family: inherit;
+  background: var(--surface);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2348535F' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.formSelect:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* ── FAQ 아코디언 ── */
+.accordionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accordionItem {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.accordionItemOpen {
+  box-shadow: 0 4px 14px rgba(11, 14, 18, 0.08);
+}
+
+.accordionHeader {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 22px;
+  background: var(--surface);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.accordionHeader:hover {
+  background: var(--b-5);
+}
+
+.accordionQ {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.accordionTitle {
+  flex: 1;
+  color: var(--text);
+}
+
+.accordionIcon {
+  flex-shrink: 0;
+  font-size: 20px;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.accordionBody {
+  display: flex;
+  gap: 12px;
+  padding: 16px 22px 20px;
+  background: var(--b-5);
+  border-top: 1px solid var(--line);
+}
+
+.accordionA {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.accordionContent {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--muted);
+  white-space: pre-wrap;
 }

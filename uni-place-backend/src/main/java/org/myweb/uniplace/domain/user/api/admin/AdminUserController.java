@@ -31,7 +31,8 @@ public class AdminUserController {
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sort", defaultValue = "userId") String sort,
-            @RequestParam(name = "direct", defaultValue = "DESC") String direct
+            @RequestParam(name = "direct", defaultValue = "DESC") String direct,
+            @RequestParam(name = "role", required = false) UserRole role
     ) {
         if (page < 1) page = 1;
         if (size < 1) size = 10;
@@ -42,7 +43,7 @@ public class AdminUserController {
         Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
 
         // ✅ 서비스에서 Page<UserResponse>로 돌려주게 만들기
-        Page<UserResponse> result = userService.listForAdmin(pageable);
+        Page<UserResponse> result = userService.listForAdmin(pageable, role);
 
         return ApiResponse.ok(PageResponse.of(result));
     }
