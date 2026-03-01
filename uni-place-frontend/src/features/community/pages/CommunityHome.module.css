@@ -49,6 +49,90 @@
   color: #fff;
 }
 
+.writerBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.writeToggleBtn {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid #111827;
+  border-radius: 8px;
+  background: #111827;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.writerBox {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.writerRow {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.writerLabel {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.writerSelect,
+.writerInput,
+.writerTextarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.writerFixed {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  color: #374151;
+  font-size: 14px;
+}
+
+.writerTextarea {
+  resize: vertical;
+}
+
+.writerActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submitBtn {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid #1d4ed8;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .error {
   margin-bottom: 12px;
   color: #b91c1c;

@@ -10,8 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface BoardRepository extends JpaRepository<Board, Integer> {
@@ -45,6 +43,14 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
          order by b.readCount desc, b.boardId desc
     """)
     List<Board> findWeeklyTop(@Param("from") LocalDateTime from, Pageable pageable);
+
+    @Query("""
+        select b
+          from Board b
+         where b.code = :code
+         order by b.boardId desc
+    """)
+    Page<Board> findByCodeOrderByBoardIdDesc(@Param("code") String code, Pageable pageable);
     
     @Query("""
     	    select b from Board b

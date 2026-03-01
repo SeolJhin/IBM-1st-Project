@@ -20,9 +20,10 @@ function formatDate(value) {
 
 function typeLabel(value) {
   const key = String(value ?? '').toUpperCase();
-  if (key === 'FREE') return '자유';
-  if (key === 'QUESTION') return '질문';
-  if (key === 'REVIEW') return '후기';
+  if (key === 'FREE' || key === 'BOARD_FREE') return '자유';
+  if (key === 'QUESTION' || key === 'BOARD_QUESTION') return '질문';
+  if (key === 'REVIEW' || key === 'BOARD_REVIEW') return '후기';
+  if (key === 'NOTICE' || key === 'BOARD_NOTICE') return '공지';
   return '일반';
 }
 
@@ -33,6 +34,12 @@ export default function CommunityHome() {
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const [showWriter, setShowWriter] = useState(false);
+  const [writeType, setWriteType] = useState('FREE');
+  const [writeTitle, setWriteTitle] = useState('');
+  const [writeContent, setWriteContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,6 +74,9 @@ export default function CommunityHome() {
 
   useEffect(() => {
     setPage(1);
+    if (activeTab !== 'ALL') {
+      setWriteType(activeTab);
+    }
   }, [activeTab]);
 
   const pageButtons = useMemo(() => {
@@ -77,6 +87,45 @@ export default function CommunityHome() {
     return nums;
   }, [page, totalPages]);
 
+  const submitPost = async () => {
+    const title = writeTitle.trim();
+    const content = writeContent.trim();
+
+    if (!title) {
+      setError('제목을 입력해주세요.');
+      return;
+    }
+    if (!content) {
+      setError('내용을 입력해주세요.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    try {
+      await communityApi.createBoard({
+        boardTitle: title,
+        boardCtnt: content,
+        code: activeTab === 'ALL' ? writeType : activeTab,
+        anonymity: 'N',
+      });
+
+      setWriteTitle('');
+      setWriteContent('');
+      setShowWriter(false);
+
+      if (page === 1) {
+        await load();
+      } else {
+        setPage(1);
+      }
+    } catch (e) {
+      setError(e?.message || '게시글 작성에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <Header />
@@ -84,9 +133,7 @@ export default function CommunityHome() {
       <main className={styles.main}>
         <section className={styles.head}>
           <h1 className={styles.title}>커뮤니티</h1>
-          <p className={styles.sub}>
-            입주민 이야기와 질문, 후기를 한 곳에서 확인하세요.
-          </p>
+          <p className={styles.sub}>전체, 자유, 질문, 후기 탭에서 글을 읽고 작성할 수 있습니다.</p>
         </section>
 
         <div className={styles.tabs}>
@@ -101,6 +148,73 @@ export default function CommunityHome() {
             </button>
           ))}
         </div>
+
+        <div className={styles.writerBar}>
+          <button
+            type="button"
+            className={styles.writeToggleBtn}
+            onClick={() => setShowWriter((v) => !v)}
+          >
+            {showWriter ? '작성 닫기' : '글쓰기'}
+          </button>
+        </div>
+
+        {showWriter && (
+          <section className={styles.writerBox}>
+            <div className={styles.writerRow}>
+              <label className={styles.writerLabel}>분류</label>
+              {activeTab === 'ALL' ? (
+                <select
+                  className={styles.writerSelect}
+                  value={writeType}
+                  onChange={(e) => setWriteType(e.target.value)}
+                  disabled={submitting}
+                >
+                  <option value="FREE">자유</option>
+                  <option value="QUESTION">질문</option>
+                  <option value="REVIEW">후기</option>
+                </select>
+              ) : (
+                <div className={styles.writerFixed}>{typeLabel(activeTab)}</div>
+              )}
+            </div>
+
+            <div className={styles.writerRow}>
+              <label className={styles.writerLabel}>제목</label>
+              <input
+                className={styles.writerInput}
+                value={writeTitle}
+                onChange={(e) => setWriteTitle(e.target.value)}
+                maxLength={200}
+                disabled={submitting}
+                placeholder="제목을 입력하세요"
+              />
+            </div>
+
+            <div className={styles.writerRow}>
+              <label className={styles.writerLabel}>내용</label>
+              <textarea
+                className={styles.writerTextarea}
+                value={writeContent}
+                onChange={(e) => setWriteContent(e.target.value)}
+                disabled={submitting}
+                placeholder="내용을 입력하세요"
+                rows={6}
+              />
+            </div>
+
+            <div className={styles.writerActions}>
+              <button
+                type="button"
+                className={styles.submitBtn}
+                onClick={submitPost}
+                disabled={submitting}
+              >
+                {submitting ? '등록 중...' : '등록'}
+              </button>
+            </div>
+          </section>
+        )}
 
         {error ? <div className={styles.error}>{error}</div> : null}
 
@@ -118,6 +232,7 @@ export default function CommunityHome() {
                   <th>작성자</th>
                   <th>작성일</th>
                   <th>조회</th>
+                  <th>좋아요</th>
                 </tr>
               </thead>
               <tbody>
@@ -125,13 +240,14 @@ export default function CommunityHome() {
                   const boardId = item?.boardId ?? item?.id ?? idx;
                   return (
                     <tr key={boardId}>
-                      <td>{typeLabel(item?.boardType)}</td>
+                      <td>{typeLabel(item?.code ?? item?.boardType)}</td>
                       <td className={styles.titleCell}>
-                        {item?.title ?? item?.boardTitle ?? '(제목 없음)'}
+                        {item?.boardTitle ?? item?.title ?? '(제목 없음)'}
                       </td>
                       <td>{item?.userId ?? item?.writerId ?? '-'}</td>
                       <td>{formatDate(item?.createdAt ?? item?.createdDate)}</td>
-                      <td>{item?.viewCount ?? item?.views ?? 0}</td>
+                      <td>{item?.readCount ?? item?.viewCount ?? item?.views ?? 0}</td>
+                      <td>{item?.likeCount ?? item?.likes ?? 0}</td>
                     </tr>
                   );
                 })}

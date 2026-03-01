@@ -6,9 +6,8 @@ import styles from "./CompanyInfo.module.css";
 const pageCategories = [
   { label: "홈", path: "/" },
   { label: "회사소개", path: "/company_info" },
-  { label: "커뮤니티", path: "/community" },
-  { label: "입주 가이드", path: "/guide" },
   { label: "뉴스", path: "/news" },
+  { label: "입주 가이드", path: "/guide" },
 ];
 
 const problemItems = [
