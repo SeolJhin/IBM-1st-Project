@@ -8,6 +8,7 @@ import ScrollToTop from './shared/components/ScrollToTop';
 import Home from './shared/pages/Home';
 import About from './shared/pages/About';
 import CompanyInfo from './shared/pages/CompanyInfo';
+import CommunityHome from './features/community/pages/CommunityHome';
 
 // ── 유저 ──────────────────────────────────────────────────────
 import Login from './features/user/pages/Login';
@@ -99,7 +100,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/company_info" element={<CompanyInfo />} />
         <Route path="/about" element={<About variant="about" />} />
-        <Route path="/community" element={<About variant="community" />} />
+        <Route path="/community" element={<CommunityHome />} />
         <Route path="/guide" element={<About variant="guide" />} />
         <Route path="/news" element={<About variant="news" />} />
 

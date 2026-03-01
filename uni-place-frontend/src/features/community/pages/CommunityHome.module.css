@@ -1,0 +1,118 @@
+.page {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.head {
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.sub {
+  margin: 8px 0 0;
+  color: #4b5563;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tabBtn {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tabBtnActive {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.error {
+  margin-bottom: 12px;
+  color: #b91c1c;
+}
+
+.state {
+  padding: 28px 0;
+  text-align: center;
+  color: #6b7280;
+}
+
+.tableWrap {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+  font-size: 14px;
+}
+
+.table th {
+  background: #f8fafc;
+  color: #475569;
+}
+
+.titleCell {
+  color: #111827;
+  font-weight: 600;
+}
+
+.pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pageBtn {
+  min-width: 34px;
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pageBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pageBtnActive {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
