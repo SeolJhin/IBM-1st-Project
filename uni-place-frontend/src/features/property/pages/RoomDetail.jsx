@@ -1152,6 +1152,7 @@ export default function RoomDetail() {
   const [permError, setPermError] = useState('');
   const [tourCreateOpen, setTourCreateOpen] = useState(false);
   const [tourListOpen, setTourListOpen] = useState(false);
+  const [contractModalOpen, setContractModalOpen] = useState(false);
 
   const [room, setRoom] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -1583,6 +1584,15 @@ export default function RoomDetail() {
                   }[room?.roomSt] || room?.roomSt}
                   )
                 </p>
+                {/* 계약하기 버튼 — 비활성 */}
+                <button
+                  className={styles.contractBtn}
+                  type="button"
+                  disabled
+                  style={{ opacity: 0.45, cursor: 'not-allowed' }}
+                >
+                  📝 계약하기
+                </button>
               </>
             ) : (
               <>
@@ -1595,6 +1605,25 @@ export default function RoomDetail() {
                 </button>
                 <p className={styles.tourReservationHint}>
                   방문 예약 후 현장에서 직접 확인해보세요
+                </p>
+                {/* 계약하기 버튼 — 활성 */}
+                <button
+                  className={styles.contractBtn}
+                  type="button"
+                  onClick={() => {
+                    if (!user) {
+                      navigate('/login', {
+                        state: { from: `/rooms/${roomId}` },
+                      });
+                      return;
+                    }
+                    setContractModalOpen(true);
+                  }}
+                >
+                  📝 계약하기
+                </button>
+                <p className={styles.tourReservationHint}>
+                  계약 신청 후 관리자 검토를 거쳐 확정됩니다
                 </p>
               </>
             )}
@@ -2156,6 +2185,664 @@ export default function RoomDetail() {
           }}
         />
       )}
+
+      {/* ── 계약 신청 팝업 ── */}
+      {contractModalOpen && (
+        <ContractRequestModal
+          room={room}
+          onClose={() => setContractModalOpen(false)}
+          onSuccess={() => {
+            setContractModalOpen(false);
+            // TODO: 계약 API 연결 후 추가 동작 (예: 마이페이지 이동 등)
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ContractRequestModal
+//
+// ▸ props
+//   room      : 현재 방 정보 객체 (roomId, buildingNm, roomNo, floor,
+//               rentPrice, deposit, manageFee, rentType 등)
+//   onClose   : 모달 닫기 핸들러
+//   onSuccess : 신청 완료 후 콜백 (API 연결 전에는 빈 함수로 사용)
+//
+// ▸ TODO (API 연결 시 작업 목록)
+//   1. contractApi.js 에서 createContract(formData) 구현
+//      → POST /contracts  (multipart/form-data)
+//      → 필드: roomId, contractStart, contractEnd, paymentDay,
+//              lessorNm, lessorTel, lessorAddr, lessorRrn, signFile
+//   2. handleSubmit 내부 "// TODO: API 호출" 주석 부분을 실제 호출로 교체
+//      예시:
+//        import { contractApi } from '../../contract/api/contractApi';
+//        const fd = new FormData();
+//        fd.append('roomId', room.roomId);
+//        fd.append('contractStart', contractStart);
+//        fd.append('contractEnd', contractEnd);
+//        fd.append('paymentDay', paymentDay);
+//        fd.append('lessorNm', lessorNm);
+//        fd.append('lessorTel', lessorTel);
+//        fd.append('lessorAddr', lessorAddr);
+//        fd.append('lessorRrn', lessorRrn);
+//        fd.append('signFile', signFile);
+//        await contractApi.createContract(fd);
+//   3. 성공 후 onSuccess() 콜백에서 마이페이지 이동 등 UX 추가
+// ─────────────────────────────────────────────────────────────────────────────
+function ContractRequestModal({ room, onClose, onSuccess }) {
+  const today = new Date().toISOString().slice(0, 10);
+
+  // ── 폼 상태 ──
+  const [contractStart, setContractStart] = React.useState(today);
+  const [contractEnd, setContractEnd] = React.useState('');
+  const [paymentDay, setPaymentDay] = React.useState('10');
+  const [lessorNm, setLessorNm] = React.useState('');
+  const [lessorTel, setLessorTel] = React.useState('');
+  const [lessorAddr, setLessorAddr] = React.useState('');
+  const [lessorRrn, setLessorRrn] = React.useState('');
+  const [signFile, setSignFile] = React.useState(null);
+  const [signPreview, setSignPreview] = React.useState(null);
+  const signFileRef = React.useRef(null);
+
+  // ── UI 상태 ──
+  const [submitting, setSubmitting] = React.useState(false);
+  const [err, setErr] = React.useState('');
+  const [success, setSuccess] = React.useState(false);
+
+  // 서명 파일 선택
+  const handleSignFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSignFile(file);
+    setSignPreview(URL.createObjectURL(file));
+    e.target.value = '';
+  };
+
+  // 유효성 검사
+  const validate = () => {
+    if (!contractStart) return '계약 시작일을 입력해 주세요.';
+    if (!contractEnd) return '계약 종료일을 입력해 주세요.';
+    if (contractEnd <= contractStart)
+      return '계약 종료일은 시작일보다 이후여야 합니다.';
+    const day = Number(paymentDay);
+    if (!paymentDay || isNaN(day) || day < 1 || day > 28)
+      return '납부일은 1 ~ 28 사이의 숫자로 입력해 주세요.';
+    if (!lessorNm.trim()) return '임대인 성명을 입력해 주세요.';
+    if (!lessorTel.trim()) return '임대인 연락처를 입력해 주세요.';
+    if (!lessorAddr.trim()) return '임대인 주소를 입력해 주세요.';
+    if (!lessorRrn.trim()) return '임대인 주민등록번호를 입력해 주세요.';
+    if (!signFile) return '서명 이미지를 첨부해 주세요.';
+    return '';
+  };
+
+  // 제출
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validErr = validate();
+    if (validErr) {
+      setErr(validErr);
+      return;
+    }
+    setErr('');
+    setSubmitting(true);
+
+    try {
+      // ────────────────────────────────────────────────────
+      // TODO: API 연결 시 아래 주석을 해제하고 실제 호출로 교체
+      //
+      // const fd = new FormData();
+      // fd.append('roomId',        room.roomId);
+      // fd.append('contractStart', contractStart);
+      // fd.append('contractEnd',   contractEnd);
+      // fd.append('paymentDay',    paymentDay);
+      // fd.append('lessorNm',      lessorNm.trim());
+      // fd.append('lessorTel',     lessorTel.trim());
+      // fd.append('lessorAddr',    lessorAddr.trim());
+      // fd.append('lessorRrn',     lessorRrn.trim());
+      // fd.append('signFile',      signFile);
+      // await contractApi.createContract(fd);
+      //
+      // contractApi.createContract 구현 위치:
+      //   src/features/contract/api/contractApi.js
+      // ────────────────────────────────────────────────────
+
+      // API 연결 전 임시: 0.8초 딜레이 후 성공 처리
+      await new Promise((r) => setTimeout(r, 800));
+
+      setSuccess(true);
+    } catch (apiErr) {
+      setErr(
+        apiErr?.message || '계약 신청에 실패했습니다. 다시 시도해 주세요.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ── 공통 스타일 ──
+  const inputSt = {
+    width: '100%',
+    padding: '10px 14px',
+    border: '1.5px solid #e8dfd0',
+    borderRadius: 10,
+    fontSize: 14,
+    boxSizing: 'border-box',
+    background: '#faf7f3',
+    fontFamily: 'inherit',
+    outline: 'none',
+    color: '#3a2e20',
+  };
+  const labelSt = {
+    display: 'block',
+    fontSize: 13,
+    fontWeight: 700,
+    color: '#5a4a30',
+    marginBottom: 6,
+  };
+  const rentTypeMap = { monthly_rent: '월세', stay: '단기 숙박' };
+
+  // ── 렌더 ──
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9000,
+        background: 'rgba(0,0,0,0.55)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 20,
+          width: '100%',
+          maxWidth: 560,
+          maxHeight: '94vh',
+          overflowY: 'auto',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ── 헤더 ── */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '22px 26px 16px',
+            borderBottom: '1px solid #f0ece5',
+            flexShrink: 0,
+            background: 'linear-gradient(135deg, #fdf8f2, #fff)',
+            borderRadius: '20px 20px 0 0',
+          }}
+        >
+          <div>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: 18,
+                fontWeight: 800,
+                color: '#3a2e20',
+              }}
+            >
+              📝 계약 신청
+            </h3>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9a8c70' }}>
+              신청 후 관리자 검토를 거쳐 계약이 확정됩니다
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(0,0,0,0.06)',
+              border: 'none',
+              width: 34,
+              height: 34,
+              borderRadius: 8,
+              fontSize: 15,
+              cursor: 'pointer',
+              color: 'rgba(0,0,0,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* ── 성공 화면 ── */}
+        {success ? (
+          <div
+            style={{
+              padding: '48px 28px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 16,
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontSize: 60 }}>🎉</div>
+            <h4
+              style={{
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 800,
+                color: '#3a2e20',
+              }}
+            >
+              계약 신청이 완료되었습니다!
+            </h4>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 14,
+                color: '#7a6a50',
+                lineHeight: 1.8,
+              }}
+            >
+              입력하신 정보를 바탕으로 관리자가 검토 후<br />
+              연락드릴 예정입니다.
+              <br />
+              <span style={{ color: '#ba8037', fontWeight: 600 }}>
+                마이페이지 › 계약 내역
+              </span>
+              에서 진행 현황을 확인하세요.
+            </p>
+            <button
+              onClick={() => {
+                onSuccess?.();
+                onClose();
+              }}
+              style={{
+                marginTop: 8,
+                background: 'linear-gradient(135deg, #c4923f, #ba8037)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 10,
+                padding: '13px 36px',
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(186,128,55,0.35)',
+              }}
+            >
+              확인
+            </button>
+          </div>
+        ) : (
+          /* ── 입력 폼 ── */
+          <form
+            onSubmit={handleSubmit}
+            style={{
+              padding: '22px 26px 28px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20,
+            }}
+          >
+            {/* 방 정보 요약 카드 */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #fdf8f2, #fef9f4)',
+                borderRadius: 12,
+                padding: '16px 18px',
+                border: '1px solid #f0e8d8',
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: '#3a2e20',
+                }}
+              >
+                🏠 {room.buildingNm} &nbsp;·&nbsp; {room.roomNo}호 {room.floor}
+                층
+              </p>
+              <p style={{ margin: '6px 0 0', fontSize: 13, color: '#7a6a50' }}>
+                {rentTypeMap[room.rentType] || room.rentType} &nbsp;|&nbsp; 월{' '}
+                <strong style={{ color: '#ba8037' }}>
+                  {Number(room.rentPrice).toLocaleString()}원
+                </strong>
+                {room.deposit > 0 && (
+                  <>
+                    {' '}
+                    &nbsp;·&nbsp; 보증금 {Number(room.deposit).toLocaleString()}
+                    원
+                  </>
+                )}
+                {room.manageFee > 0 && (
+                  <>
+                    {' '}
+                    &nbsp;·&nbsp; 관리비{' '}
+                    {Number(room.manageFee).toLocaleString()}원
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/* ── 계약 기간 ── */}
+            <div>
+              <p style={{ ...labelSt, marginBottom: 10 }}>
+                계약 기간 <span style={{ color: '#e53e3e' }}>*</span>
+              </p>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <input
+                  type="date"
+                  value={contractStart}
+                  min={today}
+                  onChange={(e) => setContractStart(e.target.value)}
+                  style={{ ...inputSt, flex: 1 }}
+                  required
+                />
+                <span
+                  style={{ color: '#9a8c70', fontWeight: 600, flexShrink: 0 }}
+                >
+                  ~
+                </span>
+                <input
+                  type="date"
+                  value={contractEnd}
+                  min={contractStart || today}
+                  onChange={(e) => setContractEnd(e.target.value)}
+                  style={{ ...inputSt, flex: 1 }}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* ── 월 납부일 ── */}
+            <div>
+              <label style={labelSt}>
+                월 납부일 <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="number"
+                  min={1}
+                  max={28}
+                  placeholder="10"
+                  value={paymentDay}
+                  onChange={(e) => setPaymentDay(e.target.value)}
+                  style={{ ...inputSt, width: 100 }}
+                  required
+                />
+                <span style={{ fontSize: 14, color: '#7a6a50' }}>
+                  일 (1~28)
+                </span>
+              </div>
+            </div>
+
+            {/* ── 임대인 정보 구분선 ── */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                color: '#9a8c70',
+                fontSize: 12,
+              }}
+            >
+              <div style={{ flex: 1, height: 1, background: '#f0e8d8' }} />
+              <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                임대인 정보
+              </span>
+              <div style={{ flex: 1, height: 1, background: '#f0e8d8' }} />
+            </div>
+
+            {/* ── 임대인 성명 ── */}
+            <div>
+              <label style={labelSt}>
+                임대인 성명 <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="임대인 이름을 입력하세요"
+                value={lessorNm}
+                onChange={(e) => setLessorNm(e.target.value)}
+                style={inputSt}
+                required
+              />
+            </div>
+
+            {/* ── 임대인 연락처 ── */}
+            <div>
+              <label style={labelSt}>
+                임대인 연락처 <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="010-0000-0000"
+                value={lessorTel}
+                onChange={(e) => setLessorTel(e.target.value)}
+                style={inputSt}
+                required
+              />
+            </div>
+
+            {/* ── 임대인 주소 ── */}
+            <div>
+              <label style={labelSt}>
+                임대인 주소 <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="임대인 주소를 입력하세요"
+                value={lessorAddr}
+                onChange={(e) => setLessorAddr(e.target.value)}
+                style={inputSt}
+                required
+              />
+            </div>
+
+            {/* ── 임대인 주민등록번호 ── */}
+            <div>
+              <label style={labelSt}>
+                임대인 주민등록번호 <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="000000-0000000"
+                value={lessorRrn}
+                onChange={(e) => setLessorRrn(e.target.value)}
+                style={inputSt}
+                required
+              />
+              <p style={{ margin: '5px 0 0', fontSize: 11, color: '#9a8c70' }}>
+                개인정보는 계약 목적으로만 사용되며 안전하게 보호됩니다.
+              </p>
+            </div>
+
+            {/* ── 서명 이미지 ── */}
+            <div>
+              <label style={labelSt}>
+                서명 이미지 <span style={{ color: '#e53e3e' }}>*</span>
+              </label>
+              <div
+                onClick={() => signFileRef.current?.click()}
+                style={{
+                  border: `2px dashed ${signFile ? '#ba8037' : '#d7cebc'}`,
+                  borderRadius: 12,
+                  padding: signPreview ? 0 : '24px 16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  background: signFile ? 'transparent' : '#faf7f3',
+                  overflow: 'hidden',
+                  transition: 'border-color 0.2s',
+                  minHeight: signPreview ? 120 : 'auto',
+                }}
+              >
+                {signPreview ? (
+                  <div style={{ position: 'relative', width: '100%' }}>
+                    <img
+                      src={signPreview}
+                      alt="서명 미리보기"
+                      style={{
+                        width: '100%',
+                        maxHeight: 160,
+                        objectFit: 'contain',
+                        display: 'block',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSignFile(null);
+                        setSignPreview(null);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        background: 'rgba(0,0,0,0.5)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: 26,
+                        height: 26,
+                        cursor: 'pointer',
+                        fontSize: 13,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span style={{ fontSize: 30 }}>✍️</span>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 13,
+                        color: '#7a6a50',
+                        fontWeight: 600,
+                      }}
+                    >
+                      서명 이미지를 첨부해 주세요
+                    </p>
+                    <p style={{ margin: 0, fontSize: 11, color: '#9a8c70' }}>
+                      PNG, JPG, JPEG (클릭하여 파일 선택)
+                    </p>
+                  </>
+                )}
+              </div>
+              <input
+                ref={signFileRef}
+                type="file"
+                accept="image/png,image/jpg,image/jpeg"
+                style={{ display: 'none' }}
+                onChange={handleSignFile}
+              />
+            </div>
+
+            {/* ── 에러 메시지 ── */}
+            {err && (
+              <div
+                style={{
+                  background: '#fff5f5',
+                  border: '1px solid #feb2b2',
+                  borderRadius: 8,
+                  padding: '10px 14px',
+                  color: '#c53030',
+                  fontSize: 13,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                🚫 {err}
+              </div>
+            )}
+
+            {/* ── 버튼 영역 ── */}
+            <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  flex: 1,
+                  padding: '13px 0',
+                  background: '#f5f0e8',
+                  color: '#5a4a30',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                }}
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                style={{
+                  flex: 2,
+                  padding: '13px 0',
+                  background: submitting
+                    ? '#d5b870'
+                    : 'linear-gradient(135deg, #c4923f, #ba8037)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  boxShadow: submitting
+                    ? 'none'
+                    : '0 4px 14px rgba(186,128,55,0.35)',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                }}
+              >
+                {submitting ? (
+                  <>
+                    <span
+                      style={{
+                        width: 14,
+                        height: 14,
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderTopColor: '#fff',
+                        borderRadius: '50%',
+                        display: 'inline-block',
+                        animation: 'spin 0.7s linear infinite',
+                      }}
+                    />
+                    처리 중...
+                  </>
+                ) : (
+                  '📝 계약 신청하기'
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
