@@ -333,12 +333,12 @@ export const adminApi = {
     request(`/monthly-charges/${chargeId}`, { auth: true }),
 
   // payments/refunds
-  getPayments: () => request('/api/admin/payments', { auth: true }),
+  getPayments: () => request('/admin/payments', { auth: true }),
   getPaymentDetail: (paymentId) =>
-    request(`/api/admin/payments/${paymentId}`, { auth: true }),
-  getRefunds: () => request('/api/admin/refunds', { auth: true }),
+    request(`/admin/payments/${paymentId}`, { auth: true }),
+  getRefunds: () => request('/admin/refunds', { auth: true }),
   getRefundDetail: async (refundId) => {
-    const items = await request('/api/admin/refunds', { auth: true });
+    const items = await request('/admin/refunds', { auth: true });
     if (!Array.isArray(items)) return null;
     return (
       items.find((it) => Number(it.refundId ?? it.id) === Number(refundId)) ??
