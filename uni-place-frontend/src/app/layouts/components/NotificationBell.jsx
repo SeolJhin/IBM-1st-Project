@@ -1,9 +1,21 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notificationApi } from '../../../features/notification/api/notificationApi';
 import Modal from '../../../shared/components/Modal/Modal';
-import NotificationList from '../../../features/notification/pages/NotificationList';
 import styles from './NotificationBell.module.css';
+
+// NotificationList를 lazy import → 순환 참조 방지
+// NotificationBell → NotificationList → Header → NotificationBell (순환)
+const NotificationList = lazy(
+  () => import('../../../features/notification/pages/NotificationList')
+);
 
 const TARGET_LABEL = {
   board: '게시글',
@@ -275,7 +287,13 @@ export default function NotificationBell() {
         title="🔔 알림 전체보기"
         size="md"
       >
-        <NotificationList inlineMode />
+        <Suspense
+          fallback={
+            <div style={{ padding: 24, textAlign: 'center' }}>로딩 중…</div>
+          }
+        >
+          <NotificationList inlineMode />
+        </Suspense>
       </Modal>
     </>
   );
