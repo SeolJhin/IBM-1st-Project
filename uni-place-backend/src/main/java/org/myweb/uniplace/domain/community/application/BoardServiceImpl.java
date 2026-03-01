@@ -10,7 +10,6 @@ import org.myweb.uniplace.domain.community.domain.entity.Board;
 import org.myweb.uniplace.domain.community.repository.BoardLikeRepository;
 import org.myweb.uniplace.domain.community.repository.BoardRepository;
 import org.myweb.uniplace.domain.community.repository.ReplyRepository;
-import org.myweb.uniplace.domain.commoncode.repository.CommonCodeRepository;
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.file.application.FileService;
@@ -38,7 +37,6 @@ public class BoardServiceImpl implements BoardService {
     private final ReplyRepository replyRepository;
     private final FileService fileService;
     private final BoardLikeRepository boardLikeRepository;
-    private final CommonCodeRepository commonCodeRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -277,8 +275,7 @@ public class BoardServiceImpl implements BoardService {
 
         String mapped = mapBoardCodeAlias(rawType);
         if ("ALL".equalsIgnoreCase(mapped)) return null;
-
-        return commonCodeRepository.existsByCode(mapped) ? mapped : null;
+        return mapped;
     }
 
     private String normalizeBoardCodeForWrite(String rawCode) {
@@ -286,8 +283,7 @@ public class BoardServiceImpl implements BoardService {
 
         String mapped = mapBoardCodeAlias(rawCode);
         if ("ALL".equalsIgnoreCase(mapped)) return DEFAULT_BOARD_CODE;
-
-        return commonCodeRepository.existsByCode(mapped) ? mapped : DEFAULT_BOARD_CODE;
+        return mapped;
     }
 
     private String mapBoardCodeAlias(String raw) {
@@ -295,7 +291,7 @@ public class BoardServiceImpl implements BoardService {
 
         return switch (normalized) {
             case "FREE" -> "BOARD_FREE";
-            case "QUESTION" -> "BOARD_FREE";
+            case "QUESTION" -> "BOARD_QUESTION";
             case "REVIEW" -> "BOARD_REVIEW";
             case "NOTICE" -> "BOARD_NOTICE";
             default -> normalized;

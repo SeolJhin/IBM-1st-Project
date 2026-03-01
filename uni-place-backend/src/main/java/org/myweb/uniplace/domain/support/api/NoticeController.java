@@ -55,6 +55,7 @@ public class NoticeController {
     }
 
     /** 공지 등록 */
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ApiResponse<NoticeResponse> create(
             @AuthenticationPrincipal AuthUser authUser,

@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.support.application;
 
 import lombok.RequiredArgsConstructor;
+import org.myweb.uniplace.domain.commoncode.repository.CommonCodeRepository;
 import org.myweb.uniplace.domain.support.api.dto.request.*;
 import org.myweb.uniplace.domain.support.api.dto.response.QnaResponse;
 import org.myweb.uniplace.domain.support.domain.entity.Qna;
@@ -22,16 +23,20 @@ import java.util.stream.Collectors;
 @Transactional
 public class QnaServiceImpl implements QnaService {
 
+    private static final String DEFAULT_SUPPORT_CODE = "SUP_GENERAL";
+
     private final QnaRepository qnaRepository;
+    private final CommonCodeRepository commonCodeRepository;
 
     // ────────────────────────── 조회 ──────────────────────────
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<QnaResponse> search(QnaSearchRequest request, Pageable pageable) {
+        String normalizedCode = normalizeSupportCodeForFilter(request.getCode());
         Page<Qna> page = qnaRepository.search(
                 request.getUserId(),
-                request.getCode(),
+                normalizedCode,
                 request.getQnaSt(),
                 request.getKeyword(),
                 pageable
@@ -42,8 +47,9 @@ public class QnaServiceImpl implements QnaService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<QnaResponse> searchAll(QnaSearchRequest request, Pageable pageable) {
+        String normalizedCode = normalizeSupportCodeForFilter(request.getCode());
         Page<Qna> page = qnaRepository.searchAll(
-                request.getCode(),
+                normalizedCode,
                 request.getQnaSt(),
                 request.getKeyword(),
                 pageable
@@ -80,7 +86,7 @@ public class QnaServiceImpl implements QnaService {
                 .qnaTitle(request.getQnaTitle())
                 .userId(userId)
                 .qnaCtnt(request.getQnaCtnt())
-                .code(request.getCode())
+                .code(normalizeSupportCodeForWrite(request.getCode()))
                 .groupId(request.getGroupId())
                 .qnaLev(request.getQnaLev() != null ? request.getQnaLev() : 0)
                 .build();
@@ -141,5 +147,39 @@ public class QnaServiceImpl implements QnaService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.QNA_NOT_FOUND));
         qna.updateStatus(request.getQnaSt());
         return QnaResponse.from(qna);
+    }
+
+    private String normalizeSupportCodeForFilter(String rawCode) {
+        if (rawCode == null || rawCode.isBlank()) return null;
+
+        String mapped = mapSupportCode(rawCode);
+        if ("ALL".equalsIgnoreCase(mapped)) return null;
+
+        return commonCodeRepository.existsByCode(mapped) ? mapped : null;
+    }
+
+    private String normalizeSupportCodeForWrite(String rawCode) {
+        if (rawCode == null || rawCode.isBlank()) return DEFAULT_SUPPORT_CODE;
+
+        String mapped = mapSupportCode(rawCode);
+        if ("ALL".equalsIgnoreCase(mapped)) return DEFAULT_SUPPORT_CODE;
+
+        return commonCodeRepository.existsByCode(mapped) ? mapped : DEFAULT_SUPPORT_CODE;
+    }
+
+    private String mapSupportCode(String rawCode) {
+        String normalized = rawCode.trim().toUpperCase();
+
+        return switch (normalized) {
+            case "SUP_GENERAL", "GENERAL" -> "SUP_GENERAL";
+            case "SUP_BILLING", "BILLING" -> "SUP_BILLING";
+            default -> {
+                if (normalized.startsWith("QNA_")) {
+                    if (normalized.contains("PAY") || normalized.contains("BILL")) yield "SUP_BILLING";
+                    yield "SUP_GENERAL";
+                }
+                yield normalized;
+            }
+        };
     }
 }

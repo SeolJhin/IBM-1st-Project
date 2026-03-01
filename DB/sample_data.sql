@@ -93,9 +93,10 @@ INSERT INTO group_common_code (group_code, group_code_name, description, is_acti
 ('NOTIFICATION', 'Notification Category', 'Notification category', 1);
 
 INSERT INTO common_code (group_code, code, code_value, description, display_order, is_active) VALUES
-('BOARD_CATEGORY', 'BOARD_FREE',   'Free',        'Free board', 1, 1),
-('BOARD_CATEGORY', 'BOARD_REVIEW', 'Review',      'Review board', 2, 1),
-('BOARD_CATEGORY', 'BOARD_NOTICE', 'Notice',      'Notice board', 3, 1),
+                                                                                                  ('BOARD_CATEGORY', 'BOARD_FREE',   'Free',        'Free board', 1, 1),
+                                                                                                  ('BOARD_CATEGORY', 'BOARD_QUESTION', 'Question',  'Question board', 2, 1),
+                                                                                                  ('BOARD_CATEGORY', 'BOARD_REVIEW', 'Review',      'Review board', 3, 1),
+                                                                                                  ('BOARD_CATEGORY', 'BOARD_NOTICE', 'Notice',      'Notice board', 4, 1),
 ('SUPPORT_CATEGORY', 'SUP_GENERAL','General',     'General support', 1, 1),
 ('SUPPORT_CATEGORY', 'SUP_BILLING','Billing',     'Billing support', 2, 1),
 ('PRODUCT_CATEGORY', 'PROD_FOOD',  'Food',        'Food product', 1, 1),
@@ -104,6 +105,78 @@ INSERT INTO common_code (group_code, code, code_value, description, display_orde
 ('AFFILIATE_CATEGORY', 'AFF_CLEAN','Clean partner','Clean affiliate', 2, 1),
 ('NOTIFICATION', 'NOTI_PAY',       'Payment',     'Payment notification', 1, 1),
 ('NOTIFICATION', 'NOTI_NOTICE',    'Notice',      'Notice notification', 2, 1);
+
+-- Ensure required common code groups and codes for community/support exist.
+-- Safe to run multiple times.
+
+-- 1) Required groups
+INSERT INTO group_common_code (group_code, group_code_name, description, is_active)
+SELECT 'BOARD_CATEGORY', 'Board Category', 'Community board category', 1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM group_common_code
+    WHERE group_code = 'BOARD_CATEGORY'
+);
+
+INSERT INTO group_common_code (group_code, group_code_name, description, is_active)
+SELECT 'SUPPORT_CATEGORY', 'Support Category', 'Support category', 1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM group_common_code
+    WHERE group_code = 'SUPPORT_CATEGORY'
+);
+
+-- 2) Required codes
+INSERT INTO common_code (group_code, code, code_value, description, display_order, is_active)
+SELECT 'BOARD_CATEGORY', 'BOARD_QUESTION', 'Question', 'Question board', 2, 1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM common_code
+    WHERE code = 'BOARD_QUESTION'
+);
+
+INSERT INTO common_code (group_code, code, code_value, description, display_order, is_active)
+SELECT 'SUPPORT_CATEGORY', 'SUP_GENERAL', 'General', 'General support', 1, 1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM common_code
+    WHERE code = 'SUP_GENERAL'
+);
+
+INSERT INTO common_code (group_code, code, code_value, description, display_order, is_active)
+SELECT 'SUPPORT_CATEGORY', 'SUP_BILLING', 'Billing', 'Billing support', 2, 1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM common_code
+    WHERE code = 'SUP_BILLING'
+);
+
+-- Ensure SUPPORT_CATEGORY and required support common codes exist.
+-- Safe to run multiple times.
+
+INSERT INTO group_common_code (group_code, group_code_name, description, is_active)
+SELECT 'SUPPORT_CATEGORY', 'Support Category', 'Support category', 1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM group_common_code
+    WHERE group_code = 'SUPPORT_CATEGORY'
+);
+
+INSERT INTO common_code (group_code, code, code_value, description, display_order, is_active)
+SELECT 'SUPPORT_CATEGORY', 'SUP_GENERAL', 'General', 'General support', 1, 1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM common_code
+    WHERE code = 'SUP_GENERAL'
+);
+
+INSERT INTO common_code (group_code, code, code_value, description, display_order, is_active)
+SELECT 'SUPPORT_CATEGORY', 'SUP_BILLING', 'Billing', 'Billing support', 2, 1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM common_code
+    WHERE code = 'SUP_BILLING'
+);
 
 -- =========================================================
 -- 2) users (jinung/hyun/jungbin/juyong + user1~user50)
@@ -585,8 +658,5 @@ INSERT INTO reviews (user_id, room_id, rating, review_title, review_ctnt, code, 
 -- =========================================================
 SET FOREIGN_KEY_CHECKS = 1;
 SET SQL_SAFE_UPDATES = 1;
-
-
-
 
 

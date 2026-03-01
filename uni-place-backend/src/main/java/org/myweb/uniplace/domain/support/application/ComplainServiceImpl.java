@@ -6,6 +6,7 @@ import org.myweb.uniplace.domain.support.api.dto.request.ComplainReplyRequest;
 import org.myweb.uniplace.domain.support.api.dto.request.ComplainSearchRequest;
 import org.myweb.uniplace.domain.support.api.dto.request.ComplainUpdateRequest;
 import org.myweb.uniplace.domain.support.api.dto.response.ComplainResponse;
+import org.myweb.uniplace.domain.commoncode.repository.CommonCodeRepository;
 import org.myweb.uniplace.domain.support.domain.entity.Complain;
 import org.myweb.uniplace.domain.support.repository.ComplainRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
@@ -21,14 +22,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ComplainServiceImpl implements ComplainService {
 
+    private static final String DEFAULT_SUPPORT_CODE = "SUP_GENERAL";
+
     private final ComplainRepository complainRepository;
+    private final CommonCodeRepository commonCodeRepository;
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ComplainResponse> search(ComplainSearchRequest request, Pageable pageable) {
+        String normalizedCode = normalizeSupportCodeForFilter(request.getCode());
         Page<Complain> page = complainRepository.search(
                 request.getUserId(),
-                request.getCode(),
+                normalizedCode,
                 request.getCompSt(),
                 request.getKeyword(),
                 pageable
@@ -58,7 +63,7 @@ public class ComplainServiceImpl implements ComplainService {
                 .compTitle(request.getCompTitle())
                 .userId(userId)
                 .compCtnt(request.getCompCtnt())
-                .code(request.getCode())
+                .code(normalizeSupportCodeForWrite(request.getCode()))
                 .build();
         return ComplainResponse.from(complainRepository.save(complain));
     }
@@ -93,5 +98,39 @@ public class ComplainServiceImpl implements ComplainService {
             throw new BusinessException(ErrorCode.COMPLAIN_NOT_FOUND);
         }
         complainRepository.deleteById(compId);
+    }
+
+    private String normalizeSupportCodeForFilter(String rawCode) {
+        if (rawCode == null || rawCode.isBlank()) return null;
+
+        String mapped = mapSupportCode(rawCode);
+        if ("ALL".equalsIgnoreCase(mapped)) return null;
+
+        return commonCodeRepository.existsByCode(mapped) ? mapped : null;
+    }
+
+    private String normalizeSupportCodeForWrite(String rawCode) {
+        if (rawCode == null || rawCode.isBlank()) return DEFAULT_SUPPORT_CODE;
+
+        String mapped = mapSupportCode(rawCode);
+        if ("ALL".equalsIgnoreCase(mapped)) return DEFAULT_SUPPORT_CODE;
+
+        return commonCodeRepository.existsByCode(mapped) ? mapped : DEFAULT_SUPPORT_CODE;
+    }
+
+    private String mapSupportCode(String rawCode) {
+        String normalized = rawCode.trim().toUpperCase();
+
+        return switch (normalized) {
+            case "SUP_GENERAL", "GENERAL" -> "SUP_GENERAL";
+            case "SUP_BILLING", "BILLING" -> "SUP_BILLING";
+            default -> {
+                if (normalized.startsWith("COMP_")) {
+                    if (normalized.contains("BILL") || normalized.contains("PAY")) yield "SUP_BILLING";
+                    yield "SUP_GENERAL";
+                }
+                yield normalized;
+            }
+        };
     }
 }
