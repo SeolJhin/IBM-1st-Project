@@ -1,5 +1,3 @@
-
-
 /* =========================================================
  * Uni-Place : FULL CREATE SCRIPT (Parent → Child)
  * - FK 충돌 없이 순서 보장
@@ -55,6 +53,7 @@ DROP TABLE IF EXISTS residents;
 DROP TABLE IF EXISTS contract;
 
 
+DROP TABLE IF EXISTS product_building_stock;
 DROP TABLE IF EXISTS product;
 DROP TABLE IF EXISTS affiliate;
 
@@ -172,45 +171,58 @@ CREATE TABLE social_accounts (
 -- 3) PROPERTY TABLES
 -- ===============================
 CREATE TABLE building (
-  building_id      INT          AUTO_INCREMENT PRIMARY KEY,
-  building_nm      VARCHAR(50)  NOT NULL,
-  building_addr    VARCHAR(500) NOT NULL,
-  building_desc    VARCHAR(500),
-  land_category    VARCHAR(20),
-  build_size       DECIMAL(5,2),
-  building_usage   VARCHAR(20),
-  exist_elv        VARCHAR(1),
-  parking_capacity INT,
-  created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at       DATETIME     NULL ON UPDATE CURRENT_TIMESTAMP,
-  delete_yn        VARCHAR(1)   NOT NULL DEFAULT 'N',
+  building_id           INT          AUTO_INCREMENT PRIMARY KEY,
+  building_nm           VARCHAR(50)  NOT NULL,
+  building_addr         VARCHAR(500) NOT NULL,
+  building_desc         VARCHAR(500),
+  land_category         VARCHAR(20),
+  build_size            DECIMAL(5,2),
+  building_usage        VARCHAR(20),
+  exist_elv             VARCHAR(1),
+  parking_capacity      INT,
+  building_lessor_nm    VARCHAR(50)  NULL COMMENT '임대인 성명',
+  building_lessor_tel   VARCHAR(20)  NULL COMMENT '임대인 전화번호',
+  building_lessor_addr  VARCHAR(200) NULL COMMENT '임대인 주소',
+  building_lessor_rrn   VARCHAR(20)  NULL COMMENT '임대인 주민등록번호',
+  created_at            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at            DATETIME     NULL ON UPDATE CURRENT_TIMESTAMP,
+  delete_yn             VARCHAR(1)   NOT NULL DEFAULT 'N',
   KEY ix_building_delete (delete_yn)
 ) ENGINE=InnoDB;
 
 
--- delete_yn 추가 (soft delete 지원)
+
+
+--  delete_yn 추가 (soft delete 지원)
 CREATE TABLE rooms (
-  room_id       INT           AUTO_INCREMENT PRIMARY KEY,
-  room_no       INT           NOT NULL,
-  floor         INT           NOT NULL,
-  room_size     DECIMAL(5,2)  NOT NULL,
-  building_id   INT           NOT NULL,
-  deposit       DECIMAL(12,0),
-  rent_price    DECIMAL(12,0) NOT NULL,
-  manage_fee    DECIMAL(12,0),
-  rent_type     ENUM('monthly_rent','stay')                                              NOT NULL DEFAULT 'monthly_rent',
-  room_st       ENUM('available','reserved','contracted','repair','cleaning')            NOT NULL DEFAULT 'available',
-  room_options  VARCHAR(500),
-  room_capacity INT           NOT NULL DEFAULT 1,
-  rent_min      INT,
-  sun_direction ENUM('n','s','w','e'),
-  room_desc     VARCHAR(3000),
-  delete_yn     VARCHAR(1)    NOT NULL DEFAULT 'N',
+  room_id         INT           AUTO_INCREMENT PRIMARY KEY,
+  room_no         INT           NOT NULL,
+  floor           INT           NOT NULL,
+  room_size       DECIMAL(5,2)  NOT NULL,
+  room_type       ENUM('one_room','two_room','three_room','loft','share') NOT NULL DEFAULT 'one_room',
+  pet_allowed_yn  ENUM('Y','N') NOT NULL DEFAULT 'N',
+  building_id     INT           NOT NULL,
+  deposit         DECIMAL(12,0),
+  rent_price      DECIMAL(12,0) NOT NULL,
+  manage_fee      DECIMAL(12,0),
+  rent_type       ENUM('monthly_rent','stay') NOT NULL DEFAULT 'monthly_rent',
+  room_st         ENUM('available','reserved','contracted','repair','cleaning') NOT NULL DEFAULT 'available',
+  room_options    VARCHAR(500),
+  -- 수용 인원
+  room_capacity   INT           NOT NULL DEFAULT 1,
+  rent_min        INT,
+  sun_direction   ENUM('n','s','w','e'),
+  room_desc       VARCHAR(3000),
+  delete_yn       VARCHAR(1)    NOT NULL DEFAULT 'N',
   UNIQUE KEY uq_rooms_building_roomno (building_id, room_no),
   KEY ix_rooms_building (building_id),
-  KEY ix_rooms_delete   (delete_yn),
+  KEY ix_rooms_delete (delete_yn),
+  KEY ix_rooms_type (room_type),
+  KEY ix_rooms_pet_allowed (pet_allowed_yn),
   CONSTRAINT fk_rooms_building FOREIGN KEY (building_id) REFERENCES building(building_id)
 ) ENGINE=InnoDB;
+
+
 
 
 CREATE TABLE common_space (
@@ -308,6 +320,21 @@ CREATE TABLE product (
   CONSTRAINT fk_product_code      FOREIGN KEY (code)         REFERENCES common_code(code),
   CONSTRAINT fk_product_affiliate FOREIGN KEY (affiliate_id) REFERENCES affiliate(affiliate_id)
 ) ENGINE=InnoDB;
+
+-- ✅ V2: 빌딩별 상품 재고 테이블 (product 바로 다음에 생성)
+CREATE TABLE product_building_stock (
+  stock_id    INT      NOT NULL AUTO_INCREMENT,
+  prod_id     INT      NOT NULL,
+  building_id INT      NOT NULL,
+  stock       INT      NOT NULL DEFAULT 0,
+  updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (stock_id),
+  UNIQUE KEY uq_prod_building (prod_id, building_id),
+  CONSTRAINT fk_pbs_product  FOREIGN KEY (prod_id)     REFERENCES product(prod_id)      ON DELETE CASCADE,
+  CONSTRAINT fk_pbs_building FOREIGN KEY (building_id) REFERENCES building(building_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
 
 
 -- ===============================
@@ -553,7 +580,7 @@ CREATE TABLE reviews (
   CONSTRAINT chk_reviews_rating CHECK (rating BETWEEN 1 AND 5),
   KEY ix_reviews_room (room_id),
   CONSTRAINT fk_reviews_user FOREIGN KEY (user_id) REFERENCES users(user_id),
-  CONSTRAINT fk_reviews_room FOREIGN KEY (room_id) REFERENCES rooms(room_id),
+  CONSTRAINT fk_reviews_room FOREIGN KEY (room_id) REFERENCES rooms(room_id)
 ) ENGINE=InnoDB;
 
 
@@ -565,12 +592,12 @@ CREATE TABLE notification (
   receiver_id     VARCHAR(50) NOT NULL,
   code            VARCHAR(20) NOT NULL,
   sender_id       VARCHAR(50),
-  message         VARCHAR(255),
+  message        TEXT,
   created_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   is_read         VARCHAR(1)  NOT NULL DEFAULT 'N',
   is_read_at      DATETIME,
   target_id       INT,
-  target          ENUM('board','reply','notice'),
+  target          ENUM('board','reply','notice','tour','space','review','payment'),
   url_path        VARCHAR(260),
   KEY ix_notification_receiver (receiver_id),
   CONSTRAINT fk_notification_receiver FOREIGN KEY (receiver_id) REFERENCES users(user_id) ON DELETE CASCADE,
@@ -589,19 +616,23 @@ CREATE TABLE cart (
   CONSTRAINT fk_cart_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-
 CREATE TABLE cart_items (
   cart_item_id   INT           AUTO_INCREMENT PRIMARY KEY,
   cart_id        INT           NOT NULL,
   prod_id        INT           NOT NULL,
+  building_id    INT           NULL,                   
   order_quantity INT           NOT NULL,
   order_price    DECIMAL(10,0) NOT NULL,
-  UNIQUE KEY uq_cart_item (cart_id, prod_id),
-  KEY ix_cart_items_cart (cart_id),
-  KEY ix_cart_items_prod (prod_id),
-  CONSTRAINT fk_cart_items_cart FOREIGN KEY (cart_id) REFERENCES cart(cart_id)    ON DELETE CASCADE,
-  CONSTRAINT fk_cart_items_prod FOREIGN KEY (prod_id) REFERENCES product(prod_id)
+  UNIQUE KEY uq_cart_item (cart_id, prod_id, building_id),   
+  KEY ix_cart_items_cart     (cart_id),
+  KEY ix_cart_items_prod     (prod_id),
+  KEY ix_cart_items_building (building_id),
+  CONSTRAINT fk_cart_items_cart     FOREIGN KEY (cart_id)     REFERENCES cart(cart_id)         ON DELETE CASCADE,
+  CONSTRAINT fk_cart_items_prod     FOREIGN KEY (prod_id)     REFERENCES product(prod_id),
+  CONSTRAINT fk_cart_items_building FOREIGN KEY (building_id) REFERENCES building(building_id) 
 ) ENGINE=InnoDB;
+
+
 
 
 -- ===============================
@@ -698,12 +729,15 @@ CREATE TABLE order_items (
   order_item_id  INT           AUTO_INCREMENT PRIMARY KEY,
   order_id       INT           NOT NULL,
   prod_id        INT           NOT NULL,
+  building_id    INT           NULL,                         
   order_quantity INT           NOT NULL,
   order_price    DECIMAL(12,0) NOT NULL,
-  KEY ix_order_items_order (order_id),
-  KEY ix_order_items_prod  (prod_id),
-  CONSTRAINT fk_order_items_order   FOREIGN KEY (order_id) REFERENCES orders(order_id),
-  CONSTRAINT fk_order_items_product FOREIGN KEY (prod_id)  REFERENCES product(prod_id)
+  KEY ix_order_items_order    (order_id),
+  KEY ix_order_items_prod     (prod_id),
+  KEY ix_order_items_building (building_id),
+  CONSTRAINT fk_order_items_order    FOREIGN KEY (order_id)    REFERENCES orders(order_id),
+  CONSTRAINT fk_order_items_product  FOREIGN KEY (prod_id)     REFERENCES product(prod_id),
+  CONSTRAINT fk_order_items_building FOREIGN KEY (building_id) REFERENCES building(building_id) -- 
 ) ENGINE=InnoDB;
 
 
@@ -787,20 +821,6 @@ CREATE TABLE payment_intent (
 
 
 SET FOREIGN_KEY_CHECKS = 1;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
