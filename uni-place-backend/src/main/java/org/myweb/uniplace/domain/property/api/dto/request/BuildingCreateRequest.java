@@ -40,6 +40,19 @@ public class BuildingCreateRequest {
     @Min(0)
     private Integer parkingCapacity;
 
+    // ✅ 임대인 정보
+    @Size(max = 50)
+    private String buildingLessorNm;
+
+    @Size(max = 20)
+    private String buildingLessorTel;
+
+    @Size(max = 200)
+    private String buildingLessorAddr;
+
+    @Size(max = 20)
+    private String buildingLessorRrn;
+
     // ✅ 파일 업로드
     private List<MultipartFile> files;
 }

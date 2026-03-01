@@ -31,6 +31,12 @@ public class RoomDetailResponse {
     private String buildingDesc;
     private Integer parkingCapacity;
 
+    // ✅ 임대인 정보 (Building에서 자동 포함)
+    private String buildingLessorNm;
+    private String buildingLessorTel;
+    private String buildingLessorAddr;
+    private String buildingLessorRrn;
+
     private Integer roomNo;
     private Integer floor;
     private BigDecimal roomSize;
@@ -65,6 +71,10 @@ public class RoomDetailResponse {
                 .buildingAddr(b != null ? b.getBuildingAddr() : null)
                 .buildingDesc(b != null ? b.getBuildingDesc() : null)
                 .parkingCapacity(b != null ? b.getParkingCapacity() : null)
+                .buildingLessorNm(b != null ? b.getBuildingLessorNm() : null)
+                .buildingLessorTel(b != null ? b.getBuildingLessorTel() : null)
+                .buildingLessorAddr(b != null ? b.getBuildingLessorAddr() : null)
+                .buildingLessorRrn(b != null ? b.getBuildingLessorRrn() : null)
                 .roomNo(e.getRoomNo())
                 .floor(e.getFloor())
                 .roomSize(e.getRoomSize())
