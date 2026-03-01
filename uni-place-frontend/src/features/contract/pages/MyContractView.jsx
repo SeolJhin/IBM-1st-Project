@@ -382,8 +382,9 @@ function ContractCard({ contract }) {
             <p className={styles.roomError}>방 정보를 찾을 수 없습니다.</p>
           )}
 
-          {/* ── 계약서 보기 버튼 ── */}
+          {/* ── 하단 버튼 영역 ── */}
           <div className={styles.pdfRow}>
+            {/* 계약서 보기 */}
             {hasContractImage ? (
               <button
                 type="button"
@@ -398,6 +399,40 @@ function ContractCard({ contract }) {
                   ? '⏳ 관리자 승인 후 계약서가 발급됩니다.'
                   : '📄 계약서 준비 중입니다.'}
               </div>
+            )}
+
+            {/* 월세 결제 버튼 (active 계약만 표시) */}
+            {isActive && (
+              <button
+                type="button"
+                className={styles.payBtn}
+                onClick={() => {
+                  // TODO: 월세 결제 기능 연결
+                  console.log(
+                    '월세 결제 clicked, contractId:',
+                    contract.contractId
+                  );
+                }}
+              >
+                💳 월세 결제
+              </button>
+            )}
+
+            {/* 결제 조회 버튼 (active 계약만 표시) */}
+            {isActive && (
+              <button
+                type="button"
+                className={styles.payHistoryBtn}
+                onClick={() => {
+                  // TODO: 결제 조회 기능 연결
+                  console.log(
+                    '결제 조회 clicked, contractId:',
+                    contract.contractId
+                  );
+                }}
+              >
+                🧾 결제 조회
+              </button>
             )}
           </div>
         </div>

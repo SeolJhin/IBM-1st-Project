@@ -405,6 +405,10 @@
   border-top: 1px solid #f0ece5;
   padding-top: 18px;
   margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 .pdfBtn {
   padding: 11px 22px;
@@ -421,6 +425,44 @@
 .pdfBtn:hover {
   background: linear-gradient(135deg, #d4a24f, #ca9047);
   box-shadow: 0 5px 16px rgba(186, 128, 55, 0.4);
+  transform: translateY(-1px);
+}
+
+/* 월세 결제 버튼 */
+.payBtn {
+  padding: 11px 22px;
+  border-radius: 10px;
+  border: 0;
+  background: linear-gradient(135deg, #4a90d9, #2f78c5);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(47, 120, 197, 0.3);
+  transition: all 0.2s;
+}
+.payBtn:hover {
+  background: linear-gradient(135deg, #5aa0e9, #3f88d5);
+  box-shadow: 0 5px 16px rgba(47, 120, 197, 0.4);
+  transform: translateY(-1px);
+}
+
+/* 결제 조회 버튼 */
+.payHistoryBtn {
+  padding: 11px 22px;
+  border-radius: 10px;
+  border: 1.5px solid #c4923f;
+  background: #fff;
+  color: #c4923f;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.payHistoryBtn:hover {
+  background: #fdf6ec;
+  border-color: #ba8037;
+  color: #ba8037;
   transform: translateY(-1px);
 }
 

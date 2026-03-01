@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.myweb.uniplace.domain.contract.domain.entity.Contract;
+import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.file.api.dto.response.FileUploadResponse;
@@ -159,11 +160,13 @@ public class ContractImageServiceImpl implements ContractImageService {
                 ? contract.getSignAt().toLocalDate() : LocalDate.now();
         m.putAll(splitDate("sign", signDate));
 
+        // ✅ 임대인 정보: Building 엔티티 (건물주)
         m.put("lessor_nm",   safe(building != null ? building.getBuildingLessorNm() : ""));
         m.put("lessor_tel",  safe(building != null ? building.getBuildingLessorTel() : ""));
         m.put("lessor_addr", safe(building != null ? building.getBuildingLessorAddr() : ""));
         m.put("lessor_rrn",  maskRrn(building != null ? building.getBuildingLessorRrn() : ""));
 
+        // ✅ 임차인 정보: Contract.lessor* 컬럼 (회원이 입력한 임차인 본인 정보)
         m.put("lessee_nm",   safe(contract.getLessorNm()));
         m.put("lessee_tel",  safe(contract.getLessorTel()));
         m.put("lessee_addr", safe(contract.getLessorAddr()));
