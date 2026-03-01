@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
-generate_contract.py - 정확한 셀 중앙 정렬 + 적정 폰트 크기
+generate_contract.py
+- 템플릿 내 라벨 글자와 동일한 폰트 크기
+- 모든 텍스트 셀 수직 중앙 정렬
 """
 
-import argparse
-import json
-import sys
+import argparse, json, sys
 from pathlib import Path
-
 from PIL import Image, ImageDraw, ImageFont
 
 IMG_W, IMG_H = 1240, 1753
@@ -15,56 +14,43 @@ PDF_W, PDF_H = 595.0, 841.0
 BLACK = (0, 0, 0)
 BLUE  = (10, 10, 180)
 
-
-def to_px(pdf_x, pdf_y=None):
-    if pdf_y is None:
-        return int(pdf_x * IMG_W / PDF_W)
-    return int(pdf_x * IMG_W / PDF_W), int(pdf_y * IMG_H / PDF_H)
-
-
+# ── 좌표 변환 ──────────────────────────────────────────────────────
 def px_x(v): return int(v * IMG_W / PDF_W)
 def px_y(v): return int(v * IMG_H / PDF_H)
 
-
 def find_font(size):
-    candidates = [
+    for path in [
         "C:/Windows/Fonts/malgun.ttf",
         "C:/Windows/Fonts/gulim.ttc",
         "C:/Windows/Fonts/batang.ttc",
         "/usr/share/fonts/opentype/unifont/unifont.otf",
         "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
         "/System/Library/Fonts/AppleGothic.ttf",
-    ]
-    for path in candidates:
+    ]:
         try:
             return ImageFont.truetype(path, size)
         except Exception:
             continue
     return ImageFont.load_default()
 
-
-def draw_cell(draw, text, x1, y1, x2, y2, font, fill=BLACK, align="center"):
-    """셀 영역 내에 텍스트 배치 (center 또는 left)"""
+def draw_in_cell(draw, text, x1, y1, x2, y2, font, fill=BLACK, align="center"):
+    """셀(x1,y1)~(x2,y2) 내 수직/수평 중앙 or 좌측 정렬"""
     if not text:
         return
     text = str(text)
     bbox = draw.textbbox((0, 0), text, font=font)
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
-    cy = (y1 + y2) // 2 - th // 2
-
+    # 수직 중앙
+    ty = y1 + (y2 - y1 - th) // 2
+    # 수평
     if align == "center":
-        cx = (x1 + x2) // 2 - tw // 2
+        tx = x1 + (x2 - x1 - tw) // 2
+    elif align == "right":
+        tx = x2 - tw - 6
     else:  # left
-        cx = x1 + 6
-
-    # 셀을 넘치면 폰트 크기 자동 축소
-    cell_w = x2 - x1 - 10
-    if tw > cell_w:
-        # 텍스트가 셀보다 넓으면 왼쪽 정렬
-        cx = x1 + 4
-
-    draw.text((cx, cy), text, font=font, fill=fill)
+        tx = x1 + 6
+    draw.text((tx, ty), text, font=font, fill=fill)
 
 
 def generate(template_path, output_path, data, sign_img_path=None):
@@ -73,13 +59,21 @@ def generate(template_path, output_path, data, sign_img_path=None):
     IMG_W, IMG_H = img.size
     draw = ImageDraw.Draw(img)
 
-    # ── 폰트 ─────────────────────────────────────────────────────
-    F16 = find_font(16)   # 주소, 금액
-    F15 = find_font(15)   # 기본
-    F14 = find_font(14)   # 작은 텍스트
-    F18 = find_font(18)   # 성명 강조
+    # ── 폰트 크기 (라벨 글자 높이 기준으로 측정한 값) ─────────────
+    # 소재지 라벨 글자 높이 16px → size=17
+    # 보증금 라벨 글자 높이 26px → size=29
+    # 차임 라벨 글자 높이 29px → size=33
+    # 하단 임대인 라벨 글자 높이 23px → size=25
+    # 날짜/작은 텍스트 → size=17 (소재지와 동일)
 
-    # ── 데이터 ───────────────────────────────────────────────────
+    F_ADDR  = find_font(17)   # 소재지 주소 (라벨과 같은 크기)
+    F_MONEY = find_font(29)   # 보증금/차임 금액
+    F_RENT  = find_font(28)   # 차임 금액 (더 큰 행)
+    F_BOT   = find_font(22)   # 하단 섹션 (행높이 32px에 맞춤)
+    F_AREA  = find_font(25)   # 면적 숫자
+    F_DATE  = find_font(17)   # 날짜 숫자
+
+    # ── 데이터 ────────────────────────────────────────────────────
     d = data
     building_addr = d.get("building_addr", "")
     room_no       = d.get("room_no", "")
@@ -105,112 +99,116 @@ def generate(template_path, output_path, data, sign_img_path=None):
     lessee_addr   = d.get("lessee_addr", "")
     lessee_rrn    = d.get("lessee_rrn", "")
 
-    # ── 테이블 행 경계 (PDF 좌표 → 픽셀) ─────────────────────────
-    # 수평선: 109.4, 152.6, 173.2, 187.6, 202.0, 225.5, 243.2, 258.1, 272.5, 284.0, 304.2
-    RL = [px_y(v) for v in [109.4, 152.6, 173.2, 187.6, 202.0, 225.5, 243.2, 258.1, 272.5, 284.0, 304.2]]
-    # RL[0]=소재지상단, RL[1]=소재지하단=면적상단, ..., RL[5]=보증금상단, RL[6]=보증금하단
-    # 행 매핑:
-    #   소재지: RL[0]~RL[1]
-    #   면적:   RL[1]~RL[2]
-    #   보증금: RL[5]~RL[6]  (인덱스 5: pdf 225.5, 인덱스 6: pdf 243.2)
-    #   잔금:   RL[8]~RL[9]  (pdf 272.5~284.0)
-    #   차임:   RL[9]~RL[10] (pdf 284.0~304.2)
+    # ── 상단 테이블 행 경계 (픽셀) ────────────────────────────────
+    # 수평선: 228,318,361,391,421,470,507,538,568,592,634
+    # 수직선: 90(외곽),208(라벨끝),1147(테이블끝)
+    R  = [228, 318, 361, 391, 421, 470, 507, 538, 568, 592, 634]
+    XL = 208   # 텍스트 입력 시작 x (라벨 오른쪽)
+    XR = 1147  # 테이블 오른쪽 끝
 
-    # 열 경계 (라벨 영역 오른쪽 x=100, 테이블 오른쪽 x=550)
-    X0 = px_x(100)   # 라벨 끝 / 텍스트 시작
-    X1 = px_x(550)   # 테이블 끝
+    # Row 인덱스:
+    # R[0]~R[1] = 소재지 (90px)
+    # R[1]~R[2] = 토지/면적 (43px)
+    # R[2]~R[3] = 건물구조 (30px)
+    # R[3]~R[4] = 임대할부분 (30px)
+    # R[4]~R[5] = 2.계약내용 (49px)
+    # R[5]~R[6] = 보증금 (37px)
+    # R[6]~R[7] = 계약금 (31px)
+    # R[7]~R[8] = 중도금 (30px)
+    # R[8]~R[9] = 잔금 (24px)
+    # R[9]~R[10]= 차임 (42px)
 
-    # ── 1. 소재지 ─────────────────────────────────────────────────
+    # ── 1. 소재지 ────────────────────────────────────────────────
     addr_text = f"{building_addr}  {room_no}호" if room_no else building_addr
-    draw_cell(draw, addr_text, X0, RL[0], X1, RL[1], F16, align="left")
+    draw_in_cell(draw, addr_text, XL, R[0], XR, R[1], F_ADDR, align="left")
 
-    # ── 2. 면적 (토지지목 행의 면적 칸, x: 135~190) ───────────────
+    # ── 2. 면적 (토지지목 행 중 면적 칸: 대략 x=340~570) ──────────
+    # 면적 칸 수직선: 약 x=338(pdf_x=162), x=570(pdf_x=273)
     if room_size:
-        draw_cell(draw, f"{room_size}㎡",
-                  px_x(135), RL[1], px_x(190), RL[2], F14, align="center")
+        draw_in_cell(draw, f"{room_size}㎡",
+                     573, R[1], 690, R[2], F_AREA, align="center")
 
-    # ── 3. 보증금 (RL[5]~RL[6]) ──────────────────────────────────
-    # "금 [금액]원정 (W [금액] )"
-    # 금액은 "금" 다음~"원정" 전 영역: x=100~280
+    # ── 3. 보증금 (R[5]~R[6], 37px) ─────────────────────────────
+    # "금 [금액]원정 (W [금액] )"  금액 칸: XL ~ "원정(W" 이전
+    # 금액 입력 위치: x=208~580(pdf_x=100~278)
     if deposit:
-        draw_cell(draw, f"{deposit}원정",
-                  px_x(100), RL[5], px_x(280), RL[6], F16, align="center")
+        draw_in_cell(draw, f"{deposit}원정",
+                     XL, R[5], px_x(278), R[6], F_MONEY, align="center")
 
-    # ── 4. 차임 금액 (RL[9]~RL[10]) ──────────────────────────────
-    # "금 [금액] 원정은 (선불로·후불로) 매월 [납부일]일에 지급"
+    # ── 4. 차임 (R[9]~R[10], 42px) ───────────────────────────────
     if rent_price:
-        draw_cell(draw, f"{rent_price}원",
-                  px_x(100), RL[9], px_x(280), RL[10], F16, align="center")
-
-    # 납부일: "매월" 뒤 빈칸 (pdf_x ≈ 337~380)
+        draw_in_cell(draw, f"{rent_price}원",
+                     XL, R[9], px_x(278), R[10], F_RENT, align="center")
+    # 납부일: "매월 ___일" → x=337~380(pdf)
     if payment_day:
-        draw_cell(draw, str(payment_day),
-                  px_x(337), RL[9], px_x(380), RL[10], F15, align="center")
+        draw_in_cell(draw, str(payment_day),
+                     px_x(337), R[9], px_x(378), R[10], F_DATE, align="center")
 
-    # ── 5. 제2조 인도일 (밑줄 pdf_y=315.7, 텍스트는 밑줄 바로 위) ──
-    # 밑줄: 년(368.5~408.8), 월(416.5~444.8), 일(452.5~480.3)
-    Y_DEL1 = px_y(305); Y_DEL2 = px_y(315)
+    # ── 5. 제2조 인도일 (밑줄 위에 - pdf_y=315.7) ─────────────────
+    # 밑줄: 년(368~409), 월(417~445), 일(453~480)
+    Y_D1 = px_y(306); Y_D2 = px_y(315)
     if deliver_year:
-        draw_cell(draw, deliver_year,  px_x(368), Y_DEL1, px_x(409), Y_DEL2, F14, fill=BLUE)
+        draw_in_cell(draw, deliver_year,  px_x(368), Y_D1, px_x(409), Y_D2, F_DATE, fill=BLUE)
     if deliver_month:
-        draw_cell(draw, deliver_month, px_x(416), Y_DEL1, px_x(445), Y_DEL2, F14, fill=BLUE)
+        draw_in_cell(draw, deliver_month, px_x(417), Y_D1, px_x(445), Y_D2, F_DATE, fill=BLUE)
     if deliver_day:
-        draw_cell(draw, deliver_day,   px_x(452), Y_DEL1, px_x(480), Y_DEL2, F14, fill=BLUE)
+        draw_in_cell(draw, deliver_day,   px_x(453), Y_D1, px_x(480), Y_D2, F_DATE, fill=BLUE)
 
-    # ── 6. 제2조 종료일 (밑줄 pdf_y≈326, 텍스트는 바로 위) ────────
+    # ── 6. 제2조 종료일 (밑줄 위에 - pdf_y=326.2) ────────────────
     # 밑줄: 년(225~265), 월(273~301), 일(309~337)
-    Y_END1 = px_y(317); Y_END2 = px_y(326)
+    Y_E1 = px_y(317); Y_E2 = px_y(326)
     if end_year:
-        draw_cell(draw, end_year,  px_x(225), Y_END1, px_x(265), Y_END2, F14, fill=BLUE)
+        draw_in_cell(draw, end_year,  px_x(225), Y_E1, px_x(265), Y_E2, F_DATE, fill=BLUE)
     if end_month:
-        draw_cell(draw, end_month, px_x(273), Y_END1, px_x(301), Y_END2, F14, fill=BLUE)
+        draw_in_cell(draw, end_month, px_x(273), Y_E1, px_x(301), Y_E2, F_DATE, fill=BLUE)
     if end_day:
-        draw_cell(draw, end_day,   px_x(309), Y_END1, px_x(337), Y_END2, F14, fill=BLUE)
+        draw_in_cell(draw, end_day,   px_x(309), Y_E1, px_x(337), Y_E2, F_DATE, fill=BLUE)
 
-    # ── 7. 서명 날짜 (하단 서명 섹션 직전, pdf_y ≈ 585~595) ───────
-    # "매장마다 간인하여, 각각 1통씩 보관한다. 년  월  일"
-    # 날짜 밑줄: 오른쪽 끝에 있음
-    Y_SGN1 = px_y(584); Y_SGN2 = px_y(596)
+    # ── 7. 서명 날짜 (하단 섹션 직전) ────────────────────────────
+    # "매장마다 간인하여, 각각 1통씩 보관한다.  년  월  일"
+    Y_S1 = px_y(583); Y_S2 = px_y(594)
     if sign_year:
-        draw_cell(draw, sign_year,  px_x(415), Y_SGN1, px_x(460), Y_SGN2, F14)
+        draw_in_cell(draw, sign_year,  px_x(415), Y_S1, px_x(460), Y_S2, F_DATE)
     if sign_month:
-        draw_cell(draw, sign_month, px_x(465), Y_SGN1, px_x(498), Y_SGN2, F14)
+        draw_in_cell(draw, sign_month, px_x(464), Y_S1, px_x(498), Y_S2, F_DATE)
     if sign_day:
-        draw_cell(draw, sign_day,   px_x(502), Y_SGN1, px_x(535), Y_SGN2, F14)
+        draw_in_cell(draw, sign_day,   px_x(501), Y_S1, px_x(535), Y_S2, F_DATE)
 
     # ── 8. 하단 임대인/임차인 섹션 ───────────────────────────────
-    # 수평선: 595.8, 611.2, 627.0, 642.4, 659.7, 676.9
-    # 수직선: 43, 54, 61, 136, 289, 341, 415, 444, 507, 550
-    BL = [px_y(v) for v in [595.8, 611.2, 627.0, 642.4, 659.7, 676.9]]
+    # 수평선(px): 1242,1274,1307,1339,1375,1411
+    # 수직선(px): 90,128,283,602,710,865,926,1057,1147
+    BL = [1242, 1274, 1307, 1339, 1375, 1411]
+    B_ADDR_L = 128    # 주소 칸 시작
+    B_ADDR_R = 602    # 주소 칸 끝
+    B_TEL_L  = 710    # 전화 칸 시작
+    B_TEL_R  = 865    # 전화 칸 끝
+    B_NM_L   = 926    # 성명 칸 시작
+    B_NM_R   = 1057   # 성명 칸 끝
+    B_STAMP_L = 1057  # ㊞ 칸 시작
+    B_STAMP_R = 1147  # ㊞ 칸 끝
 
-    # 임대인 (BL[0]~BL[3])
-    # 주소: BL[0]~BL[1], x: 61~289
-    draw_cell(draw, lessor_addr, px_x(61), BL[0], px_x(289), BL[1], F14, align="left")
-    # 주민번호: BL[1]~BL[2], x: 61~289
-    draw_cell(draw, lessor_rrn, px_x(61), BL[1], px_x(289), BL[2], F14, align="center")
-    # 전화: BL[1]~BL[2], x: 341~415
-    draw_cell(draw, lessor_tel, px_x(341), BL[1], px_x(415), BL[2], F14, align="center")
-    # 성명: BL[0]~BL[2], x: 444~507 (2행 걸쳐 중앙)
-    draw_cell(draw, lessor_nm, px_x(444), BL[0], px_x(507), BL[2], F18, align="center")
+    # 임대인 (건물주 정보)
+    draw_in_cell(draw, lessor_addr, B_ADDR_L, BL[0], B_ADDR_R, BL[1], F_BOT, align="left")
+    draw_in_cell(draw, lessor_rrn,  B_ADDR_L, BL[1], B_ADDR_R, BL[2], F_BOT, align="center")
+    draw_in_cell(draw, lessor_tel,  B_TEL_L,  BL[1], B_TEL_R,  BL[2], F_BOT, align="center")
+    draw_in_cell(draw, lessor_nm,   B_NM_L,   BL[0], B_NM_R,   BL[2], F_BOT, align="center")
 
-    # 임차인 (BL[3]~BL[5])
-    # 주소: BL[3]~BL[4], x: 61~289
-    draw_cell(draw, lessee_addr, px_x(61), BL[3], px_x(289), BL[4], F14, align="left")
-    # 주민번호: BL[4]~BL[5], x: 61~289
-    draw_cell(draw, lessee_rrn, px_x(61), BL[4], px_x(289), BL[5], F14, align="center")
-    # 전화: BL[4]~BL[5], x: 341~415
-    draw_cell(draw, lessee_tel, px_x(341), BL[4], px_x(415), BL[5], F14, align="center")
-    # 성명: BL[3]~BL[5], x: 444~507
-    draw_cell(draw, lessee_nm, px_x(444), BL[3], px_x(507), BL[5], F18, align="center")
+    # 임차인 (contract.lessor* 컬럼 = 임차인 정보)
+    draw_in_cell(draw, lessee_addr, B_ADDR_L, BL[3], B_ADDR_R, BL[4], F_BOT, align="left")
+    draw_in_cell(draw, lessee_rrn,  B_ADDR_L, BL[4], B_ADDR_R, BL[5], F_BOT, align="center")
+    draw_in_cell(draw, lessee_tel,  B_TEL_L,  BL[4], B_TEL_R,  BL[5], F_BOT, align="center")
+    draw_in_cell(draw, lessee_nm,   B_NM_L,   BL[3], B_NM_R,   BL[5], F_BOT, align="center")
 
-    # ── 9. 서명 이미지 ──────────────────────────────────────────
+    # ── 9. 서명 이미지 (임차인 ㊞ 칸에만 배치 - 성명 칸과 분리) ──
     if sign_img_path and Path(sign_img_path).exists():
         try:
             sign_raw = Image.open(sign_img_path).convert("RGBA")
-            sx = px_x(444); sy = BL[4]
-            sw = px_x(507) - px_x(444)
-            sh = BL[5] - BL[4]
-            sign_resized = sign_raw.resize((sw, sh), Image.LANCZOS)
+            pad = 4
+            stamp_w = B_STAMP_R - B_STAMP_L - pad * 2
+            stamp_h = BL[5] - BL[3] - pad * 2
+            sx = B_STAMP_L + pad
+            sy = BL[3] + pad
+            sign_resized = sign_raw.resize((stamp_w, stamp_h), Image.LANCZOS)
             img.paste(sign_resized, (sx, sy), sign_resized.split()[3])
         except Exception as e:
             print(f"[WARN] 서명 이미지 합성 실패: {e}", file=sys.stderr)
@@ -229,7 +227,7 @@ def main():
     parser.add_argument("--sign_img",  default=None)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--data",      help="JSON 문자열")
-    group.add_argument("--data_file", help="JSON 파일 경로 (한글/공백 문제 우회)")
+    group.add_argument("--data_file", help="JSON 파일 경로")
     args = parser.parse_args()
 
     try:
