@@ -11,7 +11,7 @@ function normalizeBoardCode(value) {
   const upper = raw.toUpperCase();
   if (upper === 'ALL') return 'ALL';
   if (upper === 'FREE') return 'BOARD_FREE';
-  if (upper === 'QUESTION') return 'BOARD_FREE';
+  if (upper === 'QUESTION') return 'BOARD_QUESTION';
   if (upper === 'REVIEW') return 'BOARD_REVIEW';
   if (upper === 'NOTICE') return 'BOARD_NOTICE';
   return upper;
