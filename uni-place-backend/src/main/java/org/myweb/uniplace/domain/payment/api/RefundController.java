@@ -12,7 +12,7 @@ import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping({"/payments", "/api/payments"})
 @RequiredArgsConstructor
 public class RefundController {
 

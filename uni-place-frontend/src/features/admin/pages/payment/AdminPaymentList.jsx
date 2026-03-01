@@ -3,11 +3,11 @@ import { adminApi } from '../../api/adminApi';
 import styles from './AdminPaymentTable.module.css';
 
 const PAYMENT_STATUS_OPTIONS = [
-  { value: 'ready', label: 'Ready' },
-  { value: 'paid', label: 'Paid' },
-  { value: 'cancelled', label: 'Cancelled' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'disputed', label: 'Disputed' },
+  { value: 'ready', label: '준비' },
+  { value: 'paid', label: '결제완료' },
+  { value: 'cancelled', label: '취소' },
+  { value: 'pending', label: '대기' },
+  { value: 'disputed', label: '분쟁' },
 ];
 
 const PAYMENT_STATUS_LABELS = PAYMENT_STATUS_OPTIONS.reduce((acc, item) => {

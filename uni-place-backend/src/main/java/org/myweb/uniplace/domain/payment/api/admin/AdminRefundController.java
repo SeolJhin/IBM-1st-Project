@@ -9,7 +9,7 @@ import org.myweb.uniplace.domain.payment.domain.entity.PaymentRefund;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/refunds")
+@RequestMapping({"/admin/refunds", "/api/admin/refunds"})
 @RequiredArgsConstructor
 public class AdminRefundController {
 

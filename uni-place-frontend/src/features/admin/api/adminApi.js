@@ -328,9 +328,11 @@ export const adminApi = {
 
   // monthly charge
   getMonthlyCharges: (contractId) =>
-    request(`/monthly-charges${buildQuery({ contractId })}`, { auth: true }),
+    request(`/admin/monthly-charges${buildQuery({ contractId })}`, {
+      auth: true,
+    }),
   getMonthlyChargeDetail: (chargeId) =>
-    request(`/monthly-charges/${chargeId}`, { auth: true }),
+    request(`/admin/monthly-charges/${chargeId}`, { auth: true }),
 
   // payments/refunds
   getPayments: () => request('/admin/payments', { auth: true }),
