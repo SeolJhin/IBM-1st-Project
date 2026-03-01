@@ -16,11 +16,6 @@ import java.util.List;
 @Entity
 @Table(name = "building")
 public class Building extends SoftDeleteEntity {
-    // ✅ SoftDeleteEntity 상속으로 아래 필드/메서드 자동 제공
-    //    - deleteYn (CHAR(1), 기본값 'N')
-    //    - softDelete()   → deleteYn = 'Y'
-    //    - isDeleted()    → "Y".equals(deleteYn)
-    //    - createdAt / updatedAt (BaseTimeEntity 경유)
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,9 +46,19 @@ public class Building extends SoftDeleteEntity {
     @Column(name = "parking_capacity")
     private Integer parkingCapacity;
 
-    // ✅ CascadeType.ALL + orphanRemoval 제거
-    //    이유: soft delete 방식에서 JPA cascade로 Room이 hard delete 되는 것을 방지
-    //    Building soft delete 시 Room 처리는 BuildingServiceImpl.deleteBuilding()에서 직접 수행
+    // ✅ 임대인 정보 (어드민이 건물 등록 시 입력)
+    @Column(name = "building_lessor_nm", length = 50)
+    private String buildingLessorNm;
+
+    @Column(name = "building_lessor_tel", length = 20)
+    private String buildingLessorTel;
+
+    @Column(name = "building_lessor_addr", length = 200)
+    private String buildingLessorAddr;
+
+    @Column(name = "building_lessor_rrn", length = 20)
+    private String buildingLessorRrn;
+
     @OneToMany(
             mappedBy = "building",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE},
@@ -70,15 +75,23 @@ public class Building extends SoftDeleteEntity {
             BigDecimal buildSize,
             String buildingUsage,
             String existElv,
-            Integer parkingCapacity
+            Integer parkingCapacity,
+            String buildingLessorNm,
+            String buildingLessorTel,
+            String buildingLessorAddr,
+            String buildingLessorRrn
     ) {
-        if (buildingNm != null)      this.buildingNm = buildingNm;
-        if (buildingAddr != null)    this.buildingAddr = buildingAddr;
-        if (buildingDesc != null)    this.buildingDesc = buildingDesc;
-        if (landCategory != null)    this.landCategory = landCategory;
-        if (buildSize != null)       this.buildSize = buildSize;
-        if (buildingUsage != null)   this.buildingUsage = buildingUsage;
-        if (existElv != null)        this.existElv = existElv;
-        if (parkingCapacity != null) this.parkingCapacity = parkingCapacity;
+        if (buildingNm != null)          this.buildingNm = buildingNm;
+        if (buildingAddr != null)        this.buildingAddr = buildingAddr;
+        if (buildingDesc != null)        this.buildingDesc = buildingDesc;
+        if (landCategory != null)        this.landCategory = landCategory;
+        if (buildSize != null)           this.buildSize = buildSize;
+        if (buildingUsage != null)       this.buildingUsage = buildingUsage;
+        if (existElv != null)            this.existElv = existElv;
+        if (parkingCapacity != null)     this.parkingCapacity = parkingCapacity;
+        if (buildingLessorNm != null)    this.buildingLessorNm = buildingLessorNm;
+        if (buildingLessorTel != null)   this.buildingLessorTel = buildingLessorTel;
+        if (buildingLessorAddr != null)  this.buildingLessorAddr = buildingLessorAddr;
+        if (buildingLessorRrn != null)   this.buildingLessorRrn = buildingLessorRrn;
     }
 }

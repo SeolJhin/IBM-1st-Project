@@ -1,0 +1,537 @@
+/* ContractApply.module.css */
+
+.page {
+  min-height: 100vh;
+  background: #f6eee6;
+  color: var(--text, #1a1612);
+}
+
+/* ── 로딩 / 에러 중앙 박스 ── */
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 55vh;
+  gap: 16px;
+  color: #9a8c70;
+}
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e8e0d4;
+  border-top-color: #d9ad5b;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── 브레드크럼 ── */
+.breadcrumb {
+  background: #fff;
+  border-bottom: 1px solid #f0eae0;
+}
+.breadcrumbInner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bcBtn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #9a8c70;
+  cursor: pointer;
+  padding: 0;
+}
+.bcBtn:hover {
+  color: #ba8037;
+}
+.bcSep {
+  font-size: 13px;
+  color: #d7cebc;
+}
+.bcCurrent {
+  font-size: 13px;
+  color: #1a1612;
+  font-weight: 600;
+}
+
+/* ── 메인 컨테이너 ── */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 32px 60px;
+}
+
+.pageTitle {
+  font-size: 28px;
+  font-weight: 900;
+  color: #1a1612;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+.pageSubtitle {
+  font-size: 13px;
+  color: #9a8c70;
+  text-align: center;
+  margin: 0 0 32px;
+}
+
+/* ── 계약서 전체 래퍼 ── */
+.contractWrap {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(11, 14, 18, 0.1);
+  overflow: hidden;
+  border: 1px solid #e8e0d4;
+}
+
+/* ── 섹션 공통 ── */
+.section {
+  padding: 28px 36px;
+  border-bottom: 1px solid #f0eae0;
+}
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 17px;
+  font-weight: 800;
+  color: #1a1612;
+  margin: 0 0 16px;
+}
+
+/* ── 자동입력 / 직접입력 배지 ── */
+.contractDocHeader {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+.autoFillBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #fff3cc;
+  border: 1px solid #f0d060;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #a07800;
+  letter-spacing: 0.03em;
+}
+.inputBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #e8f0ff;
+  border: 1px solid #b3c6ff;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2255cc;
+  letter-spacing: 0.03em;
+}
+
+/* ── 계약 유형 선택 ── */
+.typeCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.typeCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px 16px;
+  background: #fdfaf6;
+  border: 2px solid #e8e0d4;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.typeCard:hover {
+  border-color: #d9ad5b;
+  background: #fffaf0;
+}
+.typeCardActive {
+  border-color: #d9ad5b;
+  background: linear-gradient(135deg, #fffaf0, #fff6e0);
+  box-shadow: 0 4px 14px rgba(217, 173, 91, 0.25);
+}
+.typeCardActive strong {
+  color: #ba8037;
+}
+.typeIcon {
+  font-size: 28px;
+}
+.typeDesc {
+  font-size: 11px;
+  color: #9a8c70;
+}
+
+/* ── 문서 테이블 ── */
+.docTable {
+  border: 1.5px solid #d9cebc;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.docRow {
+  display: flex;
+  border-bottom: 1px solid #e8e0d4;
+}
+.docRow:last-child {
+  border-bottom: none;
+}
+.docRowGrid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid #e8e0d4;
+}
+.docRowGrid2:last-child {
+  border-bottom: none;
+}
+.docRowGrid3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  border-bottom: 1px solid #e8e0d4;
+}
+.docRowGrid3:last-child {
+  border-bottom: none;
+}
+.docRowGrid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid #e8e0d4;
+}
+.docRowGrid4:last-child {
+  border-bottom: none;
+}
+
+.docCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  border-right: 1px solid #e8e0d4;
+  min-width: 0;
+}
+.docCell:last-child {
+  border-right: none;
+}
+
+.docLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9a8c70;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.docValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1612;
+}
+.moneyVal {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ba8037;
+}
+.required {
+  color: #e53935;
+}
+
+.docInput {
+  font-size: 13px;
+  color: #1a1612;
+  background: #fdfaf6;
+  border: 1.5px solid #e8e0d4;
+  border-radius: 7px;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.docInput:focus {
+  border-color: #d9ad5b;
+  background: #fff;
+}
+.readOnly {
+  background: #f0ece6;
+  color: #9a8c70;
+  cursor: not-allowed;
+}
+
+/* ── 계약 당사자 블록 ── */
+.partyBlock {
+  margin-bottom: 16px;
+}
+.partyBlock:last-child {
+  margin-bottom: 0;
+}
+.partyTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.partyLabel {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a1612;
+  background: #f6eee6;
+  border: 1.5px solid #e8e0d4;
+  border-radius: 8px;
+  padding: 4px 12px;
+}
+
+/* ── 조항 텍스트 ── */
+.articleText {
+  font-size: 13px;
+  color: #5a5040;
+  line-height: 1.7;
+  margin: 0 0 12px;
+}
+
+/* ── 약관 박스 ── */
+.clauseBox {
+  background: #fdfaf6;
+  border: 1px solid #e8e0d4;
+  border-radius: 12px;
+  padding: 20px 24px;
+  font-size: 12px;
+  color: #5a5040;
+  line-height: 1.8;
+}
+.clauseBox p {
+  margin: 0 0 10px;
+}
+.clauseBox p:last-child {
+  margin: 0;
+}
+.clauseWarning {
+  color: #b83030;
+  font-weight: 600;
+  background: #fff3f3;
+  border: 1px solid #f5c0c0;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+/* ── 서명 블록 ── */
+.signBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  background: #fdfaf6;
+  border: 2px dashed #d9cebc;
+  border-radius: 14px;
+}
+.signHint {
+  font-size: 13px;
+  color: #9a8c70;
+  text-align: center;
+}
+.signFileInput {
+  display: none;
+}
+.signUploadLabel {
+  cursor: pointer;
+}
+.signUploadBtn {
+  display: inline-block;
+  padding: 10px 22px;
+  background: #f6eee6;
+  border: 1.5px solid #d9cebc;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ba8037;
+  transition: all 0.15s;
+}
+.signUploadBtn:hover {
+  background: #ffe8c4;
+  border-color: #d9ad5b;
+}
+.signEmpty {
+  font-size: 12px;
+  color: #b8ab90;
+  font-style: italic;
+}
+.signPreviewWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.signPreview {
+  max-width: 200px;
+  max-height: 80px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid #e8e0d4;
+  padding: 4px;
+  background: #fff;
+}
+.signRemoveBtn {
+  font-size: 12px;
+  color: #c0392b;
+  background: none;
+  border: 1px solid #f5c0c0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+/* ── 에러 박스 ── */
+.errorBox {
+  margin: 0 36px;
+  padding: 14px 18px;
+  background: #fff3f3;
+  border: 1px solid #f5c0c0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #c0392b;
+  font-weight: 600;
+}
+
+/* ── 제출 버튼 행 ── */
+.submitRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 24px 36px;
+}
+.cancelBtn {
+  padding: 14px 28px;
+  background: none;
+  border: 1.5px solid #d9cebc;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #9a8c70;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cancelBtn:hover {
+  border-color: #b8ab90;
+  color: #5a5040;
+}
+.submitBtn {
+  padding: 14px 36px;
+  background: linear-gradient(135deg, #d9ad5b, #ba8037);
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(217, 173, 91, 0.35);
+  transition: all 0.2s;
+}
+.submitBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(217, 173, 91, 0.45);
+}
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+.backBtn {
+  padding: 10px 24px;
+  background: #f6eee6;
+  border: 1.5px solid #e8e0d4;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #9a8c70;
+  cursor: pointer;
+}
+
+/* ── 성공 화면 ── */
+.successIcon {
+  font-size: 64px;
+}
+.successTitle {
+  font-size: 24px;
+  font-weight: 900;
+  color: #1a1612;
+  margin: 0;
+}
+.successDesc {
+  font-size: 14px;
+  color: #9a8c70;
+  text-align: center;
+  line-height: 1.8;
+  margin: 0;
+}
+.successActions {
+  display: flex;
+  gap: 12px;
+}
+.primaryBtn {
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #d9ad5b, #ba8037);
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(217, 173, 91, 0.35);
+  transition: all 0.2s;
+}
+.primaryBtn:hover {
+  transform: translateY(-2px);
+}
+.ghostBtn {
+  padding: 12px 28px;
+  background: none;
+  border: 1.5px solid #e8e0d4;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #9a8c70;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .container {
+    padding: 24px 16px 48px;
+  }
+  .section {
+    padding: 20px 18px;
+  }
+  .typeCards {
+    grid-template-columns: 1fr;
+  }
+  .docRowGrid2 {
+    grid-template-columns: 1fr;
+  }
+  .docRowGrid3 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .docRowGrid4 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .submitRow {
+    padding: 16px 18px;
+  }
+  .breadcrumbInner {
+    padding: 10px 16px;
+  }
+}

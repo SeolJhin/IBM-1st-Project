@@ -35,6 +35,9 @@ import SpaceReservationList from './features/reservation/pages/SpaceReservationL
 import TourReservationCreate from './features/reservation/pages/TourReservationCreate';
 import TourReservationList from './features/reservation/pages/TourReservationList';
 
+// ── 계약 ──────────────────────────────────────────────────────
+import ContractApply from './features/contract/pages/ContractApply';
+
 // ── 리뷰 ──────────────────────────────────────────────────────
 import ReviewWrite from './features/review/pages/ReviewWrite';
 import MyReviewsList from './features/review/pages/MyReviewsList';
@@ -117,21 +120,38 @@ export default function App() {
         <Route path="/buildings/:buildingId" element={<BuildingDetail />} />
         <Route
           path="/buildings"
-          element={<Navigate to="/rooms" state={{ tab: 'buildings' }} replace />}
+          element={
+            <Navigate to="/rooms" state={{ tab: 'buildings' }} replace />
+          }
         />
         <Route path="/membership" element={<Navigate to="/rooms" replace />} />
 
         {/* ── 예약 ── */}
-        <Route path="/reservations/space/create" element={<SpaceReservationCreate />} />
-        <Route path="/reservations/space/list" element={<SpaceReservationList />} />
-        <Route path="/reservations/tour/create" element={<TourReservationCreate />} />
-        <Route path="/reservations/tour/list" element={<TourReservationList />} />
+        <Route
+          path="/reservations/space/create"
+          element={<SpaceReservationCreate />}
+        />
+        <Route
+          path="/reservations/space/list"
+          element={<SpaceReservationList />}
+        />
+        <Route
+          path="/reservations/tour/create"
+          element={<TourReservationCreate />}
+        />
+        <Route
+          path="/reservations/tour/list"
+          element={<TourReservationList />}
+        />
 
         {/* ── 리뷰 ── */}
         <Route path="/reviews/write" element={<ReviewWrite />} />
         <Route path="/reviews/:reviewId/edit" element={<ReviewWrite />} />
         <Route path="/reviews/my" element={<MyReviewsList />} />
         <Route path="/reviews/:reviewId" element={<MyReviewsDetail />} />
+
+        {/* ── 계약 ── */}
+        <Route path="/contracts/apply" element={<ContractApply />} />
 
         {/* ── 커머스 ── */}
         <Route path="/commerce/room-service" element={<ProductList />} />
@@ -184,12 +204,18 @@ export default function App() {
               <Route path="system" element={<AdminSystemHub />}>
                 <Route path="banners" element={<AdminBannerList />} />
                 <Route path="affiliates" element={<AdminAffiliateList />} />
-                <Route path="company_info" element={<AdminCompanyInfoDetail />} />
+                <Route
+                  path="company_info"
+                  element={<AdminCompanyInfoDetail />}
+                />
                 <Route index element={<Navigate to="banners" replace />} />
               </Route>
 
               <Route path="roomservice" element={<AdminRoomServiceHub />}>
-                <Route path="room_orders" element={<AdminRoomServiceOrderList />} />
+                <Route
+                  path="room_orders"
+                  element={<AdminRoomServiceOrderList />}
+                />
                 <Route path="room_products" element={<AdminProductList />} />
                 <Route index element={<Navigate to="room_orders" replace />} />
               </Route>
