@@ -11,7 +11,8 @@ instance.interceptors.request.use((config) => {
     config.url = withApiPrefix(config.url);
   }
 
-  const token = localStorage.getItem('accessToken');
+  const token =
+    localStorage.getItem('access_token') || localStorage.getItem('accessToken');
   if (token) {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${token}`;
@@ -43,3 +44,84 @@ export const http = {
   },
 };
 
+function toFormBody(body = {}) {
+  const params = new URLSearchParams();
+  Object.entries(body).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    params.append(key, String(value));
+  });
+  return params;
+}
+
+// Legacy wrappers for pages that still import apiJson/apiUrlEncoded.
+export const apiJson = {
+  get(url, config) {
+    return instance.get(url, config);
+  },
+  post(url, body, config) {
+    return instance.post(url, body, {
+      ...config,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config?.headers ?? {}),
+      },
+    });
+  },
+  put(url, body, config) {
+    return instance.put(url, body, {
+      ...config,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config?.headers ?? {}),
+      },
+    });
+  },
+  patch(url, body, config) {
+    return instance.patch(url, body, {
+      ...config,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(config?.headers ?? {}),
+      },
+    });
+  },
+  delete(url, config) {
+    return instance.delete(url, config);
+  },
+};
+
+export const apiUrlEncoded = {
+  get(url, params = {}, config = {}) {
+    return instance.get(url, { ...config, params });
+  },
+  post(url, body, config) {
+    return instance.post(url, toFormBody(body), {
+      ...config,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(config?.headers ?? {}),
+      },
+    });
+  },
+  put(url, body, config) {
+    return instance.put(url, toFormBody(body), {
+      ...config,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(config?.headers ?? {}),
+      },
+    });
+  },
+  patch(url, body, config) {
+    return instance.patch(url, toFormBody(body), {
+      ...config,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(config?.headers ?? {}),
+      },
+    });
+  },
+  delete(url, config) {
+    return instance.delete(url, config);
+  },
+};

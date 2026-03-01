@@ -65,6 +65,7 @@ export default function AdminInfo() {
 
   const [loading, setLoading] = useState(true);
   const [errMsg, setErrMsg] = useState('');
+  const [dataSource, setDataSource] = useState('dashboard');
   const [lastUpdated, setLastUpdated] = useState(null);
   const [data, setData] = useState({
     residentCount: 0,
@@ -80,6 +81,7 @@ export default function AdminInfo() {
     setErrMsg('');
     try {
       const payload = await adminApi.dashboard();
+      setDataSource(payload?._source || 'dashboard');
       setData({
         residentCount: Number(payload?.residentCount ?? 0),
         facilityCount: Number(payload?.facilityCount ?? 0),
@@ -90,9 +92,9 @@ export default function AdminInfo() {
       });
       setLastUpdated(new Date());
     } catch (error) {
-      setErrMsg(
-        '대시보드 데이터를 불러오지 못했습니다. /admin/dashboard를 확인해 주세요.'
-      );
+      const message =
+        error?.message || '대시보드 데이터를 불러오지 못했습니다. API 상태를 확인해 주세요.';
+      setErrMsg(message);
     } finally {
       setLoading(false);
     }
@@ -138,7 +140,14 @@ export default function AdminInfo() {
   );
 
   return (
-    <div className={styles.mainInner}>
+    <div className={styles.mainInner} aria-busy={loading}>
+      <p className={styles.srOnly} aria-live="polite">
+        {loading
+          ? 'Loading dashboard data.'
+          : errMsg
+            ? `Dashboard load failed: ${errMsg}`
+            : 'Dashboard data loaded.'}
+      </p>
       <div className={styles.topRow}>
         <div className={styles.titleArea}>
           <h1 className={styles.pageTitle}>관리자 대시보드</h1>
@@ -151,6 +160,7 @@ export default function AdminInfo() {
           className={styles.refreshBtn}
           onClick={fetchDashboard}
           disabled={loading}
+          aria-label="Refresh dashboard data"
         >
           {loading ? '갱신중...' : '새로고침'}
         </button>
@@ -178,10 +188,20 @@ export default function AdminInfo() {
               {lastUpdated ? lastUpdated.toLocaleTimeString('ko-KR') : '-'}
             </strong>
           </div>
+          <div className={styles.heroStat}>
+            <span className={styles.heroStatLabel}>Data source</span>
+            <strong className={styles.heroStatValue}>
+              {dataSource === 'aggregate' ? 'Fallback aggregate' : 'Dashboard API'}
+            </strong>
+          </div>
         </div>
       </section>
 
-      {errMsg ? <div className={styles.errorBox}>{errMsg}</div> : null}
+      {errMsg ? (
+        <div className={styles.errorBox} role="alert">
+          {errMsg}
+        </div>
+      ) : null}
 
       <section className={styles.kpiGrid}>
         {cards.map((card) => (
@@ -190,6 +210,7 @@ export default function AdminInfo() {
             type="button"
             className={styles.kpiCard}
             onClick={() => navigate(card.path)}
+            aria-label={`${card.title} 상세 페이지`}
           >
             <div className={styles.kpiHead}>
               <div>
@@ -245,9 +266,12 @@ export default function AdminInfo() {
                 type="button"
                 className={styles.quickItem}
                 onClick={() => navigate(card.path)}
+                aria-label={`${card.title}로 이동`}
               >
                 <span className={styles.quickLabel}>{card.title}</span>
-                <span className={styles.quickHint}>열기</span>
+                <span className={styles.quickHint} aria-hidden="true">
+                  열기
+                </span>
               </button>
             ))}
           </div>

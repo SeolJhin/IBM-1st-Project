@@ -2,7 +2,11 @@
 import { withApiPrefix } from '../../../app/http/apiBase';
 
 function getAccessToken() {
-  return localStorage.getItem('access_token') || '';
+  return (
+    localStorage.getItem('access_token') ||
+    localStorage.getItem('accessToken') ||
+    ''
+  );
 }
 
 function buildQuery(params = {}) {
@@ -42,6 +46,86 @@ function unwrapOrThrow(res, payload) {
   }
 
   return api ? api.data : payload;
+}
+
+function toNumber(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function extractTotalCount(payload) {
+  if (payload == null) return 0;
+
+  if (typeof payload === 'number') return toNumber(payload);
+  if (Array.isArray(payload)) return payload.length;
+  if (typeof payload !== 'object') return 0;
+
+  const directKeys = [
+    'totalElements',
+    'totalCount',
+    'count',
+    'total',
+    'elements',
+  ];
+  for (const key of directKeys) {
+    if (payload[key] !== undefined) return toNumber(payload[key]);
+  }
+
+  if (Array.isArray(payload.content)) return payload.content.length;
+  if (Array.isArray(payload.items)) return payload.items.length;
+  if (Array.isArray(payload.rows)) return payload.rows.length;
+
+  if (payload.data && payload.data !== payload) {
+    return extractTotalCount(payload.data);
+  }
+
+  return 0;
+}
+
+async function fetchDashboardFallback() {
+  const [
+    usersResult,
+    spacesResult,
+    toursResult,
+    contractsResult,
+    bannersResult,
+    roomServicesResult,
+  ] = await Promise.allSettled([
+    request(`/admin/users${buildQuery({ page: 1, size: 1, sort: 'userId', direct: 'DESC' })}`, { auth: true }),
+    request(`/spaces${buildQuery({ page: 1, size: 1, sort: 'spaceId', direct: 'DESC' })}`),
+    request(`/admin/tour-reservations${buildQuery({ page: 1, size: 1, sort: 'tourId', direct: 'DESC' })}`, { auth: true }),
+    request(`/admin/contracts${buildQuery({ page: 1, size: 1, sort: 'contractId', direct: 'DESC' })}`, { auth: true }),
+    request(`/admin/banners${buildQuery({ page: 0, size: 1, sort: 'banId', direction: 'DESC' })}`, { auth: true }),
+    request(`/admin/room-services${buildQuery({ page: 0, size: 1, sort: 'createdAt' })}`, { auth: true }),
+  ]);
+
+  const settled = [
+    usersResult,
+    spacesResult,
+    toursResult,
+    contractsResult,
+    bannersResult,
+    roomServicesResult,
+  ];
+  const fulfilledCount = settled.filter((result) => result.status === 'fulfilled').length;
+
+  if (fulfilledCount === 0) {
+    const firstError = settled.find((result) => result.status === 'rejected');
+    throw firstError?.reason || new Error('Failed to load dashboard data');
+  }
+
+  const getCount = (result) =>
+    result.status === 'fulfilled' ? extractTotalCount(result.value) : 0;
+
+  return {
+    residentCount: getCount(usersResult),
+    facilityCount: getCount(spacesResult),
+    tourCount: getCount(toursResult),
+    contractCount: getCount(contractsResult),
+    bannerViewCount: getCount(bannersResult),
+    roomServiceOrderCount: getCount(roomServicesResult),
+    _source: 'aggregate',
+  };
 }
 
 async function request(
@@ -92,7 +176,16 @@ async function requestForm(
 
 export const adminApi = {
   // dashboard
-  dashboard: () => request('/admin/dashboard', { auth: true }),
+  dashboard: async () => {
+    try {
+      const payload = await request('/admin/dashboard', { auth: true });
+      return { ...payload, _source: 'dashboard' };
+    } catch (error) {
+      const status = Number(error?.status);
+      if (status === 401 || status === 403) throw error;
+      return fetchDashboardFallback();
+    }
+  },
 
   users: (params) => {
     const q = new URLSearchParams();
