@@ -21,7 +21,7 @@ function fmt(price) {
 }
 
 async function prepareKakaoPay(orderId) {
-  const res = await api.post('/api/payments/prepare', {
+  const res = await api.post('/payments/prepare', {
     orderId,
     provider: 'KAKAO',
   });

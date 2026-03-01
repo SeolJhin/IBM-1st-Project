@@ -31,6 +31,15 @@ export default function AdminPayHub() {
         >
           환불
         </NavLink>
+
+        <NavLink
+          to="/admin/pay/billings"
+          className={({ isActive }) =>
+            `${styles.tab} ${isActive ? styles.tabActive : ''}`
+          }
+        >
+          정산
+        </NavLink>
       </div>
 
       <div className={styles.panel}>

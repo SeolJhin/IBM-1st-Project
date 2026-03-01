@@ -3,9 +3,9 @@ import { adminApi } from '../../api/adminApi';
 import styles from './AdminPaymentTable.module.css';
 
 const REFUND_STATUS_OPTIONS = [
-  { value: 'requested', label: 'Requested' },
-  { value: 'done', label: 'Done' },
-  { value: 'failed', label: 'Failed' },
+  { value: 'requested', label: '요청' },
+  { value: 'done', label: '완료' },
+  { value: 'failed', label: '실패' },
 ];
 
 const REFUND_STATUS_LABELS = REFUND_STATUS_OPTIONS.reduce((acc, item) => {
