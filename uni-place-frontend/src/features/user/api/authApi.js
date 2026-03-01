@@ -83,6 +83,7 @@ export const authApi = {
     request('/auth/logout', {
       method: 'POST',
       body: { refreshToken, deviceId },
+      auth: true,
     }),
 
   kakaoComplete: ({ signupToken, userNm, userBirth, userTel }) =>

@@ -1,21 +1,23 @@
-// features/community/api/communityApi.js
 import { withApiPrefix } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
 }
 
-async function request(path, { method = 'GET', body, auth = true } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (auth) headers.Authorization = `Bearer ${getAccessToken()}`;
+function normalizeBoardCode(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return 'BOARD_FREE';
 
-  const res = await fetch(withApiPrefix(path), {
-    method,
-    headers,
-    credentials: 'same-origin',
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const upper = raw.toUpperCase();
+  if (upper === 'ALL') return 'ALL';
+  if (upper === 'FREE') return 'BOARD_FREE';
+  if (upper === 'QUESTION') return 'BOARD_QUESTION';
+  if (upper === 'REVIEW') return 'BOARD_REVIEW';
+  if (upper === 'NOTICE') return 'BOARD_NOTICE';
+  return upper;
+}
 
+async function parseApiResponse(res) {
   if (res.status === 204) return null;
 
   const contentType = res.headers.get('content-type') || '';
@@ -40,37 +42,74 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
   return api ? api.data : payload;
 }
 
+async function request(path, { method = 'GET', body, auth = true } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) headers.Authorization = `Bearer ${getAccessToken()}`;
+
+  const res = await fetch(withApiPrefix(path), {
+    method,
+    headers,
+    credentials: 'same-origin',
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  return parseApiResponse(res);
+}
+
+async function requestForm(path, { method = 'POST', formData, auth = true } = {}) {
+  const headers = {};
+  if (auth) headers.Authorization = `Bearer ${getAccessToken()}`;
+
+  const res = await fetch(withApiPrefix(path), {
+    method,
+    headers,
+    credentials: 'same-origin',
+    body: formData,
+  });
+
+  return parseApiResponse(res);
+}
+
 export const communityApi = {
-  /** GET /boards — 게시글 목록 */
   getBoards: ({ page = 1, size = 10, boardType } = {}) => {
-    const qs = new URLSearchParams({ page, size });
-    if (boardType && boardType !== 'ALL') qs.set('boardType', boardType);
+    const qs = new URLSearchParams({
+      page: String(Math.max(0, Number(page || 1) - 1)),
+      size: String(size),
+    });
+    const normalized = normalizeBoardCode(boardType);
+    if (normalized && normalized !== 'ALL') qs.set('boardType', normalized);
     return request(`/boards?${qs}`, { auth: false });
   },
 
-  /** GET /boards/me — 내가 작성한 게시글 목록 */
   myBoards: ({ page = 1, size = 10, boardType } = {}) => {
-    const qs = new URLSearchParams({ page, size });
-    if (boardType && boardType !== 'ALL') qs.set('boardType', boardType);
+    const qs = new URLSearchParams({
+      page: String(Math.max(0, Number(page || 1) - 1)),
+      size: String(size),
+    });
+    const normalized = normalizeBoardCode(boardType);
+    if (normalized && normalized !== 'ALL') qs.set('boardType', normalized);
     return request(`/boards/me?${qs}`);
   },
 
-  /** GET /replies/me — 내가 작성한 댓글 목록 */
   myReplies: ({ page = 1, size = 10 } = {}) => {
     const qs = new URLSearchParams({ page, size });
     return request(`/replies/me?${qs}`);
   },
 
-  /** GET /boards/:id — 게시글 상세 */
   getBoard: (boardId) => request(`/boards/${boardId}`, { auth: false }),
 
-  /** POST /boards — 게시글 작성 */
-  createBoard: (body) => request('/boards', { method: 'POST', body }),
+  createBoard: ({ boardTitle, boardCtnt, code, anonymity = 'N', ofile } = {}) => {
+    const formData = new FormData();
+    formData.append('boardTitle', boardTitle ?? '');
+    formData.append('boardCtnt', boardCtnt ?? '');
+    formData.append('code', normalizeBoardCode(code));
+    formData.append('anonymity', anonymity ?? 'N');
+    if (ofile) formData.append('ofile', ofile);
+    return requestForm('/boards', { method: 'POST', formData });
+  },
 
-  /** PATCH /boards/:id — 게시글 수정 */
   updateBoard: (boardId, body) =>
     request(`/boards/${boardId}`, { method: 'PATCH', body }),
 
-  /** DELETE /boards/:id — 게시글 삭제 */
   deleteBoard: (boardId) => request(`/boards/${boardId}`, { method: 'DELETE' }),
 };
