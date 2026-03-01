@@ -42,10 +42,11 @@ public class BoardController {
     // 게시판 조회
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<BoardResponse>>> boardList(
+            @RequestParam(name = "boardType", required = false) String boardType,
             @PageableDefault(size = 10, sort = "boardId", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(boardService.getBoardList(pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(boardService.getBoardList(boardType, pageable)));
     }
 
     // 게시판 등록
