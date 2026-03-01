@@ -9,7 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface BoardService {
 
-    PageResponse<BoardResponse> getBoardList(Pageable pageable);
+    PageResponse<BoardResponse> getBoardList(String boardType, Pageable pageable);
 
     BoardResponse getBoardDetail(int boardId);
 
