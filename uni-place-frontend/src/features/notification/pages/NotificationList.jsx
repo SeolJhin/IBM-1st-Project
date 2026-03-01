@@ -1,9 +1,12 @@
 // src/features/notification/pages/NotificationList.jsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../../app/layouts/components/Header';
 import { useNotifications } from '../hooks/useNotifications';
 import styles from './NotificationList.module.css';
+
+// Header를 lazy로 import → NotificationBell과의 순환 참조 방지
+// (NotificationBell → NotificationList → Header → NotificationBell 순환)
+const Header = lazy(() => import('../../../app/layouts/components/Header'));
 
 const TARGET_LABEL = {
   board: '게시글',
@@ -188,9 +191,9 @@ export default function NotificationList({ inlineMode = false }) {
   if (inlineMode) return content;
 
   return (
-    <>
+    <Suspense fallback={null}>
       <Header />
       {content}
-    </>
+    </Suspense>
   );
 }
