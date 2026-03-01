@@ -2,7 +2,7 @@
 // inlineMode: MemberInfo 탭 내에서 사용 시 true
 
 import React, { useState } from 'react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import { useOrder } from '../hooks/useOrders';
 import ConfirmModal from './components/ConfirmModal';
@@ -38,7 +38,6 @@ export default function OrderDetail({
   orderId: propOrderId,
 }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const params = useParams();
   const [tourCreateOpen, setTourCreateOpen] = useState(false);
   const [tourListOpen, setTourListOpen] = useState(false);

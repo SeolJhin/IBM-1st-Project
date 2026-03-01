@@ -75,7 +75,6 @@ export default function NotificationList({ inlineMode = false }) {
     loadMore,
     markRead,
     markAllRead,
-    refresh,
     deleteRead,
   } = useNotifications({ autoFetch: true });
 
