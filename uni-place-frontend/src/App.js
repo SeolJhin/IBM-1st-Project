@@ -98,11 +98,11 @@ export default function App() {
       <Routes>
         {/* ── 공통 ── */}
         <Route path="/" element={<Home />} />
-        <Route path="/company_info" element={<CompanyInfo />} />
+        <Route path="/company_info" element={<CompanyInfo variant="company" />} />
         <Route path="/about" element={<About variant="about" />} />
         <Route path="/community" element={<CommunityHome />} />
-        <Route path="/guide" element={<CompanyInfo />} />
-        <Route path="/news" element={<CompanyInfo />} />
+        <Route path="/guide" element={<CompanyInfo variant="guide" />} />
+        <Route path="/news" element={<CompanyInfo variant="news" />} />
 
         {/* ── 유저 ── */}
         <Route path="/login" element={<Login />} />

@@ -52,6 +52,20 @@ function getRefreshContext() {
   };
 }
 
+function isIgnorableLogoutError(error) {
+  const message = String(error?.message ?? '').toLowerCase();
+  const errorCode = String(error?.errorCode ?? '').toLowerCase();
+  const status = Number(error?.status ?? 0);
+
+  return (
+    message.includes('token') ||
+    message.includes('토큰') ||
+    message.includes('unauthorized') ||
+    status === 401 ||
+    errorCode.includes('token')
+  );
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -111,7 +125,13 @@ export function AuthProvider({ children }) {
     try {
       const { refreshToken, deviceId } = getRefreshContext();
       if (refreshToken && deviceId) {
-        await authApi.logout({ refreshToken, deviceId });
+        try {
+          await authApi.logout({ refreshToken, deviceId });
+        } catch (e) {
+          if (!isIgnorableLogoutError(e)) {
+            console.warn('logout request failed:', e);
+          }
+        }
       }
     } finally {
       clearTokens();
