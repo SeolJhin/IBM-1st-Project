@@ -1,4 +1,4 @@
-import { withApiPrefix } from '../../../app/http/apiBase';
+import { fetchWithAuthRetry } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
@@ -8,7 +8,7 @@ async function request(
   path,
   { method = 'GET', body, headers = {}, auth = false } = {}
 ) {
-  const res = await fetch(withApiPrefix(path), {
+  const res = await fetchWithAuthRetry(path, {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -19,7 +19,7 @@ async function request(
     },
     credentials: 'same-origin',
     body: body ? JSON.stringify(body) : undefined,
-  });
+  }, { auth });
 
   if (res.status === 204) return null;
 
@@ -38,7 +38,7 @@ async function request(
     const message =
       (api && api.message) ||
       (payload && payload.message) ||
-      (typeof payload === 'string' ? payload : '요청에 실패했습니다.');
+      (typeof payload === 'string' ? payload : '?붿껌???ㅽ뙣?덉뒿?덈떎.');
     const error = new Error(message);
     error.status = res.status;
     error.errorCode = api?.errorCode;
@@ -68,7 +68,7 @@ export const reservationApi = {
     direct = 'DESC',
   }) => {
     const q = buildQuery({ buildingId, date, page, size, sort, direct });
-    // ✅ 수정: tenant/로그인 사용자만 접근하도록 막혀있을 수 있으니 토큰 포함
+    // ???섏젙: tenant/濡쒓렇???ъ슜?먮쭔 ?묎렐?섎룄濡?留됲??덉쓣 ???덉쑝???좏겙 ?ы븿
     return request(`/space-reservations/spaces${q}`, { auth: true });
   },
 
@@ -101,7 +101,7 @@ export const reservationApi = {
     direct = 'DESC',
   }) => {
     const q = buildQuery({ buildingId, buildingNm, page, size, sort, direct });
-    return request(`/tour-reservations/rooms${q}`); // 공개 API 예상
+    return request(`/tour-reservations/rooms${q}`); // 怨듦컻 API ?덉긽
   },
 
   reservableTourSlots: ({ buildingId, roomId, date }) => {
@@ -123,3 +123,4 @@ export const reservationApi = {
   cancelTourReservation: (tourId, body) =>
     request(`/tour-reservations/cancel/${tourId}`, { method: 'PUT', body }),
 };
+

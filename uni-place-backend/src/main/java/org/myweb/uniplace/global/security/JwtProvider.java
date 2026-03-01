@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class JwtProvider {
@@ -64,6 +65,7 @@ public class JwtProvider {
         return Jwts.builder()
                 .subject(userId)
                 .claim("typ", "refresh")
+                .id(UUID.randomUUID().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(refreshExpMs)))
                 .signWith(key, Jwts.SIG.HS256)

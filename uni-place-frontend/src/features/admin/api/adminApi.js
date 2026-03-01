@@ -1,5 +1,5 @@
 // src/features/admin/api/adminApi.js
-import { withApiPrefix } from '../../../app/http/apiBase';
+import { fetchWithAuthRetry } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return (
@@ -134,7 +134,7 @@ async function request(
 ) {
   const isFormData = body instanceof FormData;
 
-  const res = await fetch(withApiPrefix(path), {
+  const res = await fetchWithAuthRetry(path, {
     method,
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
@@ -148,7 +148,7 @@ async function request(
     credentials: 'same-origin',
 
     body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
-  });
+  }, { auth });
 
   const payload = await parsePayload(res);
   return unwrapOrThrow(res, payload);
@@ -158,7 +158,7 @@ async function requestForm(
   path,
   { method = 'POST', formData, headers = {}, auth = false } = {}
 ) {
-  const res = await fetch(withApiPrefix(path), {
+  const res = await fetchWithAuthRetry(path, {
     method,
     headers: {
       ...(auth && getAccessToken()
@@ -168,7 +168,7 @@ async function requestForm(
     },
     credentials: 'same-origin',
     body: formData,
-  });
+  }, { auth });
 
   const payload = await parsePayload(res);
   return unwrapOrThrow(res, payload);
@@ -540,3 +540,4 @@ export const adminApi = {
   getNoticeDetail: (noticeId) =>
     request(`/notices/${noticeId}`, { auth: true }),
 };
+
