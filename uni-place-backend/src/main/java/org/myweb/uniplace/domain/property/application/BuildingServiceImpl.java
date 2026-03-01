@@ -41,45 +41,33 @@ public class BuildingServiceImpl implements BuildingService {
         return IMAGE_EXTS.contains(ext.toLowerCase());
     }
 
-    // ✅ 일반 사용자: 삭제된 건물 조회 불가
     @Override
     @Transactional(readOnly = true)
     public BuildingDetailResponse getBuilding(Integer buildingId) {
-
         Building building = buildingRepository.findByBuildingIdAndDeleteYn(buildingId, "N")
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
-
         List<FileResponse> files =
                 fileService.getActiveFiles(FileRefType.BUILDING.dbValue(), buildingId);
-
         return BuildingDetailResponse.fromEntity(building, files);
     }
 
-    // ✅ 관리자: 삭제된 건물도 조회 가능 (findById 그대로 유지)
     @Override
     @Transactional(readOnly = true)
     public BuildingDetailResponse getBuildingForAdmin(Integer buildingId) {
-
         Building building = buildingRepository.findById(buildingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
-
         List<FileResponse> files =
                 fileService.getAllFilesForAdmin(FileRefType.BUILDING.dbValue(), buildingId);
-
         return BuildingDetailResponse.fromEntity(building, files);
     }
 
-    // ✅ 일반 사용자: 삭제된 건물 목록 제외
     @Override
     @Transactional(readOnly = true)
     public Page<BuildingSummaryResponse> searchPage(Pageable pageable) {
-
         Page<Building> page = buildingRepository.findAllByDeleteYn("N", pageable);
-
         return page.map(b -> {
             List<FileResponse> files =
                     fileService.getActiveFiles(FileRefType.BUILDING.dbValue(), b.getBuildingId());
-
             FileResponse firstImage = null;
             if (files != null) {
                 for (FileResponse f : files) {
@@ -89,17 +77,14 @@ public class BuildingServiceImpl implements BuildingService {
                     }
                 }
             }
-
             Integer thumbId  = (firstImage != null ? firstImage.getFileId()  : null);
             String  thumbUrl = (firstImage != null ? firstImage.getViewUrl() : null);
-
             return BuildingSummaryResponse.fromEntity(b, thumbId, thumbUrl);
         });
     }
 
     @Override
     public BuildingDetailResponse createBuilding(BuildingCreateRequest request) {
-
         Building building = Building.builder()
                 .buildingNm(request.getBuildingNm())
                 .buildingAddr(request.getBuildingAddr())
@@ -109,6 +94,10 @@ public class BuildingServiceImpl implements BuildingService {
                 .buildingUsage(request.getBuildingUsage())
                 .existElv(request.getExistElv())
                 .parkingCapacity(request.getParkingCapacity())
+                .buildingLessorNm(request.getBuildingLessorNm())
+                .buildingLessorTel(request.getBuildingLessorTel())
+                .buildingLessorAddr(request.getBuildingLessorAddr())
+                .buildingLessorRrn(request.getBuildingLessorRrn())
                 .build();
 
         Building saved = buildingRepository.save(building);
@@ -123,14 +112,11 @@ public class BuildingServiceImpl implements BuildingService {
 
         List<FileResponse> files =
                 fileService.getActiveFiles(FileRefType.BUILDING.dbValue(), saved.getBuildingId());
-
         return BuildingDetailResponse.fromEntity(saved, files);
     }
 
     @Override
     public BuildingDetailResponse updateBuilding(Integer buildingId, BuildingUpdateRequest request) {
-
-        // ✅ 수정도 삭제된 건물은 불가
         Building building = buildingRepository.findByBuildingIdAndDeleteYn(buildingId, "N")
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
 
@@ -148,7 +134,11 @@ public class BuildingServiceImpl implements BuildingService {
                 request.getBuildSize(),
                 request.getBuildingUsage(),
                 request.getExistElv(),
-                request.getParkingCapacity()
+                request.getParkingCapacity(),
+                request.getBuildingLessorNm(),
+                request.getBuildingLessorTel(),
+                request.getBuildingLessorAddr(),
+                request.getBuildingLessorRrn()
         );
 
         if (request.getDeleteFileIds() != null && !request.getDeleteFileIds().isEmpty()) {
@@ -168,34 +158,21 @@ public class BuildingServiceImpl implements BuildingService {
         }
 
         Building saved = buildingRepository.save(building);
-
         List<FileResponse> files =
                 fileService.getActiveFiles(FileRefType.BUILDING.dbValue(), buildingId);
-
         return BuildingDetailResponse.fromEntity(saved, files);
     }
 
-    // ✅ soft delete: building + 연결된 모든 room 을 함께 논리 삭제
     @Override
     public void deleteBuilding(Integer buildingId) {
-
         Building building = buildingRepository.findById(buildingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
-
-        // 이미 삭제된 건물이면 그냥 리턴 (멱등성 보장)
-        if (building.isDeleted()) {
-            return;
-        }
-
-        // 연결된 Room 들을 먼저 soft delete
+        if (building.isDeleted()) return;
         List<Room> rooms = building.getRooms();
         if (rooms != null) {
             rooms.forEach(Room::softDelete);
         }
-
-        // Building soft delete
         building.softDelete();
-
         buildingRepository.save(building);
     }
 }

@@ -26,7 +26,12 @@ public class BuildingDetailResponse {
     private String existElv;
     private Integer parkingCapacity;
 
-    // ✅ 상세 이미지들
+    // ✅ 임대인 정보
+    private String buildingLessorNm;
+    private String buildingLessorTel;
+    private String buildingLessorAddr;
+    private String buildingLessorRrn;
+
     private List<FileResponse> files;
 
     public static BuildingDetailResponse fromEntity(Building b, List<FileResponse> files) {
@@ -40,6 +45,10 @@ public class BuildingDetailResponse {
                 .buildingUsage(b.getBuildingUsage())
                 .existElv(b.getExistElv())
                 .parkingCapacity(b.getParkingCapacity())
+                .buildingLessorNm(b.getBuildingLessorNm())
+                .buildingLessorTel(b.getBuildingLessorTel())
+                .buildingLessorAddr(b.getBuildingLessorAddr())
+                .buildingLessorRrn(b.getBuildingLessorRrn())
                 .files(files)
                 .build();
     }

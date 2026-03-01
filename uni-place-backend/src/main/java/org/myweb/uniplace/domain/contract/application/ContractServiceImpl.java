@@ -68,11 +68,12 @@ public class ContractServiceImpl implements ContractService {
             throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
         }
 
+        // active 계약이 기간 내 존재하면 신청 불가 (requested는 미확정이므로 허용)
         boolean overlapped = contractRepository.existsOverlappedContract(
             room.getRoomId(),
             request.getContractStart(),
             request.getContractEnd(),
-            ContractStatus.requested,
+            ContractStatus.active,
             ContractStatus.active
         );
         if (overlapped) {

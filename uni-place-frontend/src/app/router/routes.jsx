@@ -11,6 +11,9 @@ import RoomDetail from '../../features/property/pages/RoomDetail';
 import SpaceList from '../../features/property/pages/SpaceList';
 import SpaceDetail from '../../features/property/pages/SpaceDetail';
 
+// ── contract ──────────────────────────────────────────────────
+import ContractApply from '../../features/contract/pages/ContractApply';
+
 // ── reservation ───────────────────────────────────────────────
 import TourReservationCreate from '../../features/reservation/pages/TourReservationCreate';
 import TourReservationList from '../../features/reservation/pages/TourReservationList';
@@ -66,6 +69,9 @@ export const router = createBrowserRouter([
   { path: '/reviews/:reviewId/edit', element: <ReviewWrite /> },
   { path: '/reviews/my', element: <MyReviewsList /> },
   { path: '/reviews/:reviewId', element: <MyReviewsDetail /> },
+
+  // contract
+  { path: '/contracts/apply', element: <ContractApply /> },
 
   // ── support ──
   { path: '/support/notice', element: <NoticeList /> },
