@@ -1,4 +1,4 @@
-import { withApiPrefix } from '../../../app/http/apiBase';
+import { fetchWithAuthRetry } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
@@ -33,7 +33,7 @@ async function parseApiResponse(res) {
   if (!res.ok || (api && api.success === false)) {
     const message =
       api?.message ||
-      (typeof payload === 'string' ? payload : '요청에 실패했습니다.');
+      (typeof payload === 'string' ? payload : '?붿껌???ㅽ뙣?덉뒿?덈떎.');
     const error = new Error(message);
     error.status = res.status;
     throw error;
@@ -46,12 +46,12 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (auth) headers.Authorization = `Bearer ${getAccessToken()}`;
 
-  const res = await fetch(withApiPrefix(path), {
+  const res = await fetchWithAuthRetry(path, {
     method,
     headers,
     credentials: 'same-origin',
     body: body ? JSON.stringify(body) : undefined,
-  });
+  }, { auth });
 
   return parseApiResponse(res);
 }
@@ -60,12 +60,12 @@ async function requestForm(path, { method = 'POST', formData, auth = true } = {}
   const headers = {};
   if (auth) headers.Authorization = `Bearer ${getAccessToken()}`;
 
-  const res = await fetch(withApiPrefix(path), {
+  const res = await fetchWithAuthRetry(path, {
     method,
     headers,
     credentials: 'same-origin',
     body: formData,
-  });
+  }, { auth });
 
   return parseApiResponse(res);
 }
@@ -113,3 +113,4 @@ export const communityApi = {
 
   deleteBoard: (boardId) => request(`/boards/${boardId}`, { method: 'DELETE' }),
 };
+

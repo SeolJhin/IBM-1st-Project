@@ -12,6 +12,7 @@ export default function Login() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const notice = location.state?.message || '';
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -97,6 +98,7 @@ export default function Login() {
               />
             </label>
 
+            {notice ? <div className={styles.notice}>{notice}</div> : null}
             {error ? <div className={styles.error}>{error}</div> : null}
 
             <button
