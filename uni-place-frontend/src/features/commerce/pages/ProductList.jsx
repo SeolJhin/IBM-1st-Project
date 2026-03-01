@@ -13,18 +13,27 @@ import Header from '../../../app/layouts/components/Header';
 import { useProducts } from '../hooks/useProducts';
 import { useCart } from '../hooks/useCart';
 import { buildingApi } from '../../../app/http/buildingApi';
+import { withApiPrefix } from '../../../app/http/apiBase';
 import styles from './ProductList.module.css';
 import layoutStyles from '../../user/pages/MemberInfo.module.css';
 import Modal from '../../../shared/components/Modal/Modal';
 import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
 import TourReservationList from '../../reservation/pages/TourReservationList';
 
-const TABS = [
-  { key: 'all', label: '전체' },
-  { key: 'kitchen', label: '주방' },
-  { key: 'bathroom', label: '욕실' },
-  { key: 'etc', label: '기타' },
-];
+// PRODUCT_CATEGORY 그룹의 공통코드를 조회해 code → codeValue 매핑 반환
+async function fetchProductCategoryCodes() {
+  try {
+    const res = await fetch(
+      withApiPrefix('/admin/common-codes/PRODUCT_CATEGORY')
+    );
+    if (!res.ok) return {};
+    const json = await res.json();
+    const list = json?.data ?? [];
+    return Object.fromEntries(list.map((c) => [c.code, c.codeValue]));
+  } catch {
+    return {};
+  }
+}
 
 function fmt(n) {
   return n == null ? '0' : Number(n).toLocaleString('ko-KR');
@@ -53,6 +62,7 @@ function BuildingSelector({ buildings, selectedId, onSelect, loading }) {
 
 function ProductCard({
   product,
+  codeLabel,
   pendingQty,
   cartQty,
   stock,
@@ -106,6 +116,7 @@ function ProductCard({
           <span className={styles.cardName}>{product.prodNm}</span>
           <span className={styles.cardPrice}>{fmt(product.prodPrice)}원</span>
         </div>
+        {codeLabel && <span className={styles.codeBadge}>{codeLabel}</span>}
         {product.prodDesc && (
           <p className={styles.cardDesc}>{product.prodDesc}</p>
         )}
@@ -202,6 +213,9 @@ export default function ProductList({
   } = useCart();
 
   const [activeTab, setActiveTab] = useState('all');
+  // 동적 카테고리 탭: products의 code + 공통코드 API codeValue로 생성
+  const [tabs, setTabs] = useState([{ key: 'all', label: '전체' }]);
+  const [codeValueMap, setCodeValueMap] = useState({});
   const [buildings, setBuildings] = useState([]);
   const [buildingLoading, setBuildingLoading] = useState(false);
   const [selectedBuildingId, setSelectedBuildingId] = useState(
@@ -210,6 +224,25 @@ export default function ProductList({
   );
   const [pendingMap, setPendingMap] = useState({});
   const [adding, setAdding] = useState(false);
+
+  // products 로드 완료 시 → 공통코드 API로 codeValue 조회 후 탭 동적 생성
+  useEffect(() => {
+    if (!products.length) return;
+
+    // products에서 중복 없는 code 목록 추출
+    const uniqueCodes = [
+      ...new Set(products.map((p) => p.code).filter(Boolean)),
+    ];
+
+    fetchProductCategoryCodes().then((codeValueMap) => {
+      setCodeValueMap(codeValueMap);
+      const dynamicTabs = uniqueCodes.map((code) => ({
+        key: code,
+        label: codeValueMap[code] ?? code,
+      }));
+      setTabs([{ key: 'all', label: '전체' }, ...dynamicTabs]);
+    });
+  }, [products]);
 
   useEffect(() => {
     setBuildingLoading(true);
@@ -352,9 +385,7 @@ export default function ProductList({
 
   const filtered = useMemo(() => {
     if (activeTab === 'all') return products;
-    return products.filter(
-      (p) => String(p.code ?? '').toLowerCase() === activeTab
-    );
+    return products.filter((p) => p.code === activeTab);
   }, [products, activeTab]);
 
   const pendingTotal = useMemo(
@@ -398,7 +429,7 @@ export default function ProductList({
           loading={buildingLoading}
         />
         <div className={styles.catTabs}>
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <button
               key={t.key}
               className={`${styles.catTab} ${activeTab === t.key ? styles.catTabActive : ''}`}
@@ -431,6 +462,7 @@ export default function ProductList({
               <ProductCard
                 key={p.prodId}
                 product={p}
+                codeLabel={codeValueMap[p.code] ?? null}
                 pendingQty={pendingMap[p.prodId] ?? 0}
                 cartQty={cartQty}
                 stock={stock}

@@ -87,6 +87,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/files").permitAll()            
                 .requestMatchers(HttpMethod.POST, "/files").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/files").permitAll()
+                .requestMatchers(HttpMethod.GET, "/admin/common-codes/PRODUCT_CATEGORY").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
