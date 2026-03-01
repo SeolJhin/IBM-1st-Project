@@ -1,20 +1,20 @@
 // features/contract/api/contractApi.js
-import { withApiPrefix } from '../../../app/http/apiBase';
+import { fetchWithAuthRetry } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
 }
 
-async function request(path, { method = 'GET', body } = {}) {
-  const res = await fetch(withApiPrefix(path), {
+async function request(path, { method = 'GET', body, auth = true } = {}) {
+  const res = await fetchWithAuthRetry(path, {
     method,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${getAccessToken()}`,
+      ...(auth ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
     },
     credentials: 'same-origin',
     body: body ? JSON.stringify(body) : undefined,
-  });
+  }, { auth });
 
   if (res.status === 204) return null;
 
@@ -31,7 +31,7 @@ async function request(path, { method = 'GET', body } = {}) {
   if (!res.ok || (api && api.success === false)) {
     const message =
       api?.message ||
-      (typeof payload === 'string' ? payload : '요청에 실패했습니다.');
+      (typeof payload === 'string' ? payload : '?붿껌???ㅽ뙣?덉뒿?덈떎.');
     const error = new Error(message);
     error.status = res.status;
     throw error;
@@ -41,6 +41,7 @@ async function request(path, { method = 'GET', body } = {}) {
 }
 
 export const contractApi = {
-  /** GET /contracts/me — 내 계약 목록 */
+  /** GET /contracts/me ????怨꾩빟 紐⑸줉 */
   myContracts: () => request('/contracts/me'),
 };
+

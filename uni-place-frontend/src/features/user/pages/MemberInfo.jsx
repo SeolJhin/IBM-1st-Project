@@ -10,7 +10,6 @@ import styles from './MemberInfo.module.css';
 
 import { authApi } from '../api/authApi';
 import { useAuth } from '../hooks/useAuth';
-import { getOrCreateDeviceId } from '../../../app/http/tokenStore';
 
 // ── 탭 컴포넌트 import ────────────────────────────────────────
 import MyContractView from '../../contract/pages/MyContractView';
@@ -128,13 +127,17 @@ function MeTab() {
     }
     try {
       setSubmitting(true);
-      const deviceId = getOrCreateDeviceId();
-      await authApi.login({
-        userEmail: origin.userEmail,
-        userPwd: currentPwd,
-        deviceId,
-      });
+      const passwordChanged = Boolean(payload.userPwd);
       await authApi.updateMe(payload);
+      if (passwordChanged) {
+        await authApi.logoutAll();
+        await logout();
+        navigate('/login', {
+          replace: true,
+          state: { message: '비밀번호가 변경되어 다시 로그인해주세요.' },
+        });
+        return;
+      }
       await refresh?.();
       await loadMe();
       setCurrentPwd('');
@@ -153,6 +156,11 @@ function MeTab() {
     if (!window.confirm('정말 탈퇴하시겠어요?')) return;
     try {
       setSubmitting(true);
+      try {
+        await authApi.logoutAll();
+      } catch (e) {
+        // best effort
+      }
       await authApi.deleteMe();
       await logout();
       navigate('/', { replace: true });

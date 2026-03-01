@@ -1,6 +1,6 @@
 // src/app/http/request.js
 import axios from 'axios';
-import { withApiPrefix } from './apiBase';
+import { refreshAccessTokenOnce, withApiPrefix } from './apiBase';
 
 const instance = axios.create({
   baseURL: '',
@@ -19,6 +19,37 @@ instance.interceptors.request.use((config) => {
   }
   return config;
 });
+
+instance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error?.config;
+    const status = Number(error?.response?.status || 0);
+    if (!original || status !== 401 || original._retry) {
+      return Promise.reject(error);
+    }
+
+    const rawUrl = String(original.url || '');
+    if (rawUrl.includes('/auth/login') || rawUrl.includes('/auth/refresh')) {
+      return Promise.reject(error);
+    }
+
+    original._retry = true;
+    const refreshed = await refreshAccessTokenOnce();
+    if (!refreshed) {
+      return Promise.reject(error);
+    }
+
+    const token =
+      localStorage.getItem('access_token') || localStorage.getItem('accessToken');
+    original.headers = original.headers ?? {};
+    if (token) {
+      original.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return instance(original);
+  }
+);
 
 export function unwrapApi(resData) {
   if (!resData) return resData;
