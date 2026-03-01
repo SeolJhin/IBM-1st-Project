@@ -671,27 +671,21 @@
 .contractBtn {
   display: block;
   width: 100%;
-  padding: 14px;
-  background: #fff;
-  color: #ba8037;
-  border: 2px solid #ba8037;
+  padding: 16px;
+  background: linear-gradient(135deg, #2d6a4f, #1b4332);
+  color: #fff;
+  border: none;
   border-radius: 12px;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
   letter-spacing: 0.01em;
-  margin-top: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 16px rgba(45, 106, 79, 0.3);
 }
-.contractBtn:hover:not(:disabled) {
-  background: #ba8037;
-  color: #fff;
+.contractBtn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(186, 128, 55, 0.3);
-}
-.contractBtn:disabled {
-  border-color: #d7cebc;
-  color: #b0a090;
+  box-shadow: 0 8px 24px rgba(45, 106, 79, 0.4);
 }

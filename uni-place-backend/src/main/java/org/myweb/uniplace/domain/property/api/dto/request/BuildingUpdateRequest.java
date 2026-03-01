@@ -38,7 +38,20 @@ public class BuildingUpdateRequest {
     @Min(0)
     private Integer parkingCapacity;
 
-    // ✅ 삭제할 파일 ID들 (Room/Space 동일)
+    // ✅ 임대인 정보
+    @Size(max = 50)
+    private String buildingLessorNm;
+
+    @Size(max = 20)
+    private String buildingLessorTel;
+
+    @Size(max = 200)
+    private String buildingLessorAddr;
+
+    @Size(max = 20)
+    private String buildingLessorRrn;
+
+    // ✅ 삭제할 파일 ID들
     private List<Integer> deleteFileIds;
 
     // ✅ 새로 업로드할 파일들

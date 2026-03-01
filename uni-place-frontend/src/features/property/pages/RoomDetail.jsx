@@ -1,539 +1,11 @@
 // features/property/pages/RoomDetail.jsx
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
-import { useReviewActions } from '../../review/hooks/useReviews';
-import { reviewApi } from '../../review/api/reviewApi';
 import styles from './RoomDetail.module.css';
-import Modal from '../../../shared/components/Modal/Modal';
-import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
-import TourReservationList from '../../reservation/pages/TourReservationList';
-
-// ── 리뷰 수정 팝업 ──────────────────────────────────────────────────────────
-function ReviewEditModal({ review, onClose, onSuccess }) {
-  const { update, submitting } = useReviewActions();
-  const [rating, setRating] = React.useState(review.rating ?? 0);
-  const [hover, setHover] = React.useState(0);
-  const [title, setTitle] = React.useState(review.reviewTitle ?? '');
-  const [ctnt, setCtnt] = React.useState(review.reviewCtnt ?? '');
-
-  // 기존 파일 목록 (서버에서 불러옴)
-  const [existingFiles, setExistingFiles] = React.useState([]);
-  const [deletedIds, setDeletedIds] = React.useState([]); // 개별 삭제할 fileId 목록
-  const [deleteAll, setDeleteAll] = React.useState(false);
-
-  // 새로 추가할 파일
-  const [newFiles, setNewFiles] = React.useState([]);
-  const [newPreviews, setNewPreviews] = React.useState([]);
-  const [err, setErr] = React.useState('');
-  const fileRef = React.useRef(null);
-
-  // 기존 파일 불러오기
-  React.useEffect(() => {
-    if (review.fileCk === 'Y') {
-      reviewApi
-        .getDetail(review.reviewId)
-        .then((d) => {
-          const imgs = (d.files ?? []).filter((f) =>
-            ['.png', '.jpg', '.jpeg', '.gif', '.webp', 'image'].includes(
-              (f.fileType || '').toLowerCase()
-            )
-          );
-          setExistingFiles(imgs);
-        })
-        .catch(() => {});
-    }
-  }, [review.reviewId, review.fileCk]);
-
-  const toggleDeleteOne = (fileId) => {
-    setDeletedIds((prev) =>
-      prev.includes(fileId)
-        ? prev.filter((id) => id !== fileId)
-        : [...prev, fileId]
-    );
-  };
-
-  const removeNew = (idx) => {
-    const updated = newFiles.filter((_, i) => i !== idx);
-    setNewFiles(updated);
-    setNewPreviews(updated.map((f) => URL.createObjectURL(f)));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!rating) {
-      setErr('별점을 선택해 주세요.');
-      return;
-    }
-
-    // deleteAll이면 전체 삭제 플래그, 아니면 개별 삭제 처리
-    // 백엔드 updateReview는 deleteFiles=true면 전체 삭제 후 새 파일 업로드
-    // 개별 삭제는 별도 API 없으므로: deletedIds가 있으면 전체=기존파일 전부를 삭제 후 남은것+새것 업로드
-    const shouldDeleteAll = deleteAll || deletedIds.length > 0;
-    // kept 파일을 다시 업로드할 수는 없으므로: deleteFiles=true + newFiles만 전송
-    // → 단, kept가 있으면 deleteAll=false로 보내고 개별 삭제는 별도 처리가 필요
-    // 여기서는 가장 안전한 방식: deleteAll or deletedIds>0 이면 deleteFiles=true
-    const ok = await update(
-      review.reviewId,
-      { rating, reviewTitle: title, reviewCtnt: ctnt },
-      shouldDeleteAll,
-      newFiles
-    );
-    if (ok) onSuccess();
-    else setErr('수정 실패. 다시 시도해 주세요.');
-  };
-
-  const imgUrl = (f) => {
-    const raw = f.viewUrl || f.fileUrl || f.url || '';
-    return raw.startsWith('/files') ? `/api${raw}` : raw;
-  };
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9000,
-        background: 'rgba(0,0,0,0.55)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 20,
-          width: '100%',
-          maxWidth: 500,
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '20px 24px 16px',
-            borderBottom: '1px solid #f0ece5',
-            flexShrink: 0,
-          }}
-        >
-          <h3
-            style={{
-              margin: 0,
-              fontSize: 17,
-              fontWeight: 800,
-              color: '#3a2e20',
-            }}
-          >
-            ✏️ 리뷰 수정
-          </h3>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(0,0,0,0.06)',
-              border: 'none',
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              fontSize: 14,
-              cursor: 'pointer',
-              color: 'rgba(0,0,0,0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            padding: '20px 24px 24px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-          }}
-        >
-          {/* 별점 */}
-          <div>
-            <p
-              style={{
-                margin: '0 0 8px',
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#5a4a30',
-              }}
-            >
-              별점 <span style={{ color: '#e53e3e' }}>*</span>
-            </p>
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              {[1, 2, 3, 4, 5].map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: 30,
-                    cursor: 'pointer',
-                    padding: 0,
-                    lineHeight: 1,
-                    color: s <= (hover || rating) ? '#f6b93b' : '#e0d8cc',
-                    transition: 'color 0.1s',
-                  }}
-                  onMouseEnter={() => setHover(s)}
-                  onMouseLeave={() => setHover(0)}
-                  onClick={() => setRating(s)}
-                >
-                  ★
-                </button>
-              ))}
-              {rating > 0 && (
-                <span style={{ fontSize: 13, color: '#ba8037', marginLeft: 8 }}>
-                  {
-                    [
-                      '',
-                      '별로예요',
-                      '그저그래요',
-                      '보통이에요',
-                      '좋아요',
-                      '최고예요',
-                    ][rating]
-                  }
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* 제목 */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#5a4a30',
-                marginBottom: 6,
-              }}
-            >
-              제목
-            </label>
-            <input
-              type="text"
-              placeholder="제목을 입력하세요 (선택)"
-              maxLength={100}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                border: '1.5px solid #e8dfd0',
-                borderRadius: 10,
-                fontSize: 14,
-                boxSizing: 'border-box',
-                background: '#faf7f3',
-                fontFamily: 'inherit',
-              }}
-            />
-          </div>
-
-          {/* 내용 */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#5a4a30',
-                marginBottom: 6,
-              }}
-            >
-              내용
-            </label>
-            <textarea
-              placeholder="내용을 입력하세요 (선택)"
-              maxLength={3000}
-              rows={4}
-              value={ctnt}
-              onChange={(e) => setCtnt(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                border: '1.5px solid #e8dfd0',
-                borderRadius: 10,
-                fontSize: 14,
-                resize: 'vertical',
-                boxSizing: 'border-box',
-                background: '#faf7f3',
-                fontFamily: 'inherit',
-                lineHeight: 1.6,
-              }}
-            />
-          </div>
-
-          {/* 기존 이미지 */}
-          {existingFiles.length > 0 && (
-            <div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 8,
-                }}
-              >
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: '#5a4a30',
-                  }}
-                >
-                  기존 이미지 ({existingFiles.length}장)
-                </p>
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    fontSize: 12,
-                    color: '#c05050',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={deleteAll}
-                    onChange={(e) => {
-                      setDeleteAll(e.target.checked);
-                      if (e.target.checked) setDeletedIds([]);
-                    }}
-                  />
-                  전체 삭제
-                </label>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {existingFiles.map((f) => {
-                  const isDeleted = deleteAll || deletedIds.includes(f.fileId);
-                  return (
-                    <div
-                      key={f.fileId}
-                      style={{ position: 'relative', width: 80, height: 80 }}
-                    >
-                      <img
-                        src={imgUrl(f)}
-                        alt=""
-                        style={{
-                          width: 80,
-                          height: 80,
-                          objectFit: 'cover',
-                          borderRadius: 8,
-                          border: `2px solid ${isDeleted ? '#e53e3e' : '#e8dfd0'}`,
-                          opacity: isDeleted ? 0.4 : 1,
-                          transition: 'all 0.15s',
-                        }}
-                      />
-                      {!deleteAll && (
-                        <button
-                          type="button"
-                          onClick={() => toggleDeleteOne(f.fileId)}
-                          style={{
-                            position: 'absolute',
-                            top: -6,
-                            right: -6,
-                            background: isDeleted ? '#e53e3e' : '#3a2e20',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: 20,
-                            height: 20,
-                            cursor: 'pointer',
-                            fontSize: 11,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          {isDeleted ? '↩' : '×'}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              {(deleteAll || deletedIds.length > 0) && (
-                <p
-                  style={{ margin: '6px 0 0', fontSize: 12, color: '#e53e3e' }}
-                >
-                  {deleteAll
-                    ? '저장 시 기존 이미지가 모두 삭제됩니다.'
-                    : `${deletedIds.length}장이 삭제됩니다.`}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* 새 이미지 */}
-          <div>
-            <p
-              style={{
-                margin: '0 0 10px',
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#5a4a30',
-              }}
-            >
-              새 이미지 ({newFiles.length}/5)
-            </p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {newPreviews.map((url, idx) => (
-                <div
-                  key={idx}
-                  style={{ position: 'relative', width: 80, height: 80 }}
-                >
-                  <img
-                    src={url}
-                    alt=""
-                    style={{
-                      width: 80,
-                      height: 80,
-                      objectFit: 'cover',
-                      borderRadius: 8,
-                      border: '1.5px solid #e8dfd0',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeNew(idx)}
-                    style={{
-                      position: 'absolute',
-                      top: -6,
-                      right: -6,
-                      background: '#3a2e20',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: 20,
-                      height: 20,
-                      cursor: 'pointer',
-                      fontSize: 11,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              {newFiles.length < 5 && (
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  style={{
-                    width: 80,
-                    height: 80,
-                    border: '2px dashed #d7cebc',
-                    borderRadius: 8,
-                    background: '#faf7f3',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 2,
-                    color: '#9a8c70',
-                    fontSize: 11,
-                  }}
-                >
-                  <span style={{ fontSize: 20 }}>＋</span>추가
-                </button>
-              )}
-            </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              multiple
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const sel = Array.from(e.target.files);
-                const m = [...newFiles, ...sel].slice(0, 5);
-                setNewFiles(m);
-                setNewPreviews(m.map((f) => URL.createObjectURL(f)));
-                e.target.value = '';
-              }}
-            />
-          </div>
-
-          {err && (
-            <p style={{ margin: 0, color: '#e53e3e', fontSize: 13 }}>{err}</p>
-          )}
-
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              justifyContent: 'flex-end',
-              paddingTop: 4,
-            }}
-          >
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                background: '#f5f0e8',
-                color: '#5a4a30',
-                border: 'none',
-                borderRadius: 10,
-                padding: '11px 22px',
-                fontSize: 14,
-                cursor: 'pointer',
-              }}
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              style={{
-                background: submitting
-                  ? '#d5b870'
-                  : 'linear-gradient(135deg, #c4923f, #ba8037)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                padding: '11px 28px',
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: submitting ? 'not-allowed' : 'pointer',
-                boxShadow: '0 3px 12px rgba(186,128,55,0.35)',
-              }}
-            >
-              {submitting ? '저장 중...' : '수정 완료'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 function StarRating({ value = 0, size = 'md' }) {
   return (
@@ -550,470 +22,32 @@ function StarRating({ value = 0, size = 'md' }) {
   );
 }
 
-function ReviewDetailModal({ review, onClose }) {
-  const [detail, setDetail] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
-  const [lbIdx, setLbIdx] = React.useState(null);
-
-  React.useEffect(() => {
-    reviewApi
-      .getDetail(review.reviewId)
-      .then((d) => setDetail(d))
-      .catch(() => setDetail(null))
-      .finally(() => setLoading(false));
-  }, [review.reviewId]);
-
-  const data = detail || review;
-  const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', 'image'];
-  const imageFiles = (data.files ?? []).filter((f) =>
-    IMAGE_EXTS.includes((f.fileType || '').toLowerCase())
-  );
-  const imageUrls = imageFiles.map((f) => {
-    const raw = f.viewUrl || f.fileUrl || f.url || '';
-    return raw.startsWith('/files') ? `/api${raw}` : raw;
-  });
-
-  const stars = data.rating ?? 0;
-
+function ReviewCard({ review }) {
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9500,
-        background: 'rgba(0,0,0,0.65)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 20,
-          width: '100%',
-          maxWidth: 640,
-          maxHeight: '88vh',
-          overflowY: 'auto',
-          position: 'relative',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.28)',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* ── 헤더 ── */}
-        <div
-          style={{
-            padding: '22px 28px 18px',
-            borderBottom: '1px solid #f0ece5',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {/* 제목 */}
-            {data.reviewTitle ? (
-              <h2
-                style={{
-                  margin: '0 0 10px',
-                  fontSize: 18,
-                  fontWeight: 800,
-                  color: '#3a2e20',
-                  lineHeight: 1.4,
-                }}
-              >
-                {data.reviewTitle}
-              </h2>
-            ) : (
-              <h2
-                style={{
-                  margin: '0 0 10px',
-                  fontSize: 18,
-                  fontWeight: 800,
-                  color: '#9a8c70',
-                  lineHeight: 1.4,
-                }}
-              >
-                (제목 없음)
-              </h2>
-            )}
-            {/* 메타 */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                flexWrap: 'wrap',
-              }}
-            >
-              {/* 별점 */}
-              <div style={{ display: 'flex', gap: 2 }}>
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <span
-                    key={s}
-                    style={{
-                      fontSize: 16,
-                      color: s <= stars ? '#f6b93b' : '#e0d8cc',
-                    }}
-                  >
-                    ★
-                  </span>
-                ))}
-                <span
-                  style={{
-                    fontSize: 13,
-                    color: '#ba8037',
-                    marginLeft: 4,
-                    fontWeight: 700,
-                  }}
-                >
-                  {stars}.0
-                </span>
-              </div>
-              <span style={{ color: '#d7cebc', fontSize: 12 }}>|</span>
-              <span style={{ fontSize: 13, color: '#7a6a54', fontWeight: 600 }}>
-                {data.userId || '익명'}
-              </span>
-              <span style={{ color: '#d7cebc', fontSize: 12 }}>|</span>
-              <span style={{ fontSize: 12, color: '#9a8c70' }}>
-                {data.createdAt
-                  ? new Date(data.createdAt).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })
-                  : ''}
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(0,0,0,0.06)',
-              border: 'none',
-              width: 34,
-              height: 34,
-              borderRadius: 8,
-              fontSize: 14,
-              cursor: 'pointer',
-              color: 'rgba(0,0,0,0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              marginLeft: 12,
-            }}
-          >
-            ✕
-          </button>
+    <article className={styles.reviewCard}>
+      {review.thumbnailUrl && (
+        <div className={styles.reviewThumb}>
+          <img src={review.thumbnailUrl} alt="리뷰 이미지" />
         </div>
-
-        {/* ── 본문 ── */}
-        <div
-          style={{
-            padding: '24px 28px 28px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 20,
-          }}
-        >
-          {loading && (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '32px 0',
-                color: '#9a8c70',
-                fontSize: 14,
-              }}
-            >
-              불러오는 중...
-            </div>
-          )}
-
-          {/* 이미지 */}
-          {!loading && imageUrls.length > 0 && (
-            <div>
-              {/* 메인 이미지 */}
-              <div
-                onClick={() => setLbIdx(0)}
-                style={{
-                  width: '100%',
-                  borderRadius: 12,
-                  overflow: 'hidden',
-                  background: '#f5f0e8',
-                  cursor: 'zoom-in',
-                  marginBottom: imageUrls.length > 1 ? 8 : 0,
-                  maxHeight: 340,
-                }}
-              >
-                <img
-                  src={imageUrls[0]}
-                  alt="리뷰 이미지"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    display: 'block',
-                    maxHeight: 340,
-                  }}
-                />
-              </div>
-              {/* 서브 이미지 */}
-              {imageUrls.length > 1 && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {imageUrls.slice(1).map((url, i) => (
-                    <div
-                      key={i}
-                      onClick={() => setLbIdx(i + 1)}
-                      style={{
-                        flex: 1,
-                        maxWidth: 120,
-                        height: 90,
-                        borderRadius: 8,
-                        overflow: 'hidden',
-                        border: '2px solid #e8dfd0',
-                        cursor: 'zoom-in',
-                      }}
-                    >
-                      <img
-                        src={url}
-                        alt=""
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          display: 'block',
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 본문 텍스트 */}
-          {!loading && data.reviewCtnt && (
-            <div
-              style={{
-                fontSize: 15,
-                color: '#4a3a28',
-                lineHeight: 1.9,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                borderTop: imageUrls.length > 0 ? '1px solid #f0ece5' : 'none',
-                paddingTop: imageUrls.length > 0 ? 20 : 0,
-              }}
-            >
-              {data.reviewCtnt}
-            </div>
-          )}
-
-          {/* 내용 없음 */}
-          {!loading && imageUrls.length === 0 && !data.reviewCtnt && (
-            <p
-              style={{
-                margin: 0,
-                color: '#9a8c70',
-                fontSize: 14,
-                textAlign: 'center',
-                padding: '20px 0',
-              }}
-            >
-              작성된 내용이 없습니다.
-            </p>
-          )}
+      )}
+      <div className={styles.reviewBody}>
+        <div className={styles.reviewTop}>
+          <StarRating value={review.rating} size="sm" />
+          <span className={styles.reviewUser}>{review.userId || '익명'}</span>
+          <span className={styles.reviewDate}>
+            {review.createdAt
+              ? new Date(review.createdAt).toLocaleDateString('ko-KR')
+              : ''}
+          </span>
         </div>
+        <h4 className={styles.reviewTitle}>{review.reviewTitle}</h4>
+        <p className={styles.reviewCtnt}>
+          {review.reviewCtnt?.length > 100
+            ? review.reviewCtnt.slice(0, 100) + '…'
+            : review.reviewCtnt}
+        </p>
       </div>
-
-      {/* 라이트박스 */}
-      {lbIdx !== null && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 10000,
-            background: 'rgba(0,0,0,0.95)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-          onClick={() => setLbIdx(null)}
-        >
-          <button
-            onClick={() => setLbIdx(null)}
-            style={{
-              position: 'absolute',
-              top: 16,
-              right: 20,
-              background: 'none',
-              border: 'none',
-              color: '#fff',
-              fontSize: 36,
-              cursor: 'pointer',
-            }}
-          >
-            ×
-          </button>
-          {imageUrls.length > 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setLbIdx((i) => (i - 1 + imageUrls.length) % imageUrls.length);
-              }}
-              style={{
-                position: 'absolute',
-                left: 16,
-                background: 'rgba(255,255,255,0.15)',
-                border: 'none',
-                color: '#fff',
-                fontSize: 28,
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                cursor: 'pointer',
-              }}
-            >
-              ‹
-            </button>
-          )}
-          <img
-            src={imageUrls[lbIdx]}
-            alt=""
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: '90vw',
-              maxHeight: '88vh',
-              objectFit: 'contain',
-              borderRadius: 8,
-            }}
-          />
-          {imageUrls.length > 1 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setLbIdx((i) => (i + 1) % imageUrls.length);
-              }}
-              style={{
-                position: 'absolute',
-                right: 16,
-                background: 'rgba(255,255,255,0.15)',
-                border: 'none',
-                color: '#fff',
-                fontSize: 28,
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                cursor: 'pointer',
-              }}
-            >
-              ›
-            </button>
-          )}
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 20,
-              color: 'rgba(255,255,255,0.6)',
-              fontSize: 13,
-            }}
-          >
-            {lbIdx + 1} / {imageUrls.length}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ReviewCard({ review, currentUserId, onEdit, onDelete }) {
-  const [showDetail, setShowDetail] = React.useState(false);
-  const isOwn = currentUserId && review.userId === currentUserId;
-  return (
-    <>
-      <article
-        className={styles.reviewCard}
-        onClick={() => setShowDetail(true)}
-        style={{ cursor: 'pointer' }}
-      >
-        {review.thumbnailUrl && (
-          <div className={styles.reviewThumb}>
-            <img
-              src={`/api${review.thumbnailUrl}`}
-              alt="리뷰 이미지"
-              onError={(e) => {
-                e.target.parentElement.style.display = 'none';
-              }}
-            />
-          </div>
-        )}
-        <div className={styles.reviewBody}>
-          <div className={styles.reviewTop}>
-            <StarRating value={review.rating} size="sm" />
-            <span className={styles.reviewUser}>{review.userId || '익명'}</span>
-            <span className={styles.reviewDate}>
-              {review.createdAt
-                ? new Date(review.createdAt).toLocaleDateString('ko-KR')
-                : ''}
-            </span>
-            {isOwn && (
-              <div
-                style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  onClick={() => onEdit(review)}
-                  style={{
-                    background: 'none',
-                    border: '1px solid #c9b89a',
-                    color: '#7a6a50',
-                    fontSize: 12,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                  }}
-                >
-                  수정
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDelete(review.reviewId)}
-                  style={{
-                    background: 'none',
-                    border: '1px solid #f5b8b8',
-                    color: '#c05050',
-                    fontSize: 12,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                  }}
-                >
-                  삭제
-                </button>
-              </div>
-            )}
-          </div>
-          <h4 className={styles.reviewTitle}>{review.reviewTitle}</h4>
-          <p className={styles.reviewCtnt}>
-            {review.reviewCtnt?.length > 100
-              ? review.reviewCtnt.slice(0, 100) + '…'
-              : review.reviewCtnt}
-          </p>
-        </div>
-      </article>
-      {showDetail && (
-        <ReviewDetailModal
-          review={review}
-          onClose={() => setShowDetail(false)}
-        />
-      )}
-    </>
+    </article>
   );
 }
 
@@ -1021,7 +55,7 @@ function ImageGallery({ files }) {
   const [active, setActive] = useState(0);
   const images = (files || []).filter((f) => {
     const ext = (f.fileType || '').toLowerCase();
-    return ['.png', '.jpg', '.jpeg', '.gif', '.webp', 'image'].includes(ext);
+    return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
   });
   if (!images.length) {
     return (
@@ -1031,19 +65,12 @@ function ImageGallery({ files }) {
       </div>
     );
   }
-  const getUrl = (img) => {
-    const raw = img.viewUrl || img.fileUrl || img.url || '';
-    return raw.startsWith('/files') ? `/api${raw}` : raw;
-  };
   return (
     <div className={styles.gallery}>
       <div className={styles.galleryMain}>
         <img
-          src={getUrl(images[active])}
+          src={images[active]?.viewUrl || images[active]?.fileUrl}
           alt={`방 사진 ${active + 1}`}
-          onError={(e) => {
-            e.target.style.display = 'none';
-          }}
         />
       </div>
       {images.length > 1 && (
@@ -1055,13 +82,7 @@ function ImageGallery({ files }) {
               onClick={() => setActive(i)}
               type="button"
             >
-              <img
-                src={getUrl(img)}
-                alt={`썸네일 ${i + 1}`}
-                onError={(e) => {
-                  e.target.style.opacity = '0.3';
-                }}
-              />
+              <img src={img.viewUrl || img.fileUrl} alt={`썸네일 ${i + 1}`} />
             </button>
           ))}
         </div>
@@ -1070,7 +91,6 @@ function ImageGallery({ files }) {
   );
 }
 
-// ── 공용공간 미니 카드 ─────────────────────────────────────────────────────────
 function SpaceMiniCard({ space, onClick }) {
   const options = space.spaceOptions
     ? space.spaceOptions
@@ -1118,43 +138,10 @@ function SpaceMiniCard({ space, onClick }) {
 export default function RoomDetail() {
   const { roomId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const {
-    create: createReview,
-    submitting: reviewSubmitting,
-    error: reviewApiError,
-  } = useReviewActions();
-  const [findMenuOpen, setFindMenuOpen] = useState(false);
-  const [reviewEditTarget, setReviewEditTarget] = useState(null);
-
-  // 내 리뷰 삭제
-  const handleDeleteReview = async (reviewId) => {
-    if (!window.confirm('리뷰를 삭제할까요?')) return;
-    try {
-      await reviewApi.remove(reviewId);
-      fetchReviews(reviewPage);
-    } catch (e) {
-      alert(e?.message || '삭제 실패');
-    }
-  };
-
-  // 인라인 리뷰 작성 상태
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [inlineRating, setInlineRating] = useState(0);
-  const [inlineTitle, setInlineTitle] = useState('');
-  const [inlineCtnt, setInlineCtnt] = useState('');
-  const [inlineFiles, setInlineFiles] = useState([]);
-  const [inlinePreviews, setInlinePreviews] = useState([]);
-  const [inlineValidErr, setInlineValidErr] = useState('');
-  const [inlineSuccess, setInlineSuccess] = useState(false);
-  const inlineFileRef = useRef(null);
-  const [inlineHover, setInlineHover] = useState(0);
-  const [permError, setPermError] = useState('');
-  const [tourCreateOpen, setTourCreateOpen] = useState(false);
-  const [tourListOpen, setTourListOpen] = useState(false);
-  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const { user, loading: authLoading } = useAuth(); // ← loading 추가
 
   const [room, setRoom] = useState(null);
+  const [showContractModal, setShowContractModal] = useState(false);
   const [roomLoading, setRoomLoading] = useState(true);
   const [roomError, setRoomError] = useState(null);
 
@@ -1164,7 +151,6 @@ export default function RoomDetail() {
   const [reviewTotalPages, setReviewTotalPages] = useState(1);
   const [reviewLoading, setReviewLoading] = useState(false);
 
-  // 같은 건물 공용공간
   const [spaces, setSpaces] = useState([]);
   const [spacesLoading, setSpacesLoading] = useState(false);
 
@@ -1180,7 +166,6 @@ export default function RoomDetail() {
       .finally(() => setRoomLoading(false));
   }, [roomId]);
 
-  // 방 정보 로드 후 같은 건물 공용공간 조회
   useEffect(() => {
     if (!room?.buildingId) return;
     setSpacesLoading(true);
@@ -1193,7 +178,7 @@ export default function RoomDetail() {
 
   useEffect(() => {
     if (!roomId) return;
-    fetch(`/api/reviews/rooms/${roomId}/summary`)
+    fetch(`/reviews/rooms/${roomId}/summary`)
       .then((r) => r.json())
       .then((r) => setReviewSummary(r.data))
       .catch(() => {});
@@ -1205,7 +190,7 @@ export default function RoomDetail() {
       setReviewLoading(true);
       try {
         const res = await fetch(
-          `/api/reviews?roomId=${roomId}&page=${p - 1}&size=5&sort=reviewId&direction=DESC`
+          `/reviews?roomId=${roomId}&page=${p - 1}&size=5&sort=reviewId&direction=DESC`
         );
         const json = await res.json();
         const data = json.data;
@@ -1224,73 +209,29 @@ export default function RoomDetail() {
     fetchReviews(reviewPage);
   }, [fetchReviews, reviewPage]);
 
-  // 방 예약 버튼 클릭 → 팝업 오픈
   const handleTourReservation = () => {
-    setTourCreateOpen(true);
+    navigate(
+      `/tour-reservation?roomId=${roomId}&buildingId=${room?.buildingId}&roomNo=${room?.roomNo}`
+    );
   };
 
-  // 리뷰 작성 → 인라인 폼 표시
-  const handleWriteReview = () => {
-    setPermError('');
+  // 계약하기 버튼
+  const handleContractApply = () => {
+    if (authLoading) return; // ← 인증 로딩 중이면 무시
     if (!user) {
       navigate('/login', { state: { from: `/rooms/${roomId}` } });
       return;
     }
-    if (user.userRole !== 'tenant') {
-      setPermError('리뷰 작성은 입주자(TENANT) 권한이 필요합니다.');
+    navigate(`/contracts/apply?roomId=${roomId}`);
+  };
+
+  const handleWriteReview = () => {
+    if (!user) {
+      navigate('/login', { state: { from: `/rooms/${roomId}` } });
       return;
     }
-    setShowReviewForm(true);
-    setInlineSuccess(false);
-    setTimeout(() => {
-      document
-        .querySelector('[data-review-form]')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 50);
+    navigate(`/reviews/write?roomId=${roomId}`);
   };
-
-  const handleInlineFileChange = (e) => {
-    const selected = Array.from(e.target.files);
-    const merged = [...inlineFiles, ...selected].slice(0, 5);
-    setInlineFiles(merged);
-    setInlinePreviews(merged.map((f) => URL.createObjectURL(f)));
-    e.target.value = '';
-  };
-
-  const handleInlineSubmit = async (e) => {
-    e.preventDefault();
-    setInlineValidErr('');
-    if (inlineRating === 0) {
-      setInlineValidErr('별점을 선택해 주세요.');
-      return;
-    }
-    const ok = await createReview(
-      {
-        roomId: Number(roomId),
-        rating: inlineRating,
-        reviewTitle: inlineTitle,
-        reviewCtnt: inlineCtnt,
-      },
-      inlineFiles
-    );
-    if (ok) {
-      setInlineSuccess(true);
-      setShowReviewForm(false);
-      setInlineRating(0);
-      setInlineTitle('');
-      setInlineCtnt('');
-      setInlineFiles([]);
-      setInlinePreviews([]);
-      fetchReviews(1);
-    }
-  };
-
-  useEffect(() => {
-    if (!findMenuOpen) return;
-    const close = () => setFindMenuOpen(false);
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
-  }, [findMenuOpen]);
 
   const rentTypeLabel = { monthly_rent: '월세', stay: '단기' };
   const statusLabel = {
@@ -1340,121 +281,18 @@ export default function RoomDetail() {
 
       {/* 브레드크럼 */}
       <div className={styles.breadcrumb}>
-        <div
-          className={styles.breadcrumbInner}
-          style={{ justifyContent: 'space-between' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <button className={styles.bcBtn} onClick={() => navigate('/')}>
-              홈
-            </button>
-            <span className={styles.bcSep}>›</span>
-            <button className={styles.bcBtn} onClick={() => navigate('/rooms')}>
-              방 찾기
-            </button>
-            <span className={styles.bcSep}>›</span>
-            <span className={styles.bcCurrent}>
-              {room.buildingNm} {room.roomNo}호
-            </span>
-          </div>
-
-          {/* 방 찾기 드롭다운 */}
-          <div
-            style={{ position: 'relative' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              style={{
-                background: '#ba8037',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '7px 14px',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-              onClick={() => setFindMenuOpen((v) => !v)}
-              type="button"
-            >
-              🔍 방 찾기&nbsp;
-              <span>{findMenuOpen ? '▲' : '▼'}</span>
-            </button>
-            {findMenuOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: 'calc(100% + 6px)',
-                  background: '#fff',
-                  border: '1px solid #e8dfd0',
-                  borderRadius: '10px',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                  minWidth: '160px',
-                  zIndex: 100,
-                  overflow: 'hidden',
-                }}
-              >
-                <button
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '10px 16px',
-                    border: 'none',
-                    background: 'none',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                  }}
-                  onClick={() => {
-                    setFindMenuOpen(false);
-                    navigate('/rooms');
-                  }}
-                >
-                  🏠 방 목록 전체
-                </button>
-                <button
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '10px 16px',
-                    border: 'none',
-                    background: 'none',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                  }}
-                  onClick={() => {
-                    setFindMenuOpen(false);
-                    navigate('/rooms', { state: { tab: 'buildings' } });
-                  }}
-                >
-                  🏢 건물 목록
-                </button>
-                <button
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '10px 16px',
-                    border: 'none',
-                    background: 'none',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                  }}
-                  onClick={() => {
-                    setFindMenuOpen(false);
-                    navigate('/rooms', { state: { tab: 'spaces' } });
-                  }}
-                >
-                  🛋️ 공용공간 목록
-                </button>
-              </div>
-            )}
-          </div>
+        <div className={styles.breadcrumbInner}>
+          <button className={styles.bcBtn} onClick={() => navigate('/')}>
+            홈
+          </button>
+          <span className={styles.bcSep}>›</span>
+          <button className={styles.bcBtn} onClick={() => navigate('/rooms')}>
+            방 찾기
+          </button>
+          <span className={styles.bcSep}>›</span>
+          <span className={styles.bcCurrent}>
+            {room.buildingNm} {room.roomNo}호
+          </span>
         </div>
       </div>
 
@@ -1560,73 +398,28 @@ export default function RoomDetail() {
               </div>
             )}
 
-            {/* ── 방 예약 버튼 ── */}
-            {room?.roomSt !== 'available' ? (
-              <>
-                <button
-                  className={styles.tourReservationBtn}
-                  type="button"
-                  disabled
-                  style={{ opacity: 0.45, cursor: 'not-allowed' }}
-                >
-                  📅 방 사전 방문 예약하기
-                </button>
-                <p
-                  className={styles.tourReservationHint}
-                  style={{ color: '#c0392b' }}
-                >
-                  현재 이 방은 예약이 불가합니다 (
-                  {{
-                    reserved: '예약 중',
-                    contracted: '계약 중',
-                    repair: '수리 중',
-                    cleaning: '청소 중',
-                  }[room?.roomSt] || room?.roomSt}
-                  )
-                </p>
-                {/* 계약하기 버튼 — 비활성 */}
-                <button
-                  className={styles.contractBtn}
-                  type="button"
-                  disabled
-                  style={{ opacity: 0.45, cursor: 'not-allowed' }}
-                >
-                  📝 계약하기
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  className={styles.tourReservationBtn}
-                  onClick={handleTourReservation}
-                  type="button"
-                >
-                  📅 방 사전 방문 예약하기
-                </button>
-                <p className={styles.tourReservationHint}>
-                  방문 예약 후 현장에서 직접 확인해보세요
-                </p>
-                {/* 계약하기 버튼 — 활성 */}
-                <button
-                  className={styles.contractBtn}
-                  type="button"
-                  onClick={() => {
-                    if (!user) {
-                      navigate('/login', {
-                        state: { from: `/rooms/${roomId}` },
-                      });
-                      return;
-                    }
-                    setContractModalOpen(true);
-                  }}
-                >
-                  📝 계약하기
-                </button>
-                <p className={styles.tourReservationHint}>
-                  계약 신청 후 관리자 검토를 거쳐 확정됩니다
-                </p>
-              </>
+            {/* ── 계약하기 버튼 ── */}
+            {room.roomSt === 'available' && (
+              <button
+                className={styles.contractBtn}
+                onClick={() => setShowContractModal(true)}
+                type="button"
+              >
+                📋 계약하기
+              </button>
             )}
+
+            {/* ── 방 예약 버튼 ── */}
+            <button
+              className={styles.tourReservationBtn}
+              onClick={handleTourReservation}
+              type="button"
+            >
+              📅 방 사전 방문 예약하기
+            </button>
+            <p className={styles.tourReservationHint}>
+              방문 예약 후 현장에서 직접 확인해보세요
+            </p>
           </div>
         </div>
 
@@ -1695,361 +488,13 @@ export default function RoomDetail() {
                 </div>
               )}
             </div>
-            {!showReviewForm && (
-              <button
-                className={styles.writeReviewBtn}
-                onClick={handleWriteReview}
-              >
-                ✏️ 리뷰 작성
-              </button>
-            )}
+            <button
+              className={styles.writeReviewBtn}
+              onClick={handleWriteReview}
+            >
+              ✏️ 리뷰 작성
+            </button>
           </div>
-
-          {/* 권한 에러 메시지 */}
-          {permError && (
-            <div
-              style={{
-                background: '#fff5f5',
-                border: '1px solid #feb2b2',
-                borderRadius: '8px',
-                padding: '12px 16px',
-                marginBottom: '16px',
-                color: '#c53030',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              🚫 {permError}
-            </div>
-          )}
-          {showReviewForm && (
-            <div
-              data-review-form
-              style={{
-                background: '#fdf8f2',
-                border: '1px solid #e8dfd0',
-                borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '20px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '16px',
-                }}
-              >
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    color: '#3a2e20',
-                  }}
-                >
-                  ✏️ 리뷰 작성
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setShowReviewForm(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '18px',
-                    color: '#9a8c70',
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-              <form onSubmit={handleInlineSubmit}>
-                {/* 별점 */}
-                <div style={{ marginBottom: '16px' }}>
-                  <div
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: '#5a4a30',
-                      marginBottom: '8px',
-                    }}
-                  >
-                    별점 <span style={{ color: '#e53e3e' }}>*</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '28px',
-                          color:
-                            s <= (inlineHover || inlineRating)
-                              ? '#f6b93b'
-                              : '#d7cebc',
-                          padding: '0',
-                        }}
-                        onMouseEnter={() => setInlineHover(s)}
-                        onMouseLeave={() => setInlineHover(0)}
-                        onClick={() => setInlineRating(s)}
-                      >
-                        ★
-                      </button>
-                    ))}
-                    {inlineRating > 0 && (
-                      <span
-                        style={{
-                          fontSize: '13px',
-                          color: '#ba8037',
-                          marginLeft: '8px',
-                          lineHeight: '36px',
-                        }}
-                      >
-                        {
-                          [
-                            '',
-                            '별로예요',
-                            '그저 그래요',
-                            '보통이에요',
-                            '좋아요',
-                            '최고예요',
-                          ][inlineRating]
-                        }
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {/* 제목 */}
-                <div style={{ marginBottom: '12px' }}>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: '#5a4a30',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    제목
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="제목을 입력하세요 (선택)"
-                    maxLength={100}
-                    value={inlineTitle}
-                    onChange={(e) => setInlineTitle(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #e8dfd0',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      background: '#fff',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-                {/* 내용 */}
-                <div style={{ marginBottom: '12px' }}>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: '#5a4a30',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    내용
-                  </label>
-                  <textarea
-                    placeholder="리뷰 내용을 입력하세요 (선택)"
-                    maxLength={3000}
-                    rows={4}
-                    value={inlineCtnt}
-                    onChange={(e) => setInlineCtnt(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #e8dfd0',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      background: '#fff',
-                      resize: 'vertical',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-                {/* 사진 */}
-                <div style={{ marginBottom: '16px' }}>
-                  <div
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: '#5a4a30',
-                      marginBottom: '8px',
-                    }}
-                  >
-                    사진 ({inlineFiles.length}/5)
-                  </div>
-                  <div
-                    style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}
-                  >
-                    {inlinePreviews.map((url, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          position: 'relative',
-                          width: '72px',
-                          height: '72px',
-                        }}
-                      >
-                        <img
-                          src={url}
-                          alt=""
-                          style={{
-                            width: '72px',
-                            height: '72px',
-                            objectFit: 'cover',
-                            borderRadius: '6px',
-                            border: '1px solid #e8dfd0',
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = inlineFiles.filter(
-                              (_, i) => i !== idx
-                            );
-                            setInlineFiles(updated);
-                            setInlinePreviews(
-                              updated.map((f) => URL.createObjectURL(f))
-                            );
-                          }}
-                          style={{
-                            position: 'absolute',
-                            top: '-6px',
-                            right: '-6px',
-                            background: '#3a2e20',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '18px',
-                            height: '18px',
-                            cursor: 'pointer',
-                            fontSize: '11px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                    {inlineFiles.length < 5 && (
-                      <button
-                        type="button"
-                        onClick={() => inlineFileRef.current?.click()}
-                        style={{
-                          width: '72px',
-                          height: '72px',
-                          border: '2px dashed #d7cebc',
-                          borderRadius: '6px',
-                          background: 'none',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '2px',
-                          color: '#9a8c70',
-                          fontSize: '11px',
-                        }}
-                      >
-                        <span style={{ fontSize: '20px' }}>＋</span>사진 추가
-                      </button>
-                    )}
-                  </div>
-                  <input
-                    ref={inlineFileRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    style={{ display: 'none' }}
-                    onChange={handleInlineFileChange}
-                  />
-                </div>
-                {(inlineValidErr || reviewApiError) && (
-                  <p
-                    style={{
-                      color: '#e53e3e',
-                      fontSize: '13px',
-                      marginBottom: '12px',
-                    }}
-                  >
-                    {inlineValidErr || reviewApiError}
-                  </p>
-                )}
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    type="submit"
-                    disabled={reviewSubmitting}
-                    style={{
-                      background: '#ba8037',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '10px 24px',
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      cursor: reviewSubmitting ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    {reviewSubmitting ? '저장 중...' : '리뷰 등록'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowReviewForm(false)}
-                    style={{
-                      background: '#f5f0e8',
-                      color: '#5a4a30',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '10px 20px',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    취소
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          {inlineSuccess && (
-            <div
-              style={{
-                background: '#f0fdf4',
-                border: '1px solid #86efac',
-                borderRadius: '8px',
-                padding: '12px 16px',
-                marginBottom: '16px',
-                color: '#166534',
-                fontSize: '14px',
-              }}
-            >
-              ✅ 리뷰가 등록되었습니다!
-            </div>
-          )}
 
           {reviewLoading && (
             <div className={styles.reviewLoadingRow}>
@@ -2070,13 +515,7 @@ export default function RoomDetail() {
           {!reviewLoading && reviews.length > 0 && (
             <div className={styles.reviewList}>
               {reviews.map((r) => (
-                <ReviewCard
-                  key={r.reviewId}
-                  review={r}
-                  currentUserId={user?.userId}
-                  onEdit={(rev) => setReviewEditTarget(rev)}
-                  onDelete={handleDeleteReview}
-                />
+                <ReviewCard key={r.reviewId} review={r} />
               ))}
             </div>
           )}
@@ -2114,735 +553,101 @@ export default function RoomDetail() {
 
       <Footer />
 
-      {/* ── 사전방문 예약 팝업 ── */}
-      <Modal
-        open={tourCreateOpen}
-        onClose={() => setTourCreateOpen(false)}
-        title="📅 사전 방문 예약"
-        size="lg"
-      >
-        <TourReservationCreate
-          inlineMode
-          initRoomId={String(roomId)}
-          initBuildingId={room?.buildingId ? Number(room.buildingId) : null}
-          onSuccess={() => {
-            setTourCreateOpen(false);
-            setTourListOpen(true);
-          }}
-          onClose={() => setTourCreateOpen(false)}
-          onGoList={() => {
-            setTourCreateOpen(false);
-            setTourListOpen(true);
-          }}
-        />
-      </Modal>
-
-      {/* ── 사전방문 조회 팝업 ── */}
-      <Modal
-        open={tourListOpen}
-        onClose={() => setTourListOpen(false)}
-        title="📋 방문 예약 조회"
-        size="lg"
-        headerAction={
-          <button
-            onClick={() => {
-              setTourListOpen(false);
-              setTourCreateOpen(true);
-            }}
-            style={{
-              background: 'linear-gradient(135deg, #c4923f, #ba8037)',
-              border: 'none',
-              color: '#fff',
-              fontSize: 13,
-              fontWeight: 700,
-              padding: '7px 14px',
-              borderRadius: 8,
-              cursor: 'pointer',
-            }}
-          >
-            + 예약 생성
-          </button>
-        }
-      >
-        <TourReservationList
-          inlineMode
-          onGoCreate={() => {
-            setTourListOpen(false);
-            setTourCreateOpen(true);
-          }}
-          onClose={() => setTourListOpen(false)}
-        />
-      </Modal>
-
-      {/* ── 리뷰 수정 팝업 ── */}
-      {reviewEditTarget && (
-        <ReviewEditModal
-          review={reviewEditTarget}
-          onClose={() => setReviewEditTarget(null)}
-          onSuccess={() => {
-            setReviewEditTarget(null);
-            fetchReviews(reviewPage);
-          }}
-        />
-      )}
-
-      {/* ── 계약 신청 팝업 ── */}
-      {contractModalOpen && (
-        <ContractRequestModal
-          room={room}
-          onClose={() => setContractModalOpen(false)}
-          onSuccess={() => {
-            setContractModalOpen(false);
-            // TODO: 계약 API 연결 후 추가 동작 (예: 마이페이지 이동 등)
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ContractRequestModal
-//
-// ▸ props
-//   room      : 현재 방 정보 객체 (roomId, buildingNm, roomNo, floor,
-//               rentPrice, deposit, manageFee, rentType 등)
-//   onClose   : 모달 닫기 핸들러
-//   onSuccess : 신청 완료 후 콜백 (API 연결 전에는 빈 함수로 사용)
-//
-// ▸ TODO (API 연결 시 작업 목록)
-//   1. contractApi.js 에서 createContract(formData) 구현
-//      → POST /contracts  (multipart/form-data)
-//      → 필드: roomId, contractStart, contractEnd, paymentDay,
-//              lessorNm, lessorTel, lessorAddr, lessorRrn, signFile
-//   2. handleSubmit 내부 "// TODO: API 호출" 주석 부분을 실제 호출로 교체
-//      예시:
-//        import { contractApi } from '../../contract/api/contractApi';
-//        const fd = new FormData();
-//        fd.append('roomId', room.roomId);
-//        fd.append('contractStart', contractStart);
-//        fd.append('contractEnd', contractEnd);
-//        fd.append('paymentDay', paymentDay);
-//        fd.append('lessorNm', lessorNm);
-//        fd.append('lessorTel', lessorTel);
-//        fd.append('lessorAddr', lessorAddr);
-//        fd.append('lessorRrn', lessorRrn);
-//        fd.append('signFile', signFile);
-//        await contractApi.createContract(fd);
-//   3. 성공 후 onSuccess() 콜백에서 마이페이지 이동 등 UX 추가
-// ─────────────────────────────────────────────────────────────────────────────
-function ContractRequestModal({ room, onClose, onSuccess }) {
-  const today = new Date().toISOString().slice(0, 10);
-
-  // ── 폼 상태 ──
-  const [contractStart, setContractStart] = React.useState(today);
-  const [contractEnd, setContractEnd] = React.useState('');
-  const [paymentDay, setPaymentDay] = React.useState('10');
-  const [lessorNm, setLessorNm] = React.useState('');
-  const [lessorTel, setLessorTel] = React.useState('');
-  const [lessorAddr, setLessorAddr] = React.useState('');
-  const [lessorRrn, setLessorRrn] = React.useState('');
-  const [signFile, setSignFile] = React.useState(null);
-  const [signPreview, setSignPreview] = React.useState(null);
-  const signFileRef = React.useRef(null);
-
-  // ── UI 상태 ──
-  const [submitting, setSubmitting] = React.useState(false);
-  const [err, setErr] = React.useState('');
-  const [success, setSuccess] = React.useState(false);
-
-  // 서명 파일 선택
-  const handleSignFile = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setSignFile(file);
-    setSignPreview(URL.createObjectURL(file));
-    e.target.value = '';
-  };
-
-  // 유효성 검사
-  const validate = () => {
-    if (!contractStart) return '계약 시작일을 입력해 주세요.';
-    if (!contractEnd) return '계약 종료일을 입력해 주세요.';
-    if (contractEnd <= contractStart)
-      return '계약 종료일은 시작일보다 이후여야 합니다.';
-    const day = Number(paymentDay);
-    if (!paymentDay || isNaN(day) || day < 1 || day > 28)
-      return '납부일은 1 ~ 28 사이의 숫자로 입력해 주세요.';
-    if (!lessorNm.trim()) return '임대인 성명을 입력해 주세요.';
-    if (!lessorTel.trim()) return '임대인 연락처를 입력해 주세요.';
-    if (!lessorAddr.trim()) return '임대인 주소를 입력해 주세요.';
-    if (!lessorRrn.trim()) return '임대인 주민등록번호를 입력해 주세요.';
-    if (!signFile) return '서명 이미지를 첨부해 주세요.';
-    return '';
-  };
-
-  // 제출
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validErr = validate();
-    if (validErr) {
-      setErr(validErr);
-      return;
-    }
-    setErr('');
-    setSubmitting(true);
-
-    try {
-      // ────────────────────────────────────────────────────
-      // TODO: API 연결 시 아래 주석을 해제하고 실제 호출로 교체
-      //
-      // const fd = new FormData();
-      // fd.append('roomId',        room.roomId);
-      // fd.append('contractStart', contractStart);
-      // fd.append('contractEnd',   contractEnd);
-      // fd.append('paymentDay',    paymentDay);
-      // fd.append('lessorNm',      lessorNm.trim());
-      // fd.append('lessorTel',     lessorTel.trim());
-      // fd.append('lessorAddr',    lessorAddr.trim());
-      // fd.append('lessorRrn',     lessorRrn.trim());
-      // fd.append('signFile',      signFile);
-      // await contractApi.createContract(fd);
-      //
-      // contractApi.createContract 구현 위치:
-      //   src/features/contract/api/contractApi.js
-      // ────────────────────────────────────────────────────
-
-      // API 연결 전 임시: 0.8초 딜레이 후 성공 처리
-      await new Promise((r) => setTimeout(r, 800));
-
-      setSuccess(true);
-    } catch (apiErr) {
-      setErr(
-        apiErr?.message || '계약 신청에 실패했습니다. 다시 시도해 주세요.'
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // ── 공통 스타일 ──
-  const inputSt = {
-    width: '100%',
-    padding: '10px 14px',
-    border: '1.5px solid #e8dfd0',
-    borderRadius: 10,
-    fontSize: 14,
-    boxSizing: 'border-box',
-    background: '#faf7f3',
-    fontFamily: 'inherit',
-    outline: 'none',
-    color: '#3a2e20',
-  };
-  const labelSt = {
-    display: 'block',
-    fontSize: 13,
-    fontWeight: 700,
-    color: '#5a4a30',
-    marginBottom: 6,
-  };
-  const rentTypeMap = { monthly_rent: '월세', stay: '단기 숙박' };
-
-  // ── 렌더 ──
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9000,
-        background: 'rgba(0,0,0,0.55)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 20,
-          width: '100%',
-          maxWidth: 560,
-          maxHeight: '94vh',
-          overflowY: 'auto',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.22)',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* ── 헤더 ── */}
+      {/* ── 계약 확인 모달 ── */}
+      {showContractModal && (
         <div
           style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(11,14,18,0.5)',
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '22px 26px 16px',
-            borderBottom: '1px solid #f0ece5',
-            flexShrink: 0,
-            background: 'linear-gradient(135deg, #fdf8f2, #fff)',
-            borderRadius: '20px 20px 0 0',
+            justifyContent: 'center',
+            padding: '16px',
           }}
+          onClick={() => setShowContractModal(false)}
         >
-          <div>
-            <h3
-              style={{
-                margin: 0,
-                fontSize: 18,
-                fontWeight: 800,
-                color: '#3a2e20',
-              }}
-            >
-              📝 계약 신청
-            </h3>
-            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#9a8c70' }}>
-              신청 후 관리자 검토를 거쳐 계약이 확정됩니다
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'rgba(0,0,0,0.06)',
-              border: 'none',
-              width: 34,
-              height: 34,
-              borderRadius: 8,
-              fontSize: 15,
-              cursor: 'pointer',
-              color: 'rgba(0,0,0,0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* ── 성공 화면 ── */}
-        {success ? (
           <div
             style={{
-              padding: '48px 28px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 16,
+              background: '#fff',
+              borderRadius: '20px',
+              padding: '36px 40px',
+              maxWidth: '480px',
+              width: '100%',
+              boxShadow: '0 20px 60px rgba(11,14,18,0.2)',
               textAlign: 'center',
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ fontSize: 60 }}>🎉</div>
-            <h4
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
+            <h2
               style={{
-                margin: 0,
-                fontSize: 20,
-                fontWeight: 800,
-                color: '#3a2e20',
+                margin: '0 0 10px',
+                fontSize: '22px',
+                fontWeight: 900,
+                color: '#1a1612',
               }}
             >
-              계약 신청이 완료되었습니다!
-            </h4>
+              계약 신청
+            </h2>
             <p
               style={{
-                margin: 0,
-                fontSize: 14,
-                color: '#7a6a50',
-                lineHeight: 1.8,
+                margin: '0 0 24px',
+                fontSize: '14px',
+                color: '#5a5040',
+                lineHeight: '1.7',
               }}
             >
-              입력하신 정보를 바탕으로 관리자가 검토 후<br />
-              연락드릴 예정입니다.
+              <strong>{room.buildingNm}</strong>의{' '}
+              <strong>{room.roomNo}호</strong>를 계약하시겠습니까?
               <br />
-              <span style={{ color: '#ba8037', fontWeight: 600 }}>
-                마이페이지 › 계약 내역
+              <span style={{ fontSize: '12px', color: '#9a8c70' }}>
+                보증금 {Number(room.deposit || 0).toLocaleString()}원 · 월세{' '}
+                {Number(room.rentPrice || 0).toLocaleString()}원
               </span>
-              에서 진행 현황을 확인하세요.
             </p>
-            <button
-              onClick={() => {
-                onSuccess?.();
-                onClose();
-              }}
-              style={{
-                marginTop: 8,
-                background: 'linear-gradient(135deg, #c4923f, #ba8037)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 10,
-                padding: '13px 36px',
-                fontSize: 15,
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(186,128,55,0.35)',
-              }}
-            >
-              확인
-            </button>
-          </div>
-        ) : (
-          /* ── 입력 폼 ── */
-          <form
-            onSubmit={handleSubmit}
-            style={{
-              padding: '22px 26px 28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 20,
-            }}
-          >
-            {/* 방 정보 요약 카드 */}
             <div
-              style={{
-                background: 'linear-gradient(135deg, #fdf8f2, #fef9f4)',
-                borderRadius: 12,
-                padding: '16px 18px',
-                border: '1px solid #f0e8d8',
-              }}
+              style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}
             >
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#3a2e20',
-                }}
-              >
-                🏠 {room.buildingNm} &nbsp;·&nbsp; {room.roomNo}호 {room.floor}
-                층
-              </p>
-              <p style={{ margin: '6px 0 0', fontSize: 13, color: '#7a6a50' }}>
-                {rentTypeMap[room.rentType] || room.rentType} &nbsp;|&nbsp; 월{' '}
-                <strong style={{ color: '#ba8037' }}>
-                  {Number(room.rentPrice).toLocaleString()}원
-                </strong>
-                {room.deposit > 0 && (
-                  <>
-                    {' '}
-                    &nbsp;·&nbsp; 보증금 {Number(room.deposit).toLocaleString()}
-                    원
-                  </>
-                )}
-                {room.manageFee > 0 && (
-                  <>
-                    {' '}
-                    &nbsp;·&nbsp; 관리비{' '}
-                    {Number(room.manageFee).toLocaleString()}원
-                  </>
-                )}
-              </p>
-            </div>
-
-            {/* ── 계약 기간 ── */}
-            <div>
-              <p style={{ ...labelSt, marginBottom: 10 }}>
-                계약 기간 <span style={{ color: '#e53e3e' }}>*</span>
-              </p>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <input
-                  type="date"
-                  value={contractStart}
-                  min={today}
-                  onChange={(e) => setContractStart(e.target.value)}
-                  style={{ ...inputSt, flex: 1 }}
-                  required
-                />
-                <span
-                  style={{ color: '#9a8c70', fontWeight: 600, flexShrink: 0 }}
-                >
-                  ~
-                </span>
-                <input
-                  type="date"
-                  value={contractEnd}
-                  min={contractStart || today}
-                  onChange={(e) => setContractEnd(e.target.value)}
-                  style={{ ...inputSt, flex: 1 }}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* ── 월 납부일 ── */}
-            <div>
-              <label style={labelSt}>
-                월 납부일 <span style={{ color: '#e53e3e' }}>*</span>
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="number"
-                  min={1}
-                  max={28}
-                  placeholder="10"
-                  value={paymentDay}
-                  onChange={(e) => setPaymentDay(e.target.value)}
-                  style={{ ...inputSt, width: 100 }}
-                  required
-                />
-                <span style={{ fontSize: 14, color: '#7a6a50' }}>
-                  일 (1~28)
-                </span>
-              </div>
-            </div>
-
-            {/* ── 임대인 정보 구분선 ── */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                color: '#9a8c70',
-                fontSize: 12,
-              }}
-            >
-              <div style={{ flex: 1, height: 1, background: '#f0e8d8' }} />
-              <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
-                임대인 정보
-              </span>
-              <div style={{ flex: 1, height: 1, background: '#f0e8d8' }} />
-            </div>
-
-            {/* ── 임대인 성명 ── */}
-            <div>
-              <label style={labelSt}>
-                임대인 성명 <span style={{ color: '#e53e3e' }}>*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="임대인 이름을 입력하세요"
-                value={lessorNm}
-                onChange={(e) => setLessorNm(e.target.value)}
-                style={inputSt}
-                required
-              />
-            </div>
-
-            {/* ── 임대인 연락처 ── */}
-            <div>
-              <label style={labelSt}>
-                임대인 연락처 <span style={{ color: '#e53e3e' }}>*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="010-0000-0000"
-                value={lessorTel}
-                onChange={(e) => setLessorTel(e.target.value)}
-                style={inputSt}
-                required
-              />
-            </div>
-
-            {/* ── 임대인 주소 ── */}
-            <div>
-              <label style={labelSt}>
-                임대인 주소 <span style={{ color: '#e53e3e' }}>*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="임대인 주소를 입력하세요"
-                value={lessorAddr}
-                onChange={(e) => setLessorAddr(e.target.value)}
-                style={inputSt}
-                required
-              />
-            </div>
-
-            {/* ── 임대인 주민등록번호 ── */}
-            <div>
-              <label style={labelSt}>
-                임대인 주민등록번호 <span style={{ color: '#e53e3e' }}>*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="000000-0000000"
-                value={lessorRrn}
-                onChange={(e) => setLessorRrn(e.target.value)}
-                style={inputSt}
-                required
-              />
-              <p style={{ margin: '5px 0 0', fontSize: 11, color: '#9a8c70' }}>
-                개인정보는 계약 목적으로만 사용되며 안전하게 보호됩니다.
-              </p>
-            </div>
-
-            {/* ── 서명 이미지 ── */}
-            <div>
-              <label style={labelSt}>
-                서명 이미지 <span style={{ color: '#e53e3e' }}>*</span>
-              </label>
-              <div
-                onClick={() => signFileRef.current?.click()}
-                style={{
-                  border: `2px dashed ${signFile ? '#ba8037' : '#d7cebc'}`,
-                  borderRadius: 12,
-                  padding: signPreview ? 0 : '24px 16px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  background: signFile ? 'transparent' : '#faf7f3',
-                  overflow: 'hidden',
-                  transition: 'border-color 0.2s',
-                  minHeight: signPreview ? 120 : 'auto',
-                }}
-              >
-                {signPreview ? (
-                  <div style={{ position: 'relative', width: '100%' }}>
-                    <img
-                      src={signPreview}
-                      alt="서명 미리보기"
-                      style={{
-                        width: '100%',
-                        maxHeight: 160,
-                        objectFit: 'contain',
-                        display: 'block',
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSignFile(null);
-                        setSignPreview(null);
-                      }}
-                      style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        background: 'rgba(0,0,0,0.5)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: 26,
-                        height: 26,
-                        cursor: 'pointer',
-                        fontSize: 13,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <span style={{ fontSize: 30 }}>✍️</span>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: 13,
-                        color: '#7a6a50',
-                        fontWeight: 600,
-                      }}
-                    >
-                      서명 이미지를 첨부해 주세요
-                    </p>
-                    <p style={{ margin: 0, fontSize: 11, color: '#9a8c70' }}>
-                      PNG, JPG, JPEG (클릭하여 파일 선택)
-                    </p>
-                  </>
-                )}
-              </div>
-              <input
-                ref={signFileRef}
-                type="file"
-                accept="image/png,image/jpg,image/jpeg"
-                style={{ display: 'none' }}
-                onChange={handleSignFile}
-              />
-            </div>
-
-            {/* ── 에러 메시지 ── */}
-            {err && (
-              <div
-                style={{
-                  background: '#fff5f5',
-                  border: '1px solid #feb2b2',
-                  borderRadius: 8,
-                  padding: '10px 14px',
-                  color: '#c53030',
-                  fontSize: 13,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                🚫 {err}
-              </div>
-            )}
-
-            {/* ── 버튼 영역 ── */}
-            <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
               <button
-                type="button"
-                onClick={onClose}
                 style={{
-                  flex: 1,
-                  padding: '13px 0',
-                  background: '#f5f0e8',
-                  color: '#5a4a30',
-                  border: 'none',
-                  borderRadius: 10,
-                  fontSize: 14,
-                  fontWeight: 600,
+                  padding: '12px 28px',
+                  background: 'none',
+                  border: '1.5px solid #e8e0d4',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  color: '#9a8c70',
                   cursor: 'pointer',
-                  transition: 'background 0.15s',
                 }}
+                onClick={() => setShowContractModal(false)}
               >
                 취소
               </button>
               <button
-                type="submit"
-                disabled={submitting}
                 style={{
-                  flex: 2,
-                  padding: '13px 0',
-                  background: submitting
-                    ? '#d5b870'
-                    : 'linear-gradient(135deg, #c4923f, #ba8037)',
-                  color: '#fff',
+                  padding: '12px 32px',
+                  background: 'linear-gradient(135deg, #d9ad5b, #ba8037)',
                   border: 'none',
-                  borderRadius: 10,
-                  fontSize: 14,
+                  borderRadius: '12px',
+                  fontSize: '15px',
                   fontWeight: 800,
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  boxShadow: submitting
-                    ? 'none'
-                    : '0 4px 14px rgba(186,128,55,0.35)',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
+                  color: '#fff',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(217,173,91,0.35)',
+                }}
+                onClick={() => {
+                  setShowContractModal(false);
+                  handleContractApply();
                 }}
               >
-                {submitting ? (
-                  <>
-                    <span
-                      style={{
-                        width: 14,
-                        height: 14,
-                        border: '2px solid rgba(255,255,255,0.3)',
-                        borderTopColor: '#fff',
-                        borderRadius: '50%',
-                        display: 'inline-block',
-                        animation: 'spin 0.7s linear infinite',
-                      }}
-                    />
-                    처리 중...
-                  </>
-                ) : (
-                  '📝 계약 신청하기'
-                )}
+                계약 신청하러 가기
               </button>
             </div>
-          </form>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
