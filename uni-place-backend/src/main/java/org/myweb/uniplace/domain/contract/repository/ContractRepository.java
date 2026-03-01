@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.contract.repository;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 import org.myweb.uniplace.domain.contract.domain.entity.Contract;
 import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
@@ -40,6 +41,16 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
             @Param("st1") ContractStatus st1,
             @Param("st2") ContractStatus st2
     );
+
+    // ✅ 추가: room + building fetch join (계약서 이미지 생성 시 LAZY 로딩 문제 방지)
+    @Query("""
+        select c
+          from Contract c
+          join fetch c.room r
+          join fetch r.building b
+         where c.contractId = :contractId
+    """)
+    Optional<Contract> findWithRoomAndBuilding(@Param("contractId") Integer contractId);
 
     @Query("""
         select c

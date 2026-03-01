@@ -596,3 +596,144 @@
 .pdfDownload:hover {
   background: linear-gradient(135deg, #d4a24f, #ca9047);
 }
+
+/* ════════════════════════════════════════════════════
+   ✅ 계약서 이미지 뷰어 (ContractImageModal)
+   ════════════════════════════════════════════════════ */
+
+/* 오버레이 */
+.imgOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 12px;
+}
+
+/* 모달 박스 */
+.imgModal {
+  background: #fff;
+  border-radius: 10px;
+  width: min(680px, 96vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+/* 헤더 */
+.imgModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e8dfd0;
+  background: #faf7f2;
+  flex-shrink: 0;
+}
+
+.imgModalTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #3a2e20;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
+}
+
+.imgModalActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.imgDownloadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  background: #3a7bd5;
+  color: #fff;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.imgDownloadBtn:hover {
+  background: #2c62b0;
+}
+
+.imgCloseBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1.5px solid #d0c8b8;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #7a6a55;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.imgCloseBtn:hover {
+  background: #f0e8da;
+  color: #3a2e20;
+}
+
+/* 스크롤 영역 */
+.imgScrollArea {
+  overflow-y: auto;
+  flex: 1;
+  padding: 16px;
+  background: #f5f2ee;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 계약서 이미지 */
+.contractImg {
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: block;
+}
+
+/* 이미지 로드 에러 */
+.imgLoadError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: #9a8c70;
+  font-size: 14px;
+}
+.imgLoadError span {
+  font-size: 40px;
+}
+
+/* ── 계약서 미발급 안내 문구 ── */
+.contractPending {
+  padding: 12px 18px;
+  background: #fef9ec;
+  border: 1.5px dashed #f0d080;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #8a6a20;
+  text-align: center;
+}
