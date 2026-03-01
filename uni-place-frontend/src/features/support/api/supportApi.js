@@ -1,5 +1,5 @@
 // src/features/support/api/supportApi.js
-import { withApiPrefix } from '../../../app/http/apiBase';
+import { fetchWithAuthRetry } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
@@ -26,7 +26,7 @@ async function request(
   path,
   { method = 'GET', body, headers = {}, auth = false } = {}
 ) {
-  const res = await fetch(withApiPrefix(path), {
+  const res = await fetchWithAuthRetry(path, {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ async function request(
     },
     credentials: 'same-origin',
     body: body ? JSON.stringify(body) : undefined,
-  });
+  }, { auth });
 
   if (res.status === 204) return null;
 
@@ -56,7 +56,7 @@ async function request(
     const message =
       (api && api.message) ||
       (payload && payload.message) ||
-      (typeof payload === 'string' ? payload : '요청에 실패했습니다.');
+      (typeof payload === 'string' ? payload : '?붿껌???ㅽ뙣?덉뒿?덈떎.');
     const error = new Error(message);
     error.status = res.status;
     error.errorCode = api?.errorCode;
@@ -173,3 +173,4 @@ export const supportApi = {
   deleteComplain: (compId) =>
     request(`/complains/${compId}`, { method: 'DELETE', auth: true }),
 };
+
