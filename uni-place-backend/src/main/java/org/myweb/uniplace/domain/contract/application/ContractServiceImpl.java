@@ -30,7 +30,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -40,17 +42,13 @@ public class ContractServiceImpl implements ContractService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final FileService fileService;
+    private final ContractImageService contractImageService;
 
     private String currentUserId() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
-        }
-
+        if (authentication == null) throw new BusinessException(ErrorCode.UNAUTHORIZED);
         Object principal = authentication.getPrincipal();
-        if (principal instanceof AuthUser authUser) {
-            return authUser.getUserId();
-        }
+        if (principal instanceof AuthUser authUser) return authUser.getUserId();
         throw new BusinessException(ErrorCode.UNAUTHORIZED);
     }
 
@@ -64,11 +62,8 @@ public class ContractServiceImpl implements ContractService {
         Room room = roomRepository.findById(request.getRoomId())
             .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        if (room.isDeleted()) {
-            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
-        }
+        if (room.isDeleted()) throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
 
-        // active 계약이 기간 내 존재하면 신청 불가 (requested는 미확정이므로 허용)
         boolean overlapped = contractRepository.existsOverlappedContract(
             room.getRoomId(),
             request.getContractStart(),
@@ -76,9 +71,7 @@ public class ContractServiceImpl implements ContractService {
             ContractStatus.active,
             ContractStatus.active
         );
-        if (overlapped) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
-        }
+        if (overlapped) throw new BusinessException(ErrorCode.BAD_REQUEST);
 
         Contract contract = Contract.builder()
             .user(user)
@@ -107,8 +100,7 @@ public class ContractServiceImpl implements ContractService {
                     .files(List.of(request.getSignFile()))
                     .build()
             );
-
-            List<FileResponse> files = (uploadResp != null ? uploadResp.getFiles() : null);
+            List<FileResponse> files = uploadResp != null ? uploadResp.getFiles() : null;
             if (files != null && !files.isEmpty() && files.get(0) != null) {
                 saved.setLessorSignFileId(files.get(0).getFileId());
                 saved = contractRepository.save(saved);
@@ -122,9 +114,7 @@ public class ContractServiceImpl implements ContractService {
     @Transactional(readOnly = true)
     public List<ContractResponse> getMyContracts() {
         String userId = currentUserId();
-        List<Contract> list = contractRepository.findMyContracts(userId);
-
-        return list.stream()
+        return contractRepository.findMyContracts(userId).stream()
             .map(ContractResponse::fromEntity)
             .toList();
     }
@@ -133,19 +123,26 @@ public class ContractServiceImpl implements ContractService {
     @Transactional(readOnly = true)
     public ContractResponse getContractForAdmin(Integer contractId) {
         Contract c = contractRepository.findById(contractId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CONTRACT_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.CONTRACT_NOT_FOUND));
         return ContractResponse.fromEntity(c);
     }
-    
+
     @Override
     public ContractResponse updateContractForAdmin(Integer contractId, ContractUpdateRequest request) {
-        Contract c = contractRepository.findById(contractId)
+        // ✅ fetch join으로 room + building 한 번에 로드 (이미지 생성 시 LAZY 로딩 방지)
+        Contract c = contractRepository.findWithRoomAndBuilding(contractId)
             .orElseThrow(() -> new BusinessException(ErrorCode.CONTRACT_NOT_FOUND));
 
+        boolean justApproved = false;
+
         if (request.getContractStatus() != null) {
+            ContractStatus prevStatus = c.getContractSt();
             c.setContractSt(request.getContractStatus());
-            if (request.getContractStatus() == ContractStatus.active && c.getSignAt() == null) {
+
+            if (request.getContractStatus() == ContractStatus.active
+                    && prevStatus != ContractStatus.active) {
                 c.setSignAt(LocalDateTime.now());
+                justApproved = true;
             }
         }
 
@@ -153,6 +150,7 @@ public class ContractServiceImpl implements ContractService {
             c.setMoveinAt(request.getMoveinAt());
         }
 
+        // 관리자가 직접 파일 업로드하는 경우
         if (request.getPdfFile() != null && !request.getPdfFile().isEmpty()) {
             FileUploadResponse uploadResp = fileService.uploadFiles(
                 FileUploadRequest.builder()
@@ -161,11 +159,27 @@ public class ContractServiceImpl implements ContractService {
                     .files(List.of(request.getPdfFile()))
                     .build()
             );
-
-            List<FileResponse> files = (uploadResp != null ? uploadResp.getFiles() : null);
+            List<FileResponse> files = uploadResp != null ? uploadResp.getFiles() : null;
             if (files != null && !files.isEmpty() && files.get(0) != null) {
                 c.setContractPdfFileId(files.get(0).getFileId());
-                c = contractRepository.save(c);
+            }
+        }
+
+        c = contractRepository.save(c);
+
+        // ✅ 승인 직후 계약서 이미지 자동 생성
+        if (justApproved && c.getContractPdfFileId() == null) {
+            try {
+                Integer imageFileId = contractImageService.generateAndSave(c);
+                if (imageFileId != null) {
+                    c.setContractPdfFileId(imageFileId);
+                    c = contractRepository.save(c);
+                    log.info("[Contract] 계약 #{} 이미지 생성 완료 fileId={}", contractId, imageFileId);
+                } else {
+                    log.warn("[Contract] 계약 #{} 이미지 생성 null 반환 - application.properties 경로 확인 필요", contractId);
+                }
+            } catch (Exception e) {
+                log.error("[Contract] 계약 #{} 이미지 생성 실패 (승인은 완료됨)", contractId, e);
             }
         }
 
@@ -174,7 +188,9 @@ public class ContractServiceImpl implements ContractService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AdminContractSummaryResponse> searchAdminContracts(ContractAdminSearchRequest request, Pageable pageable) {
+    public Page<AdminContractSummaryResponse> searchAdminContracts(
+            ContractAdminSearchRequest request, Pageable pageable) {
+
         Page<Contract> page = contractRepository.searchAdminPage(
             request.getKeyword(),
             request.getContractStatus(),
@@ -191,10 +207,8 @@ public class ContractServiceImpl implements ContractService {
             if (pdfId != null) {
                 try {
                     FileResponse file = fileService.getFile(pdfId);
-                    pdfFileName = (file != null ? file.getOriginFilename() : null);
-                } catch (Exception ignored) {
-                    pdfFileName = null;
-                }
+                    pdfFileName = file != null ? file.getOriginFilename() : null;
+                } catch (Exception ignored) {}
             }
             return AdminContractSummaryResponse.fromEntity(c, pdfFileName);
         });

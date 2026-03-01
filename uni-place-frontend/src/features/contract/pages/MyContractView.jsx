@@ -1,6 +1,6 @@
 // features/contract/pages/MyContractView.jsx
 // 마이페이지 > 마이룸 탭
-// 내 계약서 목록 → 각 계약서마다 방 상세 정보 + 사진 표시
+// 내 계약서 목록 → 각 계약서마다 방 상세 정보 + 사진 표시 + 계약서 이미지 보기
 import React, { useEffect, useState } from 'react';
 import { contractApi } from '../api/contractApi';
 import { propertyApi } from '../../property/api/propertyApi';
@@ -9,7 +9,7 @@ import { getOrCreateDeviceId } from '../../../app/http/tokenStore';
 import { withApiPrefix } from '../../../app/http/apiBase';
 import styles from './MyContractView.module.css';
 
-/* ─── 이미지 갤러리 (RoomDetail과 동일 구조) ───────────────────── */
+/* ─── 이미지 갤러리 ───────────────────────────────────────────── */
 function ImageGallery({ files }) {
   const [active, setActive] = useState(0);
   const images = (files ?? []).filter((f) => {
@@ -76,7 +76,6 @@ function RoomInfoPanel({ room, contract }) {
 
   return (
     <div className={styles.roomPanel}>
-      {/* 방 타이틀 */}
       <div className={styles.roomTitleRow}>
         <h2 className={styles.roomName}>
           {room.buildingNm} {room.roomNo}호 · {room.floor}층
@@ -94,10 +93,8 @@ function RoomInfoPanel({ room, contract }) {
         </span>
       </div>
 
-      {/* 주소 */}
       <p className={styles.buildingAddr}>📍 {room.buildingAddr}</p>
 
-      {/* 계약 기간 배너 */}
       <div className={styles.contractBanner}>
         <span className={styles.contractBannerLabel}>📋 계약 기간</span>
         <span className={styles.contractBannerValue}>
@@ -105,24 +102,23 @@ function RoomInfoPanel({ room, contract }) {
         </span>
         <span
           className={`${styles.contractStatusChip} ${
-            contract.contractStatus === 'ACTIVE'
+            contract.contractStatus === 'active'
               ? styles.chipActive
-              : contract.contractStatus === 'PENDING'
+              : contract.contractStatus === 'requested'
                 ? styles.chipPending
                 : styles.chipExpired
           }`}
         >
-          {contract.contractStatus === 'ACTIVE'
+          {contract.contractStatus === 'active'
             ? '활성'
-            : contract.contractStatus === 'PENDING'
-              ? '대기'
-              : contract.contractStatus === 'EXPIRED'
+            : contract.contractStatus === 'requested'
+              ? '승인대기'
+              : contract.contractStatus === 'ended'
                 ? '만료'
                 : (contract.contractStatus ?? '-')}
         </span>
       </div>
 
-      {/* 금액 */}
       <div className={styles.priceBlock}>
         <div className={styles.priceType}>
           {rentTypeLabel[room.rentType] ?? room.rentType ?? '월세'}
@@ -137,7 +133,6 @@ function RoomInfoPanel({ room, contract }) {
         </div>
       </div>
 
-      {/* 스펙 그리드 */}
       <div className={styles.specGrid}>
         {[
           ['면적', room.roomSize ? `${room.roomSize}㎡` : '-'],
@@ -157,7 +152,6 @@ function RoomInfoPanel({ room, contract }) {
         ))}
       </div>
 
-      {/* 옵션 태그 */}
       {options.length > 0 && (
         <div className={styles.optionBlock}>
           <p className={styles.optionTitle}>포함 옵션</p>
@@ -171,7 +165,6 @@ function RoomInfoPanel({ room, contract }) {
         </div>
       )}
 
-      {/* 방 설명 */}
       {room.roomDesc && (
         <div className={styles.descBlock}>
           <p className={styles.descTitle}>방 소개</p>
@@ -182,19 +175,135 @@ function RoomInfoPanel({ room, contract }) {
   );
 }
 
-/* ─── 계약서 카드 (계약서 1건 + 방 정보 + 이미지) ───────────────── */
+/* ─── 계약서 이미지 뷰어 모달 ────────────────────────────────── */
+function ContractImageModal({ contract, onClose }) {
+  const imgUrl = withApiPrefix(`/files/${contract.contractPdfFileId}/view`);
+  const downloadUrl = withApiPrefix(
+    `/files/${contract.contractPdfFileId}/download`
+  );
+
+  return (
+    <div className={styles.imgOverlay} onClick={onClose}>
+      <div className={styles.imgModal} onClick={(e) => e.stopPropagation()}>
+        {/* 헤더 */}
+        <div className={styles.imgModalHeader}>
+          <span className={styles.imgModalTitle}>
+            📄 계약서 · {contract.buildingNm} {contract.roomNo}호
+          </span>
+          <div className={styles.imgModalActions}>
+            <a
+              className={styles.imgDownloadBtn}
+              href={downloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              ⬇ 저장
+            </a>
+            <button
+              type="button"
+              className={styles.imgCloseBtn}
+              onClick={onClose}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* 계약서 이미지 */}
+        <div className={styles.imgScrollArea}>
+          <img
+            src={imgUrl}
+            alt="계약서"
+            className={styles.contractImg}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextSibling.style.display = 'flex';
+            }}
+          />
+          <div className={styles.imgLoadError} style={{ display: 'none' }}>
+            <span>⚠️</span>
+            <p>계약서 이미지를 불러올 수 없습니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── 비밀번호 확인 모달 ────────────────────────────────────── */
+function PasswordModal({ onConfirm, onClose }) {
+  const [pwdInput, setPwdInput] = useState('');
+  const [pwdError, setPwdError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleConfirm = async () => {
+    if (!pwdInput.trim()) {
+      setPwdError('비밀번호를 입력해주세요.');
+      return;
+    }
+    setLoading(true);
+    setPwdError('');
+    try {
+      const me = await authApi.me();
+      const deviceId = getOrCreateDeviceId();
+      await authApi.login({
+        userEmail: me.userEmail,
+        userPwd: pwdInput,
+        deviceId,
+      });
+      onConfirm();
+    } catch {
+      setPwdError('비밀번호가 올바르지 않습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className={styles.overlay}>
+      <div className={styles.modalBox}>
+        <h3 className={styles.modalTitle}>🔒 본인 확인</h3>
+        <p className={styles.modalDesc}>
+          계약서를 확인하려면 현재 비밀번호를 입력해주세요.
+        </p>
+        <input
+          className={styles.pwdInput}
+          type="password"
+          placeholder="비밀번호"
+          value={pwdInput}
+          onChange={(e) => setPwdInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleConfirm()}
+          autoFocus
+        />
+        {pwdError && <p className={styles.pwdError}>{pwdError}</p>}
+        <div className={styles.modalBtns}>
+          <button type="button" className={styles.btnCancel} onClick={onClose}>
+            취소
+          </button>
+          <button
+            type="button"
+            className={styles.btnConfirm}
+            onClick={handleConfirm}
+            disabled={loading}
+          >
+            {loading ? '확인 중…' : '확인'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── 계약 카드 ──────────────────────────────────────────────── */
 function ContractCard({ contract }) {
   const [room, setRoom] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [roomError, setRoomError] = useState('');
   const [expanded, setExpanded] = useState(true);
 
-  // PDF 뷰어용
-  const [pwdModal, setPwdModal] = useState(false);
-  const [pwdInput, setPwdInput] = useState('');
-  const [pwdError, setPwdError] = useState('');
-  const [pwdLoading, setPwdLoading] = useState(false);
-  const [pdfOpen, setPdfOpen] = useState(false);
+  // 모달 상태
+  const [showPwdModal, setShowPwdModal] = useState(false);
+  const [showImgModal, setShowImgModal] = useState(false);
 
   /* 방 상세 정보 로드 */
   useEffect(() => {
@@ -211,34 +320,12 @@ function ContractCard({ contract }) {
       .finally(() => setRoomLoading(false));
   }, [contract.roomId]);
 
-  const openPwdModal = () => {
-    setPwdInput('');
-    setPwdError('');
-    setPwdModal(true);
-  };
+  const hasContractImage = !!contract.contractPdfFileId;
+  const isActive = contract.contractStatus === 'active';
 
-  const handlePwdConfirm = async () => {
-    if (!pwdInput.trim()) {
-      setPwdError('비밀번호를 입력해주세요.');
-      return;
-    }
-    setPwdLoading(true);
-    setPwdError('');
-    try {
-      const me = await authApi.me();
-      const deviceId = getOrCreateDeviceId();
-      await authApi.login({
-        userEmail: me.userEmail,
-        userPwd: pwdInput,
-        deviceId,
-      });
-      setPwdModal(false);
-      setPdfOpen(true);
-    } catch {
-      setPwdError('비밀번호가 올바르지 않습니다.');
-    } finally {
-      setPwdLoading(false);
-    }
+  const handleViewContract = () => {
+    if (!hasContractImage) return;
+    setShowPwdModal(true);
   };
 
   return (
@@ -258,18 +345,18 @@ function ContractCard({ contract }) {
         <div className={styles.cardHeadRight}>
           <span
             className={`${styles.statusChip} ${
-              contract.contractStatus === 'ACTIVE'
+              contract.contractStatus === 'active'
                 ? styles.chipActive
-                : contract.contractStatus === 'PENDING'
+                : contract.contractStatus === 'requested'
                   ? styles.chipPending
                   : styles.chipExpired
             }`}
           >
-            {contract.contractStatus === 'ACTIVE'
+            {contract.contractStatus === 'active'
               ? '활성'
-              : contract.contractStatus === 'PENDING'
-                ? '대기'
-                : contract.contractStatus === 'EXPIRED'
+              : contract.contractStatus === 'requested'
+                ? '승인대기'
+                : contract.contractStatus === 'ended'
                   ? '만료'
                   : (contract.contractStatus ?? '-')}
           </span>
@@ -277,7 +364,7 @@ function ContractCard({ contract }) {
         </div>
       </button>
 
-      {/* ── 카드 바디 (펼침) ── */}
+      {/* ── 카드 바디 ── */}
       {expanded && (
         <div className={styles.cardBody}>
           {roomLoading ? (
@@ -287,7 +374,6 @@ function ContractCard({ contract }) {
           ) : roomError ? (
             <p className={styles.roomError}>⚠️ {roomError}</p>
           ) : room ? (
-            /* 방 정보 + 사진 2단 레이아웃 */
             <div className={styles.roomGrid}>
               <ImageGallery files={room.files} />
               <RoomInfoPanel room={room} contract={contract} />
@@ -296,92 +382,44 @@ function ContractCard({ contract }) {
             <p className={styles.roomError}>방 정보를 찾을 수 없습니다.</p>
           )}
 
-          {/* 계약서 PDF 버튼 */}
-          {contract.contractPdfUrl && (
-            <div className={styles.pdfRow}>
+          {/* ── 계약서 보기 버튼 ── */}
+          <div className={styles.pdfRow}>
+            {hasContractImage ? (
               <button
                 type="button"
                 className={styles.pdfBtn}
-                onClick={openPwdModal}
+                onClick={handleViewContract}
               >
-                📄 계약서 원본 보기
+                📄 계약서 보기
               </button>
-            </div>
-          )}
+            ) : (
+              <div className={styles.contractPending}>
+                {contract.contractStatus === 'requested'
+                  ? '⏳ 관리자 승인 후 계약서가 발급됩니다.'
+                  : '📄 계약서 준비 중입니다.'}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* ── 비밀번호 확인 모달 ── */}
-      {pwdModal && (
-        <div className={styles.overlay}>
-          <div className={styles.modalBox}>
-            <h3 className={styles.modalTitle}>🔒 본인 확인</h3>
-            <p className={styles.modalDesc}>
-              계약서를 확인하려면 현재 비밀번호를 입력해주세요.
-            </p>
-            <input
-              className={styles.pwdInput}
-              type="password"
-              placeholder="비밀번호"
-              value={pwdInput}
-              onChange={(e) => setPwdInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePwdConfirm()}
-              autoFocus
-            />
-            {pwdError && <p className={styles.pwdError}>{pwdError}</p>}
-            <div className={styles.modalBtns}>
-              <button
-                type="button"
-                className={styles.btnCancel}
-                onClick={() => setPwdModal(false)}
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                className={styles.btnConfirm}
-                onClick={handlePwdConfirm}
-                disabled={pwdLoading}
-              >
-                {pwdLoading ? '확인 중…' : '확인'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {showPwdModal && (
+        <PasswordModal
+          onConfirm={() => {
+            setShowPwdModal(false);
+            setShowImgModal(true);
+          }}
+          onClose={() => setShowPwdModal(false)}
+        />
       )}
 
-      {/* ── PDF 뷰어 ── */}
-      {pdfOpen && (
-        <div className={styles.pdfOverlay}>
-          <div className={styles.pdfModal}>
-            <div className={styles.pdfHeader}>
-              <span>
-                📄 계약서 #{contract.contractId} — {contract.buildingNm}{' '}
-                {contract.roomNo}호
-              </span>
-              <button
-                type="button"
-                className={styles.pdfClose}
-                onClick={() => setPdfOpen(false)}
-              >
-                ✕ 닫기
-              </button>
-            </div>
-            <iframe
-              className={styles.pdfFrame}
-              src={withApiPrefix(contract.contractPdfUrl)}
-              title={`계약서 #${contract.contractId}`}
-            />
-            <a
-              className={styles.pdfDownload}
-              href={withApiPrefix(contract.contractPdfUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              ⬇️ 다운로드
-            </a>
-          </div>
-        </div>
+      {/* ── 계약서 이미지 뷰어 ── */}
+      {showImgModal && (
+        <ContractImageModal
+          contract={contract}
+          onClose={() => setShowImgModal(false)}
+        />
       )}
     </div>
   );
