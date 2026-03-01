@@ -4,7 +4,6 @@ import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import PageHeader from '../../../shared/components/PageHeader/PageHeader';
 import { Outlet, useLocation } from 'react-router-dom';
-import styles from './Support.module.css';
 
 // 고객센터 카테고리
 const supportCategories = [

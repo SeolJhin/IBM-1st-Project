@@ -46,7 +46,7 @@ function ReviewEditModal({ review, onClose, onSuccess }) {
         })
         .catch(() => {});
     }
-  }, [review.reviewId]);
+  }, [review.reviewId, review.fileCk]);
 
   const toggleDeleteOne = (fileId) => {
     setDeletedIds((prev) =>
@@ -73,11 +73,6 @@ function ReviewEditModal({ review, onClose, onSuccess }) {
     // 백엔드 updateReview는 deleteFiles=true면 전체 삭제 후 새 파일 업로드
     // 개별 삭제는 별도 API 없으므로: deletedIds가 있으면 전체=기존파일 전부를 삭제 후 남은것+새것 업로드
     const shouldDeleteAll = deleteAll || deletedIds.length > 0;
-    // 남길 기존 파일 (개별 삭제 모드일 때 삭제 안 한 것들)
-    const kept = deleteAll
-      ? []
-      : existingFiles.filter((f) => !deletedIds.includes(f.fileId));
-
     // kept 파일을 다시 업로드할 수는 없으므로: deleteFiles=true + newFiles만 전송
     // → 단, kept가 있으면 deleteAll=false로 보내고 개별 삭제는 별도 처리가 필요
     // 여기서는 가장 안전한 방식: deleteAll or deletedIds>0 이면 deleteFiles=true
@@ -564,7 +559,7 @@ function ReviewDetailModal({ review, onClose }) {
     reviewApi
       .getDetail(review.reviewId)
       .then((d) => setDetail(d))
-      .catch(() => setDetail(review))
+      .catch(() => setDetail(null))
       .finally(() => setLoading(false));
   }, [review.reviewId]);
 
