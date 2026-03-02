@@ -25,7 +25,7 @@ function normalizeRole(user) {
 
 export default function QnaList() {
   const { user } = useAuth();
-  const { qnas, pagination, loading, error, goToPage } = useQnas();
+  const { qnas, pagination, loading, error, goToPage } = useQnas({}, { enabled: Boolean(user) });
   const navigate = useNavigate();
 
   if (!user) return <Navigate to="/login" replace />;
