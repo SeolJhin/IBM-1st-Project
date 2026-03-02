@@ -91,6 +91,7 @@ public enum ErrorCode {
 
     // ===== Building / Space =====
     BUILDING_NOT_FOUND(HttpStatus.NOT_FOUND, "BUILDING_404", "빌딩을 찾을 수 없습니다."),
+    BUILDING_DUPLICATE(HttpStatus.CONFLICT, "BUILDING_409", "이미 같은 이름의 건물이 존재합니다."),
     SPACE_NOT_FOUND(HttpStatus.NOT_FOUND, "SPACE_404", "공용공간을 찾을 수 없습니다."),
     SPACE_BUILDING_MISMATCH(HttpStatus.BAD_REQUEST, "SPACE_400_1", "공용공간이 해당 빌딩에 속하지 않습니다."),
     SPACE_CAPACITY_EXCEEDED(HttpStatus.BAD_REQUEST, "SPACE_400_2", "예약 인원이 공간 수용 인원을 초과합니다."),

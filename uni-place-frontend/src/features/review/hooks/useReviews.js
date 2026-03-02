@@ -2,6 +2,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { reviewApi } from '../api/reviewApi';
 
+/* ── 에러 코드 → 사용자 메세지 매핑 ── */
+function reviewErrorMessage(e, fallback) {
+  const code = e?.errorCode || '';
+  const msg = e?.message || '';
+  const MAP = {
+    REVIEW_409: '이미 이 방에 리뷰를 작성하셨습니다.',
+    REVIEW_403: '해당 리뷰에 접근 권한이 없습니다.',
+    REVIEW_403_1: '입주자만 리뷰를 작성·수정·삭제할 수 있습니다.',
+    REVIEW_404: '리뷰를 찾을 수 없습니다.',
+    ROOM_404: '해당 방을 찾을 수 없습니다.',
+  };
+  return MAP[code] || msg || fallback || '오류가 발생했어요.';
+}
+
 // ── 내부 공통 페이지 훅 ──────────────────────────────────────
 function usePaginatedReviews(fetcher, deps = []) {
   const [items, setItems] = useState([]);
@@ -144,7 +158,7 @@ export function useReviewActions() {
       await reviewApi.create(body, files);
       return true;
     } catch (e) {
-      setError(e.message || '리뷰 등록에 실패했어요.');
+      setError(reviewErrorMessage(e, '리뷰 등록에 실패했어요.'));
       return false;
     } finally {
       setSubmitting(false);
@@ -159,7 +173,7 @@ export function useReviewActions() {
         await reviewApi.update(reviewId, body, deleteFiles, files);
         return true;
       } catch (e) {
-        setError(e.message || '리뷰 수정에 실패했어요.');
+        setError(reviewErrorMessage(e, '리뷰 수정에 실패했어요.'));
         return false;
       } finally {
         setSubmitting(false);
@@ -175,7 +189,7 @@ export function useReviewActions() {
       await reviewApi.remove(reviewId);
       return true;
     } catch (e) {
-      setError(e.message || '리뷰 삭제에 실패했어요.');
+      setError(reviewErrorMessage(e, '리뷰 삭제에 실패했어요.'));
       return false;
     } finally {
       setSubmitting(false);

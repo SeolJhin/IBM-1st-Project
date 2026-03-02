@@ -82,7 +82,15 @@ export default function AdminBuildingModal({ buildingId, onClose, onSuccess }) {
       onSuccess?.();
       onClose();
     } catch (e) {
-      setError(e?.message || `건물 ${isEdit ? '수정' : '등록'} 실패`);
+      const msg = e?.message || '';
+      const code = e?.errorCode || '';
+      if (code === 'BUILDING_409') {
+        setError(
+          '이미 같은 이름의 건물이 존재합니다. 다른 건물명을 사용해주세요.'
+        );
+      } else {
+        setError(msg || `건물 ${isEdit ? '수정' : '등록'} 실패`);
+      }
     } finally {
       setLoading(false);
     }

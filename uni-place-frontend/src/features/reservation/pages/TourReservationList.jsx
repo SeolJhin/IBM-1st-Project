@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import useTourReservations from '../hooks/useTourReservations';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
+import { tourErrorMessage } from './reservationErrors';
 import styles from './TourReservationList.module.css';
 
 function StatusBadge({ status }) {
@@ -86,7 +87,7 @@ export default function TourReservationList({
         { page, size: 10, sort: 'tourId', direct: 'DESC' }
       );
     } catch {
-      /* hook에서 처리 */
+      /* lookupError via hook */
     }
   };
 
@@ -97,7 +98,7 @@ export default function TourReservationList({
       alert('취소 완료');
       onLookup(lookupPage?.page ?? 1);
     } catch (e) {
-      alert(e?.message ?? '취소 실패');
+      alert(tourErrorMessage(e, '취소 처리 중 오류가 발생했습니다.'));
     }
   };
 

@@ -10,6 +10,7 @@ import Footer from '../../../app/layouts/components/Footer';
 import BuildingSlotButtons from '../components/BuildingSlotButtons';
 import TimeSlotButtons from '../components/TimeSlotButtons';
 import styles from './TourReservationCreate.module.css';
+import { tourErrorMessage } from './reservationErrors';
 
 export default function TourReservationCreate({
   inlineMode = false,
@@ -50,6 +51,7 @@ export default function TourReservationCreate({
 
   const [form, setForm] = useState({ tourNm: '', tourTel: '', tourPwd: '' });
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   // 빌딩 목록 로드
   const loadBuildings = async () => {
@@ -156,6 +158,7 @@ export default function TourReservationCreate({
   useEffect(() => {
     if (!selectedBuilding?.buildingId || !roomId || !date) return;
     setSelectedSlot(null);
+    setSubmitError('');
     loadSlots({
       buildingId: Number(selectedBuilding.buildingId),
       roomId: Number(roomId),
@@ -189,7 +192,7 @@ export default function TourReservationCreate({
         nav('/reservations/tour/list');
       }
     } catch (e) {
-      alert(e?.message || '생성 실패');
+      setSubmitError(tourErrorMessage(e));
     }
   };
 
@@ -377,6 +380,14 @@ export default function TourReservationCreate({
               </span>
             </div>
           </div>
+        )}
+
+        {submitError && (
+          <div className={styles.submitError}>⚠️ {submitError}</div>
+        )}
+
+        {submitError && (
+          <div className={styles.submitError}>⚠️ {submitError}</div>
         )}
 
         <div className={styles.btnRow}>

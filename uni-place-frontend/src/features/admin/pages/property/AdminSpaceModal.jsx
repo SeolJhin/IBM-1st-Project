@@ -76,7 +76,20 @@ export default function AdminSpaceModal({ spaceId, onClose, onSuccess }) {
       onSuccess?.();
       onClose();
     } catch (e) {
-      setError(e?.message || `공용공간 ${isEdit ? '수정' : '등록'} 실패`);
+      const msg = e?.message || '';
+      const code = e?.errorCode || '';
+      const msgLower = msg.toLowerCase();
+      if (code === 'BUILDING_409') {
+        setError('이미 같은 이름의 건물이 존재합니다.');
+      } else if (msgLower.includes('duplicate entry')) {
+        setError('같은 건물에 이미 동일한 공용공간이 존재합니다.');
+      } else if (code === 'BUILDING_404') {
+        setError('선택한 건물을 찾을 수 없습니다.');
+      } else if (code === 'BAD_REQUEST' && msg.includes('건물명')) {
+        setError('건물명이 중복됩니다. 관리자에게 문의하세요.');
+      } else {
+        setError(msg || `공용공간 ${isEdit ? '수정' : '등록'} 실패`);
+      }
     } finally {
       setLoading(false);
     }
