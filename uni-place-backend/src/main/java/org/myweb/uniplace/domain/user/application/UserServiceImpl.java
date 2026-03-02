@@ -138,10 +138,10 @@ public class UserServiceImpl implements UserService {
         String actorAdminId = currentActorId();
         safeNotifyAdmins(
             NotificationType.ADM_USER_STATUS_CHG.name(),
-            "Admin changed user status. targetUserId=" + user.getUserId()
-                + ", before=" + before
-                + ", after=" + after
-                + ", actorAdminId=" + actorAdminId,
+            "관리자가 사용자 상태를 변경했습니다. 대상회원ID=" + user.getUserId()
+                + ", 변경전=" + before
+                + ", 변경후=" + after
+                + ", 작업자관리자ID=" + actorAdminId,
             actorAdminId,
             "/admin/users/" + user.getUserId()
         );
@@ -163,10 +163,10 @@ public class UserServiceImpl implements UserService {
         String actorAdminId = currentActorId();
         safeNotifyAdmins(
             NotificationType.ADM_USER_ROLE_CHG.name(),
-            "Admin changed user role. targetUserId=" + user.getUserId()
-                + ", before=" + before
-                + ", after=" + after
-                + ", actorAdminId=" + actorAdminId,
+            "관리자가 사용자 권한을 변경했습니다. 대상회원ID=" + user.getUserId()
+                + ", 변경전=" + before
+                + ", 변경후=" + after
+                + ", 작업자관리자ID=" + actorAdminId,
             actorAdminId,
             "/admin/users/" + user.getUserId()
         );
@@ -204,13 +204,13 @@ public class UserServiceImpl implements UserService {
             return;
         }
         if (emailChanged) {
-            safeNotify(user.getUserId(), NotificationType.SEC_EMAIL_CHG.name(), "Email has been changed.");
+            safeNotify(user.getUserId(), NotificationType.SEC_EMAIL_CHG.name(), "이메일이 변경되었습니다.");
         }
         if (telChanged) {
-            safeNotify(user.getUserId(), NotificationType.SEC_TEL_CHG.name(), "Phone number has been changed.");
+            safeNotify(user.getUserId(), NotificationType.SEC_TEL_CHG.name(), "전화번호가 변경되었습니다.");
         }
         if (pwdChanged) {
-            safeNotify(user.getUserId(), NotificationType.SEC_PWD_CHG.name(), "Password has been changed.");
+            safeNotify(user.getUserId(), NotificationType.SEC_PWD_CHG.name(), "비밀번호가 변경되었습니다.");
         }
     }
 
@@ -266,11 +266,11 @@ public class UserServiceImpl implements UserService {
 
         safeNotifyAdmins(
             NotificationType.ADM_BULK_USER_CHANGE.name(),
-            "Bulk user change detected. actorAdminId=" + actorAdminId
-                + ", changeType=" + changeType
-                + ", threshold=" + ADMIN_BULK_CHANGE_THRESHOLD
-                + ", windowMinutes=" + ADMIN_BULK_CHANGE_WINDOW_MINUTES
-                + ", detectedAt=" + LocalDateTime.now().format(TS_FMT),
+            "대량 사용자 변경이 감지되었습니다. 작업자관리자ID=" + actorAdminId
+                + ", 변경유형=" + changeType
+                + ", 임계치=" + ADMIN_BULK_CHANGE_THRESHOLD
+                + ", 감지구간(분)=" + ADMIN_BULK_CHANGE_WINDOW_MINUTES
+                + ", 감지시각=" + LocalDateTime.now().format(TS_FMT),
             actorAdminId,
             "/admin/users"
         );
