@@ -438,7 +438,11 @@ function NoticeSection() {
 
           <ul className={styles.nfNoticeList}>
             {notices.map((t, i) => (
-              <li key={i} className={styles.nfNoticeItem}>
+              <li
+                key={i}
+                className={styles.nfNoticeItem}
+                onClick={() => navigate('/support/notice')}
+              >
                 {t}
               </li>
             ))}
@@ -460,7 +464,6 @@ function NoticeSection() {
               <article
                 key={f.id}
                 className={styles.nfFaqCard}
-                style={{ cursor: 'pointer' }}
                 onClick={() => navigate('/support/faq')}
               >
                 <div className={styles.nfFaqId}>{f.id}</div>
