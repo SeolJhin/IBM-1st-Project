@@ -85,6 +85,11 @@ public class BuildingServiceImpl implements BuildingService {
 
     @Override
     public BuildingDetailResponse createBuilding(BuildingCreateRequest request) {
+        List<Building> existing = buildingRepository.findByBuildingNmAndDeleteYn(request.getBuildingNm(), "N");
+        if (existing != null && !existing.isEmpty()) {
+            throw new BusinessException(ErrorCode.BUILDING_DUPLICATE);
+        }
+
         Building building = Building.builder()
                 .buildingNm(request.getBuildingNm())
                 .buildingAddr(request.getBuildingAddr())
@@ -124,6 +129,14 @@ public class BuildingServiceImpl implements BuildingService {
             List<FileResponse> files =
                     fileService.getActiveFiles(FileRefType.BUILDING.dbValue(), buildingId);
             return BuildingDetailResponse.fromEntity(building, files);
+        }
+
+        String newNm = request.getBuildingNm();
+        if (newNm != null && !newNm.isBlank() && !newNm.equals(building.getBuildingNm())) {
+            List<Building> existing = buildingRepository.findByBuildingNmAndDeleteYn(newNm, "N");
+            if (existing != null && !existing.isEmpty()) {
+                throw new BusinessException(ErrorCode.BUILDING_DUPLICATE);
+            }
         }
 
         building.update(

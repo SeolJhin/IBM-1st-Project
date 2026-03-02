@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import useSpaceReservations from '../hooks/useSpaceReservations';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
+import { spaceErrorMessage } from './reservationErrors';
 import styles from './SpaceReservationList.module.css';
 
 function StatusBadge({ status }) {
@@ -81,7 +82,7 @@ export default function SpaceReservationList({
       alert('취소 완료');
       reloadMy();
     } catch (e) {
-      alert(e?.message ?? '취소 실패');
+      alert(spaceErrorMessage(e, '취소 처리 중 오류가 발생했습니다.'));
     }
   };
 

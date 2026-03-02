@@ -361,3 +361,14 @@
   border-bottom: 1px solid #e8dfd0;
   margin-bottom: 4px;
 }
+/* ── 제출 에러 메세지 ── */
+.submitError {
+  background: #fff0f0;
+  border: 1.5px solid #e74c3c;
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #c0392b;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}

@@ -7,6 +7,7 @@ import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './RoomDetail.module.css';
 import ImageGallery from '../../file/components/ImageGallery';
+import { toApiImageUrl } from '../../file/api/fileApi';
 
 function StarRating({ value = 0, size = 'md' }) {
   return (
@@ -69,7 +70,7 @@ function SpaceMiniCard({ space, onClick }) {
     >
       <div className={styles.spaceMiniImg}>
         {space.thumbnailUrl ? (
-          <img src={space.thumbnailUrl} alt={space.spaceNm} />
+          <img src={toApiImageUrl(space.thumbnailUrl)} alt={space.spaceNm} />
         ) : (
           <div className={styles.spaceMiniImgPh}>🛋️</div>
         )}
@@ -260,7 +261,56 @@ export default function RoomDetail() {
       <div className={styles.container}>
         {/* ── 상단: 이미지 + 기본정보 ── */}
         <div className={styles.topGrid}>
-          <ImageGallery files={room.files} />
+          <div className={styles.galleryCol}>
+            <ImageGallery files={room.files} />
+
+            {/* ── 건물 빠른 정보 ── */}
+            <div className={styles.buildingQuickCard}>
+              <div className={styles.bqcHeader}>
+                <span className={styles.bqcIcon}>🏢</span>
+                <span className={styles.bqcNm}>{room.buildingNm}</span>
+              </div>
+              <div className={styles.bqcGrid}>
+                {room.buildingAddr && (
+                  <div className={styles.bqcItem}>
+                    <span className={styles.bqcLabel}>위치</span>
+                    <span className={styles.bqcValue}>{room.buildingAddr}</span>
+                  </div>
+                )}
+                {room.parkingCapacity != null && (
+                  <div className={styles.bqcItem}>
+                    <span className={styles.bqcLabel}>주차</span>
+                    <span className={styles.bqcValue}>
+                      {room.parkingCapacity}대
+                    </span>
+                  </div>
+                )}
+                {room.existElv && (
+                  <div className={styles.bqcItem}>
+                    <span className={styles.bqcLabel}>엘리베이터</span>
+                    <span className={styles.bqcValue}>
+                      {room.existElv === 'Y' ? '있음' : '없음'}
+                    </span>
+                  </div>
+                )}
+                {room.buildingUsage && (
+                  <div className={styles.bqcItem}>
+                    <span className={styles.bqcLabel}>용도</span>
+                    <span className={styles.bqcValue}>
+                      {room.buildingUsage}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button
+                className={styles.bqcDetailBtn}
+                onClick={() => navigate(`/buildings/${room.buildingId}`)}
+                type="button"
+              >
+                건물 상세 보기 →
+              </button>
+            </div>
+          </div>
 
           <div className={styles.infoPanel}>
             <button
@@ -360,15 +410,33 @@ export default function RoomDetail() {
             )}
 
             {/* ── 계약하기 버튼 ── */}
-            {room.roomSt === 'available' && (
-              <button
-                className={styles.contractBtn}
-                onClick={() => setShowContractModal(true)}
-                type="button"
-              >
-                📋 계약하기
-              </button>
-            )}
+            {(() => {
+              const canContract = room.roomSt === 'available';
+              const statusHint = {
+                reserved: '예약 중인 방입니다',
+                contracted: '계약 중인 방입니다',
+                repair: '수리 중인 방입니다',
+                cleaning: '청소 중인 방입니다',
+              }[room.roomSt];
+              return (
+                <div className={styles.contractBtnWrap}>
+                  <button
+                    className={styles.contractBtn}
+                    onClick={
+                      canContract ? () => setShowContractModal(true) : undefined
+                    }
+                    disabled={!canContract}
+                    type="button"
+                    title={!canContract ? statusHint : undefined}
+                  >
+                    📋 계약하기
+                  </button>
+                  {!canContract && statusHint && (
+                    <p className={styles.contractDisabledHint}>{statusHint}</p>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* ── 방 예약 버튼 ── */}
             <button

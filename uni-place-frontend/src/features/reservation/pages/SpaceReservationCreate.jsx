@@ -11,6 +11,7 @@ import Footer from '../../../app/layouts/components/Footer';
 import BuildingSlotButtons from '../components/BuildingSlotButtons';
 import TimeSlotButtons from '../components/TimeSlotButtons';
 import styles from './SpaceReservationCreate.module.css';
+import { spaceErrorMessage } from './reservationErrors';
 
 /**
  * inlineMode=true  → Header/Footer/topBar 없이 컨텐츠만 렌더 (마이페이지 탭 용)
@@ -55,6 +56,7 @@ export default function SpaceReservationCreate({
   const [spacesPage, setSpacesPage] = useState(null);
   const [spacesLoading, setSpacesLoading] = useState(false);
   const [spacesError, setSpacesError] = useState('');
+  const [submitError, setSubmitError] = useState('');
   const spaces = useMemo(() => spacesPage?.content ?? [], [spacesPage]);
 
   const [spaceId, setSpaceId] = useState(
@@ -162,7 +164,7 @@ export default function SpaceReservationCreate({
   const doCreateReservation = async () => {
     const maxCap = currentSpace?.spaceCapacity;
     if (maxCap && Number(srNoPeople) > maxCap) {
-      alert(`최대 인원은 ${maxCap}명입니다.`);
+      setSubmitError(`예약 인원이 최대 수용 인원(${maxCap}명)을 초과합니다.`);
       return;
     }
     try {
@@ -179,7 +181,7 @@ export default function SpaceReservationCreate({
         nav('/me?tab=space&sub=list');
       }
     } catch (e) {
-      alert(e?.message || '생성 실패');
+      setSubmitError(spaceErrorMessage(e));
     }
   };
 
@@ -309,6 +311,9 @@ export default function SpaceReservationCreate({
         </div>
       )}
 
+      {submitError && (
+        <div className={styles.submitError}>⚠️ {submitError}</div>
+      )}
       <div className={styles.btnRow}>
         <button
           type="button"
