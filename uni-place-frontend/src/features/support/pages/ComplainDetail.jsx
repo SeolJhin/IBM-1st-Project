@@ -1,6 +1,5 @@
-// features/support/pages/ComplainDetail.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
@@ -10,8 +9,21 @@ const STATUS_MAP = {
   resolved: '처리완료',
 };
 
+function normalizeRole(user) {
+  const raw =
+    user?.userRole ??
+    user?.role ??
+    user?.userRl ??
+    user?.user_role ??
+    user?.authority ??
+    user?.authorities?.[0];
+
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace('role_', '');
+}
+
 export default function ComplainDetail() {
-  // ✅ 모든 훅 최상단
   const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -19,17 +31,19 @@ export default function ComplainDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const isAdmin = normalizeRole(user) === 'admin';
+
   useEffect(() => {
     setLoading(true);
     supportApi
       .getComplainDetail(id)
       .then((res) => setData(res))
-      .catch((err) => setError(err.message || '민원 정보를 불러오는 데 실패했습니다.'))
+      .catch((err) =>
+        setError(err.message || '민원 정보를 불러오는 데 실패했습니다.')
+      )
       .finally(() => setLoading(false));
   }, [id]);
 
-  // ✅ 훅 다음에 early return
-  if (!user) return <Navigate to="/login" replace />;
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
   if (!data) return null;
@@ -47,8 +61,17 @@ export default function ComplainDetail() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          <h2 className={styles.cardTitle} style={{ margin: 0 }}>{data.compTitle}</h2>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: 8,
+          }}
+        >
+          <h2 className={styles.cardTitle} style={{ margin: 0 }}>
+            {data.compTitle}
+          </h2>
           <span
             className={styles.statusBadge}
             style={data.compSt === 'resolved' ? { background: 'var(--highlight)' } : {}}
@@ -63,7 +86,7 @@ export default function ComplainDetail() {
 
         <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{data.compCtnt}</div>
 
-        {data.compSt === 'in_progress' && (
+        {isAdmin && (
           <div style={{ marginTop: 24, display: 'flex', gap: 8 }}>
             <button
               className={styles.buttonPrimary}
@@ -78,8 +101,12 @@ export default function ComplainDetail() {
         )}
       </div>
 
-      <button className={styles.pageBtn} onClick={() => navigate('/support/complain')} style={{ marginTop: 16 }}>
-        ← 목록으로
+      <button
+        className={styles.pageBtn}
+        onClick={() => navigate('/support/complain')}
+        style={{ marginTop: 16 }}
+      >
+        목록으로
       </button>
     </div>
   );

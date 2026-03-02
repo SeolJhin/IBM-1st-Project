@@ -149,6 +149,15 @@ export const supportApi = {
     request(`/qna/${qnaId}`, { method: 'DELETE', auth: true }),
 
   // ===== Complains =====
+  getComplains: (params = {}) => {
+    const defaults = { page: 1, size: 10, sort: 'compId', direct: 'DESC' };
+    const merged = { ...defaults, ...params };
+    if (merged.code) {
+      const normalized = normalizeSupportCode(merged.code);
+      merged.code = normalized === 'ALL' ? '' : normalized;
+    }
+    return request(`/complains${buildQuery(merged)}`);
+  },
   getMyComplains: (params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'compId', direct: 'DESC' };
     const merged = { ...defaults, ...params };
@@ -161,7 +170,7 @@ export const supportApi = {
     });
   },
   getComplainDetail: (compId) =>
-    request(`/complains/${compId}`, { auth: true }),
+    request(`/complains/${compId}`),
   createComplain: (body) =>
     request('/complains', {
       method: 'POST',
@@ -173,4 +182,3 @@ export const supportApi = {
   deleteComplain: (compId) =>
     request(`/complains/${compId}`, { method: 'DELETE', auth: true }),
 };
-
