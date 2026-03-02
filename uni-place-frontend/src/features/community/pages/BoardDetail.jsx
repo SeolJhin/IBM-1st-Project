@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { communityApi } from '../api/communityApi';
-import { authApi } from '../../auth/api/authApi';
+import { authApi } from '../../../app/http/authApi';
 import ReplyWrite from './ReplyWrite';
 
 function formatDateTime(value) {
