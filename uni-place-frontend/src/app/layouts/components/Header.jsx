@@ -54,7 +54,7 @@ export default function Header() {
           <img className={styles.logoMark} src={homeLogo} alt="UNI PLACE logo" />
           <div className={styles.brandText}>
             <div className={styles.brandName}>UNI PLACE</div>
-            <div className={styles.brandSub}>Co-living Platform</div>
+            <div className={styles.brandSub}>Living as a Serivce</div>
           </div>
         </div>
 
