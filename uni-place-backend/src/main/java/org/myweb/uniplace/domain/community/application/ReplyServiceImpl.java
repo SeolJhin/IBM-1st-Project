@@ -132,6 +132,10 @@ public class ReplyServiceImpl implements ReplyService {
         if (!Objects.equals(boardId, parent.getBoardId())) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
+        // 대댓글은 원댓글(lev=1)에만 허용하고 그 이상 깊이는 차단
+        if (parent.getReplyLev() != null && parent.getReplyLev() >= 2) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
 
         Reply child = Reply.builder()
             .boardId(boardId)
@@ -163,8 +167,8 @@ public class ReplyServiceImpl implements ReplyService {
         Reply reply = replyRepository.findById(replyId)
             .orElseThrow(() -> new BusinessException(ErrorCode.REPLY_NOT_FOUND));
 
-        String me = requireCurrentUserId();
-        if (!me.equals(reply.getUserId())) {
+        AuthUser authUser = requireCurrentAuthUser();
+        if (!canModifyReply(reply, authUser)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
@@ -178,8 +182,8 @@ public class ReplyServiceImpl implements ReplyService {
         Reply reply = replyRepository.findById(replyId)
             .orElseThrow(() -> new BusinessException(ErrorCode.REPLY_NOT_FOUND));
 
-        String me = requireCurrentUserId();
-        if (!me.equals(reply.getUserId())) {
+        AuthUser authUser = requireCurrentAuthUser();
+        if (!canModifyReply(reply, authUser)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
@@ -216,11 +220,24 @@ public class ReplyServiceImpl implements ReplyService {
     }
 
     private String requireCurrentUserId() {
+        return requireCurrentAuthUser().getUserId();
+    }
+
+    private AuthUser requireCurrentAuthUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) throw new BusinessException(ErrorCode.UNAUTHORIZED);
 
         Object p = auth.getPrincipal();
-        if (p instanceof AuthUser au) return au.getUserId();
+        if (p instanceof AuthUser au) return au;
         throw new BusinessException(ErrorCode.UNAUTHORIZED);
+    }
+
+    private boolean canModifyReply(Reply reply, AuthUser authUser) {
+        String role = authUser.getRole();
+        String userId = authUser.getUserId();
+
+        boolean isAdmin = role != null && "admin".equalsIgnoreCase(role.trim());
+        boolean isOwner = userId != null && userId.equals(reply.getUserId());
+        return isAdmin || isOwner;
     }
 }
