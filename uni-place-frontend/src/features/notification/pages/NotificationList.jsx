@@ -1,20 +1,19 @@
-// src/features/notification/pages/NotificationList.jsx
-import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../hooks/useNotifications';
+import { resolveNotificationPath } from '../utils/resolveNotificationPath';
 import styles from './NotificationList.module.css';
 
-// Header를 lazy로 import → NotificationBell과의 순환 참조 방지
-// (NotificationBell → NotificationList → Header → NotificationBell 순환)
 const Header = lazy(() => import('../../../app/layouts/components/Header'));
 
 const TARGET_LABEL = {
   board: '게시글',
   reply: '댓글',
   notice: '공지사항',
-  tour: '사전방문',
-  space: '공용시설',
+  tour: '투어',
+  space: '공간예약',
   review: '리뷰',
+  payment: '결제',
 };
 
 function timeAgo(dateStr) {
@@ -31,43 +30,48 @@ function timeAgo(dateStr) {
 }
 
 function NotificationItem({ item, onRead, onNavigate }) {
-  const isUnread = item.isRead !== 'Y';
-  const handleClick = () => {
-    if (isUnread) onRead(item.notificationId);
-    if (item.urlPath) onNavigate(item.urlPath);
+  const handleNavigate = () => {
+    const nextPath = resolveNotificationPath(item);
+    if (nextPath) onNavigate(nextPath);
   };
+
+  const handleRead = (e) => {
+    e.stopPropagation();
+    onRead(item.notificationId);
+  };
+
   return (
     <div
-      className={`${styles.item} ${isUnread ? styles.unread : styles.read}`}
-      onClick={handleClick}
+      className={`${styles.item} ${styles.unread}`}
+      onClick={handleNavigate}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && handleClick()}
+      onKeyDown={(e) => e.key === 'Enter' && handleNavigate()}
     >
       <div className={styles.itemLeft}>
-        <span
-          className={`${styles.typeBadge} ${!isUnread ? styles.badgeRead : ''}`}
-        >
+        <span className={styles.typeBadge}>
           {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
         </span>
-        <p
-          className={`${styles.message} ${!isUnread ? styles.messageRead : ''}`}
-        >
-          {item.message}
-        </p>
+        <p className={styles.message}>{item.message}</p>
         <span className={styles.time}>{timeAgo(item.createdAt)}</span>
       </div>
-      {isUnread && <span className={styles.dot} aria-label="읽지 않음" />}
+      <div className={styles.itemRight}>
+        <span className={styles.dot} aria-label="읽지 않음" />
+        <button
+          className={styles.readBtn}
+          type="button"
+          onClick={handleRead}
+          aria-label="읽음 처리"
+        >
+          읽음
+        </button>
+      </div>
     </div>
   );
 }
 
-/**
- * inlineMode=true → Header 없이 컨텐츠만 (Modal 안에서 사용)
- */
 export default function NotificationList({ inlineMode = false }) {
   const navigate = useNavigate();
-  const [deletingRead, setDeletingRead] = useState(false);
 
   const {
     items,
@@ -78,22 +82,7 @@ export default function NotificationList({ inlineMode = false }) {
     loadMore,
     markRead,
     markAllRead,
-    deleteRead,
   } = useNotifications({ autoFetch: true });
-
-  const handleDeleteRead = async () => {
-    if (!window.confirm('읽은 알림을 모두 삭제할까요?')) return;
-    setDeletingRead(true);
-    try {
-      await deleteRead();
-    } catch (e) {
-      alert(e.message || '삭제에 실패했습니다.');
-    } finally {
-      setDeletingRead(false);
-    }
-  };
-
-  const hasReadItems = items.some((n) => n.isRead === 'Y');
 
   const sentinelRef = useRef(null);
   useEffect(() => {
@@ -127,22 +116,8 @@ export default function NotificationList({ inlineMode = false }) {
         </h1>
         <div className={styles.headerBtns}>
           {unreadCount > 0 && (
-            <button
-              className={styles.readAllBtn}
-              type="button"
-              onClick={markAllRead}
-            >
+            <button className={styles.readAllBtn} type="button" onClick={markAllRead}>
               모두 읽음
-            </button>
-          )}
-          {hasReadItems && (
-            <button
-              className={styles.deleteReadBtn}
-              type="button"
-              onClick={handleDeleteRead}
-              disabled={deletingRead}
-            >
-              {deletingRead ? '삭제 중…' : '읽은 알림 삭제'}
             </button>
           )}
         </div>

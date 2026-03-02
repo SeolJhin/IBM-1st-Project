@@ -1,5 +1,6 @@
 // features/admin/pages/contract/AdminContractList.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import styles from '../reservation/AdminReservation.module.css';
 
@@ -17,6 +18,8 @@ const STATUS_LABELS = {
   ended: { label: '종료', cls: styles.badgeCompleted },
   cancelled: { label: '취소', cls: styles.badgeCancelled },
 };
+
+const API_BASE = 'http://localhost:8080';
 
 function StatusBadge({ status }) {
   const s = STATUS_LABELS[status] ?? {
@@ -50,6 +53,7 @@ function toDatetimeLocal(value) {
 }
 
 export default function AdminContractList() {
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -85,6 +89,7 @@ export default function AdminContractList() {
   const [editMoveinAt, setEditMoveinAt] = useState(''); // datetime-local string
   const [editPdfFile, setEditPdfFile] = useState(null); // File
   const [saveLoading, setSaveLoading] = useState(false);
+  const searchKey = searchParams.toString();
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -111,7 +116,19 @@ export default function AdminContractList() {
     fetchList();
   }, [fetchList]);
 
-  const openDetail = async (contractId) => {
+  useEffect(() => {
+    const params = new URLSearchParams(searchKey);
+    const contractId = (params.get('contractId') || '').trim();
+    const keyword = (params.get('keyword') || '').trim();
+    const nextKeyword = contractId || keyword;
+    if (!nextKeyword) return;
+    setFilter((prev) =>
+      prev.keyword === nextKeyword ? prev : { ...prev, keyword: nextKeyword }
+    );
+    setQuery((prev) => (prev.page === 1 ? prev : { ...prev, page: 1 }));
+  }, [searchKey]);
+
+  const openDetail = useCallback(async (contractId) => {
     setDetailModal(contractId);
     setDetail(null);
     setDetailLoading(true);
@@ -134,7 +151,19 @@ export default function AdminContractList() {
     } finally {
       setDetailLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchKey);
+    const contractIdNum = Number(params.get('contractId'));
+    if (!Number.isFinite(contractIdNum) || contractIdNum <= 0) return;
+    if (loading || detailModal) return;
+
+    const hit = items.find(
+      (item) => Number(item.contractId) === Math.trunc(contractIdNum)
+    );
+    if (hit) openDetail(Math.trunc(contractIdNum));
+  }, [detailModal, items, loading, openDetail, searchKey]);
 
   const closeDetail = () => {
     setDetailModal(null);
@@ -369,7 +398,7 @@ export default function AdminContractList() {
                   <td>
                     {c.contractPdfUrl ? (
                       <a
-                        href={c.contractPdfUrl}
+                        href={`${API_BASE}${c.contractPdfUrl}`}
                         target="_blank"
                         rel="noreferrer"
                         style={{ textDecoration: 'underline' }}
@@ -500,7 +529,7 @@ export default function AdminContractList() {
                       <span className={styles.detailValue}>
                         {detail.contractPdfUrl ? (
                           <a
-                            href={detail.contractPdfUrl}
+                            href={`${API_BASE}${detail.contractPdfUrl}`}
                             target="_blank"
                             rel="noreferrer"
                             style={{ textDecoration: 'underline' }}

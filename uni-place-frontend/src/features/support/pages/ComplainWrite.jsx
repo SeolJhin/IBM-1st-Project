@@ -1,10 +1,10 @@
 // features/support/pages/ComplainWrite.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
+import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 
-// B방법: 프론트 하드코딩 기본값 (추후 API로 교체 가능)
 const COMPLAIN_CATEGORIES = [
   { code: 'COMP_PERSONAL', label: '개인' },
   { code: 'COMP_FACILITY', label: '시설' },
@@ -15,13 +15,14 @@ const COMPLAIN_CATEGORIES = [
 ];
 
 export default function ComplainWrite() {
+  // ✅ 모든 훅 최상단
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    compTitle: '',
-    compCtnt: '',
-    code: '',
-  });
+  const [form, setForm] = useState({ compTitle: '', compCtnt: '', code: '' });
   const [submitting, setSubmitting] = useState(false);
+
+  // ✅ 훅 다음에 early return
+  if (!user) return <Navigate to="/login" replace />;
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -54,12 +55,11 @@ export default function ComplainWrite() {
           className={styles.formSelect}
           value={form.code}
           onChange={(e) => handleChange('code', e.target.value)}
+          disabled={submitting}
         >
           <option value="">유형 선택</option>
           {COMPLAIN_CATEGORIES.map((cat) => (
-            <option key={cat.code} value={cat.code}>
-              {cat.label}
-            </option>
+            <option key={cat.code} value={cat.code}>{cat.label}</option>
           ))}
         </select>
 
@@ -70,6 +70,7 @@ export default function ComplainWrite() {
           placeholder="제목을 입력하세요"
           value={form.compTitle}
           onChange={(e) => handleChange('compTitle', e.target.value)}
+          disabled={submitting}
         />
 
         <label className={styles.formLabel}>내용</label>
@@ -78,6 +79,7 @@ export default function ComplainWrite() {
           placeholder="민원 내용을 입력하세요"
           value={form.compCtnt}
           onChange={(e) => handleChange('compCtnt', e.target.value)}
+          disabled={submitting}
         />
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -88,7 +90,7 @@ export default function ComplainWrite() {
           >
             {submitting ? '등록 중...' : '등록'}
           </button>
-          <button className={styles.pageBtn} onClick={() => navigate('/support/complain')}>
+          <button className={styles.pageBtn} onClick={() => navigate('/support/complain')} disabled={submitting}>
             취소
           </button>
         </div>
