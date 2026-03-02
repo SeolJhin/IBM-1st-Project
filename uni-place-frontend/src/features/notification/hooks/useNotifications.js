@@ -28,7 +28,7 @@ export function useNotifications({ autoFetch = true } = {}) {
       setLoading(true);
       setError(null);
       try {
-        const res = await notificationApi.getList({
+        const res = await notificationApi.getUnread({
           page: pageNum,
           size: SIZE,
         });
@@ -70,11 +70,7 @@ export function useNotifications({ autoFetch = true } = {}) {
   const markRead = useCallback(async (notificationId) => {
     try {
       await notificationApi.markRead(notificationId);
-      setItems((prev) =>
-        prev.map((n) =>
-          n.notificationId === notificationId ? { ...n, isRead: 'Y' } : n
-        )
-      );
+      setItems((prev) => prev.filter((n) => n.notificationId !== notificationId));
       setUnreadCount((c) => Math.max(0, c - 1));
     } catch (e) {
       console.error('markRead 실패', e);
@@ -85,7 +81,7 @@ export function useNotifications({ autoFetch = true } = {}) {
   const markAllRead = useCallback(async () => {
     try {
       await notificationApi.markAllRead();
-      setItems((prev) => prev.map((n) => ({ ...n, isRead: 'Y' })));
+      setItems([]);
       setUnreadCount(0);
     } catch (e) {
       console.error('markAllRead 실패', e);

@@ -1,7 +1,8 @@
 // features/support/pages/ComplainEdit.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
+import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 
 const COMPLAIN_CATEGORIES = [
@@ -14,6 +15,8 @@ const COMPLAIN_CATEGORIES = [
 ];
 
 export default function ComplainEdit() {
+  // ✅ 모든 훅 최상단
+  const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const [form, setForm] = useState({ compTitle: '', compCtnt: '', code: '' });
@@ -32,6 +35,10 @@ export default function ComplainEdit() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  // ✅ 훅 다음에 early return
+  if (!user) return <Navigate to="/login" replace />;
+  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -54,8 +61,6 @@ export default function ComplainEdit() {
     }
   };
 
-  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
-
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -66,12 +71,11 @@ export default function ComplainEdit() {
           className={styles.formSelect}
           value={form.code}
           onChange={(e) => handleChange('code', e.target.value)}
+          disabled={submitting}
         >
           <option value="">유형 선택</option>
           {COMPLAIN_CATEGORIES.map((cat) => (
-            <option key={cat.code} value={cat.code}>
-              {cat.label}
-            </option>
+            <option key={cat.code} value={cat.code}>{cat.label}</option>
           ))}
         </select>
 
@@ -81,6 +85,7 @@ export default function ComplainEdit() {
           type="text"
           value={form.compTitle}
           onChange={(e) => handleChange('compTitle', e.target.value)}
+          disabled={submitting}
         />
 
         <label className={styles.formLabel}>내용</label>
@@ -88,6 +93,7 @@ export default function ComplainEdit() {
           className={styles.formTextarea}
           value={form.compCtnt}
           onChange={(e) => handleChange('compCtnt', e.target.value)}
+          disabled={submitting}
         />
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -98,7 +104,11 @@ export default function ComplainEdit() {
           >
             {submitting ? '수정 중...' : '수정'}
           </button>
-          <button className={styles.pageBtn} onClick={() => navigate(`/support/complain/${id}`)}>
+          <button
+            className={styles.pageBtn}
+            onClick={() => navigate(`/support/complain/${id}`)}
+            disabled={submitting}
+          >
             취소
           </button>
         </div>
