@@ -91,8 +91,18 @@ export default function BoardDetail() {
     }
 
     let canceled = false;
+<<<<<<< HEAD
 
     async function loadAll() {
+=======
+<<<<<<< HEAD
+
+    async function loadAll() {
+=======
+    const timerId = setTimeout(async () => {
+      if (canceled) return;
+>>>>>>> f6e98c7a96a64abe914f97c46edeb59ec875f6b1
+>>>>>>> 76ead3451c84d50d6fc8ffaf341305c22c779c71
       setLoading(true);
       setError('');
 
@@ -107,12 +117,22 @@ export default function BoardDetail() {
       } finally {
         if (!canceled) setLoading(false);
       }
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 76ead3451c84d50d6fc8ffaf341305c22c779c71
 
       if (!canceled) await loadReplies();
     }
 
     loadAll();
 
+<<<<<<< HEAD
+=======
+=======
+    }, 0);
+>>>>>>> f6e98c7a96a64abe914f97c46edeb59ec875f6b1
+>>>>>>> 76ead3451c84d50d6fc8ffaf341305c22c779c71
     return () => {
       canceled = true;
     };
