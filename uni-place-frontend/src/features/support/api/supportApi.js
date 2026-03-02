@@ -26,18 +26,22 @@ async function request(
   path,
   { method = 'GET', body, headers = {}, auth = false } = {}
 ) {
-  const res = await fetchWithAuthRetry(path, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(auth && getAccessToken()
-        ? { Authorization: `Bearer ${getAccessToken()}` }
-        : {}),
-      ...headers,
+  const res = await fetchWithAuthRetry(
+    path,
+    {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth && getAccessToken()
+          ? { Authorization: `Bearer ${getAccessToken()}` }
+          : {}),
+        ...headers,
+      },
+      credentials: 'same-origin',
+      body: body ? JSON.stringify(body) : undefined,
     },
-    credentials: 'same-origin',
-    body: body ? JSON.stringify(body) : undefined,
-  }, { auth });
+    { auth }
+  );
 
   if (res.status === 204) return null;
 
@@ -192,7 +196,7 @@ export const supportApi = {
     });
   },
   getComplainDetail: (compId) =>
-    request(`/complains/${compId}`),
+    request(`/complains/${compId}`, { auth: true }),
   createComplain: (body) =>
     request('/complains', {
       method: 'POST',

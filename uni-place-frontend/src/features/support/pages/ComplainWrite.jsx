@@ -36,7 +36,7 @@ export default function ComplainWrite() {
   if (!user) return <Navigate to="/login" replace />;
 
   const role = normalizeRole(user);
-  const canCreate = role === 'admin' || role === 'tenant';
+  const canCreate = role === 'admin' || role === 'user';
   if (!canCreate) {
     return (
       <div className={styles.container}>
