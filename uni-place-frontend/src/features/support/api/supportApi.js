@@ -75,21 +75,6 @@ function buildQuery(params = {}) {
   return '?' + new URLSearchParams(entries).toString();
 }
 
-async function requestOptionalAuth(path, options = {}) {
-  if (!getAccessToken()) {
-    return request(path, { ...options, auth: false });
-  }
-
-  try {
-    return await request(path, { ...options, auth: true });
-  } catch (error) {
-    if (Number(error?.status) === 401) {
-      return request(path, { ...options, auth: false });
-    }
-    throw error;
-  }
-}
-
 export const supportApi = {
   // ===== FAQ =====
   getFaqs: (params = {}) => {
@@ -171,7 +156,7 @@ export const supportApi = {
       const normalized = normalizeSupportCode(merged.code);
       merged.code = normalized === 'ALL' ? '' : normalized;
     }
-    return requestOptionalAuth(`/complains${buildQuery(merged)}`);
+    return request(`/complains${buildQuery(merged)}`);
   },
   getMyComplains: (params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'compId', direct: 'DESC' };
@@ -185,7 +170,7 @@ export const supportApi = {
     });
   },
   getComplainDetail: (compId) =>
-    requestOptionalAuth(`/complains/${compId}`),
+    request(`/complains/${compId}`),
   createComplain: (body) =>
     request('/complains', {
       method: 'POST',
