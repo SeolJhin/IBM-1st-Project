@@ -46,6 +46,8 @@ export default function AdminPropertyListTable({
   createLabel,
   onCreateClick,
   reloadRef,
+  onDeleteSelected, // async (ids: number[]) => void
+  deleteLabel, // 삭제 버튼 텍스트 (기본: "선택 삭제")
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [rows, setRows] = useState([]);
@@ -57,9 +59,21 @@ export default function AdminPropertyListTable({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // 체크박스 선택 state
+  const [selected, setSelected] = useState(new Set());
+  const [deleting, setDeleting] = useState(false);
+
+  const resolveRowKey = (row, idx) => {
+    if (typeof rowKey === 'function') return rowKey(row, idx);
+    if (typeof rowKey === 'string' && row?.[rowKey] !== undefined)
+      return row[rowKey];
+    return idx;
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
+    setSelected(new Set()); // 페이지 바뀌면 선택 초기화
     try {
       const payload = await fetcher(query);
       const pageData = normalizePage(payload);
@@ -82,7 +96,6 @@ export default function AdminPropertyListTable({
     load();
   }, [load]);
 
-  // reloadRef로 외부에서 새로고침 트리거 가능
   React.useEffect(() => {
     if (reloadRef) reloadRef.current = load;
   }, [reloadRef, load]);
@@ -97,12 +110,55 @@ export default function AdminPropertyListTable({
     setQuery((prev) => ({ ...prev, [key]: nextValue, page: 1 }));
   };
 
-  const resolveRowKey = (row, idx) => {
-    if (typeof rowKey === 'function') return rowKey(row, idx);
-    if (typeof rowKey === 'string' && row?.[rowKey] !== undefined)
-      return row[rowKey];
-    return idx;
+  // ── 체크박스 핸들러 ──
+  const allKeys = rows.map((r, i) => resolveRowKey(r, i));
+  const allChecked =
+    allKeys.length > 0 && allKeys.every((k) => selected.has(k));
+  const someChecked = allKeys.some((k) => selected.has(k));
+
+  const toggleAll = () => {
+    if (allChecked) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(allKeys));
+    }
   };
+
+  const toggleOne = (key) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  // ── 일괄 삭제 ──
+  const handleDeleteSelected = async () => {
+    if (selected.size === 0) return;
+    if (
+      !window.confirm(
+        `선택한 ${selected.size}개를 삭제하시겠습니까?\n삭제 후 복구할 수 없습니다.`
+      )
+    )
+      return;
+    setDeleting(true);
+    try {
+      await onDeleteSelected([...selected]);
+      await load();
+    } catch (e) {
+      alert(e?.message || '삭제 중 오류가 발생했습니다.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const hasDelete = typeof onDeleteSelected === 'function';
+
+  // columns 앞에 체크박스 컬럼 삽입 (삭제 기능 있을 때만)
+  const effectiveColumns = hasDelete
+    ? [{ key: '__check__', label: '' }, ...columns]
+    : columns;
 
   return (
     <section className={styles.wrap}>
@@ -121,6 +177,18 @@ export default function AdminPropertyListTable({
               onClick={onCreateClick}
             >
               + {createLabel || '새로 만들기'}
+            </button>
+          )}
+          {hasDelete && selected.size > 0 && (
+            <button
+              type="button"
+              className={`${styles.btn} ${styles.btnDelete}`}
+              onClick={handleDeleteSelected}
+              disabled={deleting}
+            >
+              {deleting
+                ? '삭제 중...'
+                : `🗑 ${deleteLabel || '선택 삭제'} (${selected.size})`}
             </button>
           )}
           {'direct' in query && (
@@ -223,23 +291,59 @@ export default function AdminPropertyListTable({
           <table className={styles.table}>
             <thead>
               <tr>
-                {columns.map((col) => (
-                  <th key={col.key}>{col.label}</th>
+                {effectiveColumns.map((col) => (
+                  <th
+                    key={col.key}
+                    className={col.key === '__check__' ? styles.checkTh : ''}
+                  >
+                    {col.key === '__check__' ? (
+                      <input
+                        type="checkbox"
+                        className={styles.checkbox}
+                        checked={allChecked}
+                        ref={(el) => {
+                          if (el) el.indeterminate = someChecked && !allChecked;
+                        }}
+                        onChange={toggleAll}
+                        title="전체 선택"
+                      />
+                    ) : (
+                      col.label
+                    )}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, idx) => (
-                <tr key={resolveRowKey(row, idx)}>
-                  {columns.map((col) => (
-                    <td key={col.key}>
-                      {col.render
-                        ? col.render(row, idx)
-                        : valueOrDash(row?.[col.key])}
-                    </td>
-                  ))}
-                </tr>
-              ))}
+              {rows.map((row, idx) => {
+                const key = resolveRowKey(row, idx);
+                const isChecked = selected.has(key);
+                return (
+                  <tr key={key} className={isChecked ? styles.rowSelected : ''}>
+                    {effectiveColumns.map((col) => (
+                      <td
+                        key={col.key}
+                        className={
+                          col.key === '__check__' ? styles.checkTd : ''
+                        }
+                      >
+                        {col.key === '__check__' ? (
+                          <input
+                            type="checkbox"
+                            className={styles.checkbox}
+                            checked={isChecked}
+                            onChange={() => toggleOne(key)}
+                          />
+                        ) : col.render ? (
+                          col.render(row, idx)
+                        ) : (
+                          valueOrDash(row?.[col.key])
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

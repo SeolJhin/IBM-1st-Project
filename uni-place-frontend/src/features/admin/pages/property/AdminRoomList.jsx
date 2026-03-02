@@ -88,6 +88,16 @@ export default function AdminRoomList() {
 
   const handleSuccess = () => reloadRef.current?.();
 
+  const handleDeleteSelected = async (ids) => {
+    const results = await Promise.allSettled(
+      ids.map((id) => adminApi.deleteRoom(id))
+    );
+    const failed = results.filter((r) => r.status === 'rejected');
+    if (failed.length > 0) {
+      throw new Error(`${failed.length}개 삭제 실패 (나머지는 완료)`);
+    }
+  };
+
   return (
     <>
       <AdminPropertyListTable
@@ -109,6 +119,8 @@ export default function AdminRoomList() {
         createLabel="방 등록"
         onCreateClick={() => setCreateModal(true)}
         reloadRef={reloadRef}
+        onDeleteSelected={handleDeleteSelected}
+        deleteLabel="방 삭제"
       />
 
       {createModal && (

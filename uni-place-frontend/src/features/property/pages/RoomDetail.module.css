@@ -690,79 +690,12 @@
   box-shadow: 0 8px 24px rgba(45, 106, 79, 0.4);
 }
 
-/* ── 갤러리 컬럼 (왼쪽) ── */
-.galleryCol {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* ── 건물 빠른 정보 카드 (갤러리 아래) ── */
-.buildingQuickCard {
-  background: #fff;
-  border: 1px solid #ede8de;
-  border-radius: 14px;
-  padding: 16px 18px;
-}
-.bqcHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.bqcIcon {
-  font-size: 15px;
-}
-.bqcNm {
-  font-size: 14px;
-  font-weight: 800;
-  color: #0b0e12;
-}
-.bqcGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px 16px;
-  margin-bottom: 12px;
-}
-.bqcItem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.bqcLabel {
-  font-size: 10px;
-  font-weight: 700;
-  color: #9a8c70;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.bqcValue {
-  font-size: 13px;
-  color: #0b0e12;
-  font-weight: 500;
-}
-.bqcDetailBtn {
-  width: 100%;
-  padding: 8px 0;
-  background: #f6eee6;
-  color: #ba8037;
-  border: 1.5px solid #e8e0d4;
-  border-radius: 9px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.bqcDetailBtn:hover {
-  background: #ffe8c4;
-  border-color: #d9ad5b;
-}
-
-/* ── 계약하기 버튼 비활성 ── */
+/* ── 계약하기 버튼 비활성 (override) ── */
 .contractBtnWrap {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  width: 100%;
 }
 .contractBtn:disabled {
   opacity: 0.45;
@@ -772,8 +705,9 @@
   transform: none;
 }
 .contractDisabledHint {
-  margin: 0;
+  margin: 2px 0 0;
   font-size: 11px;
   color: #c0392b;
   text-align: center;
+  line-height: 1.3;
 }

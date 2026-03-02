@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './Login.module.css';
 import { useAuth } from '../hooks/useAuth';
 import Header from '../../../app/layouts/components/Header';
+import { toKoreanMessage } from '../../../app/http/errorMapper';
 
 export default function Login() {
   const { login, loading } = useAuth();
@@ -36,7 +37,17 @@ export default function Login() {
       const from = location.state?.from || '/';
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err?.message || '로그인에 실패했습니다.');
+      // 백엔드는 보안상 USER_NOT_FOUND / PASSWORD_MISMATCH / LOCKED 모두 COMMON_400으로 통일
+      const isLoginFail =
+        err?.errorCode === 'COMMON_400' || err?.status === 400;
+      setError(
+        isLoginFail
+          ? '이메일 또는 비밀번호를 확인해주세요.'
+          : toKoreanMessage(
+              err,
+              '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.'
+            )
+      );
     } finally {
       setSubmitting(false);
     }

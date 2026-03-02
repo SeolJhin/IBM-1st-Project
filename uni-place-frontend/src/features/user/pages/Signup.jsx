@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './Signup.module.css';
 import { authApi } from '../api/authApi';
-
-// ✅ Header 경로는 Login.jsx에서 쓰는 것과 동일하게 맞춰줘!
 import Header from '../../../app/layouts/components/Header';
+import { toKoreanMessage } from '../../../app/http/errorMapper';
 
 export default function Signup() {
   const [form, setForm] = useState({
@@ -54,21 +53,12 @@ export default function Signup() {
 
       setDone(true);
     } catch (err) {
-      // ✅ 백엔드 ErrorCode 기반 UX 처리
-      // DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER_409_1", "이미 사용 중인 이메일입니다.")
-      if (err?.status === 409 && err?.errorCode === 'USER_409_1') {
-        setError('이미 사용 중인 이메일입니다.');
-        return;
-      }
-
-      // (선택) 전화번호 중복도 같은 패턴이면 여기에 추가
-      // 예: DUPLICATE_TEL => "USER_409_2" 라면:
-      // if (err?.status === 409 && err?.errorCode === "USER_409_2") {
-      //   setError("이미 사용 중인 전화번호입니다.");
-      //   return;
-      // }
-
-      setError(err?.message || '회원가입에 실패했습니다.');
+      setError(
+        toKoreanMessage(
+          err,
+          '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.'
+        )
+      );
     } finally {
       setSubmitting(false);
     }

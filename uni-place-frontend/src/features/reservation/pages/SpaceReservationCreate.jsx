@@ -11,7 +11,7 @@ import Footer from '../../../app/layouts/components/Footer';
 import BuildingSlotButtons from '../components/BuildingSlotButtons';
 import TimeSlotButtons from '../components/TimeSlotButtons';
 import styles from './SpaceReservationCreate.module.css';
-import { spaceErrorMessage } from './reservationErrors';
+import { toKoreanMessage } from '../../../app/http/errorMapper';
 
 /**
  * inlineMode=true  → Header/Footer/topBar 없이 컨텐츠만 렌더 (마이페이지 탭 용)
@@ -181,7 +181,7 @@ export default function SpaceReservationCreate({
         nav('/me?tab=space&sub=list');
       }
     } catch (e) {
-      setSubmitError(spaceErrorMessage(e));
+      setSubmitError(toKoreanMessage(e));
     }
   };
 
