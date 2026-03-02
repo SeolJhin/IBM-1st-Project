@@ -37,9 +37,7 @@ export default function BoardDetail() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState('');
 
-  // ---------------------------
   // 로그인 유저 정보
-  // ---------------------------
   useEffect(() => {
     let canceled = false;
 
@@ -60,9 +58,7 @@ export default function BoardDetail() {
     };
   }, []);
 
-  // ---------------------------
   // 댓글 로드
-  // ---------------------------
   const loadReplies = useCallback(async () => {
     if (!boardId) return;
 
@@ -80,9 +76,7 @@ export default function BoardDetail() {
     }
   }, [boardId]);
 
-  // ---------------------------
   // 게시글 + 댓글 로드
-  // ---------------------------
   useEffect(() => {
     if (!boardId) {
       setLoading(false);
@@ -91,18 +85,8 @@ export default function BoardDetail() {
     }
 
     let canceled = false;
-<<<<<<< HEAD
 
     async function loadAll() {
-=======
-<<<<<<< HEAD
-
-    async function loadAll() {
-=======
-    const timerId = setTimeout(async () => {
-      if (canceled) return;
->>>>>>> f6e98c7a96a64abe914f97c46edeb59ec875f6b1
->>>>>>> 76ead3451c84d50d6fc8ffaf341305c22c779c71
       setLoading(true);
       setError('');
 
@@ -117,36 +101,20 @@ export default function BoardDetail() {
       } finally {
         if (!canceled) setLoading(false);
       }
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 76ead3451c84d50d6fc8ffaf341305c22c779c71
 
       if (!canceled) await loadReplies();
     }
 
     loadAll();
 
-<<<<<<< HEAD
-=======
-=======
-    }, 0);
->>>>>>> f6e98c7a96a64abe914f97c46edeb59ec875f6b1
->>>>>>> 76ead3451c84d50d6fc8ffaf341305c22c779c71
     return () => {
       canceled = true;
     };
   }, [boardId, loadReplies]);
 
-  // ---------------------------
-  // 내 댓글 여부
-  // ---------------------------
   const isMine = (reply) =>
     myUserId && String(reply?.userId) === String(myUserId);
 
-  // ---------------------------
-  // 수정 시작
-  // ---------------------------
   const startEdit = (reply) => {
     setEditError('');
     setEditingId(reply.replyId);
@@ -189,13 +157,9 @@ export default function BoardDetail() {
     }
   };
 
-  // ---------------------------
-  // UI
-  // ---------------------------
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
       <Header />
-
       <main
         style={{ maxWidth: 980, margin: '0 auto', padding: '24px 20px 48px' }}
       >
@@ -216,12 +180,11 @@ export default function BoardDetail() {
         </button>
 
         {loading ? (
-          <div style={{ color: '#6b7280' }}>불러오는 중...</div>
+          <div>불러오는 중...</div>
         ) : error ? (
-          <div style={{ color: '#b91c1c' }}>⚠️ {error}</div>
+          <div style={{ color: 'red' }}>⚠️ {error}</div>
         ) : (
           <>
-            {/* 게시글 */}
             <article
               style={{
                 background: '#fff',
@@ -230,8 +193,8 @@ export default function BoardDetail() {
                 padding: 20,
               }}
             >
-              <h1 style={{ margin: 0 }}>{board?.boardTitle}</h1>
-              <div style={{ marginTop: 10, color: '#6b7280', fontSize: 14 }}>
+              <h1>{board?.boardTitle}</h1>
+              <div style={{ color: '#6b7280' }}>
                 작성자: {board?.userId} | 작성일:{' '}
                 {formatDateTime(board?.createdAt)}
               </div>
@@ -240,7 +203,6 @@ export default function BoardDetail() {
               </div>
             </article>
 
-            {/* 댓글 */}
             <section
               style={{
                 marginTop: 16,
@@ -257,11 +219,6 @@ export default function BoardDetail() {
               </div>
 
               <div style={{ marginTop: 14 }}>
-                {repliesLoading && <div>댓글 불러오는 중…</div>}
-                {repliesError && (
-                  <div style={{ color: '#b91c1c' }}>{repliesError}</div>
-                )}
-
                 {replies.map((r) => {
                   const editing = editingId === r.replyId;
 
@@ -310,9 +267,7 @@ export default function BoardDetail() {
                             style={{ width: '100%', marginTop: 8 }}
                           />
                           {editError && (
-                            <div style={{ color: 'red', fontSize: 12 }}>
-                              {editError}
-                            </div>
+                            <div style={{ color: 'red' }}>{editError}</div>
                           )}
                         </>
                       ) : (
@@ -326,7 +281,6 @@ export default function BoardDetail() {
           </>
         )}
       </main>
-
       <Footer />
     </div>
   );
