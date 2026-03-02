@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { communityApi } from '../api/communityApi';
@@ -28,6 +29,7 @@ function typeLabel(value) {
 }
 
 export default function CommunityHome() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('ALL');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -242,7 +244,13 @@ export default function CommunityHome() {
                     <tr key={boardId}>
                       <td>{typeLabel(item?.code ?? item?.boardType)}</td>
                       <td className={styles.titleCell}>
-                        {item?.boardTitle ?? item?.title ?? '(제목 없음)'}
+                        <button
+                          type="button"
+                          className={styles.titleBtn}
+                          onClick={() => navigate(`/community/${boardId}`)}
+                        >
+                          {item?.boardTitle ?? item?.title ?? '(제목 없음)'}
+                        </button>
                       </td>
                       <td>{item?.userId ?? item?.writerId ?? '-'}</td>
                       <td>{formatDate(item?.createdAt ?? item?.createdDate)}</td>
