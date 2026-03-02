@@ -18,6 +18,8 @@ const STATUS_LABELS = {
   cancelled: { label: '취소', cls: styles.badgeCancelled },
 };
 
+const API_BASE = 'http://localhost:8080';
+
 function StatusBadge({ status }) {
   const s = STATUS_LABELS[status] ?? {
     label: status ?? '-',
@@ -369,7 +371,7 @@ export default function AdminContractList() {
                   <td>
                     {c.contractPdfUrl ? (
                       <a
-                        href={c.contractPdfUrl}
+                        href={`${API_BASE}${c.contractPdfUrl}`}
                         target="_blank"
                         rel="noreferrer"
                         style={{ textDecoration: 'underline' }}
@@ -500,7 +502,7 @@ export default function AdminContractList() {
                       <span className={styles.detailValue}>
                         {detail.contractPdfUrl ? (
                           <a
-                            href={detail.contractPdfUrl}
+                            href={`${API_BASE}${detail.contractPdfUrl}`}
                             target="_blank"
                             rel="noreferrer"
                             style={{ textDecoration: 'underline' }}
