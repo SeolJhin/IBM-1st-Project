@@ -7,7 +7,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supportApi } from '../api/supportApi';
 
-export function useQnas(initialParams = {}) {
+export function useQnas(initialParams = {}, options = {}) {
+  const enabled = options?.enabled ?? true;
   const [qnas, setQnas] = useState([]);
   const [pagination, setPagination] = useState({
     page: initialParams.page ?? 1,
@@ -28,6 +29,7 @@ export function useQnas(initialParams = {}) {
   const [error, setError] = useState(null);
 
   const fetchQnas = useCallback(async (fetchParams) => {
+    if (!enabled) return;
     setLoading(true);
     setError(null);
     try {
@@ -50,11 +52,19 @@ export function useQnas(initialParams = {}) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     fetchQnas(params);
-  }, [fetchQnas, params]);
+  }, [enabled, fetchQnas, params]);
+
+  useEffect(() => {
+    if (enabled) return;
+    setQnas([]);
+    setError(null);
+    setLoading(false);
+  }, [enabled]);
 
   const goToPage = useCallback((nextPage) => {
     setParams((prev) => ({ ...prev, page: nextPage }));
@@ -65,8 +75,9 @@ export function useQnas(initialParams = {}) {
   }, []);
 
   const refetch = useCallback(() => {
+    if (!enabled) return;
     fetchQnas(params);
-  }, [fetchQnas, params]);
+  }, [enabled, fetchQnas, params]);
 
   return {
     qnas, // QnaResponse[]

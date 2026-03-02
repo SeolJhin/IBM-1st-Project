@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { communityApi } from '../api/communityApi';
-import { authApi } from '../../../app/http/authApi'; // ✅ 추가
+import { authApi } from '../../auth/api/authApi';
 import ReplyWrite from './ReplyWrite';
 
 function formatDateTime(value) {
@@ -30,18 +30,16 @@ export default function BoardDetail() {
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState('');
 
-  // ✅ 내 userId 상태
   const [myUserId, setMyUserId] = useState('');
 
-  // 수정 모드
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState('');
 
-  // -------------------------------
-  // ✅ 로그인 유저 정보 가져오기
-  // -------------------------------
+  // ---------------------------
+  // 로그인 유저 정보
+  // ---------------------------
   useEffect(() => {
     let canceled = false;
 
@@ -52,7 +50,6 @@ export default function BoardDetail() {
           setMyUserId(me.userId);
         }
       } catch {
-        // 비로그인 상태면 그냥 무시
         if (!canceled) setMyUserId('');
       }
     }
@@ -63,13 +60,15 @@ export default function BoardDetail() {
     };
   }, []);
 
-  // -------------------------------
+  // ---------------------------
   // 댓글 로드
-  // -------------------------------
+  // ---------------------------
   const loadReplies = useCallback(async () => {
     if (!boardId) return;
+
     setRepliesLoading(true);
     setRepliesError('');
+
     try {
       const data = await communityApi.getReplies(boardId);
       setReplies(Array.isArray(data) ? data : []);
@@ -81,9 +80,9 @@ export default function BoardDetail() {
     }
   }, [boardId]);
 
-  // -------------------------------
-  // 게시글 + 댓글 동시 로드
-  // -------------------------------
+  // ---------------------------
+  // 게시글 + 댓글 로드
+  // ---------------------------
   useEffect(() => {
     if (!boardId) {
       setLoading(false);
@@ -96,6 +95,7 @@ export default function BoardDetail() {
     async function loadAll() {
       setLoading(true);
       setError('');
+
       try {
         const data = await communityApi.getBoard(boardId);
         if (!canceled) setBoard(data);
@@ -118,15 +118,15 @@ export default function BoardDetail() {
     };
   }, [boardId, loadReplies]);
 
-  // -------------------------------
+  // ---------------------------
   // 내 댓글 여부
-  // -------------------------------
+  // ---------------------------
   const isMine = (reply) =>
     myUserId && String(reply?.userId) === String(myUserId);
 
-  // -------------------------------
+  // ---------------------------
   // 수정 시작
-  // -------------------------------
+  // ---------------------------
   const startEdit = (reply) => {
     setEditError('');
     setEditingId(reply.replyId);
@@ -160,6 +160,7 @@ export default function BoardDetail() {
 
   const deleteReply = async (replyId) => {
     if (!window.confirm('댓글을 삭제할까요?')) return;
+
     try {
       await communityApi.deleteReply(replyId);
       await loadReplies();
@@ -168,12 +169,13 @@ export default function BoardDetail() {
     }
   };
 
-  // -------------------------------
+  // ---------------------------
   // UI
-  // -------------------------------
+  // ---------------------------
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
       <Header />
+
       <main
         style={{ maxWidth: 980, margin: '0 auto', padding: '24px 20px 48px' }}
       >
@@ -218,7 +220,7 @@ export default function BoardDetail() {
               </div>
             </article>
 
-            {/* 댓글 영역 */}
+            {/* 댓글 */}
             <section
               style={{
                 marginTop: 16,
@@ -235,8 +237,14 @@ export default function BoardDetail() {
               </div>
 
               <div style={{ marginTop: 14 }}>
+                {repliesLoading && <div>댓글 불러오는 중…</div>}
+                {repliesError && (
+                  <div style={{ color: '#b91c1c' }}>{repliesError}</div>
+                )}
+
                 {replies.map((r) => {
                   const editing = editingId === r.replyId;
+
                   return (
                     <div
                       key={r.replyId}
@@ -255,7 +263,7 @@ export default function BoardDetail() {
                             {editing ? (
                               <>
                                 <button onClick={() => saveEdit(r.replyId)}>
-                                  저장
+                                  {savingEdit ? '저장중…' : '저장'}
                                 </button>
                                 <button onClick={cancelEdit}>취소</button>
                               </>
@@ -298,6 +306,7 @@ export default function BoardDetail() {
           </>
         )}
       </main>
+
       <Footer />
     </div>
   );
