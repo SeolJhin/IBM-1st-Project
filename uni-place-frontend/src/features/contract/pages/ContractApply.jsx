@@ -96,7 +96,7 @@ export default function ContractApply() {
         state: { from: window.location.pathname + window.location.search },
       });
     }
-  }, [loading, user, navigate]);
+  }, [loading, authLoading, user, navigate]);
 
   /* ── 핸들러 ── */
   const handleChange = (e) => {
