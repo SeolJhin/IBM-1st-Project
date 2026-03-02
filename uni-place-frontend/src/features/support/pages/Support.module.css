@@ -4,27 +4,38 @@
   padding: 60px 20px 100px;
 }
 
+.pageTitle {
+  font-size: 26px;
+  font-weight: 800;
+  text-align: center;
+  margin-top: 60px;
+  margin-bottom: 0px;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
 .sectionTitle {
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 32px;
-  border-bottom: 2px solid var(--line);
+  border-bottom: 2px solid #b8ad9e;
   padding-bottom: 14px;
 }
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1.5px solid #c8bfb0;
   border-radius: var(--radius);
   padding: 24px 28px;
   margin-bottom: 18px;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow);
+  border-color: var(--primary);
 }
 
 .cardTitle {
@@ -62,33 +73,70 @@
 /* ── 테이블 ── */
 .table {
   width: 100%;
-  border-collapse: collapse;
+  /* collapse → separate 로 변경해야 border-radius 가 실제로 보임 */
+  border-collapse: separate;
+  border-spacing: 0;
   margin-top: 8px;
+  border: 1.5px solid #a88e8e;
+  border-radius: 14px; /* radius 적용 */
+  overflow: hidden; /* 안쪽 셀이 모서리 밖으로 삐져나오지 않도록 */
+  table-layout: fixed;
 }
 
 .table th {
   background: var(--b-5);
   padding: 14px;
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
-  border-bottom: 2px solid var(--line);
+  border-bottom: 2px solid #a89e8e;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+/* 제목 컬럼 너비 */
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 55%;
 }
 
 .table td {
   padding: 16px 14px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid #c8b0b0;
   font-size: 14px;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
 }
 
 .table tr:hover td {
   background: var(--cream);
 }
 
+/* ── 제목 셀 내부: 뱃지 + 링크를 한 줄로 ── */
+.tableTitleCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden; /* flex 컨테이너에서 말줄임 동작 유지 */
+}
+
+/* ── 제목 링크 말줄임 ── */
 .tableLink {
   color: var(--text);
   text-decoration: none;
   font-weight: 500;
+  /* flex 자식으로서 남은 공간 차지하며 말줄임 */
+  flex: 1;
+  min-width: 0; /* flex 자식은 min-width:0 없으면 말줄임 안 됨 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .tableLink:hover {
@@ -117,7 +165,7 @@
 
 .pageBtn {
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1.5px solid #c8bfb0;
   border-radius: var(--radius);
   padding: 8px 18px;
   cursor: pointer;
@@ -156,48 +204,56 @@
 .formInput {
   width: 100%;
   padding: 12px;
-  border: 1px solid var(--line);
+  border: 1.5px solid #c8bfb0;
   border-radius: var(--radius);
   font-size: 15px;
   font-family: inherit;
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .formInput:focus {
   outline: none;
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(217, 173, 91, 0.18);
 }
 
 .formTextarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid var(--line);
+  border: 1.5px solid #c8bfb0;
   border-radius: var(--radius);
   font-size: 15px;
   font-family: inherit;
   min-height: 160px;
   resize: vertical;
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .formTextarea:focus {
   outline: none;
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(217, 173, 91, 0.18);
 }
 
 .formSelect {
   width: 100%;
   padding: 12px;
-  border: 1px solid var(--line);
+  border: 1.5px solid #c8bfb0;
   border-radius: var(--radius);
   font-size: 15px;
   font-family: inherit;
   background: var(--surface);
   cursor: pointer;
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2348535F' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -208,6 +264,7 @@
 .formSelect:focus {
   outline: none;
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(217, 173, 91, 0.18);
 }
 
 /* ── FAQ 아코디언 ── */
@@ -218,14 +275,17 @@
 }
 
 .accordionItem {
-  border: 1px solid var(--line);
+  border: 1.5px solid #c8bfb0;
   border-radius: var(--radius);
   overflow: hidden;
-  transition: box-shadow 0.2s;
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s;
 }
 
 .accordionItemOpen {
-  box-shadow: 0 4px 14px rgba(11, 14, 18, 0.08);
+  border-color: var(--primary);
+  box-shadow: 0 4px 14px rgba(217, 173, 91, 0.15);
 }
 
 .accordionHeader {
@@ -265,6 +325,10 @@
 .accordionTitle {
   flex: 1;
   color: var(--text);
+  /* 아코디언 제목도 말줄임 */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .accordionIcon {
@@ -279,7 +343,7 @@
   gap: 12px;
   padding: 16px 22px 20px;
   background: var(--b-5);
-  border-top: 1px solid var(--line);
+  border-top: 1.5px solid #c8bfb0;
 }
 
 .accordionA {
