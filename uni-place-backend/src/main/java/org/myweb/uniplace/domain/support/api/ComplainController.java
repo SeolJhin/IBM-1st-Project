@@ -77,7 +77,7 @@ public class ComplainController {
     }
 
     /** 민원 등록 */
-    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping
     public ApiResponse<ComplainResponse> create(
             @AuthenticationPrincipal AuthUser authUser,
