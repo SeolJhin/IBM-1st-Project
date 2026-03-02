@@ -1,5 +1,6 @@
 import React from "react";
 import styles from "./Footer.module.css";
+import homeLogo from "../../../home_logo.png";
 
 export default function Footer() {
   return (
@@ -9,7 +10,7 @@ export default function Footer() {
           <div className={styles.bottomGrid}>
             <div className={styles.logoWrap}>
               <div className={styles.logoInline}>
-                <LogoMark className={styles.logoMark} />
+                <img className={styles.logoMark} src={homeLogo} alt="UNI PLACE logo" />
                 <div>
                   <p className={styles.logoTitle}>UNI-PLACE</p>
                   <p className={styles.logoSub}>CO-LIVING PLATFORM</p>
@@ -80,15 +81,5 @@ export default function Footer() {
         </div>
       </section>
     </footer>
-  );
-}
-
-function LogoMark({ className = "" }) {
-  return (
-    <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M10 20L24 10l14 10" stroke="#BD9853" strokeWidth="2.2" strokeLinejoin="round" />
-      <path d="M14 20v16h20V20" stroke="#BD9853" strokeWidth="2.2" strokeLinejoin="round" />
-      <path d="M18 36v-8h12v8" stroke="#BD9853" strokeWidth="2.2" strokeLinejoin="round" />
-    </svg>
   );
 }
