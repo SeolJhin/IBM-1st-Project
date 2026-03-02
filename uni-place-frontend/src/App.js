@@ -101,7 +101,10 @@ export default function App() {
       <Routes>
         {/* ── 공통 ── */}
         <Route path="/" element={<Home />} />
-        <Route path="/company_info" element={<CompanyInfo variant="company" />} />
+        <Route
+          path="/company_info"
+          element={<CompanyInfo variant="company" />}
+        />
         <Route path="/about" element={<About variant="about" />} />
         <Route path="/community" element={<CommunityHome />} />
         <Route path="/guide" element={<CompanyInfo variant="guide" />} />
@@ -167,12 +170,13 @@ export default function App() {
           <Route path="notice" element={<NoticeList />} />
           <Route path="notice/:noticeId" element={<NoticeDetail />} />
           <Route path="qna" element={<QnaList />} />
-          <Route path="qna/:qnaId" element={<QnaDetail />} />
           <Route path="qna/write" element={<QnaWrite />} />
+          <Route path="qna/:qnaId/edit" element={<QnaWrite />} />
+          <Route path="qna/:qnaId" element={<QnaDetail />} />
           <Route path="complain" element={<ComplainList />} />
           <Route path="complain/write" element={<ComplainWrite />} />
-          <Route path="complain/:id" element={<ComplainDetail />} />
           <Route path="complain/edit/:id" element={<ComplainEdit />} />
+          <Route path="complain/:id" element={<ComplainDetail />} />
         </Route>
 
         {/* ── 어드민 (로그인 + ADMIN 역할 필요) ── */}
