@@ -1,6 +1,5 @@
 // features/file/hooks/useFileUpload.js
 import { useState, useCallback } from 'react';
-import { toApiImageUrl } from '../api/fileApi';
 
 /**
  * 파일 업로드 상태 관리 훅
