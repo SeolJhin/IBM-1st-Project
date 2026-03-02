@@ -58,7 +58,7 @@ export default function Login() {
 
   // ✅ 버튼만 존재(기능 없음) / 나중에 연결
   const goSignup = () => navigate('/signup');
-  const goFind = () => alert('ID/PW 찾기 기능은 추후 연결 예정입니다.');
+  const goFind = () => navigate('/find-account');
   const goKakao = () => {
     window.location.href = `${backendBaseUrl}/oauth2/authorization/kakao`;
   };
