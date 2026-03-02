@@ -3,6 +3,7 @@ import styles from './Header.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../features/user/hooks/useAuth';
 import NotificationBell from './NotificationBell';
+import homeLogo from '../../../home_logo.png';
 
 export default function Header() {
   const navigate = useNavigate();
@@ -50,10 +51,10 @@ export default function Header() {
           role="button"
           tabIndex={0}
         >
-          <div className={styles.logoMark} />
+          <img className={styles.logoMark} src={homeLogo} alt="UNI PLACE logo" />
           <div className={styles.brandText}>
             <div className={styles.brandName}>UNI PLACE</div>
-            <div className={styles.brandSub}>Co-living Platform</div>
+            <div className={styles.brandSub}>Living as a Serivce</div>
           </div>
         </div>
 

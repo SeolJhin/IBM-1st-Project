@@ -51,9 +51,11 @@ export default function CommunityHome() {
   const isAdmin = userRole === 'admin';
   const isTenant = userRole === 'tenant';
   const isUser = userRole === 'user';
+  const effectiveWriteType =
+    isUser && activeTab === 'ALL' ? 'QUESTION' : selectedWriteType;
   const isQuestionWrite =
-    String(selectedWriteType).toUpperCase() === 'QUESTION' ||
-    String(selectedWriteType).toUpperCase() === 'BOARD_QUESTION';
+    String(effectiveWriteType).toUpperCase() === 'QUESTION' ||
+    String(effectiveWriteType).toUpperCase() === 'BOARD_QUESTION';
 
   const canOpenWriter = isAdmin || isTenant || (isUser && (activeTab === 'ALL' || activeTab === 'QUESTION'));
   const canSubmitWrite = isAdmin || isTenant || (isUser && isQuestionWrite);
@@ -97,6 +99,12 @@ export default function CommunityHome() {
   }, [activeTab]);
 
   useEffect(() => {
+    if (activeTab === 'ALL' && isUser && writeType !== 'QUESTION') {
+      setWriteType('QUESTION');
+    }
+  }, [activeTab, isUser, writeType]);
+
+  useEffect(() => {
     if (!canOpenWriter) {
       setShowWriter(false);
     }
@@ -134,7 +142,7 @@ export default function CommunityHome() {
       await communityApi.createBoard({
         boardTitle: title,
         boardCtnt: content,
-        code: selectedWriteType,
+        code: effectiveWriteType,
         anonymity: 'N',
       });
 
@@ -182,7 +190,15 @@ export default function CommunityHome() {
             <button
               type="button"
               className={styles.writeToggleBtn}
-              onClick={() => setShowWriter((v) => !v)}
+              onClick={() =>
+                setShowWriter((v) => {
+                  const next = !v;
+                  if (next && activeTab === 'ALL' && isUser) {
+                    setWriteType('QUESTION');
+                  }
+                  return next;
+                })
+              }
             >
               {showWriter ? '작성 닫기' : '글쓰기'}
             </button>
@@ -196,7 +212,7 @@ export default function CommunityHome() {
               {activeTab === 'ALL' ? (
                 <select
                   className={styles.writerSelect}
-                  value={writeType}
+                  value={isUser ? 'QUESTION' : writeType}
                   onChange={(e) => setWriteType(e.target.value)}
                   disabled={submitting}
                 >

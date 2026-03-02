@@ -30,6 +30,8 @@ export default function ComplainDetail() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [statusValue, setStatusValue] = useState('in_progress');
+  const [statusSubmitting, setStatusSubmitting] = useState(false);
 
   const isAdmin = normalizeRole(user) === 'admin';
 
@@ -37,7 +39,10 @@ export default function ComplainDetail() {
     setLoading(true);
     supportApi
       .getComplainDetail(id)
-      .then((res) => setData(res))
+      .then((res) => {
+        setData(res);
+        setStatusValue(res?.compSt ?? 'in_progress');
+      })
       .catch((err) =>
         setError(err.message || '민원 정보를 불러오는 데 실패했습니다.')
       )
@@ -55,6 +60,24 @@ export default function ComplainDetail() {
       navigate('/support/complain');
     } catch (e) {
       alert(e.message || '삭제에 실패했습니다.');
+    }
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!isAdmin) return;
+    setStatusSubmitting(true);
+    try {
+      const updated = await supportApi.updateComplainStatus(id, statusValue);
+      setData((prev) => ({
+        ...prev,
+        ...(updated ?? {}),
+        compSt: updated?.compSt ?? statusValue,
+      }));
+      alert('민원 처리상태가 변경되었습니다.');
+    } catch (e) {
+      alert(e.message || '민원 상태 변경에 실패했습니다.');
+    } finally {
+      setStatusSubmitting(false);
     }
   };
 
@@ -87,17 +110,39 @@ export default function ComplainDetail() {
         <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{data.compCtnt}</div>
 
         {isAdmin && (
-          <div style={{ marginTop: 24, display: 'flex', gap: 8 }}>
-            <button
-              className={styles.buttonPrimary}
-              onClick={() => navigate(`/support/complain/edit/${id}`)}
-            >
-              수정
-            </button>
-            <button className={styles.pageBtn} onClick={handleDelete}>
-              삭제
-            </button>
-          </div>
+          <>
+            <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <select
+                className={styles.formSelect}
+                value={statusValue}
+                onChange={(e) => setStatusValue(e.target.value)}
+                disabled={statusSubmitting}
+                style={{ maxWidth: 180 }}
+              >
+                <option value="in_progress">처리중</option>
+                <option value="resolved">처리완료</option>
+              </select>
+              <button
+                className={styles.buttonPrimary}
+                onClick={handleUpdateStatus}
+                disabled={statusSubmitting}
+              >
+                {statusSubmitting ? '변경 중...' : '처리상태 변경'}
+              </button>
+            </div>
+
+            <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+              <button
+                className={styles.buttonPrimary}
+                onClick={() => navigate(`/support/complain/edit/${id}`)}
+              >
+                수정
+              </button>
+              <button className={styles.pageBtn} onClick={handleDelete}>
+                삭제
+              </button>
+            </div>
+          </>
         )}
       </div>
 
@@ -111,3 +156,4 @@ export default function ComplainDetail() {
     </div>
   );
 }
+
