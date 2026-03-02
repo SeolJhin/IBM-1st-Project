@@ -32,10 +32,16 @@ public class QnaServiceImpl implements QnaService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<QnaResponse> search(QnaSearchRequest request, Pageable pageable) {
+    public PageResponse<QnaResponse> search(
+            QnaSearchRequest request,
+            Pageable pageable,
+            String requesterUserId,
+            boolean isAdmin
+    ) {
         String normalizedCode = normalizeSupportCodeForFilter(request.getCode());
+        String targetUserId = isAdmin ? request.getUserId() : requesterUserId;
         Page<Qna> page = qnaRepository.search(
-                request.getUserId(),
+                targetUserId,
                 normalizedCode,
                 request.getQnaSt(),
                 request.getKeyword(),
@@ -59,18 +65,19 @@ public class QnaServiceImpl implements QnaService {
 
     @Override
     @Transactional(readOnly = true)
-    public QnaResponse get(Integer qnaId) {
+    public QnaResponse get(Integer qnaId, String requesterUserId, boolean isAdmin) {
         Qna qna = qnaRepository.findById(qnaId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.QNA_NOT_FOUND));
+        ensureReadAccess(qna, requesterUserId, isAdmin);
         return QnaResponse.from(qna);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<QnaResponse> getReplies(Integer qnaId) {
-        if (!qnaRepository.existsById(qnaId)) {
-            throw new BusinessException(ErrorCode.QNA_NOT_FOUND);
-        }
+    public List<QnaResponse> getReplies(Integer qnaId, String requesterUserId, boolean isAdmin) {
+        Qna question = qnaRepository.findById(qnaId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.QNA_NOT_FOUND));
+        ensureReadAccess(question, requesterUserId, isAdmin);
         return qnaRepository.findByParentIdOrderByQnaIdAsc(qnaId)
                 .stream()
                 .map(QnaResponse::from)
@@ -147,6 +154,24 @@ public class QnaServiceImpl implements QnaService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.QNA_NOT_FOUND));
         qna.updateStatus(request.getQnaSt());
         return QnaResponse.from(qna);
+    }
+
+    private void ensureReadAccess(Qna qna, String requesterUserId, boolean isAdmin) {
+        if (isAdmin) return;
+
+        Qna ownerQuestion = resolveOwnerQuestion(qna);
+        if (requesterUserId == null || !requesterUserId.equals(ownerQuestion.getUserId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+    }
+
+    private Qna resolveOwnerQuestion(Qna qna) {
+        Integer level = qna.getQnaLev();
+        if (level == null || level == 0 || qna.getParentId() == null) {
+            return qna;
+        }
+
+        return qnaRepository.findById(qna.getParentId()).orElse(qna);
     }
 
     private String normalizeSupportCodeForFilter(String rawCode) {

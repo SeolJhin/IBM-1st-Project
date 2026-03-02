@@ -27,6 +27,11 @@ const TARGET_LABEL = {
   payment: '결제',
 };
 
+function isAuthError(error) {
+  const status = Number(error?.response?.status || error?.status || 0);
+  return status === 401 || status === 403;
+}
+
 function timeAgo(dateStr) {
   if (!dateStr) return '';
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -46,13 +51,17 @@ export default function NotificationBell() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const dropRef = useRef(null);
+  const pollBlockedRef = useRef(false);
 
   const fetchUnreadCount = useCallback(async () => {
+    if (pollBlockedRef.current) return;
     try {
       const res = await notificationApi.getUnread({ page: 0, size: 1 });
       setUnreadCount(res?.unreadCount ?? 0);
-    } catch {
-      // ignore
+    } catch (error) {
+      if (isAuthError(error)) {
+        pollBlockedRef.current = true;
+      }
     }
   }, []);
 
@@ -63,13 +72,16 @@ export default function NotificationBell() {
   }, [fetchUnreadCount]);
 
   const loadDropdown = useCallback(async () => {
+    if (pollBlockedRef.current) return;
     setLoading(true);
     try {
       const res = await notificationApi.getUnread({ page: 0, size: 20 });
       setItems(res?.notifications?.content ?? []);
       setUnreadCount(res?.unreadCount ?? 0);
-    } catch {
-      // ignore
+    } catch (error) {
+      if (isAuthError(error)) {
+        pollBlockedRef.current = true;
+      }
     } finally {
       setLoading(false);
     }

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useNotices } from '../hooks/useNotices';
 import { supportApi } from '../api/supportApi';
 import styles from './Support.module.css';
-import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../user/hooks/useAuth';
 
 const NOTICE_STATUS_OPTIONS = [
@@ -49,6 +48,11 @@ export default function NoticeList() {
   };
 
   const handleCreateNotice = async () => {
+    if (!isAdmin) {
+      alert('관리자만 공지사항을 등록할 수 있습니다.');
+      return;
+    }
+
     const title = writeForm.noticeTitle.trim();
     const content = writeForm.noticeCtnt.trim();
     if (!title) return alert('제목을 입력해주세요.');
@@ -80,7 +84,6 @@ export default function NoticeList() {
     }
   };
 
-  if (!user) return <Navigate to="/login" replace />;
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { communityApi } from '../api/communityApi';
+import { useAuth } from '../../user/hooks/useAuth';
 import styles from './CommunityHome.module.css';
 
 const TABS = [
@@ -30,6 +31,9 @@ function typeLabel(value) {
 
 export default function CommunityHome() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const userRole = String(user?.userRole ?? '').toLowerCase();
+
   const [activeTab, setActiveTab] = useState('ALL');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,6 +46,19 @@ export default function CommunityHome() {
   const [writeTitle, setWriteTitle] = useState('');
   const [writeContent, setWriteContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const selectedWriteType = activeTab === 'ALL' ? writeType : activeTab;
+  const isAdmin = userRole === 'admin';
+  const isTenant = userRole === 'tenant';
+  const isUser = userRole === 'user';
+  const effectiveWriteType =
+    isUser && activeTab === 'ALL' ? 'QUESTION' : selectedWriteType;
+  const isQuestionWrite =
+    String(effectiveWriteType).toUpperCase() === 'QUESTION' ||
+    String(effectiveWriteType).toUpperCase() === 'BOARD_QUESTION';
+
+  const canOpenWriter = isAdmin || isTenant || (isUser && (activeTab === 'ALL' || activeTab === 'QUESTION'));
+  const canSubmitWrite = isAdmin || isTenant || (isUser && isQuestionWrite);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,6 +98,18 @@ export default function CommunityHome() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab === 'ALL' && isUser && writeType !== 'QUESTION') {
+      setWriteType('QUESTION');
+    }
+  }, [activeTab, isUser, writeType]);
+
+  useEffect(() => {
+    if (!canOpenWriter) {
+      setShowWriter(false);
+    }
+  }, [canOpenWriter]);
+
   const pageButtons = useMemo(() => {
     const from = Math.max(1, page - 2);
     const to = Math.min(totalPages, page + 2);
@@ -90,6 +119,11 @@ export default function CommunityHome() {
   }, [page, totalPages]);
 
   const submitPost = async () => {
+    if (!canSubmitWrite) {
+      setError('커뮤니티 질문은 일반회원/입주자/관리자만 등록할 수 있습니다.');
+      return;
+    }
+
     const title = writeTitle.trim();
     const content = writeContent.trim();
 
@@ -108,7 +142,7 @@ export default function CommunityHome() {
       await communityApi.createBoard({
         boardTitle: title,
         boardCtnt: content,
-        code: activeTab === 'ALL' ? writeType : activeTab,
+        code: effectiveWriteType,
         anonymity: 'N',
       });
 
@@ -135,7 +169,7 @@ export default function CommunityHome() {
       <main className={styles.main}>
         <section className={styles.head}>
           <h1 className={styles.title}>커뮤니티</h1>
-          <p className={styles.sub}>전체, 자유, 질문, 후기 탭에서 글을 읽고 작성할 수 있습니다.</p>
+          <p className={styles.sub}>전체, 자유, 질문, 후기 게시글을 조회하고 작성할 수 있습니다.</p>
         </section>
 
         <div className={styles.tabs}>
@@ -152,29 +186,39 @@ export default function CommunityHome() {
         </div>
 
         <div className={styles.writerBar}>
-          <button
-            type="button"
-            className={styles.writeToggleBtn}
-            onClick={() => setShowWriter((v) => !v)}
-          >
-            {showWriter ? '작성 닫기' : '글쓰기'}
-          </button>
+          {canOpenWriter ? (
+            <button
+              type="button"
+              className={styles.writeToggleBtn}
+              onClick={() =>
+                setShowWriter((v) => {
+                  const next = !v;
+                  if (next && activeTab === 'ALL' && isUser) {
+                    setWriteType('QUESTION');
+                  }
+                  return next;
+                })
+              }
+            >
+              {showWriter ? '작성 닫기' : '글쓰기'}
+            </button>
+          ) : null}
         </div>
 
-        {showWriter && (
+        {canOpenWriter && showWriter && (
           <section className={styles.writerBox}>
             <div className={styles.writerRow}>
               <label className={styles.writerLabel}>분류</label>
               {activeTab === 'ALL' ? (
                 <select
                   className={styles.writerSelect}
-                  value={writeType}
+                  value={isUser ? 'QUESTION' : writeType}
                   onChange={(e) => setWriteType(e.target.value)}
                   disabled={submitting}
                 >
-                  <option value="FREE">자유</option>
+                  {(isAdmin || isTenant) ? <option value="FREE">자유</option> : null}
                   <option value="QUESTION">질문</option>
-                  <option value="REVIEW">후기</option>
+                  {(isAdmin || isTenant) ? <option value="REVIEW">후기</option> : null}
                 </select>
               ) : (
                 <div className={styles.writerFixed}>{typeLabel(activeTab)}</div>

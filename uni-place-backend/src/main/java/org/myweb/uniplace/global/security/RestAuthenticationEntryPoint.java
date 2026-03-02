@@ -19,16 +19,19 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
-    private static final int THRESHOLD = 30;
+    private static final int THRESHOLD = 60;
+    private static final int SUSPICIOUS_THRESHOLD = 8;
     private static final long WINDOW_MINUTES = 5L;
-    private static final Deque<LocalDateTime> UNAUTH_WINDOW = new ArrayDeque<>();
-    private static LocalDateTime lastAlertAt;
+    private static final Map<String, Deque<LocalDateTime>> UNAUTH_WINDOWS = new HashMap<>();
+    private static final Map<String, LocalDateTime> LAST_ALERT_AT = new HashMap<>();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final NotificationService notificationService;
@@ -50,39 +53,29 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private void recordUnauthorizedRequest(HttpServletRequest request) {
         LocalDateTime now = LocalDateTime.now();
-        boolean shouldAlert = false;
-        synchronized (UNAUTH_WINDOW) {
-            LocalDateTime start = now.minusMinutes(WINDOW_MINUTES);
-            while (!UNAUTH_WINDOW.isEmpty() && UNAUTH_WINDOW.peekFirst().isBefore(start)) {
-                UNAUTH_WINDOW.pollFirst();
-            }
-            UNAUTH_WINDOW.addLast(now);
-            if (UNAUTH_WINDOW.size() >= THRESHOLD && (lastAlertAt == null || lastAlertAt.isBefore(start))) {
-                shouldAlert = true;
-                lastAlertAt = now;
-            }
-        }
-
         String userAgent = safe(request.getHeader("User-Agent"));
         String path = safe(request.getRequestURI());
-        if (isSuspiciousUserAgent(userAgent)) {
-            shouldAlert = true;
-        }
+        String ip = safe(request.getRemoteAddr());
 
+        boolean suspiciousUa = isSuspiciousUserAgent(userAgent);
+        int threshold = suspiciousUa ? SUSPICIOUS_THRESHOLD : THRESHOLD;
+        String bucketKey = ip + "|" + path;
+
+        boolean shouldAlert = shouldAlert(bucketKey, now, threshold, UNAUTH_WINDOWS, LAST_ALERT_AT);
         if (!shouldAlert) {
             return;
         }
 
         try {
             notificationService.notifyAdmins(
-                NotificationType.ADM_ABNORMAL_API.name(),
-                "비정상 API 접근이 감지되었습니다(401). 경로=" + path
-                    + ", ip=" + safe(request.getRemoteAddr())
-                    + ", ua=" + userAgent,
-                null,
-                TargetType.notice,
-                null,
-                "/admin/security"
+                    NotificationType.ADM_ABNORMAL_API.name(),
+                    "Abnormal API access detected (401). path=" + path
+                            + ", ip=" + ip
+                            + ", ua=" + userAgent,
+                    null,
+                    TargetType.notice,
+                    null,
+                    "/admin/security"
             );
         } catch (Exception e) {
             log.warn("[SECURITY][NOTIFY][ADMIN] 401 alert failed reason={}", e.getMessage());
@@ -92,13 +85,42 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private static boolean isSuspiciousUserAgent(String ua) {
         String v = ua.toLowerCase(Locale.ROOT);
         return v.contains("sqlmap")
-            || v.contains("nmap")
-            || v.contains("nikto")
-            || v.contains("python-requests")
-            || v.contains("curl");
+                || v.contains("nmap")
+                || v.contains("nikto");
+    }
+
+    private static boolean shouldAlert(
+            String key,
+            LocalDateTime now,
+            int threshold,
+            Map<String, Deque<LocalDateTime>> windows,
+            Map<String, LocalDateTime> lastAlertAtMap
+    ) {
+        synchronized (windows) {
+            LocalDateTime start = now.minusMinutes(WINDOW_MINUTES);
+            Deque<LocalDateTime> window = windows.computeIfAbsent(key, ignored -> new ArrayDeque<>());
+
+            while (!window.isEmpty() && window.peekFirst().isBefore(start)) {
+                window.pollFirst();
+            }
+
+            window.addLast(now);
+            if (window.size() < threshold) {
+                return false;
+            }
+
+            LocalDateTime lastAlert = lastAlertAtMap.get(key);
+            if (lastAlert != null && !lastAlert.isBefore(start)) {
+                return false;
+            }
+
+            lastAlertAtMap.put(key, now);
+            return true;
+        }
     }
 
     private static String safe(String value) {
         return value == null || value.isBlank() ? "-" : value;
     }
 }
+
