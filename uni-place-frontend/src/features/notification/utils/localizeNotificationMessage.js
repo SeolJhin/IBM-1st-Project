@@ -85,7 +85,9 @@ function normalizeByCode(item, code, message) {
       return '결제 배치 처리에 실패했습니다.';
     case 'SEC_NEW_DEVICE': {
       const bits = [deviceId && `기기=${deviceId}`, ip && `IP=${ip}`].filter(Boolean);
-      return bits.length ? `새 기기 로그인이 감지되었습니다. (${bits.join(', ')})` : '새 기기 로그인이 감지되었습니다.';
+      return bits.length
+        ? `새 기기 로그인이 감지되었습니다. (${bits.join(', ')})`
+        : '새 기기 로그인이 감지되었습니다.';
     }
     case 'SEC_EMAIL_CHG':
       return '이메일이 변경되었습니다.';
@@ -94,9 +96,13 @@ function normalizeByCode(item, code, message) {
     case 'SEC_PWD_CHG':
       return '비밀번호가 변경되었습니다.';
     case 'SEC_LOGIN_LOCK':
-      return unlockAt ? `반복된 로그인 실패로 계정이 잠겼습니다. (해제시각=${unlockAt})` : '반복된 로그인 실패로 계정이 잠겼습니다.';
+      return unlockAt
+        ? `반복된 로그인 실패로 계정이 잠겼습니다. (해제시각=${unlockAt})`
+        : '반복된 로그인 실패로 계정이 잠겼습니다.';
     case 'SEC_SOCIAL_LINK':
-      return provider ? `소셜 계정 연동이 완료되었습니다. (provider=${provider})` : '소셜 계정 연동이 완료되었습니다.';
+      return provider
+        ? `소셜 계정 연동이 완료되었습니다. (provider=${provider})`
+        : '소셜 계정 연동이 완료되었습니다.';
     case 'ADM_LOGIN_OK':
       return '관리자 로그인 성공 알림입니다.';
     case 'ADM_NEW_DEVICE':
@@ -120,21 +126,62 @@ function normalizeByCode(item, code, message) {
   }
 }
 
+function fallbackByCode(code, target) {
+  const normalizedCode = str(code).toUpperCase();
+  const normalizedTarget = str(target).toLowerCase();
+
+  if (normalizedCode.includes('CONTRACT')) return '계약 관련 알림이 도착했습니다.';
+  if (
+    normalizedCode.includes('ROOMSERVICE') ||
+    normalizedCode.includes('ROOM_SERVICE') ||
+    normalizedCode.includes('ORDER')
+  ) {
+    return '룸서비스 주문 알림이 도착했습니다.';
+  }
+  if (normalizedCode.startsWith('PAY_') || normalizedTarget === 'payment') {
+    return '결제 관련 알림이 도착했습니다.';
+  }
+  if (normalizedCode.startsWith('SP_') || normalizedTarget === 'space') {
+    return '공간 예약 알림이 도착했습니다.';
+  }
+  if (normalizedCode.startsWith('TOUR_') || normalizedTarget === 'tour') {
+    return '투어 예약 알림이 도착했습니다.';
+  }
+  if (
+    normalizedCode.startsWith('BRD_') ||
+    normalizedCode.startsWith('RPL_') ||
+    normalizedTarget === 'board' ||
+    normalizedTarget === 'reply'
+  ) {
+    return '커뮤니티 알림이 도착했습니다.';
+  }
+  return '알림이 도착했습니다.';
+}
+
 function replaceLegacyEnglish(message) {
   let out = str(message);
   out = out.replace(/Email has been changed\.?/gi, '이메일이 변경되었습니다.');
   out = out.replace(/Phone number has been changed\.?/gi, '전화번호가 변경되었습니다.');
   out = out.replace(/Password has been changed\.?/gi, '비밀번호가 변경되었습니다.');
   out = out.replace(/Social account linked\.?/gi, '소셜 계정 연동이 완료되었습니다.');
-  out = out.replace(/Abnormal API access detected/gi, '비정상 API 접근이 감지되었습니다');
-  out = out.replace(/Abnormal login traffic detected/gi, '비정상 로그인 트래픽이 감지되었습니다');
-  out = out.replace(/New device login detected/gi, '새 기기 로그인이 감지되었습니다');
-  out = out.replace(/Admin login success/gi, '관리자 로그인 성공');
-  out = out.replace(/Admin login locked/gi, '관리자 계정 로그인 잠금');
-  out = out.replace(/Login blocked for 5 minutes due to repeated failures/gi, '반복된 로그인 실패로 5분 동안 로그인이 차단되었습니다');
-  out = out.replace(/Bulk user change detected/gi, '대량 사용자 변경이 감지되었습니다');
-  out = out.replace(/Admin changed user status/gi, '관리자가 사용자 상태를 변경했습니다');
-  out = out.replace(/Admin changed user role/gi, '관리자가 사용자 권한을 변경했습니다');
+  out = out.replace(/Abnormal API access detected\.?/gi, '비정상 API 접근이 감지되었습니다.');
+  out = out.replace(/Abnormal login traffic detected\.?/gi, '비정상 로그인 트래픽이 감지되었습니다.');
+  out = out.replace(/New device login detected\.?/gi, '새 기기 로그인이 감지되었습니다.');
+  out = out.replace(/Admin login success\.?/gi, '관리자 로그인 성공 알림입니다.');
+  out = out.replace(/Admin login locked\.?/gi, '관리자 계정이 잠겼습니다.');
+  out = out.replace(
+    /Login blocked for 5 minutes due to repeated failures\.?/gi,
+    '반복된 로그인 실패로 5분 동안 로그인이 차단되었습니다.'
+  );
+  out = out.replace(/Bulk user change detected\.?/gi, '대량 사용자 변경이 감지되었습니다.');
+  out = out.replace(/Admin changed user status\.?/gi, '관리자가 사용자 상태를 변경했습니다.');
+  out = out.replace(/Admin changed user role\.?/gi, '관리자가 사용자 권한을 변경했습니다.');
+  out = out.replace(/Contract approved\.?/gi, '계약이 승인되었습니다.');
+  out = out.replace(/Contract rejected\.?/gi, '계약이 반려되었습니다.');
+  out = out.replace(/Contract status updated\.?/gi, '계약 상태가 변경되었습니다.');
+  out = out.replace(/Room service order created\.?/gi, '룸서비스 주문이 접수되었습니다.');
+  out = out.replace(/Room service order updated\.?/gi, '룸서비스 주문 상태가 변경되었습니다.');
+  out = out.replace(/Room service order cancelled\.?/gi, '룸서비스 주문이 취소되었습니다.');
   return out;
 }
 
@@ -143,14 +190,11 @@ export function localizeNotificationMessage(item) {
   const message = str(item?.message).trim();
 
   const byCode = normalizeByCode(item, code, message);
-  if (byCode) {
-    return byCode;
-  }
-  if (hasKorean(message)) {
-    return message;
-  }
+  if (byCode) return byCode;
+  if (hasKorean(message)) return message;
 
   const replaced = replaceLegacyEnglish(message);
-  return replaced || '알림이 도착했습니다.';
-}
+  if (hasKorean(replaced)) return replaced;
 
+  return fallbackByCode(code, item?.target);
+}
