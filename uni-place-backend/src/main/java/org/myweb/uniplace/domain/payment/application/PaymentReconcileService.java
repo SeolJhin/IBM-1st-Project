@@ -96,12 +96,12 @@ public class PaymentReconcileService {
                 reconcileOne(payment, false);
             } catch (Exception e) {
                 log.warn("[ALERT][PAYMENT_RECONCILE] reconcile failed paymentId={} reason={}",
-                    payment.getPaymentId(), trimMessage(e.getMessage()));
+                    payment.getPaymentId(), trimMessageKor(e.getMessage()));
                 notifyAdmins(
                     NotificationType.PAY_BATCH_FAIL.name(),
                     "결제 배치(reconcile) 실패. paymentId=" + payment.getPaymentId()
                         + ", provider=" + payment.getProvider()
-                        + ", reason=" + trimMessage(e.getMessage()),
+                        + ", reason=" + trimMessageKor(e.getMessage()),
                     payment.getUserId(),
                     payment.getPaymentId(),
                     "/admin/payments/" + payment.getPaymentId()
@@ -255,7 +255,7 @@ public class PaymentReconcileService {
         if (hasText(reason) && reason.contains("MISMATCH")) {
             notifyAdmins(
                 NotificationType.PAY_STATUS_MISMATCH.name(),
-                "결제 상태 불일치 감지(disputed). paymentId=" + payment.getPaymentId()
+                "결제 상태 불일치가 감지되어 분쟁 상태로 전환되었습니다. paymentId=" + payment.getPaymentId()
                     + ", provider=" + payment.getProvider()
                     + ", reason=" + reason,
                 payment.getUserId(),
@@ -370,7 +370,14 @@ public class PaymentReconcileService {
 
     private static String trimMessage(String message) {
         if (!hasText(message)) {
-            return "unknown";
+            return "알 수 없음";
+        }
+        return message.length() > 255 ? message.substring(0, 255) : message;
+    }
+
+    private static String trimMessageKor(String message) {
+        if (!hasText(message)) {
+            return "알 수 없음";
         }
         return message.length() > 255 ? message.substring(0, 255) : message;
     }
@@ -391,7 +398,7 @@ public class PaymentReconcileService {
             );
         } catch (Exception e) {
             log.warn("[PAYMENT][NOTIFY][ADMIN] reconcile notify failed code={} paymentId={} reason={}",
-                code, paymentId, trimMessage(e.getMessage()));
+                code, paymentId, trimMessageKor(e.getMessage()));
         }
     }
 }
