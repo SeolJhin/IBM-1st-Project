@@ -10,8 +10,10 @@ import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
 import org.myweb.uniplace.domain.commerce.domain.enums.RoomServiceOrderStatus;
 import org.myweb.uniplace.domain.commerce.repository.OrderRepository;
 import org.myweb.uniplace.domain.commerce.repository.RoomServiceOrderRepository;
+import org.myweb.uniplace.domain.contract.domain.entity.Contract;
+import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
+import org.myweb.uniplace.domain.contract.repository.ContractRepository;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
-import org.myweb.uniplace.domain.property.repository.RoomRepository;
 import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,37 +36,42 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
     private final RoomServiceOrderRepository roomServiceOrderRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-    private final RoomRepository roomRepository;
+    private final ContractRepository contractRepository;
 
     @Override
     public RoomServiceOrderResponse createOrder(String userId, RoomServiceOrderCreateRequest request) {
-
-        if (request == null || request.getRoomId() == null) {
+        if (request == null) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        Room room = roomRepository.findById(request.getRoomId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
+        Contract tenantContract = resolveTenantContract(userId);
+        Room tenantRoom = tenantContract.getRoom();
+        if (tenantRoom == null || tenantRoom.getRoomId() == null) {
+            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+        }
+
+        if (request.getRoomId() != null && !tenantRoom.getRoomId().equals(request.getRoomId())) {
+            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
 
         Order parentOrder = resolveParentOrder(user, request);
 
         BigDecimal parentTotal = parentOrder.getTotalPrice() == null
-                ? BigDecimal.ZERO
-                : parentOrder.getTotalPrice();
+            ? BigDecimal.ZERO
+            : parentOrder.getTotalPrice();
 
         RoomServiceOrder roomServiceOrder = RoomServiceOrder.builder()
-                .parentOrder(parentOrder)
-                .user(user)
-                .room(room)
-                .totalPrice(parentTotal) // ✅ 부모 Order 금액 복사
-                .roomServiceDesc(request.getRoomServiceDesc())
-                .build();
+            .parentOrder(parentOrder)
+            .user(user)
+            .room(tenantRoom)
+            .totalPrice(parentTotal)
+            .roomServiceDesc(trimToNull(request.getRoomServiceDesc()))
+            .build();
 
         roomServiceOrderRepository.save(roomServiceOrder);
-
         return RoomServiceOrderResponse.from(roomServiceOrder);
     }
 
@@ -71,15 +79,15 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
     @Transactional(readOnly = true)
     public List<RoomServiceOrderResponse> getMyOrders(String userId) {
         return roomServiceOrderRepository.findAllByUserIdWithRoom(userId).stream()
-                .map(RoomServiceOrderResponse::from)
-                .collect(Collectors.toList());
+            .map(RoomServiceOrderResponse::from)
+            .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<RoomServiceOrderResponse> getAllOrders(Pageable pageable) {
         return roomServiceOrderRepository.findAllWithDetails(pageable)
-                .map(RoomServiceOrderResponse::from);
+            .map(RoomServiceOrderResponse::from);
     }
 
     @Override
@@ -89,7 +97,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
         }
 
         RoomServiceOrder order = roomServiceOrderRepository.findById(orderId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_SERVICE_ORDER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_SERVICE_ORDER_NOT_FOUND));
 
         order.updateStatus(request.getOrderSt());
         return RoomServiceOrderResponse.from(order);
@@ -97,9 +105,8 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
 
     @Override
     public RoomServiceOrderResponse cancelOrder(String userId, Integer orderId) {
-
         RoomServiceOrder roomServiceOrder = roomServiceOrderRepository.findById(orderId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_SERVICE_ORDER_NOT_FOUND));
+            .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_SERVICE_ORDER_NOT_FOUND));
 
         if (!roomServiceOrder.getUser().getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
@@ -112,9 +119,8 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
         roomServiceOrder.updateStatus(RoomServiceOrderStatus.cancelled);
 
         Order parentOrder = roomServiceOrder.getParentOrder();
-
         boolean allCancelled = parentOrder.getRoomServiceOrders().stream()
-                .allMatch(rso -> rso.getOrderSt() == RoomServiceOrderStatus.cancelled);
+            .allMatch(rso -> rso.getOrderSt() == RoomServiceOrderStatus.cancelled);
 
         if (allCancelled) {
             if (parentOrder.getOrderSt() == OrderStatus.ordered) {
@@ -128,28 +134,49 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
     }
 
     private Order resolveParentOrder(User user, RoomServiceOrderCreateRequest request) {
-
         if (request.getOrderId() != null) {
             Order existing = orderRepository.findById(request.getOrderId())
-                    .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
             if (!existing.getUser().getUserId().equals(user.getUserId())) {
                 throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
             }
 
             if (existing.getOrderSt() != OrderStatus.ordered) {
-                throw new BusinessException(ErrorCode.ORDER_INVALID_STATUS); 
+                throw new BusinessException(ErrorCode.ORDER_INVALID_STATUS);
             }
 
             return existing;
         }
 
         Order created = Order.builder()
-                .user(user)
-                .orderSt(OrderStatus.ordered)
-                .totalPrice(BigDecimal.ZERO)
-                .build();
+            .user(user)
+            .orderSt(OrderStatus.ordered)
+            .totalPrice(BigDecimal.ZERO)
+            .build();
 
         return orderRepository.save(created);
+    }
+
+    private Contract resolveTenantContract(String userId) {
+        List<Contract> contracts = contractRepository.findActiveContractsWithRoomAndBuilding(
+            userId,
+            ContractStatus.active,
+            LocalDate.now()
+        );
+
+        if (contracts.isEmpty()) {
+            throw new BusinessException(ErrorCode.ROOM_SERVICE_TENANT_ONLY);
+        }
+
+        return contracts.get(0);
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

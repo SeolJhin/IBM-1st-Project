@@ -12,7 +12,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import { useProducts } from '../hooks/useProducts';
 import { useCart } from '../hooks/useCart';
-import { buildingApi } from '../../../app/http/buildingApi';
+import { useTenantContract } from '../hooks/useTenantContract';
 import { withApiPrefix } from '../../../app/http/apiBase';
 import styles from './ProductList.module.css';
 import layoutStyles from '../../user/pages/MemberInfo.module.css';
@@ -211,6 +211,11 @@ export default function ProductList({
     actionLoading,
     refetch: refetchCart,
   } = useCart();
+  const {
+    contract: tenantContract,
+    loading: tenantLoading,
+    error: tenantError,
+  } = useTenantContract();
 
   const [activeTab, setActiveTab] = useState('all');
   // 동적 카테고리 탭: products의 code + 공통코드 API codeValue로 생성
@@ -245,21 +250,23 @@ export default function ProductList({
   }, [products]);
 
   useEffect(() => {
-    setBuildingLoading(true);
-    buildingApi
-      .getList({ size: 50 })
-      .then((res) => {
-        const list =
-          res?.data?.data?.content ??
-          res?.data?.data ??
-          res?.data?.content ??
-          res?.data ??
-          [];
-        setBuildings(Array.isArray(list) ? list : []);
-      })
-      .catch(() => setBuildings([]))
-      .finally(() => setBuildingLoading(false));
-  }, []);
+    setBuildingLoading(tenantLoading);
+    if (tenantLoading) return;
+
+    if (!tenantContract || !tenantContract.buildingId) {
+      setBuildings([]);
+      setSelectedBuildingId(null);
+      return;
+    }
+
+    const nextBuilding = {
+      buildingId: tenantContract.buildingId,
+      buildingNm:
+        tenantContract.buildingNm ?? `빌딩 #${tenantContract.buildingId}`,
+    };
+    setBuildings([nextBuilding]);
+    setSelectedBuildingId(tenantContract.buildingId);
+  }, [tenantContract, tenantLoading]);
 
   const handleSelectBuilding = async (id) => {
     if (id === selectedBuildingId) return;
@@ -295,6 +302,12 @@ export default function ProductList({
   }, []);
 
   const handleAddToCart = async () => {
+    if (!tenantContract) {
+      alert(
+        tenantError || '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.'
+      );
+      return;
+    }
     if (!selectedBuildingId) {
       alert('빌딩을 선택해주세요.');
       return;
@@ -428,6 +441,11 @@ export default function ProductList({
           onSelect={handleSelectBuilding}
           loading={buildingLoading}
         />
+        {!tenantLoading && !tenantContract && (
+          <p className={styles.errMsg}>
+            {tenantError || '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.'}
+          </p>
+        )}
         <div className={styles.catTabs}>
           {tabs.map((t) => (
             <button
@@ -487,7 +505,9 @@ export default function ProductList({
             <button
               className={`${styles.addCartBtn} ${pendingTotal === 0 ? styles.addCartBtnDim : ''}`}
               onClick={handleAddToCart}
-              disabled={adding || actionLoading || pendingTotal === 0}
+              disabled={
+                adding || actionLoading || pendingTotal === 0 || !tenantContract
+              }
             >
               {adding
                 ? '담는 중…'
@@ -497,6 +517,13 @@ export default function ProductList({
               <button
                 className={styles.goCartBtn}
                 onClick={() => {
+                  if (!tenantContract) {
+                    alert(
+                      tenantError ||
+                        '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.'
+                    );
+                    return;
+                  }
                   if (!selectedBuildingId) {
                     alert('빌딩을 선택해주세요.');
                     return;

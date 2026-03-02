@@ -240,7 +240,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.markCanceled();
         paymentRepository.save(payment);
         paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
-        notifyPaymentFail(payment, trimMessage(failMessage));
+        notifyPaymentFailKor(payment, trimMessage(failMessage));
     }
 
     private PaymentResponse approveInternal(String requesterUserId, PaymentApproveRequest request) {
@@ -291,7 +291,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .build()
             );
 
-            verifyApproveResult(payment, gwRes);
+            verifyApproveResultKor(payment, gwRes);
 
             intent.markApproveOk(gwRes.getPgApproveJson());
             paymentIntentRepository.save(intent);
@@ -301,7 +301,7 @@ public class PaymentServiceImpl implements PaymentService {
                     ? gwRes.getProviderPaymentId()
                     : intent.getProviderRefId();
 
-            validateProviderPaymentId(payment, providerPaymentId);
+            validateProviderPaymentIdKor(payment, providerPaymentId);
             payment.updateProviderPaymentId(providerPaymentId);
             payment.markPaid(
                 LocalDateTime.now(),
@@ -311,7 +311,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             syncTargetPaid(payment);
             paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.approved);
-            notifyPaymentSuccess(payment);
+            notifyPaymentSuccessKor(payment);
 
             return PaymentResponse.builder()
                 .paymentId(payment.getPaymentId())
@@ -322,7 +322,7 @@ public class PaymentServiceImpl implements PaymentService {
             intent.markApproveFail("APPROVE_FAIL", trimMessage(e.getMessage()), null);
             paymentIntentRepository.save(intent);
             paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
-            notifyPaymentFail(payment, trimMessage(e.getMessage()));
+            notifyPaymentFailKor(payment, trimMessage(e.getMessage()));
             throw e;
         }
     }
@@ -344,7 +344,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         payment.markReady();
         paymentRepository.save(payment);
-        notifyPaymentRetry(payment);
+        notifyPaymentRetryKor(payment);
 
         return PaymentResponse.builder()
             .paymentId(payment.getPaymentId())
@@ -477,7 +477,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static String trimMessage(String message) {
         if (message == null || message.isBlank()) {
-            return "payment approve failed";
+            return "결제 승인 실패";
         }
         return message.length() > 255 ? message.substring(0, 255) : message;
     }
@@ -719,6 +719,118 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private void verifyApproveResultKor(Payment payment, PaymentGatewayApproveResponse gwRes) {
+        if (gwRes == null || !isApprovedStatus(gwRes.getGatewayStatus())) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+        if (!hasText(gwRes.getProviderPaymentId())) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+        if (hasText(gwRes.getMerchantUid()) && !payment.getMerchantUid().equals(gwRes.getMerchantUid())) {
+            safeNotifyAdmins(
+                NotificationType.PAY_STATUS_MISMATCH.name(),
+                "결제 상태 불일치 감지(merchantUid). paymentId=" + payment.getPaymentId()
+                    + ", 예상값=" + payment.getMerchantUid()
+                    + ", 실제값=" + gwRes.getMerchantUid(),
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+        if (gwRes.getCapturedPrice() != null
+            && payment.getTotalPrice() != null
+            && payment.getTotalPrice().compareTo(gwRes.getCapturedPrice()) != 0) {
+            safeNotifyAdmins(
+                NotificationType.PAY_STATUS_MISMATCH.name(),
+                "결제 상태 불일치 감지(amount). paymentId=" + payment.getPaymentId()
+                    + ", 예상값=" + payment.getTotalPrice()
+                    + ", 실제값=" + gwRes.getCapturedPrice(),
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+        if (hasText(gwRes.getCurrency())
+            && hasText(payment.getCurrency())
+            && !payment.getCurrency().equalsIgnoreCase(gwRes.getCurrency())) {
+            safeNotifyAdmins(
+                NotificationType.PAY_STATUS_MISMATCH.name(),
+                "결제 상태 불일치 감지(currency). paymentId=" + payment.getPaymentId()
+                    + ", 예상값=" + payment.getCurrency()
+                    + ", 실제값=" + gwRes.getCurrency(),
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+    }
+
+    private void validateProviderPaymentIdKor(Payment payment, String providerPaymentId) {
+        if (!hasText(providerPaymentId)) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+        if (hasText(payment.getProviderPaymentId()) && !payment.getProviderPaymentId().equals(providerPaymentId)) {
+            safeNotifyAdmins(
+                NotificationType.PAY_DUPLICATE.name(),
+                "결제 거래번호 충돌 감지. paymentId=" + payment.getPaymentId()
+                    + ", provider=" + payment.getProvider()
+                    + ", existingProviderPaymentId=" + payment.getProviderPaymentId()
+                    + ", requestedProviderPaymentId=" + providerPaymentId,
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+
+        Payment existing = paymentRepository
+            .findByProviderAndProviderPaymentId(payment.getProvider(), providerPaymentId)
+            .orElse(null);
+
+        if (existing != null && !Objects.equals(existing.getPaymentId(), payment.getPaymentId())) {
+            safeNotifyAdmins(
+                NotificationType.PAY_DUPLICATE.name(),
+                "중복 결제가 감지되었습니다. paymentId=" + payment.getPaymentId()
+                    + ", duplicatePaymentId=" + existing.getPaymentId()
+                    + ", provider=" + payment.getProvider()
+                    + ", providerPaymentId=" + providerPaymentId,
+                payment.getUserId(),
+                payment.getPaymentId(),
+                "/admin/payments/" + payment.getPaymentId()
+            );
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+    }
+
+    private void notifyPaymentSuccessKor(Payment payment) {
+        if (payment == null || !hasText(payment.getUserId())) {
+            return;
+        }
+        String msg = "결제가 완료되었습니다. (paymentId=" + payment.getPaymentId()
+            + ", 결제금액=" + payment.getCapturedPrice() + "원)";
+        safeNotifyUser(payment.getUserId(), NotificationType.PAY_OK.name(), msg, payment.getPaymentId());
+    }
+
+    private void notifyPaymentFailKor(Payment payment, String reason) {
+        if (payment == null || !hasText(payment.getUserId())) {
+            return;
+        }
+        String failReason = hasText(reason) ? " 사유: " + reason : "";
+        String msg = "결제에 실패했습니다. 다시 시도해 주세요. (paymentId=" + payment.getPaymentId() + ")" + failReason;
+        safeNotifyUser(payment.getUserId(), NotificationType.PAY_FAIL.name(), msg, payment.getPaymentId());
+    }
+
+    private void notifyPaymentRetryKor(Payment payment) {
+        if (payment == null || !hasText(payment.getUserId())) {
+            return;
+        }
+        String msg = "결제를 다시 시도합니다. (paymentId=" + payment.getPaymentId() + ")";
+        safeNotifyUser(payment.getUserId(), NotificationType.PAY_RETRY.name(), msg, payment.getPaymentId());
     }
 
     private void notifyPaymentSuccess(Payment payment) {

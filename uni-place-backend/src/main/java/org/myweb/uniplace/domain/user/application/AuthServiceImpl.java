@@ -388,7 +388,7 @@ public class AuthServiceImpl implements AuthService {
             safeNotifyUser(
                 user.getUserId(),
                 NotificationType.SEC_LOGIN_LOCK.name(),
-                "Login blocked for 5 minutes due to repeated failures. (unlockAt="
+                "반복된 로그인 실패로 5분 동안 로그인이 차단되었습니다. (해제시각="
                     + lockUntil.format(TS_FMT)
                     + ", deviceId=" + safe(deviceId)
                     + ", ip=" + safe(ip)
@@ -412,14 +412,14 @@ public class AuthServiceImpl implements AuthService {
         safeNotifyUser(
             user.getUserId(),
             NotificationType.SEC_NEW_DEVICE.name(),
-            "New device login detected. (deviceId=" + safe(deviceId)
+            "새 기기 로그인 감지. (deviceId=" + safe(deviceId)
                 + ", ip=" + safe(ip)
                 + ", ua=" + safe(userAgent) + ")"
         );
         if (isAdmin(user)) {
             safeNotifyAdmins(
                 NotificationType.ADM_NEW_DEVICE.name(),
-                "Admin new device login detected. adminId=" + user.getUserId()
+                "관리자 계정의 새 기기 로그인이 감지되었습니다. 관리자ID=" + user.getUserId()
                     + ", deviceId=" + safe(deviceId)
                     + ", ip=" + safe(ip)
                     + ", ua=" + safe(userAgent),
@@ -465,8 +465,8 @@ public class AuthServiceImpl implements AuthService {
         }
         safeNotifyAdmins(
             NotificationType.ADM_LOGIN_OK.name(),
-            "Admin login success. adminId=" + user.getUserId()
-                + ", loginAt=" + now.format(TS_FMT)
+            "관리자 로그인 성공. 관리자ID=" + user.getUserId()
+                + ", 로그인시각=" + now.format(TS_FMT)
                 + ", deviceId=" + safe(deviceId)
                 + ", ip=" + safe(ip)
                 + ", ua=" + safe(userAgent),
@@ -480,8 +480,8 @@ public class AuthServiceImpl implements AuthService {
         }
         safeNotifyAdmins(
             NotificationType.ADM_LOGIN_LOCK.name(),
-            "Admin login locked due to repeated failures. adminId=" + user.getUserId()
-                + ", unlockAt=" + lockUntil.format(TS_FMT)
+            "반복된 실패로 관리자 로그인이 잠겼습니다. 관리자ID=" + user.getUserId()
+                + ", 해제시각=" + lockUntil.format(TS_FMT)
                 + ", deviceId=" + safe(deviceId)
                 + ", ip=" + safe(ip)
                 + ", ua=" + safe(userAgent),
@@ -508,9 +508,9 @@ public class AuthServiceImpl implements AuthService {
 
         safeNotifyAdmins(
             NotificationType.ADM_ABNORMAL_TRAFFIC.name(),
-            "Abnormal login traffic detected. failedLogins="
+            "비정상 로그인 트래픽이 감지되었습니다. 로그인실패수="
                 + GLOBAL_LOGIN_FAIL_ALERT_THRESHOLD
-                + "+ in " + LOGIN_FAIL_WINDOW_MINUTES + " minutes.",
+                + "+, 감지구간(분)=" + LOGIN_FAIL_WINDOW_MINUTES + ".",
             null
         );
     }

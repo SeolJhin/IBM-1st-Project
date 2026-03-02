@@ -1,10 +1,10 @@
-// features/support/pages/NoticeList.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useNotices } from '../hooks/useNotices';
 import { supportApi } from '../api/supportApi';
-import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../user/hooks/useAuth';
 
 const NOTICE_STATUS_OPTIONS = [
   { value: 'notice', label: '공지' },
@@ -21,13 +21,17 @@ function normalizeRole(user) {
     user?.user_role ??
     user?.authority ??
     user?.authorities?.[0];
-  return String(raw ?? '').toLowerCase().replace('role_', '');
+
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace('role_', '');
 }
 
 export default function NoticeList() {
-  // ✅ 모든 훅 최상단
+  // ✅ 모든 hooks 최상단 - early return 전에 호출
   const { user } = useAuth();
-  const { notices, pagination, loading, error, goToPage, refetch } = useNotices();
+  const { notices, pagination, loading, error, goToPage, refetch } =
+    useNotices();
   const [showWriter, setShowWriter] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [writeForm, setWriteForm] = useState({
@@ -38,7 +42,6 @@ export default function NoticeList() {
     importance: 'N',
   });
 
-  // ✅ user 정의 후에 isAdmin 계산 (공지는 누구나 볼 수 있으므로 로그인 리다이렉트 없음)
   const isAdmin = normalizeRole(user) === 'admin';
 
   const handleChange = (field, value) => {
@@ -60,7 +63,13 @@ export default function NoticeList() {
         code: writeForm.code,
         importance: writeForm.importance,
       });
-      setWriteForm({ noticeTitle: '', noticeCtnt: '', noticeSt: 'notice', code: 'SUP_GENERAL', importance: 'N' });
+      setWriteForm({
+        noticeTitle: '',
+        noticeCtnt: '',
+        noticeSt: 'notice',
+        code: 'SUP_GENERAL',
+        importance: 'N',
+      });
       setShowWriter(false);
       await refetch();
       alert('공지사항이 등록되었습니다.');
@@ -71,7 +80,7 @@ export default function NoticeList() {
     }
   };
 
-  // ✅ 훅 다음에 early return (공지는 공개 페이지 → 로그인 체크 없음)
+  if (!user) return <Navigate to="/login" replace />;
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
@@ -79,8 +88,17 @@ export default function NoticeList() {
     <div className={styles.container}>
       {isAdmin && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-            <button className={styles.buttonPrimary} onClick={() => setShowWriter((v) => !v)}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginBottom: 16,
+            }}
+          >
+            <button
+              className={styles.buttonPrimary}
+              onClick={() => setShowWriter((v) => !v)}
+            >
               {showWriter ? '작성 닫기' : '공지 글쓰기'}
             </button>
           </div>
@@ -104,7 +122,9 @@ export default function NoticeList() {
                 disabled={submitting}
               >
                 {NOTICE_STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
                 ))}
               </select>
 
@@ -129,7 +149,11 @@ export default function NoticeList() {
               />
 
               <div style={{ marginTop: 12 }}>
-                <button className={styles.buttonPrimary} onClick={handleCreateNotice} disabled={submitting}>
+                <button
+                  className={styles.buttonPrimary}
+                  onClick={handleCreateNotice}
+                  disabled={submitting}
+                >
                   {submitting ? '등록 중...' : '등록'}
                 </button>
               </div>
@@ -150,24 +174,46 @@ export default function NoticeList() {
         <tbody>
           {notices.length === 0 ? (
             <tr>
-              <td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--muted)' }}>
+              <td
+                colSpan={4}
+                style={{
+                  textAlign: 'center',
+                  padding: 32,
+                  color: 'var(--muted)',
+                }}
+              >
                 등록된 공지사항이 없습니다.
               </td>
             </tr>
           ) : (
             notices.map((notice) => (
               <tr key={notice.noticeId}>
-                <td style={{ textAlign: 'center', color: 'var(--muted)' }}>{notice.noticeId}</td>
-                <td>
-                  {notice.importance === 'Y' && (
-                    <span className={styles.statusBadge} style={{ marginRight: 8 }}>중요</span>
-                  )}
-                  <Link to={`/support/notice/${notice.noticeId}`} className={styles.tableLink}>
-                    {notice.noticeTitle}
-                  </Link>
+                <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                  {notice.noticeId}
                 </td>
-                <td style={{ textAlign: 'center', color: 'var(--muted)' }}>{notice.readCount ?? 0}</td>
-                <td style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                <td>
+                  <div className={styles.tableTitleCell}>
+                    {notice.importance === 'Y' && (
+                      <span className={styles.statusBadge}>중요</span>
+                    )}
+                    <Link
+                      to={`/support/notice/${notice.noticeId}`}
+                      className={styles.tableLink}
+                    >
+                      {notice.noticeTitle}
+                    </Link>
+                  </div>
+                </td>
+                <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                  {notice.readCount ?? 0}
+                </td>
+                <td
+                  style={{
+                    textAlign: 'center',
+                    color: 'var(--muted)',
+                    fontSize: 13,
+                  }}
+                >
                   {notice.createdAt ? notice.createdAt.slice(0, 10) : '-'}
                 </td>
               </tr>
@@ -178,11 +224,21 @@ export default function NoticeList() {
 
       {pagination.totalPages > 1 && (
         <div className={styles.pagination}>
-          <button className={styles.pageBtn} disabled={pagination.isFirst} onClick={() => goToPage(pagination.page - 1)}>
+          <button
+            className={styles.pageBtn}
+            disabled={pagination.isFirst}
+            onClick={() => goToPage(pagination.page - 1)}
+          >
             이전
           </button>
-          <span className={styles.pageInfo}>{pagination.page} / {pagination.totalPages}</span>
-          <button className={styles.pageBtn} disabled={pagination.isLast} onClick={() => goToPage(pagination.page + 1)}>
+          <span className={styles.pageInfo}>
+            {pagination.page} / {pagination.totalPages}
+          </span>
+          <button
+            className={styles.pageBtn}
+            disabled={pagination.isLast}
+            onClick={() => goToPage(pagination.page + 1)}
+          >
             다음
           </button>
         </div>

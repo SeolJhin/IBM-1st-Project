@@ -137,7 +137,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             notificationService.notifyUser(
                 userId,
                 NotificationType.SEC_SOCIAL_LINK.name(),
-                "Social account linked. (provider=" + provider + ")",
+                "소셜 계정 연동이 완료되었습니다. (provider=" + provider + ")",
                 null,
                 TargetType.notice,
                 null,
