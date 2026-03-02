@@ -99,4 +99,29 @@ export const authApi = {
     request('/users/me', { method: 'PATCH', body: patch, auth: true }),
 
   deleteMe: () => request('/users/me', { method: 'DELETE', auth: true }),
+
+  // ── 아이디 찾기
+  findEmail: ({ userNm, userTel }) =>
+    request('/auth/find-email', {
+      method: 'POST',
+      body: { userNm, userTel },
+    }),
+
+  // ── 비밀번호 재설정 요청 (메일 발송)
+  requestPasswordReset: ({ userEmail }) =>
+    request('/auth/reset-password/request', {
+      method: 'POST',
+      body: { userEmail },
+    }),
+
+  // ── 토큰 유효성 사전 확인
+  verifyPasswordResetToken: (token) =>
+    request(`/auth/reset-password/verify?token=${encodeURIComponent(token)}`),
+
+  // ── 비밀번호 재설정 확정
+  confirmPasswordReset: ({ token, newPassword }) =>
+    request('/auth/reset-password/confirm', {
+      method: 'POST',
+      body: { token, newPassword },
+    }),
 };

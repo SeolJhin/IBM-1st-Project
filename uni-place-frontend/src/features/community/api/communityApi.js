@@ -46,26 +46,37 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (auth) headers.Authorization = `Bearer ${getAccessToken()}`;
 
-  const res = await fetchWithAuthRetry(path, {
-    method,
-    headers,
-    credentials: 'same-origin',
-    body: body ? JSON.stringify(body) : undefined,
-  }, { auth });
+  const res = await fetchWithAuthRetry(
+    path,
+    {
+      method,
+      headers,
+      credentials: 'same-origin',
+      body: body ? JSON.stringify(body) : undefined,
+    },
+    { auth }
+  );
 
   return parseApiResponse(res);
 }
 
-async function requestForm(path, { method = 'POST', formData, auth = true } = {}) {
+async function requestForm(
+  path,
+  { method = 'POST', formData, auth = true } = {}
+) {
   const headers = {};
   if (auth) headers.Authorization = `Bearer ${getAccessToken()}`;
 
-  const res = await fetchWithAuthRetry(path, {
-    method,
-    headers,
-    credentials: 'same-origin',
-    body: formData,
-  }, { auth });
+  const res = await fetchWithAuthRetry(
+    path,
+    {
+      method,
+      headers,
+      credentials: 'same-origin',
+      body: formData,
+    },
+    { auth }
+  );
 
   return parseApiResponse(res);
 }
@@ -98,7 +109,13 @@ export const communityApi = {
 
   getBoard: (boardId) => request(`/boards/${boardId}`, { auth: false }),
 
-  createBoard: ({ boardTitle, boardCtnt, code, anonymity = 'N', ofile } = {}) => {
+  createBoard: ({
+    boardTitle,
+    boardCtnt,
+    code,
+    anonymity = 'N',
+    ofile,
+  } = {}) => {
     const formData = new FormData();
     formData.append('boardTitle', boardTitle ?? '');
     formData.append('boardCtnt', boardCtnt ?? '');
@@ -112,5 +129,43 @@ export const communityApi = {
     request(`/boards/${boardId}`, { method: 'PATCH', body }),
 
   deleteBoard: (boardId) => request(`/boards/${boardId}`, { method: 'DELETE' }),
-};
 
+  getReplies: (boardId) =>
+    request(`/boards/${boardId}/replies`, { auth: false }),
+
+  getChildReplies: (boardId, parentId) =>
+    request(`/boards/${boardId}/replies/${parentId}/children`, { auth: false }),
+
+  createReply: (boardId, { replyCtnt } = {}) => {
+    const formData = new FormData();
+    formData.append('replyCtnt', replyCtnt ?? '');
+    return requestForm(`/boards/${boardId}/replies`, {
+      method: 'POST',
+      formData,
+      auth: true,
+    });
+  },
+
+  createChildReply: (boardId, parentId, { replyCtnt } = {}) => {
+    const formData = new FormData();
+    formData.append('replyCtnt', replyCtnt ?? '');
+    return requestForm(`/boards/${boardId}/replies/${parentId}/children`, {
+      method: 'POST',
+      formData,
+      auth: true,
+    });
+  },
+
+  updateReply: (replyId, { replyCtnt } = {}) => {
+    const formData = new FormData();
+    formData.append('replyCtnt', replyCtnt ?? '');
+    return requestForm(`/replies/${replyId}`, {
+      method: 'PUT',
+      formData,
+      auth: true,
+    });
+  },
+
+  deleteReply: (replyId) =>
+    request(`/replies/${replyId}`, { method: 'DELETE', auth: true }),
+};

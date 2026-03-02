@@ -9,8 +9,21 @@ public interface AuthService {
     UserTokenResponse refresh(RefreshTokenRequest req, String userAgent, String ip);
     void logout(LogoutRequest req);
     void logoutAll(String userId);
-    
-    // ✅ 카카오 소셜 로그인 "추가정보 입력 완료" 처리
+
     UserTokenResponse kakaoComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
     UserTokenResponse googleComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
+
+    // ===== 아이디 찾기 =====
+    /** 이름 + 전화번호로 마스킹된 이메일 반환 */
+    String findEmail(FindEmailRequest req);
+
+    // ===== 비밀번호 재설정 =====
+    /** 이메일로 재설정 링크 발송 */
+    void requestPasswordReset(PasswordResetRequest req);
+
+    /** 토큰 유효성 검증 (프론트 페이지 진입 시 사전 확인용) */
+    void verifyPasswordResetToken(String token);
+
+    /** 토큰 + 새 비밀번호로 비밀번호 변경 */
+    void confirmPasswordReset(PasswordResetConfirmRequest req);
 }
