@@ -1,4 +1,3 @@
-// features/support/pages/ComplainWrite.jsx
 import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
@@ -9,20 +8,48 @@ const COMPLAIN_CATEGORIES = [
   { code: 'COMP_PERSONAL', label: '개인' },
   { code: 'COMP_FACILITY', label: '시설' },
   { code: 'COMP_NOISE', label: '소음' },
-  { code: 'COMP_CONTRACT', label: '입주·계약' },
+  { code: 'COMP_CONTRACT', label: '입주/계약' },
   { code: 'COMP_SAFETY', label: '안전' },
   { code: 'COMP_ETC', label: '기타' },
 ];
 
+function normalizeRole(user) {
+  const raw =
+    user?.userRole ??
+    user?.role ??
+    user?.userRl ??
+    user?.user_role ??
+    user?.authority ??
+    user?.authorities?.[0];
+
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace('role_', '');
+}
+
 export default function ComplainWrite() {
-  // ✅ 모든 훅 최상단
   const { user } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ compTitle: '', compCtnt: '', code: '' });
   const [submitting, setSubmitting] = useState(false);
 
-  // ✅ 훅 다음에 early return
   if (!user) return <Navigate to="/login" replace />;
+
+  const role = normalizeRole(user);
+  const canCreate = role === 'admin' || role === 'tenant';
+  if (!canCreate) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <h2 className={styles.sectionTitle}>접근 권한 없음</h2>
+          <p style={{ marginBottom: 16 }}>민원 작성은 관리자와 입주자만 가능합니다.</p>
+          <button className={styles.pageBtn} onClick={() => navigate('/support/complain')}>
+            목록으로
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -59,7 +86,9 @@ export default function ComplainWrite() {
         >
           <option value="">유형 선택</option>
           {COMPLAIN_CATEGORIES.map((cat) => (
-            <option key={cat.code} value={cat.code}>{cat.label}</option>
+            <option key={cat.code} value={cat.code}>
+              {cat.label}
+            </option>
           ))}
         </select>
 
@@ -90,7 +119,11 @@ export default function ComplainWrite() {
           >
             {submitting ? '등록 중...' : '등록'}
           </button>
-          <button className={styles.pageBtn} onClick={() => navigate('/support/complain')} disabled={submitting}>
+          <button
+            className={styles.pageBtn}
+            onClick={() => navigate('/support/complain')}
+            disabled={submitting}
+          >
             취소
           </button>
         </div>
