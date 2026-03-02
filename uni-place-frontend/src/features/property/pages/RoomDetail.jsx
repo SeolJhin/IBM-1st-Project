@@ -6,6 +6,8 @@ import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './RoomDetail.module.css';
+import { toApiImageUrl } from '../../../shared/utils/imageUrl';
+import ImageGallery from '../../file/components/ImageGallery';
 
 function StarRating({ value = 0, size = 'md' }) {
   return (
@@ -48,46 +50,6 @@ function ReviewCard({ review }) {
         </p>
       </div>
     </article>
-  );
-}
-
-function ImageGallery({ files }) {
-  const [active, setActive] = useState(0);
-  const images = (files || []).filter((f) => {
-    const ext = (f.fileType || '').toLowerCase();
-    return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
-  });
-  if (!images.length) {
-    return (
-      <div className={styles.galleryPlaceholder}>
-        <span>🏠</span>
-        <p>등록된 사진이 없습니다</p>
-      </div>
-    );
-  }
-  return (
-    <div className={styles.gallery}>
-      <div className={styles.galleryMain}>
-        <img
-          src={images[active]?.viewUrl || images[active]?.fileUrl}
-          alt={`방 사진 ${active + 1}`}
-        />
-      </div>
-      {images.length > 1 && (
-        <div className={styles.galleryThumbs}>
-          {images.map((img, i) => (
-            <button
-              key={i}
-              className={`${styles.galleryThumb} ${i === active ? styles.galleryThumbActive : ''}`}
-              onClick={() => setActive(i)}
-              type="button"
-            >
-              <img src={img.viewUrl || img.fileUrl} alt={`썸네일 ${i + 1}`} />
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
 

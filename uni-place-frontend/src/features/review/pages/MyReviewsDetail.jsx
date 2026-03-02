@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useReviewDetail, useReviewActions } from '../hooks/useReviews';
 import styles from './ReviewDetail.module.css';
+import { toApiImageUrl } from '../../file/api/fileApi';
 
 function StarRating({ rating }) {
   return (
@@ -164,7 +165,7 @@ export default function MyReviewsDetail() {
     const t = (f.fileType || '').toLowerCase();
     return IMAGE_EXTS.includes(t) || t === 'image';
   });
-  const imageUrls = imageFiles.map((f) => f.viewUrl);
+  const imageUrls = imageFiles.map((f) => toApiImageUrl(f.viewUrl));
 
   return (
     <div className={styles.container}>

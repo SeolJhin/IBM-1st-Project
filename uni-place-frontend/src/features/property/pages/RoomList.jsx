@@ -8,6 +8,7 @@ import styles from './RoomList.module.css';
 import Modal from '../../../shared/components/Modal/Modal';
 import TourReservationList from '../../reservation/pages/TourReservationList';
 import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
+import { toApiImageUrl } from '../../../shared/utils/imageUrl';
 
 // ─── 방 쿼리 ──────────────────────────────────────────────────
 const INIT_QUERY = {
@@ -112,7 +113,7 @@ function RoomCard({ room, onClick }) {
       <div className={styles.cardImg}>
         {room.thumbnailUrl ? (
           <img
-            src={room.thumbnailUrl}
+            src={toApiImageUrl(room.thumbnailUrl)}
             alt={`${room.buildingNm} ${room.roomNo}호`}
           />
         ) : (
@@ -184,7 +185,7 @@ function SpaceCard({ space, onClick }) {
     >
       <div className={styles.cardImg}>
         {space.thumbnailUrl ? (
-          <img src={space.thumbnailUrl} alt={space.spaceNm} />
+          <img src={toApiImageUrl(space.thumbnailUrl)} alt={space.spaceNm} />
         ) : (
           <div className={styles.cardImgPlaceholder}>
             <span>🛋️</span>
@@ -630,11 +631,17 @@ export default function RoomList() {
     }
   }, [activeTab, bldgLoaded]);
 
-  const roomPages = Array.from({ length: roomPag.totalPages }, (_, i) => i + 1);
-  const spacePages = Array.from(
-    { length: spacePag.totalPages },
-    (_, i) => i + 1
-  );
+  // 페이지 윈도우: 현재 페이지 기준 앞뒤 4개씩만 표시 (최대 10개)
+  function pageWindow(current, total, radius = 4) {
+    const from = Math.max(1, current - radius);
+    const to = Math.min(total, current + radius);
+    const result = [];
+    for (let p = from; p <= to; p++) result.push(p);
+    return result;
+  }
+
+  const roomPages = pageWindow(query.page, roomPag.totalPages);
+  const spacePages = pageWindow(spaceQ.page, spacePag.totalPages);
 
   return (
     <div className={styles.page}>
@@ -998,7 +1005,10 @@ export default function RoomList() {
                     >
                       <div className={styles.cardImg}>
                         {b.thumbnailUrl ? (
-                          <img src={b.thumbnailUrl} alt={b.buildingNm} />
+                          <img
+                            src={toApiImageUrl(b.thumbnailUrl)}
+                            alt={b.buildingNm}
+                          />
                         ) : (
                           <div className={styles.cardImgPlaceholder}>
                             <span>🏢</span>
@@ -1036,10 +1046,7 @@ export default function RoomList() {
                   >
                     ‹
                   </button>
-                  {Array.from(
-                    { length: buildingsTotalPages },
-                    (_, i) => i + 1
-                  ).map((p) => (
+                  {pageWindow(buildingsPage, buildingsTotalPages).map((p) => (
                     <button
                       key={p}
                       className={`${styles.pageBtn} ${p === buildingsPage ? styles.pageBtnActive : ''}`}

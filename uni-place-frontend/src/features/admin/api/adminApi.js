@@ -558,6 +558,16 @@ export const adminApi = {
   } = {}) => request(`/buildings${buildQuery({ page, size, sort, direct })}`),
   getBuildingDetail: (buildingId) =>
     request(`/admin/buildings/${buildingId}`, { auth: true }),
+  createBuilding: (formData) =>
+    requestForm('/admin/buildings', { method: 'POST', formData, auth: true }),
+  updateBuilding: (buildingId, formData) =>
+    requestForm(`/admin/buildings/${buildingId}`, {
+      method: 'PUT',
+      formData,
+      auth: true,
+    }),
+  deleteBuilding: (buildingId) =>
+    request(`/admin/buildings/${buildingId}`, { method: 'DELETE', auth: true }),
 
   getRooms: ({
     page = 1,
@@ -568,6 +578,16 @@ export const adminApi = {
   } = {}) =>
     request(`/rooms${buildQuery({ page, size, sort, direct, ...filters })}`),
   getRoomDetail: (roomId) => request(`/admin/rooms/${roomId}`, { auth: true }),
+  createRoom: (formData) =>
+    requestForm('/admin/rooms', { method: 'POST', formData, auth: true }),
+  updateRoom: (roomId, formData) =>
+    requestForm(`/admin/rooms/${roomId}`, {
+      method: 'PUT',
+      formData,
+      auth: true,
+    }),
+  deleteRoom: (roomId) =>
+    request(`/admin/rooms/${roomId}`, { method: 'DELETE', auth: true }),
 
   getSpaces: ({
     page = 1,
@@ -579,6 +599,16 @@ export const adminApi = {
     request(`/spaces${buildQuery({ page, size, sort, direct, ...filters })}`),
   getSpaceDetail: (spaceId) =>
     request(`/admin/spaces/${spaceId}`, { auth: true }),
+  createSpace: (formData) =>
+    requestForm('/admin/spaces', { method: 'POST', formData, auth: true }),
+  updateSpace: (spaceId, formData) =>
+    requestForm(`/admin/spaces/${spaceId}`, {
+      method: 'PUT',
+      formData,
+      auth: true,
+    }),
+  deleteSpace: (spaceId) =>
+    request(`/admin/spaces/${spaceId}`, { method: 'DELETE', auth: true }),
 
   // support detail
   getComplainDetail: (compId) =>

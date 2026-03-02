@@ -63,6 +63,17 @@
   cursor: not-allowed;
 }
 
+.btnCreate {
+  border-color: rgba(60, 140, 80, 0.5);
+  background: rgba(60, 140, 80, 0.18);
+  color: #1a5c2a;
+  box-shadow: 0 4px 12px rgba(60, 140, 80, 0.15);
+}
+
+.btnCreate:hover {
+  background: rgba(60, 140, 80, 0.28);
+}
+
 .btnPrimary {
   border-color: rgba(202, 162, 90, 0.5);
   background: rgba(202, 162, 90, 0.22);
