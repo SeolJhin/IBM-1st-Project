@@ -208,3 +208,36 @@
     flex: 1 1 160px;
   }
 }
+
+/* ── 체크박스 ── */
+.checkTh,
+.checkTd {
+  width: 40px;
+  text-align: center;
+  padding: 0 8px;
+}
+.checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #c58a3a;
+}
+
+/* ── 선택된 행 ── */
+.rowSelected {
+  background: rgba(202, 162, 90, 0.12) !important;
+}
+
+/* ── 일괄 삭제 버튼 ── */
+.btnDelete {
+  border-color: rgba(200, 70, 70, 0.45);
+  background: rgba(200, 70, 70, 0.12);
+  color: #8c2e2e;
+}
+.btnDelete:hover:not(:disabled) {
+  background: rgba(200, 70, 70, 0.22);
+}
+.btnDelete:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

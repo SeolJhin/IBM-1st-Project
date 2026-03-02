@@ -10,7 +10,7 @@ import Footer from '../../../app/layouts/components/Footer';
 import BuildingSlotButtons from '../components/BuildingSlotButtons';
 import TimeSlotButtons from '../components/TimeSlotButtons';
 import styles from './TourReservationCreate.module.css';
-import { tourErrorMessage } from './reservationErrors';
+import { toKoreanMessage } from '../../../app/http/errorMapper';
 
 export default function TourReservationCreate({
   inlineMode = false,
@@ -192,7 +192,7 @@ export default function TourReservationCreate({
         nav('/reservations/tour/list');
       }
     } catch (e) {
-      setSubmitError(tourErrorMessage(e));
+      setSubmitError(toKoreanMessage(e));
     }
   };
 

@@ -1,4 +1,5 @@
 import { fetchWithAuthRetry } from '../../../app/http/apiBase';
+import { toKoreanMessage } from '../../../app/http/errorMapper';
 
 async function request(
   path,
@@ -32,14 +33,16 @@ async function request(
       : null;
 
   if (!res.ok || (api && api.success === false)) {
-    const message =
+    const rawMessage =
       (api && api.message) ||
       (payload && payload.message) ||
-      (typeof payload === 'string' ? payload : 'Request failed.');
-    const error = new Error(message);
+      (typeof payload === 'string' ? payload : null);
+    const error = new Error(rawMessage || 'Request failed.');
     error.status = res.status;
     error.errorCode = api?.errorCode;
     error.data = payload;
+    // 한글 메시지로 변환하여 별도 필드에 저장 (UI에서 사용)
+    error.koreanMessage = toKoreanMessage(error);
     throw error;
   }
 

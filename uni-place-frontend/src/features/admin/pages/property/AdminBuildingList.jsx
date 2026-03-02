@@ -53,6 +53,17 @@ export default function AdminBuildingList() {
 
   const handleSuccess = () => reloadRef.current?.();
 
+  // 체크박스 일괄 삭제 (순차 처리)
+  const handleDeleteSelected = async (ids) => {
+    const results = await Promise.allSettled(
+      ids.map((id) => adminApi.deleteBuilding(id))
+    );
+    const failed = results.filter((r) => r.status === 'rejected');
+    if (failed.length > 0) {
+      throw new Error(`${failed.length}개 삭제 실패 (나머지는 완료)`);
+    }
+  };
+
   return (
     <>
       <AdminPropertyListTable
@@ -66,6 +77,8 @@ export default function AdminBuildingList() {
         createLabel="건물 등록"
         onCreateClick={() => setCreateModal(true)}
         reloadRef={reloadRef}
+        onDeleteSelected={handleDeleteSelected}
+        deleteLabel="건물 삭제"
       />
 
       {createModal && (
