@@ -27,6 +27,23 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
     java.util.List<Contract> findMyContracts(@Param("userId") String userId);
 
     @Query("""
+        select c
+          from Contract c
+          join fetch c.room r
+          join fetch r.building b
+         where c.user.userId = :userId
+           and c.contractSt = :status
+           and c.contractStart <= :today
+           and c.contractEnd >= :today
+         order by c.contractStart desc, c.contractId desc
+    """)
+    java.util.List<Contract> findActiveContractsWithRoomAndBuilding(
+            @Param("userId") String userId,
+            @Param("status") ContractStatus status,
+            @Param("today") LocalDate today
+    );
+
+    @Query("""
         select count(c) > 0
           from Contract c
          where c.room.roomId = :roomId

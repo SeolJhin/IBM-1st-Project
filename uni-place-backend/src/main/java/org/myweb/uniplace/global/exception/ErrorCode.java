@@ -122,7 +122,8 @@ public enum ErrorCode {
     TOUR_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "TOUR_ST_404", "해당 투어 예약 상태를 찾을 수 없습니다."),
 
     // ===== RoomServiceOrder =====
-    ROOM_SERVICE_ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "RSO_404", "룸서비스 주문을 찾을 수 없습니다.");
+    ROOM_SERVICE_ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "RSO_404", "룸서비스 주문을 찾을 수 없습니다."),
+    ROOM_SERVICE_TENANT_ONLY(HttpStatus.FORBIDDEN, "RSO_403_1", "입주자만 룸서비스 주문이 가능합니다.");
 
     private final HttpStatus status;
     private final String code;

@@ -76,7 +76,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         try {
             notificationService.notifyAdmins(
                 NotificationType.ADM_ABNORMAL_API.name(),
-                "Abnormal API access detected(401). path=" + path
+                "비정상 API 접근이 감지되었습니다(401). 경로=" + path
                     + ", ip=" + safe(request.getRemoteAddr())
                     + ", ua=" + userAgent,
                 null,

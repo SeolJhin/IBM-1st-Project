@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.time.Instant;
+import java.util.Locale;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -99,10 +100,11 @@ public class PaymentWebhookController {
     }
 
     private void notifyWebhookFail(String message) {
+        String localizedMessage = toKoreanWebhookMessage(message);
         try {
             notificationService.notifyAdmins(
                 NotificationType.PAY_WEBHOOK_FAIL.name(),
-                message,
+                localizedMessage,
                 null,
                 TargetType.payment,
                 null,
@@ -111,6 +113,36 @@ public class PaymentWebhookController {
         } catch (Exception e) {
             log.warn("[PAYMENT][NOTIFY][ADMIN] webhook fail notify error={}", e.getMessage());
         }
+    }
+
+    private static String toKoreanWebhookMessage(String rawMessage) {
+        if (rawMessage == null || rawMessage.isBlank()) {
+            return "결제 웹훅 검증에 실패했습니다.";
+        }
+        String normalized = rawMessage.toUpperCase(Locale.ROOT);
+
+        if (normalized.contains("KAKAO")) {
+            return "카카오 결제 웹훅 검증에 실패했습니다.";
+        }
+        if (normalized.contains("MISSING SIGNATURE")) {
+            return "토스 결제 웹훅 검증에 실패했습니다. 사유=서명 누락";
+        }
+        if (normalized.contains("MISSING TRANSMISSION TIME")) {
+            return "토스 결제 웹훅 검증에 실패했습니다. 사유=전송 시각 누락";
+        }
+        if (normalized.contains("STALE TRANSMISSION TIME")) {
+            return "토스 결제 웹훅 검증에 실패했습니다. 사유=전송 시각 만료";
+        }
+        if (normalized.contains("MISSING WEBHOOK SECRET")) {
+            return "토스 결제 웹훅 검증에 실패했습니다. 사유=웹훅 시크릿 누락";
+        }
+        if (normalized.contains("INVALID SIGNATURE")) {
+            return "토스 결제 웹훅 검증에 실패했습니다. 사유=유효하지 않은 서명";
+        }
+        if (normalized.contains("TOSS")) {
+            return "토스 결제 웹훅 검증에 실패했습니다.";
+        }
+        return "결제 웹훅 검증에 실패했습니다.";
     }
 
     private boolean isValidKakaoWebhook(String authorization, String resourceId, String userAgent) {
