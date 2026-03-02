@@ -19,6 +19,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.myweb.uniplace.domain.user.api.dto.request.FindEmailRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.PasswordResetRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.PasswordResetConfirmRequest;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequiredArgsConstructor
@@ -81,4 +86,39 @@ public class AuthController {
         }
         return request.getRemoteAddr();
     }
+    
+    // ─────────────────────────────────────────────
+    // 아이디(이메일) 찾기
+    // ─────────────────────────────────────────────
+    @PostMapping("/find-email")
+    public ApiResponse<String> findEmail(@Valid @RequestBody FindEmailRequest req) {
+        return ApiResponse.ok(authService.findEmail(req));
+    }
+
+    // ─────────────────────────────────────────────
+    // 비밀번호 재설정 요청 (메일 발송)
+    // ─────────────────────────────────────────────
+    @PostMapping("/reset-password/request")
+    public ApiResponse<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest req) {
+        authService.requestPasswordReset(req);
+        return ApiResponse.ok();
+    }
+
+    // ─────────────────────────────────────────────
+    // 토큰 유효성 사전 확인 (페이지 진입 시)
+    // ─────────────────────────────────────────────
+    @GetMapping("/reset-password/verify")
+    public ApiResponse<Void> verifyPasswordResetToken(@RequestParam("token") String token) {
+        authService.verifyPasswordResetToken(token);
+        return ApiResponse.ok();
+    }
+    // ─────────────────────────────────────────────
+    // 비밀번호 재설정 확정
+    // ─────────────────────────────────────────────
+    @PostMapping("/reset-password/confirm")
+    public ApiResponse<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest req) {
+        authService.confirmPasswordReset(req);
+        return ApiResponse.ok();
+    }
+
 }

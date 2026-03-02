@@ -16,8 +16,11 @@ public interface UserRepository extends JpaRepository<User, String> {
     boolean existsByUserEmail(String userEmail);
 
     boolean existsByUserTel(String userTel);
-    
+
     List<User> findAllByUserRole(UserRole userRole);
-    
+
     Page<User> findByUserRole(UserRole userRole, Pageable pageable);
+
+    // 아이디 찾기: 이름 + 전화번호 일치
+    Optional<User> findByUserNmAndUserTel(String userNm, String userTel);
 }
