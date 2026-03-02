@@ -13,7 +13,7 @@ export default function Footer() {
                 <img className={styles.logoMark} src={homeLogo} alt="UNI PLACE logo" />
                 <div>
                   <p className={styles.logoTitle}>UNI-PLACE</p>
-                  <p className={styles.logoSub}>CO-LIVING PLATFORM</p>
+                  <p className={styles.logoSub}>Living as a Serivce</p>
                 </div>
               </div>
             </div>
