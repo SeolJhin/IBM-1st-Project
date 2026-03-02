@@ -92,6 +92,17 @@ export const supportApi = {
       },
       auth: true,
     }),
+  updateFaq: (faqId, body) =>
+    request(`/faqs/${faqId}`, {
+      method: 'PUT',
+      body: {
+        ...body,
+        code: normalizeSupportCode(body?.code),
+      },
+      auth: true,
+    }),
+  deleteFaq: (faqId) =>
+    request(`/faqs/${faqId}`, { method: 'DELETE', auth: true }),
 
   // ===== Notice =====
   getNotices: (params = {}) => {
@@ -110,6 +121,17 @@ export const supportApi = {
       },
       auth: true,
     }),
+  updateNotice: (noticeId, body) =>
+    request(`/notices/${noticeId}`, {
+      method: 'PUT',
+      body: {
+        ...body,
+        code: body?.code ? normalizeSupportCode(body?.code) : body?.code,
+      },
+      auth: true,
+    }),
+  deleteNotice: (noticeId) =>
+    request(`/notices/${noticeId}`, { method: 'DELETE', auth: true }),
 
   // ===== QnA =====
   getQnas: (params = {}) => {
@@ -179,6 +201,12 @@ export const supportApi = {
     }),
   updateComplain: (compId, body) =>
     request(`/complains/${compId}`, { method: 'PUT', body, auth: true }),
+  updateComplainStatus: (compId, compSt) =>
+    request(`/complains/${compId}/status`, {
+      method: 'PATCH',
+      body: { compSt },
+      auth: true,
+    }),
   deleteComplain: (compId) =>
     request(`/complains/${compId}`, { method: 'DELETE', auth: true }),
 };

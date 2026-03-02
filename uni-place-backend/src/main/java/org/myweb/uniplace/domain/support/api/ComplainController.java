@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/complains")
+@RequestMapping({"/complains", "/api/complains"})
 public class ComplainController {
 
     private final ComplainService complainService;

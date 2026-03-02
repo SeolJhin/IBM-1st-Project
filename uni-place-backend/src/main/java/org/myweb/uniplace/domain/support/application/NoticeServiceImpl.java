@@ -35,10 +35,11 @@ public class NoticeServiceImpl implements NoticeService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public NoticeResponse get(Integer noticeId) {
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTICE_NOT_FOUND));
+        notice.increaseReadCount();
         return NoticeResponse.from(notice);
     }
 

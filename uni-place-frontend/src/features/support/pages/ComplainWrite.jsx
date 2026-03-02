@@ -42,8 +42,13 @@ export default function ComplainWrite() {
       <div className={styles.container}>
         <div className={styles.card}>
           <h2 className={styles.sectionTitle}>접근 권한 없음</h2>
-          <p style={{ marginBottom: 16 }}>민원 작성은 관리자와 입주자만 가능합니다.</p>
-          <button className={styles.pageBtn} onClick={() => navigate('/support/complain')}>
+          <p style={{ marginBottom: 16 }}>
+            민원 작성은 관리자와 입주민만 가능합니다.
+          </p>
+          <button
+            className={styles.pageBtn}
+            onClick={() => navigate('/support/complain')}
+          >
             목록으로
           </button>
         </div>
@@ -66,6 +71,13 @@ export default function ComplainWrite() {
       alert('민원이 접수되었습니다.');
       navigate('/support/complain');
     } catch (err) {
+      if (Number(err?.status) === 401) {
+        alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+        navigate('/login', {
+          state: { from: '/support/complain/write' },
+        });
+        return;
+      }
       alert(err.message || '등록에 실패했습니다.');
     } finally {
       setSubmitting(false);
