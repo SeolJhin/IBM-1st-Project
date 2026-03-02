@@ -20,8 +20,12 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "check:source-tree": "node -e \"const fs=require('fs');const bad=['src/src','src/src.zip','src2222222222222','src.zip'].filter((p)=>fs.existsSync(p));if(bad.length){console.error('[source-tree-check] Duplicate source tree detected:\\n'+bad.map((p)=>'- '+p).join('\\n'));process.exit(1)}console.log('[source-tree-check] OK');\"",
+    "prestart": "npm run check:source-tree",
     "start": "react-scripts start",
+    "prebuild": "npm run check:source-tree",
     "build": "react-scripts build",
+    "pretest": "npm run check:source-tree",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
