@@ -1,7 +1,8 @@
 // features/support/pages/ComplainDetail.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
+import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 
 const STATUS_MAP = {
@@ -10,6 +11,8 @@ const STATUS_MAP = {
 };
 
 export default function ComplainDetail() {
+  // ✅ 모든 훅 최상단
+  const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
@@ -25,6 +28,12 @@ export default function ComplainDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // ✅ 훅 다음에 early return
+  if (!user) return <Navigate to="/login" replace />;
+  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
+  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
+  if (!data) return null;
+
   const handleDelete = async () => {
     if (!window.confirm('민원을 삭제하시겠습니까?')) return;
     try {
@@ -34,10 +43,6 @@ export default function ComplainDetail() {
       alert(e.message || '삭제에 실패했습니다.');
     }
   };
-
-  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
-  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
-  if (!data) return null;
 
   return (
     <div className={styles.container}>
@@ -58,7 +63,6 @@ export default function ComplainDetail() {
 
         <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{data.compCtnt}</div>
 
-        {/* 처리중일 때만 수정/삭제 가능 */}
         {data.compSt === 'in_progress' && (
           <div style={{ marginTop: 24, display: 'flex', gap: 8 }}>
             <button

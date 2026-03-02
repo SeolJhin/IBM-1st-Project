@@ -1,10 +1,10 @@
 // features/support/pages/QnaWrite.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
+import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 
-// B방법: 프론트 하드코딩 기본값 (추후 API로 교체 가능)
 const QNA_CATEGORIES = [
   { code: 'QNA_CONTRACT', label: '계약 문의' },
   { code: 'QNA_PAYMENT', label: '결제·환불' },
@@ -15,13 +15,37 @@ const QNA_CATEGORIES = [
 ];
 
 export default function QnaWrite() {
+  // ✅ 훅 최상단
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    qnaTitle: '',
-    qnaCtnt: '',
-    code: '',
-  });
+  const { qnaId } = useParams();
+  const isEdit = !!qnaId;
+
+  const [form, setForm] = useState({ qnaTitle: '', qnaCtnt: '', code: '' });
+  const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isEdit) return;
+    supportApi
+      .getQnaDetail(qnaId)
+      .then((res) => {
+        setForm({
+          qnaTitle: res.qnaTitle ?? '',
+          qnaCtnt: res.qnaCtnt ?? '',
+          code: res.code ?? '',
+        });
+      })
+      .catch((err) => {
+        alert(err.message || '문의 내용을 불러오는 데 실패했습니다.');
+        navigate('/support/qna');
+      })
+      .finally(() => setLoading(false));
+  }, [isEdit, qnaId, navigate]);
+
+  // ✅ 훅 다음에 early return
+  if (!user) return <Navigate to="/login" replace />;
+  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -34,11 +58,17 @@ export default function QnaWrite() {
 
     setSubmitting(true);
     try {
-      await supportApi.createQna(form);
-      alert('문의가 등록되었습니다.');
-      navigate('/support/qna');
+      if (isEdit) {
+        await supportApi.updateQna(qnaId, form);
+        alert('문의가 수정되었습니다.');
+        navigate(`/support/qna/${qnaId}`);
+      } else {
+        await supportApi.createQna(form);
+        alert('문의가 등록되었습니다.');
+        navigate('/support/qna');
+      }
     } catch (err) {
-      alert(err.message || '등록에 실패했습니다.');
+      alert(err.message || (isEdit ? '수정에 실패했습니다.' : '등록에 실패했습니다.'));
     } finally {
       setSubmitting(false);
     }
@@ -47,19 +77,20 @@ export default function QnaWrite() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h2 className={styles.sectionTitle}>1:1 문의 작성</h2>
+        <h2 className={styles.sectionTitle}>
+          {isEdit ? '1:1 문의 수정' : '1:1 문의 작성'}
+        </h2>
 
         <label className={styles.formLabel}>문의 유형</label>
         <select
           className={styles.formSelect}
           value={form.code}
           onChange={(e) => handleChange('code', e.target.value)}
+          disabled={submitting}
         >
           <option value="">유형 선택</option>
           {QNA_CATEGORIES.map((cat) => (
-            <option key={cat.code} value={cat.code}>
-              {cat.label}
-            </option>
+            <option key={cat.code} value={cat.code}>{cat.label}</option>
           ))}
         </select>
 
@@ -70,6 +101,7 @@ export default function QnaWrite() {
           placeholder="제목을 입력하세요"
           value={form.qnaTitle}
           onChange={(e) => handleChange('qnaTitle', e.target.value)}
+          disabled={submitting}
         />
 
         <label className={styles.formLabel}>내용</label>
@@ -78,6 +110,7 @@ export default function QnaWrite() {
           placeholder="문의 내용을 입력하세요"
           value={form.qnaCtnt}
           onChange={(e) => handleChange('qnaCtnt', e.target.value)}
+          disabled={submitting}
         />
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -86,9 +119,13 @@ export default function QnaWrite() {
             onClick={handleSubmit}
             disabled={submitting}
           >
-            {submitting ? '등록 중...' : '등록'}
+            {submitting ? (isEdit ? '수정 중...' : '등록 중...') : (isEdit ? '수정' : '등록')}
           </button>
-          <button className={styles.pageBtn} onClick={() => navigate('/support/qna')}>
+          <button
+            className={styles.pageBtn}
+            onClick={() => isEdit ? navigate(`/support/qna/${qnaId}`) : navigate('/support/qna')}
+            disabled={submitting}
+          >
             취소
           </button>
         </div>
