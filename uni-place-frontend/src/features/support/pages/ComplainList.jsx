@@ -29,7 +29,7 @@ export default function ComplainList() {
   const navigate = useNavigate();
 
   const role = normalizeRole(user);
-  const canCreate = role === 'admin' || role === 'tenant';
+  const canCreate = role === 'admin' || role === 'user';
 
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
@@ -37,7 +37,13 @@ export default function ComplainList() {
   return (
     <div className={styles.container}>
       {canCreate && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: 16,
+          }}
+        >
           <button
             className={styles.buttonPrimary}
             onClick={() => navigate('/support/complain/write')}
@@ -61,7 +67,11 @@ export default function ComplainList() {
             <tr>
               <td
                 colSpan={4}
-                style={{ textAlign: 'center', padding: 32, color: 'var(--muted)' }}
+                style={{
+                  textAlign: 'center',
+                  padding: 32,
+                  color: 'var(--muted)',
+                }}
               >
                 접수된 민원이 없습니다.
               </td>
@@ -73,19 +83,32 @@ export default function ComplainList() {
                   {item.compId}
                 </td>
                 <td>
-                  <Link to={`/support/complain/${item.compId}`} className={styles.tableLink}>
+                  <Link
+                    to={`/support/complain/${item.compId}`}
+                    className={styles.tableLink}
+                  >
                     {item.compTitle}
                   </Link>
                 </td>
                 <td style={{ textAlign: 'center' }}>
                   <span
                     className={styles.statusBadge}
-                    style={item.compSt === 'resolved' ? { background: 'var(--highlight)' } : {}}
+                    style={
+                      item.compSt === 'resolved'
+                        ? { background: 'var(--highlight)' }
+                        : {}
+                    }
                   >
                     {STATUS_MAP[item.compSt] ?? item.compSt}
                   </span>
                 </td>
-                <td style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                <td
+                  style={{
+                    textAlign: 'center',
+                    color: 'var(--muted)',
+                    fontSize: 13,
+                  }}
+                >
                   {item.createdAt ? item.createdAt.slice(0, 10) : '-'}
                 </td>
               </tr>

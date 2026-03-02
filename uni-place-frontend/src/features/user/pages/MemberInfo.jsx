@@ -269,6 +269,7 @@ function MeTab() {
 // ── 고객센터 작성 목록 탭 ─────────────────────────────────────
 function QnaInline() {
   const { qnas, pagination, loading, error, goToPage } = useQnas();
+  const navigate = useNavigate();
 
   if (loading) return <div className={styles.loading}>불러오는 중…</div>;
   if (error) return <div className={styles.error}>{error}</div>;
@@ -317,7 +318,11 @@ function QnaInline() {
             qnas.map((q) => (
               <tr
                 key={q.qnaId}
-                style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+                onClick={() => navigate(`/support/qna/${q.qnaId}`)}
+                style={{
+                  borderBottom: '1px solid rgba(0,0,0,0.06)',
+                  cursor: 'pointer',
+                }}
               >
                 <td
                   style={{
@@ -412,6 +417,7 @@ function QnaInline() {
 
 function ComplainInline() {
   const { complains, pagination, loading, error, goToPage } = useComplains();
+  const navigate = useNavigate(); // ✅ 위로 올림
 
   if (loading) return <div className={styles.loading}>불러오는 중…</div>;
   if (error) return <div className={styles.error}>{error}</div>;
@@ -460,7 +466,11 @@ function ComplainInline() {
             complains.map((item) => (
               <tr
                 key={item.compId}
-                style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+                onClick={() => navigate(`/support/complain/${item.compId}`)}
+                style={{
+                  borderBottom: '1px solid rgba(0,0,0,0.06)',
+                  cursor: 'pointer',
+                }}
               >
                 <td
                   style={{
