@@ -106,6 +106,29 @@ public class ContractServiceImpl implements ContractService {
                 saved = contractRepository.save(saved);
             }
         }
+        
+        // 2) ✅ 신청 즉시 계약서(PDF/이미지) 생성 + 저장 + contract_pdf_file_id 세팅
+        if (saved.getContractPdfFileId() == null) {
+            try {
+                // generateAndSave()에서 room/building 접근할 수 있으니 fetch join으로 다시 로드
+                Contract full = contractRepository.findWithRoomAndBuilding(saved.getContractId())
+                    .orElse(saved);
+
+                Integer fileId = contractImageService.generateAndSave(full);
+                if (fileId != null) {
+                    saved.setContractPdfFileId(fileId);
+                    saved = contractRepository.save(saved);
+                    log.info("[Contract] 신청 즉시 계약서 생성 완료 contractId={} fileId={}", saved.getContractId(), fileId);
+                } else {
+                    log.warn("[Contract] 신청 즉시 계약서 생성 실패(null) contractId={}", saved.getContractId());
+                }
+            } catch (Exception e) {
+                log.error("[Contract] 신청 즉시 계약서 생성 예외 contractId={}", saved.getContractId(), e);
+                // 정책: 여기서 예외를 던지면 계약 생성 자체가 롤백됨.
+                // 지금처럼 로그만 남기면 계약은 생성되지만 계약서 파일이 없을 수 있음.
+                // 원하면 throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR)로 바꿔도 됨.
+            }
+        }
 
         return ContractResponse.fromEntity(saved);
     }
