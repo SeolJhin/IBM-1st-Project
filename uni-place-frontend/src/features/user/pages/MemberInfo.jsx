@@ -14,6 +14,8 @@ import { useAuth } from '../hooks/useAuth';
 // ── 탭 컴포넌트 import ────────────────────────────────────────
 import MyContractView from '../../contract/pages/MyContractView';
 import MyPosts from '../../community/pages/MyPosts';
+import { useQnas } from '../../support/hooks/useQnas';
+import { useComplains } from '../../support/hooks/useComplains';
 import ProductList from '../../commerce/pages/ProductList';
 import Cart from '../../commerce/pages/Cart';
 import Checkout from '../../commerce/pages/Checkout';
@@ -264,6 +266,325 @@ function MeTab() {
 }
 
 // ── 공용 시설 탭 (로컬) ───────────────────────────────────────
+// ── 고객센터 작성 목록 탭 ─────────────────────────────────────
+function QnaInline() {
+  const { qnas, pagination, loading, error, goToPage } = useQnas();
+
+  if (loading) return <div className={styles.loading}>불러오는 중…</div>;
+  if (error) return <div className={styles.error}>{error}</div>;
+
+  const STATUS_MAP = { waiting: '답변대기', complete: '답변완료' };
+
+  return (
+    <div>
+      <table
+        style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}
+      >
+        <thead>
+          <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.10)' }}>
+            {['번호', '제목', '상태', '날짜'].map((h) => (
+              <th
+                key={h}
+                style={{
+                  padding: '10px 12px',
+                  textAlign: 'left',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: 'rgba(0,0,0,0.55)',
+                }}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {qnas.length === 0 ? (
+            <tr>
+              <td
+                colSpan={4}
+                style={{
+                  padding: 32,
+                  textAlign: 'center',
+                  color: 'rgba(0,0,0,0.4)',
+                  fontSize: 14,
+                }}
+              >
+                작성된 문의가 없습니다.
+              </td>
+            </tr>
+          ) : (
+            qnas.map((q) => (
+              <tr
+                key={q.qnaId}
+                style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+              >
+                <td
+                  style={{
+                    padding: '12px',
+                    fontSize: 13,
+                    color: 'rgba(0,0,0,0.4)',
+                    width: 60,
+                  }}
+                >
+                  {q.qnaId}
+                </td>
+                <td
+                  style={{
+                    padding: '12px',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    maxWidth: 0,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {q.qnaTitle}
+                </td>
+                <td style={{ padding: '12px', width: 100 }}>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '3px 10px',
+                      borderRadius: 20,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      background:
+                        q.qnaSt === 'complete' ? '#FFCD8E' : 'rgba(0,0,0,0.08)',
+                      color:
+                        q.qnaSt === 'complete' ? '#362F20' : 'rgba(0,0,0,0.6)',
+                    }}
+                  >
+                    {STATUS_MAP[q.qnaSt] ?? q.qnaSt}
+                  </span>
+                </td>
+                <td
+                  style={{
+                    padding: '12px',
+                    fontSize: 13,
+                    color: 'rgba(0,0,0,0.4)',
+                    width: 100,
+                  }}
+                >
+                  {q.createdAt ? q.createdAt.slice(0, 10) : '-'}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
+      {pagination.totalPages > 1 && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 16,
+            marginTop: 20,
+          }}
+        >
+          <button
+            className={styles.cancelBtn}
+            style={{ minWidth: 60, height: 36 }}
+            disabled={pagination.isFirst}
+            onClick={() => goToPage(pagination.page - 1)}
+          >
+            이전
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>
+            {pagination.page} / {pagination.totalPages}
+          </span>
+          <button
+            className={styles.cancelBtn}
+            style={{ minWidth: 60, height: 36 }}
+            disabled={pagination.isLast}
+            onClick={() => goToPage(pagination.page + 1)}
+          >
+            다음
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ComplainInline() {
+  const { complains, pagination, loading, error, goToPage } = useComplains();
+
+  if (loading) return <div className={styles.loading}>불러오는 중…</div>;
+  if (error) return <div className={styles.error}>{error}</div>;
+
+  const STATUS_MAP = { in_progress: '처리중', resolved: '처리완료' };
+
+  return (
+    <div>
+      <table
+        style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}
+      >
+        <thead>
+          <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.10)' }}>
+            {['번호', '제목', '상태', '날짜'].map((h) => (
+              <th
+                key={h}
+                style={{
+                  padding: '10px 12px',
+                  textAlign: 'left',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: 'rgba(0,0,0,0.55)',
+                }}
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {complains.length === 0 ? (
+            <tr>
+              <td
+                colSpan={4}
+                style={{
+                  padding: 32,
+                  textAlign: 'center',
+                  color: 'rgba(0,0,0,0.4)',
+                  fontSize: 14,
+                }}
+              >
+                접수된 민원이 없습니다.
+              </td>
+            </tr>
+          ) : (
+            complains.map((item) => (
+              <tr
+                key={item.compId}
+                style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+              >
+                <td
+                  style={{
+                    padding: '12px',
+                    fontSize: 13,
+                    color: 'rgba(0,0,0,0.4)',
+                    width: 60,
+                  }}
+                >
+                  {item.compId}
+                </td>
+                <td
+                  style={{
+                    padding: '12px',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    maxWidth: 0,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {item.compTitle}
+                </td>
+                <td style={{ padding: '12px', width: 100 }}>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '3px 10px',
+                      borderRadius: 20,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      background:
+                        item.compSt === 'resolved'
+                          ? '#FFCD8E'
+                          : 'rgba(0,0,0,0.08)',
+                      color:
+                        item.compSt === 'resolved'
+                          ? '#362F20'
+                          : 'rgba(0,0,0,0.6)',
+                    }}
+                  >
+                    {STATUS_MAP[item.compSt] ?? item.compSt}
+                  </span>
+                </td>
+                <td
+                  style={{
+                    padding: '12px',
+                    fontSize: 13,
+                    color: 'rgba(0,0,0,0.4)',
+                    width: 100,
+                  }}
+                >
+                  {item.createdAt ? item.createdAt.slice(0, 10) : '-'}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
+      {pagination.totalPages > 1 && (
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 16,
+            marginTop: 20,
+          }}
+        >
+          <button
+            className={styles.cancelBtn}
+            style={{ minWidth: 60, height: 36 }}
+            disabled={pagination.isFirst}
+            onClick={() => goToPage(pagination.page - 1)}
+          >
+            이전
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>
+            {pagination.page} / {pagination.totalPages}
+          </span>
+          <button
+            className={styles.cancelBtn}
+            style={{ minWidth: 60, height: 36 }}
+            disabled={pagination.isLast}
+            onClick={() => goToPage(pagination.page + 1)}
+          >
+            다음
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SupportPostsTab() {
+  const [supportSub, setSupportSub] = React.useState('qna');
+
+  return (
+    <div>
+      <div className={styles.subTabRow} style={{ marginTop: 8 }}>
+        <button
+          type="button"
+          className={`${styles.subTab} ${supportSub === 'qna' ? styles.subTabActive : ''}`}
+          onClick={() => setSupportSub('qna')}
+        >
+          질문 / 답변
+        </button>
+        <button
+          type="button"
+          className={`${styles.subTab} ${supportSub === 'complain' ? styles.subTabActive : ''}`}
+          onClick={() => setSupportSub('complain')}
+        >
+          민원
+        </button>
+      </div>
+
+      {supportSub === 'qna' && <QnaInline />}
+      {supportSub === 'complain' && <ComplainInline />}
+    </div>
+  );
+}
+
 // ── 룸서비스 탭 (서브뷰: product → cart → checkout → orders → orderDetail) ─
 function RoomServiceTab() {
   const [view, setView] = React.useState('product'); // 'product'|'cart'|'checkout'|'orders'|'orderDetail'
@@ -387,6 +708,9 @@ export default function MemberInfo() {
   const [spaceSubTab, setSpaceSubTab] = useState(
     urlTab === TAB.SPACE && urlSub === 'list' ? 'list' : 'create'
   );
+  const [postsSubTab, setPostsSubTab] = useState(
+    urlTab === TAB.POSTS && urlSub === 'support' ? 'support' : 'community'
+  );
   const [tourCreateOpen, setTourCreateOpen] = useState(false);
   const [tourListOpen, setTourListOpen] = useState(false);
 
@@ -401,6 +725,8 @@ export default function MemberInfo() {
     const sub = searchParams.get('sub') || '';
     setActiveTab(tab);
     if (tab === TAB.SPACE) setSpaceSubTab(sub === 'list' ? 'list' : 'create');
+    if (tab === TAB.POSTS)
+      setPostsSubTab(sub === 'support' ? 'support' : 'community');
   }, [searchParams]);
 
   const goTab = (tab, sub) => {
@@ -461,7 +787,33 @@ export default function MemberInfo() {
               <div className={styles.cardHeader}>
                 <h1 className={styles.title}>📝 작성 목록</h1>
               </div>
-              <MyPosts />
+
+              {/* 1단계 서브탭: 커뮤니티 | 고객센터 */}
+              <div className={styles.subTabRow}>
+                <button
+                  type="button"
+                  className={`${styles.subTab} ${postsSubTab === 'community' ? styles.subTabActive : ''}`}
+                  onClick={() => {
+                    setPostsSubTab('community');
+                    setSearchParams({ tab: TAB.POSTS, sub: 'community' });
+                  }}
+                >
+                  커뮤니티
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.subTab} ${postsSubTab === 'support' ? styles.subTabActive : ''}`}
+                  onClick={() => {
+                    setPostsSubTab('support');
+                    setSearchParams({ tab: TAB.POSTS, sub: 'support' });
+                  }}
+                >
+                  고객센터
+                </button>
+              </div>
+
+              {postsSubTab === 'community' && <MyPosts />}
+              {postsSubTab === 'support' && <SupportPostsTab />}
             </div>
           )}
 
