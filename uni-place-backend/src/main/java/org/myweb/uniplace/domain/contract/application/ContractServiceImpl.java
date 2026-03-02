@@ -11,6 +11,8 @@ import org.myweb.uniplace.domain.contract.api.dto.response.ContractResponse;
 import org.myweb.uniplace.domain.contract.domain.entity.Contract;
 import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 import org.myweb.uniplace.domain.contract.repository.ContractRepository;
+import org.myweb.uniplace.domain.contract.repository.ResidentRepository;
+import org.myweb.uniplace.domain.contract.domain.entity.Resident;
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.file.api.dto.response.FileUploadResponse;
@@ -39,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ContractServiceImpl implements ContractService {
 
     private final ContractRepository contractRepository;
+    private final ResidentRepository residentRepository;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final FileService fileService;
@@ -152,20 +155,27 @@ public class ContractServiceImpl implements ContractService {
 
     @Override
     public ContractResponse updateContractForAdmin(Integer contractId, ContractUpdateRequest request) {
-        // ✅ fetch join으로 room + building 한 번에 로드 (이미지 생성 시 LAZY 로딩 방지)
         Contract c = contractRepository.findWithRoomAndBuilding(contractId)
             .orElseThrow(() -> new BusinessException(ErrorCode.CONTRACT_NOT_FOUND));
 
         boolean justApproved = false;
+        boolean justDeactivatedFromActive = false;
+        ContractStatus prevStatus = c.getContractSt();
 
         if (request.getContractStatus() != null) {
-            ContractStatus prevStatus = c.getContractSt();
             c.setContractSt(request.getContractStatus());
 
+            // active 전환(승인) 감지
             if (request.getContractStatus() == ContractStatus.active
                     && prevStatus != ContractStatus.active) {
                 c.setSignAt(LocalDateTime.now());
                 justApproved = true;
+            }
+
+            // active -> 비활성(취소/종료 등) 감지
+            if (prevStatus == ContractStatus.active
+                    && request.getContractStatus() != ContractStatus.active) {
+                justDeactivatedFromActive = true;
             }
         }
 
@@ -173,7 +183,6 @@ public class ContractServiceImpl implements ContractService {
             c.setMoveinAt(request.getMoveinAt());
         }
 
-        // 관리자가 직접 파일 업로드하는 경우
         if (request.getPdfFile() != null && !request.getPdfFile().isEmpty()) {
             FileUploadResponse uploadResp = fileService.uploadFiles(
                 FileUploadRequest.builder()
@@ -190,7 +199,39 @@ public class ContractServiceImpl implements ContractService {
 
         c = contractRepository.save(c);
 
-        // ✅ 승인 직후 계약서 이미지 자동 생성
+        // ✅ (A) 승인(active) 시: resident 자동 생성 (멱등)
+        if (justApproved) {
+            String userId = (c.getUser() != null ? c.getUser().getUserId() : null);
+            Integer buildingId =
+                    (c.getRoom() != null && c.getRoom().getBuilding() != null)
+                            ? c.getRoom().getBuilding().getBuildingId()
+                            : null;
+
+            if (userId != null && buildingId != null) {
+                boolean exists = residentRepository.existsByContractIdAndUserId(c.getContractId(), userId);
+                if (!exists) {
+                    residentRepository.save(
+                            Resident.builder()
+                                    .buildingId(buildingId)
+                                    .contractId(c.getContractId())
+                                    .userId(userId)
+                                    .build()
+                    );
+                    log.info("[Resident] auto created by contract approval contractId={} userId={}", c.getContractId(), userId);
+                }
+            }
+        }
+
+        // ✅ (B) active 해제(취소/종료 등) 시: resident 자동 삭제
+        if (justDeactivatedFromActive) {
+            String userId = (c.getUser() != null ? c.getUser().getUserId() : null);
+            if (userId != null) {
+                residentRepository.deleteByContractIdAndUserId(c.getContractId(), userId);
+                log.info("[Resident] auto deleted by contract deactivation contractId={} userId={}", c.getContractId(), userId);
+            }
+        }
+
+        // ✅ 승인 직후 계약서 이미지 자동 생성(기존 유지)
         if (justApproved && c.getContractPdfFileId() == null) {
             try {
                 Integer imageFileId = contractImageService.generateAndSave(c);
@@ -208,7 +249,7 @@ public class ContractServiceImpl implements ContractService {
 
         return ContractResponse.fromEntity(c);
     }
-
+    
     @Override
     @Transactional(readOnly = true)
     public Page<AdminContractSummaryResponse> searchAdminContracts(
