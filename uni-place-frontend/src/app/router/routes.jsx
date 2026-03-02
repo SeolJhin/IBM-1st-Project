@@ -43,6 +43,11 @@ import RequireAuth from '../../app/router/guards/RequireAuth';
 import AdminInfo from '../../features/admin/pages/AdminInfo';
 import AdminTourReservationList from '../../features/admin/pages/reservation/AdminTourReservationList';
 import AdminSpaceReservationList from '../../features/admin/pages/reservation/AdminSpaceReservationList';
+import AdminShell from '../../features/admin/components/AdminShell';
+import AdminPropertyHub from '../../features/admin/pages/property/AdminPropertyHub';
+import AdminBuildingList from '../../features/admin/pages/property/AdminBuildingList';
+import AdminRoomList from '../../features/admin/pages/property/AdminRoomList';
+import AdminSpaceList from '../../features/admin/pages/property/AdminSpaceList';
 
 export const router = createBrowserRouter([
   { path: '/', element: <Home /> },
@@ -116,6 +121,20 @@ export const router = createBrowserRouter([
   { path: '/admin', element: <AdminInfo /> },
   { path: '/admin/reservation/tours', element: <AdminTourReservationList /> },
   { path: '/admin/reservation/spaces', element: <AdminSpaceReservationList /> },
+  {
+    path: '/admin/property',
+    element: <AdminShell />,
+    children: [
+      {
+        element: <AdminPropertyHub />,
+        children: [
+          { path: 'buildings', element: <AdminBuildingList /> },
+          { path: 'rooms', element: <AdminRoomList /> },
+          { path: 'spaces', element: <AdminSpaceList /> },
+        ],
+      },
+    ],
+  },
 ]);
 
 export default router;

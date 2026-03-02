@@ -1,9 +1,11 @@
 // features/review/pages/ReviewWrite.jsx
 // 리뷰 작성: /reviews/write?roomId=xxx
 // 리뷰 수정: /reviews/:reviewId/edit
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useReviewActions, useReviewDetail } from '../hooks/useReviews';
+import FileUploader from '../../file/components/FileUploader';
+import useFileUpload from '../../file/hooks/useFileUpload';
 import styles from './ReviewWrite.module.css';
 
 const MAX_TITLE = 100;
@@ -46,13 +48,10 @@ export default function ReviewWrite() {
   const [rating, setRating] = useState(0);
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewCtnt, setReviewCtnt] = useState('');
-  const [newFiles, setNewFiles] = useState([]);
-  const [previews, setPreviews] = useState([]);
   const [deleteFiles, setDeleteFiles] = useState(false);
   const [validErr, setValidErr] = useState('');
-  const fileInputRef = useRef(null);
+  const fu = useFileUpload({ maxCount: 5 });
 
-  // 수정 모드: 기존 데이터 채우기
   useEffect(() => {
     if (isEdit && existing) {
       setRating(existing.rating ?? 0);
@@ -60,20 +59,6 @@ export default function ReviewWrite() {
       setReviewCtnt(existing.reviewCtnt ?? '');
     }
   }, [isEdit, existing]);
-
-  const handleFileChange = (e) => {
-    const selected = Array.from(e.target.files);
-    const merged = [...newFiles, ...selected].slice(0, 5);
-    setNewFiles(merged);
-    setPreviews(merged.map((f) => URL.createObjectURL(f)));
-    e.target.value = '';
-  };
-
-  const removeNewFile = (idx) => {
-    const updated = newFiles.filter((_, i) => i !== idx);
-    setNewFiles(updated);
-    setPreviews(updated.map((f) => URL.createObjectURL(f)));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,7 +73,7 @@ export default function ReviewWrite() {
         Number(reviewId),
         { rating, reviewTitle, reviewCtnt },
         deleteFiles,
-        newFiles
+        fu.newFiles
       );
       if (ok) navigate(`/reviews/${reviewId}`, { replace: true });
     } else {
@@ -98,7 +83,7 @@ export default function ReviewWrite() {
       }
       const ok = await create(
         { roomId: Number(roomId), rating, reviewTitle, reviewCtnt },
-        newFiles
+        fu.newFiles
       );
       if (ok) navigate('/reviews/my', { replace: true });
     }
@@ -116,7 +101,6 @@ export default function ReviewWrite() {
 
   return (
     <div className={styles.container}>
-      {/* 헤더 */}
       <div className={styles.header}>
         <button
           className={styles.backBtn}
@@ -190,8 +174,7 @@ export default function ReviewWrite() {
 
         {/* 사진 */}
         <div className={styles.fieldGroup}>
-          <span className={styles.label}>사진 ({newFiles.length}/5)</span>
-
+          <span className={styles.label}>사진</span>
           {isEdit && existing?.fileCk === 'Y' && (
             <div className={styles.deleteFilesRow}>
               <input
@@ -203,43 +186,15 @@ export default function ReviewWrite() {
               <label htmlFor="deleteFiles">기존 사진 모두 삭제</label>
             </div>
           )}
-
-          <div className={styles.imageUploadArea}>
-            {previews.map((url, idx) => (
-              <div key={idx} className={styles.imagePreview}>
-                <img
-                  className={styles.previewImg}
-                  src={url}
-                  alt={`미리보기 ${idx + 1}`}
-                />
-                <button
-                  className={styles.removeImgBtn}
-                  type="button"
-                  onClick={() => removeNewFile(idx)}
-                  aria-label="사진 제거"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-            {newFiles.length < 5 && (
-              <button
-                className={styles.addImageBtn}
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <span className={styles.addImageIcon}>＋</span>
-                사진 추가
-              </button>
-            )}
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            style={{ display: 'none' }}
-            onChange={handleFileChange}
+          <FileUploader
+            newFiles={fu.newFiles}
+            previews={fu.previews}
+            deleteFileIds={fu.deleteFileIds}
+            addFiles={fu.addFiles}
+            removeNewFile={fu.removeNewFile}
+            toggleDeleteExisting={fu.toggleDeleteExisting}
+            maxCount={5}
+            label="사진"
           />
         </div>
 

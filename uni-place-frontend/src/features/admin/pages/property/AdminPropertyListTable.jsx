@@ -16,7 +16,9 @@ function normalizePage(payload) {
     content,
     page: Number.isFinite(page) && page > 0 ? page : 1,
     totalPages: Number.isFinite(totalPages) && totalPages > 0 ? totalPages : 1,
-    totalElements: Number.isFinite(totalElements) ? totalElements : content.length,
+    totalElements: Number.isFinite(totalElements)
+      ? totalElements
+      : content.length,
   };
 }
 
@@ -41,10 +43,17 @@ export default function AdminPropertyListTable({
   filters = [],
   emptyMessage,
   rowKey,
+  createLabel,
+  onCreateClick,
+  reloadRef,
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [rows, setRows] = useState([]);
-  const [meta, setMeta] = useState({ page: 1, totalPages: 1, totalElements: 0 });
+  const [meta, setMeta] = useState({
+    page: 1,
+    totalPages: 1,
+    totalElements: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -73,6 +82,11 @@ export default function AdminPropertyListTable({
     load();
   }, [load]);
 
+  // reloadRef로 외부에서 새로고침 트리거 가능
+  React.useEffect(() => {
+    if (reloadRef) reloadRef.current = load;
+  }, [reloadRef, load]);
+
   const pages = useMemo(
     () => pageWindow(meta.page, meta.totalPages),
     [meta.page, meta.totalPages]
@@ -85,7 +99,8 @@ export default function AdminPropertyListTable({
 
   const resolveRowKey = (row, idx) => {
     if (typeof rowKey === 'function') return rowKey(row, idx);
-    if (typeof rowKey === 'string' && row?.[rowKey] !== undefined) return row[rowKey];
+    if (typeof rowKey === 'string' && row?.[rowKey] !== undefined)
+      return row[rowKey];
     return idx;
   };
 
@@ -99,12 +114,25 @@ export default function AdminPropertyListTable({
           </p>
         </div>
         <div className={styles.actions}>
+          {onCreateClick && (
+            <button
+              type="button"
+              className={`${styles.btn} ${styles.btnCreate}`}
+              onClick={onCreateClick}
+            >
+              + {createLabel || '새로 만들기'}
+            </button>
+          )}
           {'direct' in query && (
             <select
               className={styles.select}
               value={query.direct ?? 'DESC'}
               onChange={(e) =>
-                setQuery((prev) => ({ ...prev, direct: e.target.value, page: 1 }))
+                setQuery((prev) => ({
+                  ...prev,
+                  direct: e.target.value,
+                  page: 1,
+                }))
               }
             >
               <option value="DESC">최신순</option>
@@ -115,7 +143,11 @@ export default function AdminPropertyListTable({
             className={styles.select}
             value={query.size ?? 10}
             onChange={(e) =>
-              setQuery((prev) => ({ ...prev, size: Number(e.target.value), page: 1 }))
+              setQuery((prev) => ({
+                ...prev,
+                size: Number(e.target.value),
+                page: 1,
+              }))
             }
           >
             {[10, 20, 30, 50].map((n) => (
@@ -144,7 +176,9 @@ export default function AdminPropertyListTable({
                 <select
                   className={styles.select}
                   value={query[f.key] ?? ''}
-                  onChange={(e) => setFilterValue(f.key, e.target.value, f.parse)}
+                  onChange={(e) =>
+                    setFilterValue(f.key, e.target.value, f.parse)
+                  }
                 >
                   {(f.options ?? []).map((opt) => (
                     <option key={String(opt.value)} value={opt.value}>
@@ -158,7 +192,9 @@ export default function AdminPropertyListTable({
                   type={f.type || 'text'}
                   value={query[f.key] ?? ''}
                   placeholder={f.placeholder || ''}
-                  onChange={(e) => setFilterValue(f.key, e.target.value, f.parse)}
+                  onChange={(e) =>
+                    setFilterValue(f.key, e.target.value, f.parse)
+                  }
                 />
               )}
             </label>
@@ -174,10 +210,14 @@ export default function AdminPropertyListTable({
       )}
 
       {error ? <div className={styles.errorBox}>{error}</div> : null}
-      {loading ? <div className={styles.loading}>데이터를 불러오는 중입니다...</div> : null}
+      {loading ? (
+        <div className={styles.loading}>데이터를 불러오는 중입니다...</div>
+      ) : null}
 
       {!loading && rows.length === 0 ? (
-        <div className={styles.empty}>{emptyMessage || '데이터가 없습니다.'}</div>
+        <div className={styles.empty}>
+          {emptyMessage || '데이터가 없습니다.'}
+        </div>
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
@@ -193,7 +233,9 @@ export default function AdminPropertyListTable({
                 <tr key={resolveRowKey(row, idx)}>
                   {columns.map((col) => (
                     <td key={col.key}>
-                      {col.render ? col.render(row, idx) : valueOrDash(row?.[col.key])}
+                      {col.render
+                        ? col.render(row, idx)
+                        : valueOrDash(row?.[col.key])}
                     </td>
                   ))}
                 </tr>
@@ -209,7 +251,9 @@ export default function AdminPropertyListTable({
             type="button"
             className={styles.pageBtn}
             disabled={meta.page <= 1}
-            onClick={() => setQuery((prev) => ({ ...prev, page: prev.page - 1 }))}
+            onClick={() =>
+              setQuery((prev) => ({ ...prev, page: prev.page - 1 }))
+            }
           >
             {'<'}
           </button>
@@ -227,7 +271,9 @@ export default function AdminPropertyListTable({
             type="button"
             className={styles.pageBtn}
             disabled={meta.page >= meta.totalPages}
-            onClick={() => setQuery((prev) => ({ ...prev, page: prev.page + 1 }))}
+            onClick={() =>
+              setQuery((prev) => ({ ...prev, page: prev.page + 1 }))
+            }
           >
             {'>'}
           </button>

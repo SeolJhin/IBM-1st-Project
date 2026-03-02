@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMyReviews, useReviewActions } from '../hooks/useReviews';
 import styles from './ReviewList.module.css';
+import { toApiImageUrl } from '../../file/api/fileApi';
 
 function StarRating({ rating }) {
   return (
@@ -40,7 +41,7 @@ function ReviewCard({ review, onView, onEdit, onDelete }) {
       {review.thumbnailUrl && (
         <img
           className={styles.thumbnail}
-          src={review.thumbnailUrl}
+          src={toApiImageUrl(review.thumbnailUrl)}
           alt="리뷰 이미지"
         />
       )}

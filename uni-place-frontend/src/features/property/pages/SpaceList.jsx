@@ -5,6 +5,7 @@ import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import styles from './SpaceList.module.css';
+import { toApiImageUrl } from '../../file/api/fileApi';
 
 const INIT_QUERY = {
   page: 1,
@@ -48,7 +49,7 @@ function SpaceCard({ space, onClick }) {
     >
       <div className={styles.cardImg}>
         {space.thumbnailUrl ? (
-          <img src={space.thumbnailUrl} alt={space.spaceNm} />
+          <img src={toApiImageUrl(space.thumbnailUrl)} alt={space.spaceNm} />
         ) : (
           <div className={styles.cardImgPh}>🛋️</div>
         )}

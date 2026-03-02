@@ -6,48 +6,10 @@ import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './SpaceDetail.module.css';
+import { toApiImageUrl } from '../../../shared/utils/imageUrl';
 import Modal from '../../../shared/components/Modal/Modal';
 import SpaceReservationCreate from '../../reservation/pages/SpaceReservationCreate';
-
-function ImageGallery({ files }) {
-  const [active, setActive] = useState(0);
-  const images = (files || []).filter((f) => {
-    const ext = (f.fileType || '').toLowerCase();
-    return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
-  });
-  if (!images.length) {
-    return (
-      <div className={styles.galleryPlaceholder}>
-        <span>🛋️</span>
-        <p>등록된 사진이 없습니다</p>
-      </div>
-    );
-  }
-  return (
-    <div className={styles.gallery}>
-      <div className={styles.galleryMain}>
-        <img
-          src={images[active]?.viewUrl || images[active]?.fileUrl}
-          alt={`공용공간 사진 ${active + 1}`}
-        />
-      </div>
-      {images.length > 1 && (
-        <div className={styles.galleryThumbs}>
-          {images.map((img, i) => (
-            <button
-              key={i}
-              className={`${styles.galleryThumb} ${i === active ? styles.galleryThumbActive : ''}`}
-              onClick={() => setActive(i)}
-              type="button"
-            >
-              <img src={img.viewUrl || img.fileUrl} alt="" />
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+import ImageGallery from '../../file/components/ImageGallery';
 
 export default function SpaceDetail() {
   const { spaceId } = useParams();
@@ -414,7 +376,10 @@ export default function SpaceDetail() {
                   >
                     <div className={styles.otherCardImg}>
                       {s.thumbnailUrl ? (
-                        <img src={s.thumbnailUrl} alt={s.spaceNm} />
+                        <img
+                          src={toApiImageUrl(s.thumbnailUrl)}
+                          alt={s.spaceNm}
+                        />
                       ) : (
                         <div className={styles.otherCardImgPh}>🛋️</div>
                       )}

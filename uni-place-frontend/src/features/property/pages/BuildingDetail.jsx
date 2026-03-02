@@ -5,46 +5,8 @@ import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import styles from './BuildingDetail.module.css';
-
-function ImageGallery({ files }) {
-  const [active, setActive] = useState(0);
-  const images = (files || []).filter((f) => {
-    const ext = (f.fileType || '').toLowerCase();
-    return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
-  });
-  if (!images.length) {
-    return (
-      <div className={styles.galleryPlaceholder}>
-        <span>🏢</span>
-        <p>등록된 사진이 없습니다</p>
-      </div>
-    );
-  }
-  return (
-    <div className={styles.gallery}>
-      <div className={styles.galleryMain}>
-        <img
-          src={images[active]?.viewUrl || images[active]?.fileUrl}
-          alt={`빌딩 사진 ${active + 1}`}
-        />
-      </div>
-      {images.length > 1 && (
-        <div className={styles.galleryThumbs}>
-          {images.map((img, i) => (
-            <button
-              key={i}
-              className={`${styles.galleryThumb} ${i === active ? styles.galleryThumbActive : ''}`}
-              onClick={() => setActive(i)}
-              type="button"
-            >
-              <img src={img.viewUrl || img.fileUrl} alt="" />
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+import { toApiImageUrl } from '../../../shared/utils/imageUrl';
+import ImageGallery from '../../file/components/ImageGallery';
 
 function SpaceCard({ space, onDetail }) {
   const options = space.spaceOptions
@@ -63,7 +25,7 @@ function SpaceCard({ space, onDetail }) {
     >
       <div className={styles.spaceImg}>
         {space.thumbnailUrl ? (
-          <img src={space.thumbnailUrl} alt={space.spaceNm} />
+          <img src={toApiImageUrl(space.thumbnailUrl)} alt={space.spaceNm} />
         ) : (
           <div className={styles.spaceImgPlaceholder}>🛋️</div>
         )}
@@ -117,7 +79,10 @@ function RoomMiniCard({ room, onDetail }) {
     >
       <div className={styles.roomMiniImg}>
         {room.thumbnailUrl ? (
-          <img src={room.thumbnailUrl} alt={`${room.roomNo}호`} />
+          <img
+            src={toApiImageUrl(room.thumbnailUrl)}
+            alt={`${room.roomNo}호`}
+          />
         ) : (
           <div className={styles.roomMiniImgPh}>🏠</div>
         )}
