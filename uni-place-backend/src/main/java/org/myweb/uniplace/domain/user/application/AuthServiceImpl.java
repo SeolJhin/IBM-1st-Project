@@ -37,6 +37,12 @@ import java.util.HexFormat;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.myweb.uniplace.domain.user.api.dto.request.FindEmailRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.PasswordResetRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.PasswordResetConfirmRequest;
+import org.myweb.uniplace.domain.user.domain.entity.PasswordResetToken;
+import org.myweb.uniplace.domain.user.repository.PasswordResetTokenRepository;
+import org.myweb.uniplace.global.util.MailService;
 
 @Slf4j
 @Service
@@ -59,6 +65,9 @@ public class AuthServiceImpl implements AuthService {
     private final JwtProvider jwtProvider;
     private final OAuthCompleteService oAuthCompleteService;
     private final NotificationService notificationService;
+    
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final MailService mailService;
 
     @Value("${jwt.refresh-exp:86400000}")
     private long refreshExpMillis;
@@ -528,4 +537,121 @@ public class AuthServiceImpl implements AuthService {
         private LocalDateTime lockedUntil;
         private LocalDateTime lockNotifiedUntil;
     }
+    
+    // ----------------------------------------------------------------
+    // 아이디(이메일) 찾기
+    // ----------------------------------------------------------------
+    @Override
+    public String findEmail(FindEmailRequest req) {
+        if (req == null) throw new BusinessException(ErrorCode.BAD_REQUEST);
+
+        String userNm  = req.getUserNm()  == null ? null : req.getUserNm().trim();
+        String userTel = req.getUserTel() == null ? null : req.getUserTel().trim();
+
+        User user = userRepository.findByUserNmAndUserTel(userNm, userTel)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        return maskEmail(user.getUserEmail());
+    }
+
+    // ----------------------------------------------------------------
+    // 비밀번호 재설정 요청 (이메일 발송)
+    // ----------------------------------------------------------------
+    @Override
+    @Transactional
+    public void requestPasswordReset(PasswordResetRequest req) {
+        if (req == null) throw new BusinessException(ErrorCode.BAD_REQUEST);
+
+        String email = normalizeEmail(req.getUserEmail());
+        User user = userRepository.findByUserEmail(email)
+                .orElse(null);
+
+        // 보안상: 이메일 존재 여부 노출 안 함 → 없어도 정상 응답
+        if (user == null) {
+            log.info("[PWD_RESET] 가입되지 않은 이메일로 요청: {}", email);
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // 만료된 토큰 정리
+        passwordResetTokenRepository.deleteExpiredTokens(now);
+
+        // 이미 유효한 토큰이 있으면 재사용 (30분 이내 중복 발송 방지)
+        String tokenValue = passwordResetTokenRepository
+                .findActiveByUserId(user.getUserId(), now)
+                .map(PasswordResetToken::getToken)
+                .orElseGet(() -> {
+                    String newToken = IdGenerator.generate("PRT").replace("PRT_", "");
+                    PasswordResetToken prt = PasswordResetToken.builder()
+                            .id(IdGenerator.generate("PRTID"))
+                            .userId(user.getUserId())
+                            .token(newToken)
+                            .expiresAt(now.plusMinutes(30))
+                            .used(false)
+                            .build();
+                    passwordResetTokenRepository.save(prt);
+                    return newToken;
+                });
+
+        mailService.sendPasswordResetMail(user.getUserEmail(), tokenValue);
+    }
+
+    // ----------------------------------------------------------------
+    // 토큰 유효성 검증 (페이지 진입 시 사전 확인)
+    // ----------------------------------------------------------------
+    @Override
+    public void verifyPasswordResetToken(String token) {
+        PasswordResetToken prt = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PASSWORD_RESET_TOKEN_INVALID));
+
+        if (prt.isUsed() || prt.isExpired()) {
+            throw new BusinessException(ErrorCode.PASSWORD_RESET_TOKEN_EXPIRED);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // 비밀번호 재설정 확정
+    // ----------------------------------------------------------------
+    @Override
+    @Transactional
+    public void confirmPasswordReset(PasswordResetConfirmRequest req) {
+        if (req == null) throw new BusinessException(ErrorCode.BAD_REQUEST);
+
+        PasswordResetToken prt = passwordResetTokenRepository.findByToken(req.getToken())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PASSWORD_RESET_TOKEN_INVALID));
+
+        if (prt.isUsed()) {
+            throw new BusinessException(ErrorCode.PASSWORD_RESET_TOKEN_INVALID);
+        }
+        if (prt.isExpired()) {
+            throw new BusinessException(ErrorCode.PASSWORD_RESET_TOKEN_EXPIRED);
+        }
+
+        User user = userRepository.findById(prt.getUserId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        user.changePwd(passwordEncoder.encode(req.getNewPassword()));
+        prt.markUsed();
+
+        log.info("[PWD_RESET] 비밀번호 변경 완료: userId={}", user.getUserId());
+    }
+
+    // ----------------------------------------------------------------
+    // private helpers
+    // ----------------------------------------------------------------
+    private static String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return email;
+        int atIdx = email.indexOf('@');
+        String local  = email.substring(0, atIdx);
+        String domain = email.substring(atIdx);          // @domain.com
+
+        if (local.length() <= 2) {
+            // 짧은 경우: t*** 형태
+            return local.charAt(0) + "***" + domain;
+        }
+        // 앞 2글자 + *** + 나머지
+        return local.substring(0, 2) + "***" + domain;
+    }
+
 }

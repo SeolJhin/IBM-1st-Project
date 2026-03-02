@@ -3,6 +3,10 @@ import { createBrowserRouter } from 'react-router-dom';
 import Home from '../../shared/pages/Home';
 import NotificationList from '../../features/notification/pages/NotificationList';
 
+// ── user ──────────────────────────────────────────────────────
+import FindAccount from '../../features/user/pages/FindAccount';
+import ResetPassword from '../../features/user/pages/ResetPassword';
+
 // ── property ──────────────────────────────────────────────────
 import BuildingList from '../../features/property/pages/BuildingList';
 import BuildingDetail from '../../features/property/pages/BuildingDetail';
@@ -52,6 +56,9 @@ import AdminSpaceList from '../../features/admin/pages/property/AdminSpaceList';
 export const router = createBrowserRouter([
   { path: '/', element: <Home /> },
   { path: '/notifications', element: <NotificationList /> },
+
+  { path: '/find-account', element: <FindAccount /> },
+  { path: '/reset-password', element: <ResetPassword /> },
 
   // property
   { path: '/buildings', element: <BuildingList /> },
