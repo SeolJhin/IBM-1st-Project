@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notificationApi } from '../../../features/notification/api/notificationApi';
+import { localizeNotificationMessage } from '../../../features/notification/utils/localizeNotificationMessage';
 import { resolveNotificationPath } from '../../../features/notification/utils/resolveNotificationPath';
 import Modal from '../../../shared/components/Modal/Modal';
 import styles from './NotificationBell.module.css';
@@ -179,7 +180,7 @@ export default function NotificationBell() {
                       <span className={styles.typeBadge}>
                         {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
                       </span>
-                      <p className={styles.dropMsg}>{item.message}</p>
+                      <p className={styles.dropMsg}>{localizeNotificationMessage(item)}</p>
                       <span className={styles.dropTime}>{timeAgo(item.createdAt)}</span>
                     </div>
                     <div className={styles.dropItemRight}>
