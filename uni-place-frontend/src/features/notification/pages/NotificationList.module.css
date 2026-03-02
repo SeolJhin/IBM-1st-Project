@@ -192,6 +192,29 @@
   box-shadow: 0 0 6px rgba(217, 173, 91, 0.6);
 }
 
+.itemRight {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.readBtn {
+  background: transparent;
+  border: 1px solid rgba(217, 173, 91, 0.5);
+  color: #d9ad5b;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.readBtn:hover {
+  background: rgba(217, 173, 91, 0.12);
+}
+
 /* ── 빈 상태 ── */
 .empty {
   display: flex;

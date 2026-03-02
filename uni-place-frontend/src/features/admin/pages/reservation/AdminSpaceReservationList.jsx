@@ -1,5 +1,6 @@
 // features/admin/pages/reservation/AdminSpaceReservationList.jsx
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import styles from './AdminReservation.module.css';
 
@@ -19,6 +20,7 @@ function StatusBadge({ status }) {
 }
 
 export default function AdminSpaceReservationList() {
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -41,6 +43,7 @@ export default function AdminSpaceReservationList() {
   const [detailModal, setDetailModal] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const searchKey = searchParams.toString();
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -60,6 +63,28 @@ export default function AdminSpaceReservationList() {
   useEffect(() => {
     fetchList();
   }, [fetchList]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchKey);
+    const raw = params.get('reservationId');
+    const reservationId = Number(raw);
+    if (!Number.isFinite(reservationId) || reservationId <= 0) return;
+    let canceled = false;
+    async function loadDetail() {
+      try {
+        const res = await adminApi.spaceReservationDetail(Math.trunc(reservationId));
+        if (canceled) return;
+        setDetailModal(res);
+        setCancelReason('');
+      } catch {
+        // ignore
+      }
+    }
+    loadDetail();
+    return () => {
+      canceled = true;
+    };
+  }, [searchKey]);
 
   const openDetail = async (reservationId) => {
     try {
