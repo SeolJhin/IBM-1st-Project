@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../hooks/useNotifications';
+import { localizeNotificationMessage } from '../utils/localizeNotificationMessage';
 import { resolveNotificationPath } from '../utils/resolveNotificationPath';
 import styles from './NotificationList.module.css';
 
@@ -52,7 +53,7 @@ function NotificationItem({ item, onRead, onNavigate }) {
         <span className={styles.typeBadge}>
           {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
         </span>
-        <p className={styles.message}>{item.message}</p>
+        <p className={styles.message}>{localizeNotificationMessage(item)}</p>
         <span className={styles.time}>{timeAgo(item.createdAt)}</span>
       </div>
       <div className={styles.itemRight}>
