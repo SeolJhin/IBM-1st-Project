@@ -108,7 +108,7 @@ public class QnaController {
     }
 
     // 질문 작성: 관리자 + 입주민
-    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     @PostMapping
     public ApiResponse<QnaResponse> create(
             @AuthenticationPrincipal AuthUser authUser,
