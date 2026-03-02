@@ -17,4 +17,5 @@ public interface AffiliateService {
     // 관리자
     AffiliateResponse create(AffiliateCreateRequest request);
     AffiliateResponse update(Integer affiliateId, AffiliateUpdateRequest request);
+    void delete(Integer affiliateId);
 }
