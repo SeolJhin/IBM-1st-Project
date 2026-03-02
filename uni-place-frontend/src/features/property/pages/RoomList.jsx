@@ -1004,9 +1004,9 @@ export default function RoomList() {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className={styles.cardImg}>
-                        {b.thumbnailUrl ? (
+                        {b.thumbUrl ? (
                           <img
-                            src={toApiImageUrl(b.thumbnailUrl)}
+                            src={toApiImageUrl(b.thumbUrl)}
                             alt={b.buildingNm}
                           />
                         ) : (

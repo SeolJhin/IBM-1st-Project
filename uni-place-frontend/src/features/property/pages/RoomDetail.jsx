@@ -6,7 +6,6 @@ import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './RoomDetail.module.css';
-import { toApiImageUrl } from '../../../shared/utils/imageUrl';
 import ImageGallery from '../../file/components/ImageGallery';
 
 function StarRating({ value = 0, size = 'md' }) {

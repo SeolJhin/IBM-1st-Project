@@ -1,5 +1,4 @@
 // features/file/api/fileApi.js
-import { fetchWithAuthRetry } from '../../../app/http/apiBase';
 
 const API = '/api';
 

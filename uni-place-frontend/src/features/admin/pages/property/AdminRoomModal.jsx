@@ -37,10 +37,10 @@ const ROOM_STATUS = [
 ];
 const SUN_DIRS = [
   { value: '', label: '미선택' },
-  { value: 'east', label: '동향' },
-  { value: 'west', label: '서향' },
-  { value: 'south', label: '남향' },
-  { value: 'north', label: '북향' },
+  { value: 'e', label: '동향' },
+  { value: 'w', label: '서향' },
+  { value: 's', label: '남향' },
+  { value: 'n', label: '북향' },
 ];
 
 export default function AdminRoomModal({ roomId, onClose, onSuccess }) {
