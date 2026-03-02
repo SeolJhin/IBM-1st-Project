@@ -127,4 +127,14 @@ public class AffiliateServiceImpl implements AffiliateService {
         // ✅ dirty checking으로 자동 반영
         return AffiliateResponse.from(affiliate);
     }
+    
+    @Override
+    public void delete(Integer affiliateId) {
+        if (!affiliateRepository.existsById(affiliateId)) {
+            throw new BusinessException(ErrorCode.AFFILIATE_NOT_FOUND);
+        }
+
+        affiliateRepository.deleteById(affiliateId);
+        affiliateRepository.flush();
+    }
 }

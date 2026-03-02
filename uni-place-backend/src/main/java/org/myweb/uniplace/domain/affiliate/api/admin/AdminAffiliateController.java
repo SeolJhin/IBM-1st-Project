@@ -47,4 +47,10 @@ public class AdminAffiliateController {
     public ApiResponse<AffiliateResponse> detail(@PathVariable("affiliateId") Integer affiliateId) {
         return ApiResponse.ok(affiliateService.get(affiliateId));
     }
+    
+    @DeleteMapping("/{affiliateId}")
+    public ApiResponse<Void> delete(@PathVariable("affiliateId") Integer affiliateId) {
+        affiliateService.delete(affiliateId);
+        return ApiResponse.ok();
+    }
 }

@@ -91,12 +91,29 @@ async function fetchDashboardFallback() {
     bannersResult,
     roomServicesResult,
   ] = await Promise.allSettled([
-    request(`/admin/users${buildQuery({ page: 1, size: 1, sort: 'userId', direct: 'DESC' })}`, { auth: true }),
-    request(`/spaces${buildQuery({ page: 1, size: 1, sort: 'spaceId', direct: 'DESC' })}`),
-    request(`/admin/tour-reservations${buildQuery({ page: 1, size: 1, sort: 'tourId', direct: 'DESC' })}`, { auth: true }),
-    request(`/admin/contracts${buildQuery({ page: 1, size: 1, sort: 'contractId', direct: 'DESC' })}`, { auth: true }),
-    request(`/admin/banners${buildQuery({ page: 0, size: 1, sort: 'banId', direction: 'DESC' })}`, { auth: true }),
-    request(`/admin/room-services${buildQuery({ page: 0, size: 1, sort: 'createdAt' })}`, { auth: true }),
+    request(
+      `/admin/users${buildQuery({ page: 1, size: 1, sort: 'userId', direct: 'DESC' })}`,
+      { auth: true }
+    ),
+    request(
+      `/spaces${buildQuery({ page: 1, size: 1, sort: 'spaceId', direct: 'DESC' })}`
+    ),
+    request(
+      `/admin/tour-reservations${buildQuery({ page: 1, size: 1, sort: 'tourId', direct: 'DESC' })}`,
+      { auth: true }
+    ),
+    request(
+      `/admin/contracts${buildQuery({ page: 1, size: 1, sort: 'contractId', direct: 'DESC' })}`,
+      { auth: true }
+    ),
+    request(
+      `/admin/banners${buildQuery({ page: 0, size: 1, sort: 'banId', direction: 'DESC' })}`,
+      { auth: true }
+    ),
+    request(
+      `/admin/room-services${buildQuery({ page: 0, size: 1, sort: 'createdAt' })}`,
+      { auth: true }
+    ),
   ]);
 
   const settled = [
@@ -107,7 +124,9 @@ async function fetchDashboardFallback() {
     bannersResult,
     roomServicesResult,
   ];
-  const fulfilledCount = settled.filter((result) => result.status === 'fulfilled').length;
+  const fulfilledCount = settled.filter(
+    (result) => result.status === 'fulfilled'
+  ).length;
 
   if (fulfilledCount === 0) {
     const firstError = settled.find((result) => result.status === 'rejected');
@@ -134,21 +153,25 @@ async function request(
 ) {
   const isFormData = body instanceof FormData;
 
-  const res = await fetchWithAuthRetry(path, {
-    method,
-    headers: {
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+  const res = await fetchWithAuthRetry(
+    path,
+    {
+      method,
+      headers: {
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
 
-      ...(auth && getAccessToken()
-        ? { Authorization: `Bearer ${getAccessToken()}` }
-        : {}),
+        ...(auth && getAccessToken()
+          ? { Authorization: `Bearer ${getAccessToken()}` }
+          : {}),
 
-      ...headers,
+        ...headers,
+      },
+      credentials: 'same-origin',
+
+      body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
     },
-    credentials: 'same-origin',
-
-    body: body ? (isFormData ? body : JSON.stringify(body)) : undefined,
-  }, { auth });
+    { auth }
+  );
 
   const payload = await parsePayload(res);
   return unwrapOrThrow(res, payload);
@@ -158,17 +181,21 @@ async function requestForm(
   path,
   { method = 'POST', formData, headers = {}, auth = false } = {}
 ) {
-  const res = await fetchWithAuthRetry(path, {
-    method,
-    headers: {
-      ...(auth && getAccessToken()
-        ? { Authorization: `Bearer ${getAccessToken()}` }
-        : {}),
-      ...headers,
+  const res = await fetchWithAuthRetry(
+    path,
+    {
+      method,
+      headers: {
+        ...(auth && getAccessToken()
+          ? { Authorization: `Bearer ${getAccessToken()}` }
+          : {}),
+        ...headers,
+      },
+      credentials: 'same-origin',
+      body: formData,
     },
-    credentials: 'same-origin',
-    body: formData,
-  }, { auth });
+    { auth }
+  );
 
   const payload = await parsePayload(res);
   return unwrapOrThrow(res, payload);
@@ -440,6 +467,26 @@ export const adminApi = {
     }),
   getAffiliateDetail: (affiliateId) =>
     request(`/admin/affiliates/${affiliateId}`, { auth: true }),
+  createAffiliate: (body) =>
+    request(`/admin/affiliates`, {
+      method: 'POST',
+      auth: true,
+      body,
+    }),
+  updateAffiliate: (affiliateId, body) =>
+    request(`/admin/affiliates/${affiliateId}`, {
+      method: 'PATCH',
+      auth: true,
+      body,
+    }),
+  deleteAffiliate: (affiliateId) =>
+    request(`/admin/affiliates/${affiliateId}`, {
+      method: 'DELETE',
+      auth: true,
+    }),
+  // common-codes
+  getActiveCommonCodes: (groupCode) =>
+    request(`/admin/common-codes/${groupCode}`, { auth: true }),
 
   // banners
   getBanners: ({ page = 0, size = 10, sort = 'banId', direct = 'DESC' } = {}) =>
@@ -540,4 +587,3 @@ export const adminApi = {
   getNoticeDetail: (noticeId) =>
     request(`/notices/${noticeId}`, { auth: true }),
 };
-
