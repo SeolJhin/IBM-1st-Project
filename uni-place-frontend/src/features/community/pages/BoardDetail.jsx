@@ -31,7 +31,8 @@ export default function BoardDetail() {
     }
 
     let canceled = false;
-    async function loadBoard() {
+    const timerId = setTimeout(async () => {
+      if (canceled) return;
       setLoading(true);
       setError('');
       try {
@@ -45,11 +46,10 @@ export default function BoardDetail() {
       } finally {
         if (!canceled) setLoading(false);
       }
-    }
-
-    loadBoard();
+    }, 0);
     return () => {
       canceled = true;
+      clearTimeout(timerId);
     };
   }, [boardId]);
 
