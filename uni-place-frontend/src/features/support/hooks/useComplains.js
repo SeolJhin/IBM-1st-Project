@@ -34,7 +34,7 @@ export function useComplains(initialParams = {}) {
       // PageResponse<ComplainResponse>
       // 필드: compId, compTitle, userId, compCtnt, compSt,
       //       code, fileCk, replyCk, createdAt, updatedAt
-      const data = await supportApi.getMyComplains(fetchParams);
+      const data = await supportApi.getComplains(fetchParams);
       setComplains(data?.content ?? []);
       setPagination({
         page: data?.page ?? fetchParams.page,
