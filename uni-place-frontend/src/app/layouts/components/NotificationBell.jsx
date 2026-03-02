@@ -8,11 +8,10 @@ import React, {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notificationApi } from '../../../features/notification/api/notificationApi';
+import { resolveNotificationPath } from '../../../features/notification/utils/resolveNotificationPath';
 import Modal from '../../../shared/components/Modal/Modal';
 import styles from './NotificationBell.module.css';
 
-// NotificationList를 lazy import → 순환 참조 방지
-// NotificationBell → NotificationList → Header → NotificationBell (순환)
 const NotificationList = lazy(
   () => import('../../../features/notification/pages/NotificationList')
 );
@@ -21,9 +20,10 @@ const TARGET_LABEL = {
   board: '게시글',
   reply: '댓글',
   notice: '공지사항',
-  tour: '사전방문',
-  space: '공용시설',
+  tour: '투어',
+  space: '공간예약',
   review: '리뷰',
+  payment: '결제',
 };
 
 function timeAgo(dateStr) {
@@ -44,7 +44,6 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [deletingRead, setDeletingRead] = useState(false);
   const dropRef = useRef(null);
 
   const fetchUnreadCount = useCallback(async () => {
@@ -52,7 +51,7 @@ export default function NotificationBell() {
       const res = await notificationApi.getUnread({ page: 0, size: 1 });
       setUnreadCount(res?.unreadCount ?? 0);
     } catch {
-      /* 로그인 안 된 상태 등 무시 */
+      // ignore
     }
   }, []);
 
@@ -65,11 +64,11 @@ export default function NotificationBell() {
   const loadDropdown = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await notificationApi.getList({ page: 0, size: 5 });
+      const res = await notificationApi.getUnread({ page: 0, size: 20 });
       setItems(res?.notifications?.content ?? []);
       setUnreadCount(res?.unreadCount ?? 0);
     } catch {
-      /* ignore */
+      // ignore
     } finally {
       setLoading(false);
     }
@@ -84,8 +83,9 @@ export default function NotificationBell() {
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (dropRef.current && !dropRef.current.contains(e.target))
+      if (dropRef.current && !dropRef.current.contains(e.target)) {
         setOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -95,60 +95,22 @@ export default function NotificationBell() {
     e.stopPropagation();
     try {
       await notificationApi.markRead(notificationId);
-      setItems((prev) =>
-        prev.map((n) =>
-          n.notificationId === notificationId ? { ...n, isRead: 'Y' } : n
-        )
-      );
+      setItems((prev) => prev.filter((n) => n.notificationId !== notificationId));
       setUnreadCount((c) => Math.max(0, c - 1));
     } catch {
-      /* ignore */
+      // ignore
     }
   }, []);
 
   const handleItemClick = useCallback(
-    async (item) => {
-      if (item.isRead !== 'Y') {
-        try {
-          await notificationApi.markRead(item.notificationId);
-          setItems((prev) =>
-            prev.map((n) =>
-              n.notificationId === item.notificationId
-                ? { ...n, isRead: 'Y' }
-                : n
-            )
-          );
-          setUnreadCount((c) => Math.max(0, c - 1));
-        } catch {
-          /* ignore */
-        }
-      }
+    (item) => {
       setOpen(false);
-      if (item.urlPath) navigate(item.urlPath);
+      const nextPath = resolveNotificationPath(item);
+      if (nextPath) navigate(nextPath);
     },
     [navigate]
   );
 
-  const handleDeleteRead = useCallback(
-    async (e) => {
-      e.stopPropagation();
-      if (!window.confirm('읽은 알림을 모두 삭제할까요?')) return;
-      setDeletingRead(true);
-      try {
-        await notificationApi.deleteRead();
-        await loadDropdown();
-      } catch {
-        /* ignore */
-      } finally {
-        setDeletingRead(false);
-      }
-    },
-    [loadDropdown]
-  );
-
-  const hasReadItems = items.some((n) => n.isRead === 'Y');
-
-  // "알림 전체 보기" → 팝업으로
   const goToAll = () => {
     setOpen(false);
     setNotiModalOpen(true);
@@ -184,12 +146,10 @@ export default function NotificationBell() {
                     e.stopPropagation();
                     try {
                       await notificationApi.markAllRead();
-                      setItems((prev) =>
-                        prev.map((n) => ({ ...n, isRead: 'Y' }))
-                      );
+                      setItems([]);
                       setUnreadCount(0);
                     } catch {
-                      /* ignore */
+                      // ignore
                     }
                   }}
                 >
@@ -206,68 +166,39 @@ export default function NotificationBell() {
               <div className={styles.empty}>새로운 알림이 없어요</div>
             ) : (
               <ul className={styles.dropList}>
-                {items.map((item) => {
-                  const isUnread = item.isRead !== 'Y';
-                  return (
-                    <li
-                      key={item.notificationId}
-                      className={`${styles.dropItem} ${isUnread ? styles.unread : styles.read}`}
-                      onClick={() => handleItemClick(item)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) =>
-                        e.key === 'Enter' && handleItemClick(item)
-                      }
-                    >
-                      <div className={styles.dropItemLeft}>
-                        <span
-                          className={`${styles.typeBadge} ${!isUnread ? styles.badgeRead : ''}`}
-                        >
-                          {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
-                        </span>
-                        <p
-                          className={`${styles.dropMsg} ${!isUnread ? styles.msgRead : ''}`}
-                        >
-                          {item.message}
-                        </p>
-                        <span className={styles.dropTime}>
-                          {timeAgo(item.createdAt)}
-                        </span>
-                      </div>
-                      <div className={styles.dropItemRight}>
-                        {isUnread && (
-                          <>
-                            <span className={styles.dot} />
-                            <button
-                              className={styles.readBtn}
-                              type="button"
-                              aria-label="읽음 처리"
-                              onClick={(e) =>
-                                handleMarkRead(item.notificationId, e)
-                              }
-                            >
-                              ✓
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
+                {items.map((item) => (
+                  <li
+                    key={item.notificationId}
+                    className={`${styles.dropItem} ${styles.unread}`}
+                    onClick={() => handleItemClick(item)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && handleItemClick(item)}
+                  >
+                    <div className={styles.dropItemLeft}>
+                      <span className={styles.typeBadge}>
+                        {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
+                      </span>
+                      <p className={styles.dropMsg}>{item.message}</p>
+                      <span className={styles.dropTime}>{timeAgo(item.createdAt)}</span>
+                    </div>
+                    <div className={styles.dropItemRight}>
+                      <span className={styles.dot} />
+                      <button
+                        className={styles.readBtn}
+                        type="button"
+                        aria-label="읽음 처리"
+                        onClick={(e) => handleMarkRead(item.notificationId, e)}
+                      >
+                        읽음
+                      </button>
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
 
             <div className={styles.dropFooter}>
-              {hasReadItems && (
-                <button
-                  className={styles.deleteReadBtn}
-                  type="button"
-                  onClick={handleDeleteRead}
-                  disabled={deletingRead}
-                >
-                  {deletingRead ? '삭제 중…' : '읽은 알림 지우기'}
-                </button>
-              )}
               <button
                 className={styles.viewAllBtn}
                 type="button"
@@ -280,17 +211,14 @@ export default function NotificationBell() {
         )}
       </div>
 
-      {/* 알림 전체보기 팝업 */}
       <Modal
         open={notiModalOpen}
         onClose={() => setNotiModalOpen(false)}
-        title="🔔 알림 전체보기"
+        title="알림 전체보기"
         size="md"
       >
         <Suspense
-          fallback={
-            <div style={{ padding: 24, textAlign: 'center' }}>로딩 중…</div>
-          }
+          fallback={<div style={{ padding: 24, textAlign: 'center' }}>로딩 중...</div>}
         >
           <NotificationList inlineMode />
         </Suspense>

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import { useAdminRoomServiceOrders } from '../../hooks/useAdminRoomServiceOrders';
 import styles from './AdminRoomServiceOrderList.module.css';
@@ -60,9 +61,11 @@ function StatusBadge({ status }) {
 }
 
 export default function AdminRoomServiceOrderList() {
+  const [searchParams] = useSearchParams();
   const [size, setSize] = useState(20);
   const [statusFilter, setStatusFilter] = useState('all');
   const [keyword, setKeyword] = useState('');
+  const [focusedOrder, setFocusedOrder] = useState(null);
 
   const [editableStatus, setEditableStatus] = useState({});
   const [savingOrderId, setSavingOrderId] = useState(null);
@@ -76,17 +79,59 @@ export default function AdminRoomServiceOrderList() {
       sort: 'createdAt,DESC',
     });
 
+  const searchKey = searchParams.toString();
+  const orderIdFromQuery = useMemo(() => {
+    const params = new URLSearchParams(searchKey);
+    const raw = params.get('orderId');
+    const num = Number(raw);
+    return Number.isFinite(num) && num > 0 ? Math.trunc(num) : null;
+  }, [searchKey]);
+
+  useEffect(() => {
+    let canceled = false;
+    async function focusOrder() {
+      if (!orderIdFromQuery) {
+        setFocusedOrder(null);
+        return;
+      }
+
+      setKeyword(String(orderIdFromQuery));
+      setStatusFilter('all');
+
+      try {
+        const order = await adminApi.getRoomServiceOrderById(orderIdFromQuery);
+        if (canceled) return;
+        setFocusedOrder(order ?? null);
+      } catch {
+        if (canceled) return;
+        setFocusedOrder(null);
+      }
+    }
+
+    focusOrder();
+    return () => {
+      canceled = true;
+    };
+  }, [orderIdFromQuery]);
+
+  const sourceOrders = useMemo(
+    () => (focusedOrder ? [focusedOrder] : orders),
+    [focusedOrder, orders]
+  );
+
   useEffect(() => {
     const next = {};
-    orders.forEach((order) => {
+    sourceOrders.forEach((order) => {
       next[order.orderId] = order.orderSt ?? 'requested';
     });
     setEditableStatus(next);
-  }, [orders]);
+  }, [sourceOrders]);
 
   const filteredOrders = useMemo(() => {
+    if (focusedOrder) return [focusedOrder];
+
     const query = keyword.trim().toLowerCase();
-    return orders.filter((order) => {
+    return sourceOrders.filter((order) => {
       if (statusFilter !== 'all' && order.orderSt !== statusFilter) return false;
       if (!query) return true;
 
@@ -103,7 +148,7 @@ export default function AdminRoomServiceOrderList() {
 
       return haystack.includes(query);
     });
-  }, [keyword, orders, statusFilter]);
+  }, [focusedOrder, keyword, sourceOrders, statusFilter]);
 
   const pages = useMemo(
     () => windowedPages(pagination.currentPage, pagination.totalPages),
@@ -123,7 +168,12 @@ export default function AdminRoomServiceOrderList() {
         orderSt: nextStatus,
       });
       setNotice(`Order #${orderId} status updated.`);
-      await refetch();
+      if (focusedOrder && Number(focusedOrder.orderId) === Number(orderId)) {
+        const refreshed = await adminApi.getRoomServiceOrderById(orderId);
+        setFocusedOrder(refreshed ?? null);
+      } else {
+        await refetch();
+      }
     } catch (e) {
       setActionError(e?.message || 'Failed to update order status.');
     } finally {

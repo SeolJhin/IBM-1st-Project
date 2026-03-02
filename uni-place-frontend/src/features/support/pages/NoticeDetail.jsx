@@ -45,11 +45,7 @@ export default function NoticeDetail() {
         </div>
       </div>
 
-      <button
-        className={styles.pageBtn}
-        onClick={() => navigate('/support/notice')}
-        style={{ marginTop: 16 }}
-      >
+      <button className={styles.pageBtn} onClick={() => navigate('/support/notice')} style={{ marginTop: 16 }}>
         ← 목록으로
       </button>
     </div>

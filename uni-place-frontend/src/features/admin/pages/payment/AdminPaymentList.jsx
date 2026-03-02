@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import styles from './AdminPaymentTable.module.css';
 
@@ -62,6 +63,7 @@ function PaymentStatusBadge({ status }) {
 }
 
 export default function AdminPaymentList() {
+  const [searchParams] = useSearchParams();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -71,6 +73,7 @@ export default function AdminPaymentList() {
   const [keyword, setKeyword] = useState('');
   const [size, setSize] = useState(20);
   const [page, setPage] = useState(1);
+  const searchKey = searchParams.toString();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,6 +94,16 @@ export default function AdminPaymentList() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchKey);
+    const paymentId = (params.get('paymentId') || '').trim();
+    const keywordParam = (params.get('keyword') || '').trim();
+    const nextKeyword = paymentId || keywordParam;
+    if (!nextKeyword) return;
+    setKeyword(nextKeyword);
+    setPage(1);
+  }, [searchKey]);
 
   const providerOptions = useMemo(() => {
     const set = new Set();

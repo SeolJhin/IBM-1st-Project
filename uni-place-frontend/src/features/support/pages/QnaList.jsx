@@ -1,7 +1,8 @@
 // features/support/pages/QnaList.jsx
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { useQnas } from '../hooks/useQnas';
+import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 
 const STATUS_MAP = {
@@ -10,9 +11,13 @@ const STATUS_MAP = {
 };
 
 export default function QnaList() {
+  // ✅ 훅은 항상 최상단에 - early return 전에
+  const { user } = useAuth();
   const { qnas, pagination, loading, error, goToPage } = useQnas();
   const navigate = useNavigate();
 
+  // ✅ 훅 다음에 early return
+  if (!user) return <Navigate to="/login" replace />;
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
