@@ -153,13 +153,16 @@ public class BoardServiceImpl implements BoardService {
 
     @Override
     public void createBoard(BoardCreateRequest request, MultipartFile file) {
-        String userId = requireCurrentUserId();
+        AuthUser authUser = requireCurrentAuthUser();
+        String boardCode = normalizeBoardCodeForWrite(request.getCode());
+        requireBoardWriteRole(authUser, boardCode);
+        String userId = authUser.getUserId();
 
         Board board = Board.builder()
                 .boardTitle(request.getBoardTitle())
                 .boardCtnt(request.getBoardCtnt())
                 .userId(userId)
-                .code(normalizeBoardCodeForWrite(request.getCode()))
+                .code(boardCode)
                 .anonymity(nvlYn(request.getAnonymity(), "N"))
                 .importance(nvlYn(request.getImportance(), "N"))
                 .impEndAt(request.getImpEndAt())
@@ -187,8 +190,8 @@ public class BoardServiceImpl implements BoardService {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
-        String me = requireCurrentUserId();
-        if (!me.equals(board.getUserId())) throw new BusinessException(ErrorCode.FORBIDDEN);
+        AuthUser authUser = requireCurrentAuthUser();
+        if (!canModifyBoard(board, authUser)) throw new BusinessException(ErrorCode.FORBIDDEN);
 
         if (request.getBoardTitle() != null) board.setBoardTitle(request.getBoardTitle());
         if (request.getBoardCtnt() != null) board.setBoardCtnt(request.getBoardCtnt());
@@ -231,8 +234,8 @@ public class BoardServiceImpl implements BoardService {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
-        String me = requireCurrentUserId();
-        if (!me.equals(board.getUserId())) throw new BusinessException(ErrorCode.FORBIDDEN);
+        AuthUser authUser = requireCurrentAuthUser();
+        if (!canModifyBoard(board, authUser)) throw new BusinessException(ErrorCode.FORBIDDEN);
 
         boardRepository.deleteById(boardId);
     }
@@ -257,12 +260,53 @@ public class BoardServiceImpl implements BoardService {
     }
 
     private String requireCurrentUserId() {
+        return requireCurrentAuthUser().getUserId();
+    }
+
+    private AuthUser requireCurrentAuthUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) throw new BusinessException(ErrorCode.UNAUTHORIZED);
 
         Object p = auth.getPrincipal();
-        if (p instanceof AuthUser au) return au.getUserId();
+        if (p instanceof AuthUser au) return au;
         throw new BusinessException(ErrorCode.UNAUTHORIZED);
+    }
+
+    private void requireBoardWriteRole(AuthUser authUser, String boardCode) {
+        String role = authUser.getRole();
+        if (role == null) throw new BusinessException(ErrorCode.FORBIDDEN);
+
+        String normalized = role.trim().toLowerCase(Locale.ROOT);
+        boolean isAdmin = "admin".equals(normalized);
+        boolean isTenant = "tenant".equals(normalized);
+        boolean isUser = "user".equals(normalized);
+
+        // 커뮤니티 질문 게시판은 일반회원(user)도 작성 허용
+        if ("BOARD_QUESTION".equalsIgnoreCase(boardCode)) {
+            if (!isAdmin && !isTenant && !isUser) throw new BusinessException(ErrorCode.FORBIDDEN);
+            return;
+        }
+
+        if (!isAdmin && !isTenant) throw new BusinessException(ErrorCode.FORBIDDEN);
+    }
+
+    private boolean canModifyBoard(Board board, AuthUser authUser) {
+        String role = authUser.getRole();
+        String userId = authUser.getUserId();
+        String boardCode = String.valueOf(board.getCode());
+
+        boolean isOwner = userId != null && userId.equals(board.getUserId());
+        boolean isAdmin = role != null && "admin".equalsIgnoreCase(role.trim());
+
+        // 자유게시판/질문게시판/후기게시판은 관리자 또는 작성자 본인 수정/삭제 허용
+        if ("BOARD_FREE".equalsIgnoreCase(boardCode)
+                || "BOARD_QUESTION".equalsIgnoreCase(boardCode)
+                || "BOARD_REVIEW".equalsIgnoreCase(boardCode)) {
+            return isAdmin || isOwner;
+        }
+
+        // 그 외 게시판은 기존처럼 작성자 본인만 허용
+        return isOwner;
     }
 
     private String nvlYn(String v, String def) {

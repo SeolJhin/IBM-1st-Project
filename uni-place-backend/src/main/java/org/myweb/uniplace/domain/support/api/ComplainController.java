@@ -22,13 +22,12 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/complains")
+@RequestMapping({"/complains", "/api/complains"})
 public class ComplainController {
 
     private final ComplainService complainService;
 
     /** 전체 민원 목록 (관리자) */
-    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ApiResponse<PageResponse<ComplainResponse>> search(
             @ModelAttribute ComplainSearchRequest request,
@@ -49,6 +48,7 @@ public class ComplainController {
     }
 
     /** 내 민원 목록 */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
     public ApiResponse<PageResponse<ComplainResponse>> myList(
             @AuthenticationPrincipal AuthUser authUser,
@@ -77,6 +77,7 @@ public class ComplainController {
     }
 
     /** 민원 등록 */
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT')")
     @PostMapping
     public ApiResponse<ComplainResponse> create(
             @AuthenticationPrincipal AuthUser authUser,
@@ -86,6 +87,7 @@ public class ComplainController {
     }
 
     /** 민원 수정 */
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{compId}")
     public ApiResponse<ComplainResponse> update(
             @PathVariable("compId") Integer compId,
@@ -115,6 +117,7 @@ public class ComplainController {
     }
 
     /** 민원 삭제 */
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{compId}")
     public ApiResponse<Void> delete(
             @PathVariable("compId") Integer compId

@@ -2,6 +2,12 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Source Tree Rule
+
+- Edit only `uni-place-frontend/src`.
+- Do not re-create duplicate source folders like `src/src` or `src2222222222222`.
+- `npm start`, `npm run build`, and `npm test` run a source-tree check first.
+
 ## Available Scripts
 
 In the project directory, you can run:

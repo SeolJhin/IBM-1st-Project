@@ -28,6 +28,13 @@ export default function FaqList() {
     faqCtnt: '',
     code: 'SUP_GENERAL',
   });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    faqTitle: '',
+    faqCtnt: '',
+    code: 'SUP_GENERAL',
+  });
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   const isAdmin = normalizeRole(user) === 'admin';
 
@@ -37,7 +44,31 @@ export default function FaqList() {
     setWriteForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const startEdit = (faq) => {
+    setEditingId(faq.faqId);
+    setOpenId(faq.faqId);
+    setEditForm({
+      faqTitle: faq.faqTitle ?? '',
+      faqCtnt: faq.faqCtnt ?? '',
+      code: faq.code ?? 'SUP_GENERAL',
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({
+      faqTitle: '',
+      faqCtnt: '',
+      code: 'SUP_GENERAL',
+    });
+  };
+
   const handleCreateFaq = async () => {
+    if (!isAdmin) {
+      alert('관리자만 FAQ를 등록할 수 있습니다.');
+      return;
+    }
+
     const title = writeForm.faqTitle.trim();
     const content = writeForm.faqCtnt.trim();
     if (!title) return alert('제목을 입력해주세요.');
@@ -62,6 +93,46 @@ export default function FaqList() {
       alert(e.message || 'FAQ 등록에 실패했습니다.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleUpdateFaq = async (faqId) => {
+    if (!isAdmin) return;
+    const title = editForm.faqTitle.trim();
+    const content = editForm.faqCtnt.trim();
+    if (!title) return alert('제목을 입력해주세요.');
+    if (!content) return alert('내용을 입력해주세요.');
+
+    setEditSubmitting(true);
+    try {
+      await supportApi.updateFaq(faqId, {
+        faqTitle: title,
+        faqCtnt: content,
+        code: editForm.code,
+      });
+      await refetch();
+      cancelEdit();
+      alert('FAQ가 수정되었습니다.');
+    } catch (e) {
+      alert(e.message || 'FAQ 수정에 실패했습니다.');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleDeleteFaq = async (faqId) => {
+    if (!isAdmin) return;
+    if (!window.confirm('FAQ를 삭제하시겠습니까?')) return;
+
+    try {
+      await supportApi.deleteFaq(faqId);
+      await refetch();
+      if (editingId === faqId) {
+        cancelEdit();
+      }
+      alert('FAQ가 삭제되었습니다.');
+    } catch (e) {
+      alert(e.message || 'FAQ 삭제에 실패했습니다.');
     }
   };
 
@@ -131,6 +202,8 @@ export default function FaqList() {
         ) : (
           faqs.map((faq) => {
             const isOpen = openId === faq.faqId;
+            const isEditing = editingId === faq.faqId;
+
             return (
               <div
                 key={faq.faqId}
@@ -145,10 +218,90 @@ export default function FaqList() {
                   <span className={styles.accordionTitle}>{faq.faqTitle}</span>
                   <span className={styles.accordionIcon}>{isOpen ? '-' : '+'}</span>
                 </button>
+
                 {isOpen && (
                   <div className={styles.accordionBody}>
                     <span className={styles.accordionA}>A</span>
-                    <p className={styles.accordionContent}>{faq.faqCtnt}</p>
+                    <div style={{ width: '100%' }}>
+                      {isEditing ? (
+                        <>
+                          <label className={styles.formLabel}>제목</label>
+                          <input
+                            className={styles.formInput}
+                            value={editForm.faqTitle}
+                            onChange={(e) =>
+                              setEditForm((prev) => ({ ...prev, faqTitle: e.target.value }))
+                            }
+                            maxLength={100}
+                            disabled={editSubmitting}
+                          />
+
+                          <label className={styles.formLabel}>분류 코드</label>
+                          <select
+                            className={styles.formSelect}
+                            value={editForm.code}
+                            onChange={(e) =>
+                              setEditForm((prev) => ({ ...prev, code: e.target.value }))
+                            }
+                            disabled={editSubmitting}
+                          >
+                            <option value="SUP_GENERAL">일반</option>
+                            <option value="SUP_BILLING">요금/정산</option>
+                          </select>
+
+                          <label className={styles.formLabel}>내용</label>
+                          <textarea
+                            className={styles.formTextarea}
+                            value={editForm.faqCtnt}
+                            onChange={(e) =>
+                              setEditForm((prev) => ({ ...prev, faqCtnt: e.target.value }))
+                            }
+                            maxLength={3000}
+                            disabled={editSubmitting}
+                          />
+
+                          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                            <button
+                              className={styles.buttonPrimary}
+                              type="button"
+                              onClick={() => handleUpdateFaq(faq.faqId)}
+                              disabled={editSubmitting}
+                            >
+                              {editSubmitting ? '저장 중...' : '저장'}
+                            </button>
+                            <button
+                              className={styles.pageBtn}
+                              type="button"
+                              onClick={cancelEdit}
+                              disabled={editSubmitting}
+                            >
+                              취소
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <p className={styles.accordionContent}>{faq.faqCtnt}</p>
+                      )}
+
+                      {isAdmin && !isEditing && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button
+                            className={styles.buttonPrimary}
+                            type="button"
+                            onClick={() => startEdit(faq)}
+                          >
+                            수정
+                          </button>
+                          <button
+                            className={styles.pageBtn}
+                            type="button"
+                            onClick={() => handleDeleteFaq(faq.faqId)}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -181,3 +334,4 @@ export default function FaqList() {
     </div>
   );
 }
+
