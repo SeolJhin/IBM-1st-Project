@@ -1,5 +1,6 @@
 // features/admin/pages/reservation/AdminTourReservationList.jsx
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import styles from './AdminReservation.module.css';
 
@@ -26,6 +27,7 @@ function StatusBadge({ status }) {
 }
 
 export default function AdminTourReservationList() {
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,6 +44,7 @@ export default function AdminTourReservationList() {
   const [statusModal, setStatusModal] = useState(null);
   const [statusValue, setStatusValue] = useState('');
   const [statusLoading, setStatusLoading] = useState(false);
+  const searchKey = searchParams.toString();
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -66,6 +69,15 @@ export default function AdminTourReservationList() {
     setStatusModal({ tourId: item.tourId });
     setStatusValue(item.tourSt ?? 'requested');
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchKey);
+    const raw = params.get('tourId');
+    const tourId = Number(raw);
+    if (!Number.isFinite(tourId) || tourId <= 0) return;
+    const found = items.find((item) => Number(item.tourId) === Math.trunc(tourId));
+    if (found) openStatusModal(found);
+  }, [items, searchKey]);
 
   const handleStatusChange = async () => {
     if (!statusModal || !statusValue) return;
