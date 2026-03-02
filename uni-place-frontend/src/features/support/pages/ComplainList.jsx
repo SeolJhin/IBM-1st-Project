@@ -1,6 +1,5 @@
-// features/support/pages/ComplainList.jsx
 import React from 'react';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useComplains } from '../hooks/useComplains';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
@@ -10,27 +9,43 @@ const STATUS_MAP = {
   resolved: '처리완료',
 };
 
+function normalizeRole(user) {
+  const raw =
+    user?.userRole ??
+    user?.role ??
+    user?.userRl ??
+    user?.user_role ??
+    user?.authority ??
+    user?.authorities?.[0];
+
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace('role_', '');
+}
+
 export default function ComplainList() {
-  // ✅ 모든 훅 최상단
   const { user } = useAuth();
   const { complains, pagination, loading, error, goToPage } = useComplains();
   const navigate = useNavigate();
 
-  // ✅ 훅 다음에 early return
-  if (!user) return <Navigate to="/login" replace />;
+  const role = normalizeRole(user);
+  const canCreate = role === 'admin' || role === 'tenant';
+
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
   return (
     <div className={styles.container}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-        <button
-          className={styles.buttonPrimary}
-          onClick={() => navigate('/support/complain/write')}
-        >
-          민원 작성
-        </button>
-      </div>
+      {canCreate && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <button
+            className={styles.buttonPrimary}
+            onClick={() => navigate('/support/complain/write')}
+          >
+            민원 작성
+          </button>
+        </div>
+      )}
 
       <table className={styles.table}>
         <thead>
@@ -44,14 +59,19 @@ export default function ComplainList() {
         <tbody>
           {complains.length === 0 ? (
             <tr>
-              <td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--muted)' }}>
+              <td
+                colSpan={4}
+                style={{ textAlign: 'center', padding: 32, color: 'var(--muted)' }}
+              >
                 접수된 민원이 없습니다.
               </td>
             </tr>
           ) : (
             complains.map((item) => (
               <tr key={item.compId}>
-                <td style={{ textAlign: 'center', color: 'var(--muted)' }}>{item.compId}</td>
+                <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                  {item.compId}
+                </td>
                 <td>
                   <Link to={`/support/complain/${item.compId}`} className={styles.tableLink}>
                     {item.compTitle}

@@ -1,4 +1,3 @@
-// features/support/pages/QnaList.jsx
 import React from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { useQnas } from '../hooks/useQnas';
@@ -6,31 +5,49 @@ import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 
 const STATUS_MAP = {
-  waiting: '답변대기',
-  complete: '답변완료',
+  waiting: '답변 대기',
+  complete: '답변 완료',
 };
 
+function normalizeRole(user) {
+  const raw =
+    user?.userRole ??
+    user?.role ??
+    user?.userRl ??
+    user?.user_role ??
+    user?.authority ??
+    user?.authorities?.[0];
+
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace('role_', '');
+}
+
 export default function QnaList() {
-  // ✅ 훅은 항상 최상단에 - early return 전에
   const { user } = useAuth();
   const { qnas, pagination, loading, error, goToPage } = useQnas();
   const navigate = useNavigate();
 
-  // ✅ 훅 다음에 early return
   if (!user) return <Navigate to="/login" replace />;
+
+  const role = normalizeRole(user);
+  const canCreate = role === 'admin' || role === 'tenant';
+
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
   return (
     <div className={styles.container}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-        <button
-          className={styles.buttonPrimary}
-          onClick={() => navigate('/support/qna/write')}
-        >
-          문의 작성
-        </button>
-      </div>
+      {canCreate && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <button
+            className={styles.buttonPrimary}
+            onClick={() => navigate('/support/qna/write')}
+          >
+            문의 작성
+          </button>
+        </div>
+      )}
 
       <table className={styles.table}>
         <thead>
@@ -44,8 +61,11 @@ export default function QnaList() {
         <tbody>
           {qnas.length === 0 ? (
             <tr>
-              <td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--muted)' }}>
-                작성된 문의가 없습니다.
+              <td
+                colSpan={4}
+                style={{ textAlign: 'center', padding: 32, color: 'var(--muted)' }}
+              >
+                작성한 문의가 없습니다.
               </td>
             </tr>
           ) : (
@@ -60,7 +80,7 @@ export default function QnaList() {
                 <td style={{ textAlign: 'center' }}>
                   <span
                     className={styles.statusBadge}
-                    style={q.qnaSt === 'complete' ? { background: 'var(--highlight)', color: 'var(--ink-soft)' } : {}}
+                    style={q.qnaSt === 'complete' ? { background: 'var(--highlight)' } : {}}
                   >
                     {STATUS_MAP[q.qnaSt] ?? q.qnaSt}
                   </span>

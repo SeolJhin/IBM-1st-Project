@@ -38,6 +38,11 @@ export default function FaqList() {
   };
 
   const handleCreateFaq = async () => {
+    if (!isAdmin) {
+      alert('관리자만 FAQ를 등록할 수 있습니다.');
+      return;
+    }
+
     const title = writeForm.faqTitle.trim();
     const content = writeForm.faqCtnt.trim();
     if (!title) return alert('제목을 입력해주세요.');
