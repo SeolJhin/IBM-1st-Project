@@ -20,6 +20,12 @@ const addMonths = (base, m) => {
   d.setDate(d.getDate() - 1);
   return toDateStr(d);
 };
+const addDays = (base, days) => {
+  const d = new Date(base);
+  d.setDate(d.getDate() + days);
+  return toDateStr(d);
+};
+const MIN_CONTRACT_DAYS = 7;
 
 const sunLabel = { s: '남향', n: '북향', e: '동향', w: '서향' };
 
@@ -60,6 +66,9 @@ export default function ContractApply() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitOk, setSubmitOk] = useState(false);
+  const minContractEnd = form.contractStart
+    ? addDays(form.contractStart, MIN_CONTRACT_DAYS)
+    : '';
 
   /* 계약 종료일 자동계산 */
   useEffect(() => {
@@ -101,7 +110,17 @@ export default function ContractApply() {
   /* ── 핸들러 ── */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+    setForm((f) => {
+      const next = { ...f, [name]: value };
+      if (
+        name === 'contractStart' &&
+        next.contractEnd &&
+        next.contractEnd < addDays(value, MIN_CONTRACT_DAYS)
+      ) {
+        next.contractEnd = addDays(value, MIN_CONTRACT_DAYS);
+      }
+      return next;
+    });
   };
 
   const handleSignFile = (e) => {
@@ -122,6 +141,10 @@ export default function ContractApply() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const pd = Number(form.paymentDay);
+    if (!form.contractStart || !form.contractEnd || form.contractEnd < minContractEnd) {
+      setSubmitError('계약 종료일은 시작일로부터 최소 7일 이후여야 합니다.');
+      return;
+    }
     if (!pd || pd < 1 || pd > 31) {
       setSubmitError('납부일은 1~31 사이의 숫자를 입력해주세요.');
       return;
@@ -420,6 +443,7 @@ export default function ContractApply() {
                       value={form.contractEnd}
                       onChange={handleChange}
                       className={styles.docInput}
+                      min={minContractEnd}
                       required
                     />
                   </div>

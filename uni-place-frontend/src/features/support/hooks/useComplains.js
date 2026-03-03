@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supportApi } from '../api/supportApi';
 
-export function useComplains(initialParams = {}) {
+export function useComplains(initialParams = {}, options = {}) {
+  const isAdmin = options?.isAdmin === true;
   const [complains, setComplains] = useState([]);
   const [pagination, setPagination] = useState({
     page: initialParams.page ?? 1,
@@ -28,7 +29,9 @@ export function useComplains(initialParams = {}) {
     setError(null);
     try {
       // ✅ 여기만 변경됨
-      const data = await supportApi.getMyComplains(fetchParams);
+      const data = isAdmin
+        ? await supportApi.getComplains(fetchParams)
+        : await supportApi.getMyComplains(fetchParams);
 
       setComplains(data?.content ?? []);
       setPagination({
@@ -45,7 +48,7 @@ export function useComplains(initialParams = {}) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     fetchComplains(params);
