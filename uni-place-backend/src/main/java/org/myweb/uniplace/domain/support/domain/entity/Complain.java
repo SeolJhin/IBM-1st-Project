@@ -30,7 +30,7 @@ public class Complain extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "comp_st", nullable = false,
-            columnDefinition = "ENUM('in_progress','resolved') DEFAULT 'in_progress'")
+            columnDefinition = "ENUM('received','in_progress','resolved') DEFAULT 'received'")
     private ComplainStatus compSt;
 
     /** FK -> common_code(code) */
@@ -45,7 +45,7 @@ public class Complain extends BaseTimeEntity {
 
     @PrePersist
     public void prePersist() {
-        if (compSt == null) compSt = ComplainStatus.in_progress;
+        if (compSt == null) compSt = ComplainStatus.received;
         if (fileCk == null) fileCk = "N";
         if (replyCk == null) replyCk = "N";
     }
@@ -67,4 +67,3 @@ public class Complain extends BaseTimeEntity {
         else this.compSt = ComplainStatus.resolved;
     }
 }
-

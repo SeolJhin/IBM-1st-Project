@@ -28,8 +28,10 @@ public class ComplainController {
     private final ComplainService complainService;
 
     /** 전체 민원 목록 (관리자) */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ApiResponse<PageResponse<ComplainResponse>> search(
+            @AuthenticationPrincipal AuthUser authUser,
             @ModelAttribute ComplainSearchRequest request,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "20") int size,
@@ -43,7 +45,9 @@ public class ComplainController {
                 "ASC".equalsIgnoreCase(direct) ? Sort.Direction.ASC : Sort.Direction.DESC;
 
         Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
-
+        if (!isAdmin(authUser)) {
+            request.setUserId(requireUserId(authUser));
+        }
         return ApiResponse.ok(complainService.search(request, pageable));
     }
 
@@ -69,15 +73,21 @@ public class ComplainController {
     }
 
     /** 민원 상세 */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{compId}")
     public ApiResponse<ComplainResponse> detail(
+            @AuthenticationPrincipal AuthUser authUser,
             @PathVariable("compId") Integer compId
     ) {
-        return ApiResponse.ok(complainService.get(compId));
+        ComplainResponse response = complainService.get(compId);
+        if (!isAdmin(authUser) && !requireUserId(authUser).equals(response.getUserId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return ApiResponse.ok(response);
     }
 
     /** 민원 등록 */
-    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT', 'USER')")
     @PostMapping
     public ApiResponse<ComplainResponse> create(
             @AuthenticationPrincipal AuthUser authUser,
@@ -131,5 +141,9 @@ public class ComplainController {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         return authUser.getUserId();
+    }
+
+    private boolean isAdmin(AuthUser authUser) {
+        return authUser != null && "admin".equalsIgnoreCase(authUser.getRole());
     }
 }
