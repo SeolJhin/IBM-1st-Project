@@ -14,6 +14,8 @@ import org.myweb.uniplace.domain.billing.repository.MonthlyChargeRepository;
 import org.myweb.uniplace.domain.commerce.domain.entity.Order;
 import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
 import org.myweb.uniplace.domain.commerce.repository.OrderRepository;
+import org.myweb.uniplace.domain.contract.domain.entity.Contract;
+import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 import org.myweb.uniplace.domain.contract.repository.ContractRepository;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentApproveRequest;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentPrepareRequest;
@@ -275,6 +277,7 @@ class PaymentServiceImplTest {
 
         given(paymentRepository.findById(2)).willReturn(Optional.of(payment));
         given(monthlyChargeRepository.findById(20)).willReturn(Optional.of(charge));
+        given(contractRepository.findById(300)).willReturn(Optional.of(contract(300, ContractStatus.active)));
         given(paymentIntentRepository.findTopByPaymentIdOrderByPaymentIntentIdDesc(2)).willReturn(Optional.of(intent));
         given(paymentGatewayFactory.get("TOSS")).willReturn(paymentGateway);
         given(paymentGateway.approve(any(PaymentGatewayApproveRequest.class))).willReturn(approve);
@@ -287,6 +290,51 @@ class PaymentServiceImplTest {
         assertThat(response.getPaymentSt()).isEqualTo("paid");
         assertThat(charge.getChargeSt()).isEqualTo(MonthlyCharge.ST_PAID);
         assertThat(charge.getPaymentId()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("approve(monthly_charge): overdue 청구는 결제할 수 없다")
+    void approveMonthlyChargeFailsWhenOverdue() {
+        String userId = "user-1";
+        BigDecimal total = new BigDecimal("800000");
+
+        Payment payment = Payment.builder()
+            .paymentId(22)
+            .userId(userId)
+            .serviceGoodsId(2)
+            .provider("TOSS")
+            .merchantUid("PAY_22")
+            .currency("KRW")
+            .totalPrice(total)
+            .capturedPrice(BigDecimal.ZERO)
+            .paymentSt("ready")
+            .targetType("monthly_charge")
+            .targetId(220)
+            .build();
+
+        MonthlyCharge charge = MonthlyCharge.builder()
+            .chargeId(220)
+            .contractId(330)
+            .chargeType("rent")
+            .billingDt("2026-02")
+            .price(total)
+            .chargeSt("overdue")
+            .build();
+
+        PaymentApproveRequest request = new PaymentApproveRequest();
+        request.setPaymentId(22);
+        request.setPgToken("pg-token");
+
+        given(paymentRepository.findById(22)).willReturn(Optional.of(payment));
+        given(monthlyChargeRepository.findById(220)).willReturn(Optional.of(charge));
+        given(contractRepository.findById(330)).willReturn(Optional.of(contract(330, ContractStatus.active)));
+
+        assertThatThrownBy(() -> paymentService.approve(userId, request))
+            .isInstanceOf(BusinessException.class)
+            .extracting(e -> ((BusinessException) e).getErrorCode())
+            .isEqualTo(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
+
+        verify(paymentGatewayFactory, never()).get(any());
     }
 
     @Test
@@ -397,6 +445,13 @@ class PaymentServiceImplTest {
             .userSt(UserStatus.active)
             .deleteYN("N")
             .firstSign("N")
+            .build();
+    }
+
+    private static Contract contract(Integer contractId, ContractStatus status) {
+        return Contract.builder()
+            .contractId(contractId)
+            .contractSt(status)
             .build();
     }
 }
