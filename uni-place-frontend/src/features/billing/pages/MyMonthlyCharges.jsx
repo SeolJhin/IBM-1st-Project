@@ -103,7 +103,7 @@ function summarizeContract(contract, charges, now) {
   const overdueCharges = rentCharges.filter(
     (c) => String(c?.chargeSt || '').toLowerCase() === 'overdue'
   );
-  const payableCharges = sortByBillingDtAsc([...overdueCharges, ...unpaidCharges]);
+  const payableCharges = sortByBillingDtAsc([...unpaidCharges]);
 
   const paidMonths = paidCharges.length;
   const remainingMonths = Math.max(0, totalMonths - paidMonths);
@@ -142,7 +142,7 @@ function summarizeContract(contract, charges, now) {
     statusKey,
     statusLabel,
     monthlyRent: Number(contract.rentPrice || 0),
-    maxPlan: remainingMonths,
+    maxPlan: Math.min(remainingMonths, payableCharges.length),
     payableChargeIds: payableCharges.map((c) => c.chargeId).filter(Boolean),
     selected: false,
     payPlan: 0,
@@ -173,7 +173,10 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
     setError('');
     try {
       const contractsRaw = await contractApi.myContracts();
-      const contracts = Array.isArray(contractsRaw) ? contractsRaw : [];
+      const contracts = (Array.isArray(contractsRaw) ? contractsRaw : []).filter(
+        (contract) =>
+          String(contract?.contractStatus || '').toLowerCase() !== 'cancelled'
+      );
 
       const chargeResults = await Promise.all(
         contracts.map(async (contract) => {
