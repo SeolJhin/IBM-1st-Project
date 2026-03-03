@@ -1,6 +1,10 @@
 package org.myweb.uniplace.domain.support.application;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.support.api.dto.request.ComplainCreateRequest;
 import org.myweb.uniplace.domain.support.api.dto.request.ComplainReplyRequest;
 import org.myweb.uniplace.domain.support.api.dto.request.ComplainSearchRequest;
@@ -17,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -26,6 +31,7 @@ public class ComplainServiceImpl implements ComplainService {
 
     private final ComplainRepository complainRepository;
     private final CommonCodeRepository commonCodeRepository;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -65,7 +71,20 @@ public class ComplainServiceImpl implements ComplainService {
                 .compCtnt(request.getCompCtnt())
                 .code(normalizeSupportCodeForWrite(request.getCode()))
                 .build();
-        return ComplainResponse.from(complainRepository.save(complain));
+        Complain saved = complainRepository.save(complain);
+
+        // 민원 접수 → 어드민 알림
+        try {
+            notificationService.notifyAdmins(
+                NotificationType.COMP_NEW.name(),
+                "새 민원이 접수되었습니다. compId=" + saved.getCompId() + ", userId=" + userId,
+                userId, TargetType.notice, null, "/admin/complain"
+            );
+        } catch (Exception e) {
+            log.warn("[COMP][NOTIFY][ADMIN] compId={} reason={}", saved.getCompId(), e.getMessage());
+        }
+
+        return ComplainResponse.from(saved);
     }
 
     @Override
@@ -89,6 +108,19 @@ public class ComplainServiceImpl implements ComplainService {
         Complain complain = complainRepository.findById(compId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPLAIN_NOT_FOUND));
         complain.markReplied(request.getCompSt());
+
+        // 민원 답변 → 민원인 알림
+        try {
+            notificationService.notifyUser(
+                complain.getUserId(),
+                NotificationType.COMP_REPLIED.name(),
+                "접수하신 민원에 답변이 등록되었습니다.",
+                null, TargetType.notice, null, "/support/complain/" + compId
+            );
+        } catch (Exception e) {
+            log.warn("[COMP][NOTIFY] replied compId={} reason={}", compId, e.getMessage());
+        }
+
         return ComplainResponse.from(complain);
     }
 
@@ -115,7 +147,6 @@ public class ComplainServiceImpl implements ComplainService {
         String mapped = mapSupportCode(rawCode);
         if ("ALL".equalsIgnoreCase(mapped)) return DEFAULT_SUPPORT_CODE;
 
-        // COMP_* 도메인 코드는 공통코드 테이블에 없으므로 DB 체크 없이 바로 저장
         if (mapped.startsWith("COMP_")) return mapped;
 
         return commonCodeRepository.existsByCode(mapped) ? mapped : DEFAULT_SUPPORT_CODE;
@@ -127,7 +158,6 @@ public class ComplainServiceImpl implements ComplainService {
         return switch (normalized) {
             case "SUP_GENERAL", "GENERAL" -> "SUP_GENERAL";
             case "SUP_BILLING", "BILLING" -> "SUP_BILLING";
-            // COMP_* 코드는 그대로 저장
             case "COMP_PERSONAL", "COMP_FACILITY", "COMP_NOISE",
                  "COMP_CONTRACT", "COMP_SAFETY", "COMP_ETC" -> normalized;
             default -> {
