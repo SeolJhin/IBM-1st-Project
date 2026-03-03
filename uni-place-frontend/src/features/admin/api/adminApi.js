@@ -1,6 +1,8 @@
 // src/features/admin/api/adminApi.js
 import { fetchWithAuthRetry } from '../../../app/http/apiBase';
 
+let dashboardEndpointUnavailable = false;
+
 function getAccessToken() {
   return (
     localStorage.getItem('access_token') ||
@@ -208,14 +210,20 @@ async function requestForm(
 export const adminApi = {
   // dashboard
   dashboard: async () => {
-    try {
-      const payload = await request('/admin/dashboard', { auth: true });
-      return { ...payload, _source: 'dashboard' };
-    } catch (error) {
-      const status = Number(error?.status);
-      if (status === 401 || status === 403) throw error;
-      return fetchDashboardFallback();
+    if (!dashboardEndpointUnavailable) {
+      try {
+        const payload = await request('/admin/dashboard', { auth: true });
+        return { ...payload, _source: 'dashboard' };
+      } catch (error) {
+        const status = Number(error?.status);
+        if (status === 401 || status === 403) throw error;
+        if (status === 404 || status === 405) {
+          dashboardEndpointUnavailable = true;
+        }
+      }
     }
+
+    return fetchDashboardFallback();
   },
 
   users: (params) => {
@@ -394,7 +402,14 @@ export const adminApi = {
   // orders
   getAllOrders: ({ page = 0, size = 20, sort = 'orderCreatedAt' } = {}) =>
     request(`/admin/orders${buildQuery({ page, size, sort })}`, { auth: true }),
-  getOrderDetail: (orderId) => request(`/orders/${orderId}`, { auth: true }),
+  getOrderDetail: async (orderId) => {
+    const data = await request(
+      `/admin/orders${buildQuery({ page: 0, size: 200, sort: 'orderCreatedAt' })}`,
+      { auth: true }
+    );
+    const items = data?.content ?? [];
+    return items.find((it) => Number(it.orderId) === Number(orderId)) ?? null;
+  },
 
   // products
   getProducts: () => request('/products'),

@@ -5,10 +5,10 @@ import { useAdminRoomServiceOrders } from '../../hooks/useAdminRoomServiceOrders
 import styles from './AdminRoomServiceOrderList.module.css';
 
 const STATUS_OPTIONS = [
-  { value: 'requested', label: 'Requested' },
-  { value: 'paid', label: 'Paid' },
-  { value: 'delivered', label: 'Delivered' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'requested', label: '요청됨' },
+  { value: 'paid', label: '결제완료' },
+  { value: 'delivered', label: '배송완료' },
+  { value: 'cancelled', label: '취소됨' },
 ];
 
 const STATUS_LABELS = STATUS_OPTIONS.reduce((acc, item) => {
@@ -19,7 +19,7 @@ const STATUS_LABELS = STATUS_OPTIONS.reduce((acc, item) => {
 function formatMoney(value) {
   const safe = Number(value ?? 0);
   if (!Number.isFinite(safe)) return '-';
-  return `${safe.toLocaleString('ko-KR')} KRW`;
+  return `${safe.toLocaleString('ko-KR')}원`;
 }
 
 function formatDateTime(value) {
@@ -167,7 +167,7 @@ export default function AdminRoomServiceOrderList() {
       await adminApi.updateRoomServiceOrderStatus(orderId, {
         orderSt: nextStatus,
       });
-      setNotice(`Order #${orderId} status updated.`);
+      setNotice(`주문 #${orderId} 상태가 변경되었습니다.`);
       if (focusedOrder && Number(focusedOrder.orderId) === Number(orderId)) {
         const refreshed = await adminApi.getRoomServiceOrderById(orderId);
         setFocusedOrder(refreshed ?? null);
@@ -175,7 +175,7 @@ export default function AdminRoomServiceOrderList() {
         await refetch();
       }
     } catch (e) {
-      setActionError(e?.message || 'Failed to update order status.');
+      setActionError(e?.message || '주문 상태 변경에 실패했습니다.');
     } finally {
       setSavingOrderId(null);
     }
@@ -185,9 +185,9 @@ export default function AdminRoomServiceOrderList() {
     <section className={styles.wrap}>
       <div className={styles.topRow}>
         <div className={styles.titleArea}>
-          <h2 className={styles.title}>Room Service Orders</h2>
+          <h2 className={styles.title}>룸서비스 주문내역</h2>
           <p className={styles.sub}>
-            Total <strong>{pagination.totalElements}</strong> orders
+            총 <strong>{pagination.totalElements}</strong>건
           </p>
         </div>
 
@@ -203,7 +203,7 @@ export default function AdminRoomServiceOrderList() {
           >
             {[10, 20, 30, 50].map((optionSize) => (
               <option key={optionSize} value={optionSize}>
-                {optionSize} / page
+                {optionSize}개씩
               </option>
             ))}
           </select>
@@ -214,20 +214,20 @@ export default function AdminRoomServiceOrderList() {
             onClick={refetch}
             disabled={loading || Boolean(savingOrderId)}
           >
-            {loading ? 'Loading...' : 'Refresh'}
+            {loading ? '불러오는 중...' : '새로고침'}
           </button>
         </div>
       </div>
 
       <div className={styles.filterRow}>
         <label className={styles.filterItem}>
-          <span className={styles.filterLabel}>Status</span>
+          <span className={styles.filterLabel}>상태</span>
           <select
             className={styles.select}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">All</option>
+            <option value="all">전체</option>
             {STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -237,11 +237,11 @@ export default function AdminRoomServiceOrderList() {
         </label>
 
         <label className={styles.filterItem}>
-          <span className={styles.filterLabel}>Search</span>
+          <span className={styles.filterLabel}>검색</span>
           <input
             className={styles.input}
             value={keyword}
-            placeholder="Order ID / User ID / Room / Memo"
+            placeholder="주문번호 / 사용자ID / 객실 / 메모"
             onChange={(e) => setKeyword(e.target.value)}
           />
         </label>
@@ -254,30 +254,30 @@ export default function AdminRoomServiceOrderList() {
             setKeyword('');
           }}
         >
-          Reset Filter
+          필터 초기화
         </button>
       </div>
 
       <div className={styles.statusRow} aria-live="polite">
-        {loading ? 'Loading order data...' : notice}
+        {loading ? '주문 데이터를 불러오는 중...' : notice}
       </div>
 
       {error ? <div className={styles.errorBox}>{error}</div> : null}
       {actionError ? <div className={styles.errorBox}>{actionError}</div> : null}
 
       {!loading && filteredOrders.length === 0 ? (
-        <div className={styles.empty}>No orders found for the current filter.</div>
+        <div className={styles.empty}>현재 조건에 맞는 주문이 없습니다.</div>
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Order</th>
-                <th>User / Room</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Requested At</th>
-                <th>Memo</th>
+                <th>주문</th>
+                <th>사용자 / 객실</th>
+                <th>금액</th>
+                <th>상태</th>
+                <th>요청일시</th>
+                <th>메모</th>
               </tr>
             </thead>
             <tbody>
@@ -286,13 +286,13 @@ export default function AdminRoomServiceOrderList() {
                   <td>
                     <strong>#{order.orderId}</strong>
                     <div className={styles.subCell}>
-                      Parent #{order.parentOrderId ?? '-'}
+                      연결 주문 #{order.parentOrderId ?? '-'}
                     </div>
                   </td>
                   <td>
                     <div>{order.userId || '-'}</div>
                     <div className={styles.subCell}>
-                      Room {order.roomNo ?? '-'} (ID {order.roomId ?? '-'})
+                      객실 {order.roomNo ?? '-'} (ID {order.roomId ?? '-'})
                     </div>
                   </td>
                   <td>{formatMoney(order.totalPrice)}</td>
@@ -322,7 +322,7 @@ export default function AdminRoomServiceOrderList() {
                           onClick={() => onSaveStatus(order.orderId)}
                           disabled={Boolean(savingOrderId)}
                         >
-                          {savingOrderId === order.orderId ? 'Saving...' : 'Save'}
+                          {savingOrderId === order.orderId ? '저장 중...' : '저장'}
                         </button>
                       </div>
                     </div>

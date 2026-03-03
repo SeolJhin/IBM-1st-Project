@@ -7,7 +7,7 @@
 // GET /admin/orders   → 전체 주문 목록 (Page<OrderResponse>, sort: orderCreatedAt)
 //
 // ※ 주문 상세/취소는 AdminOrderController에 없음
-//   → 필요 시 일반 GET /orders/{orderId} 사용 (관리자 권한으로 접근 가능 여부는 백엔드 확인 필요)
+//   → 현재 프론트는 GET /admin/orders 결과에서 orderId로 상세를 조회
 //
 // ── 응답 구조 ─────────────────────────────────────────────────────────────────
 // Page<OrderResponse> (Spring Page — 0-base):

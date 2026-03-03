@@ -33,7 +33,7 @@ async function parseApiResponse(res) {
   if (!res.ok || (api && api.success === false)) {
     const message =
       api?.message ||
-      (typeof payload === 'string' ? payload : '?붿껌???ㅽ뙣?덉뒿?덈떎.');
+      (typeof payload === 'string' ? payload : '요청에 실패했습니다.');
     const error = new Error(message);
     error.status = res.status;
     throw error;
