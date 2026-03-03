@@ -126,8 +126,8 @@ export const router = createBrowserRouter([
 
   // admin
   { path: '/admin', element: <AdminInfo /> },
-  { path: '/admin/reservation/tours', element: <AdminTourReservationList /> },
-  { path: '/admin/reservation/spaces', element: <AdminSpaceReservationList /> },
+  { path: '/admin/reservations/tours', element: <AdminTourReservationList /> },
+  { path: '/admin/reservations/spaces', element: <AdminSpaceReservationList /> },
   {
     path: '/admin/property',
     element: <AdminShell />,

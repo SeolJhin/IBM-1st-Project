@@ -4,8 +4,8 @@ import { useAdminProductList } from '../../hooks/useAdminProducts';
 import styles from './AdminProductList.module.css';
 
 const STATUS_OPTIONS = [
-  { value: 'on_sale', label: 'On Sale' },
-  { value: 'sold_out', label: 'Sold Out' },
+  { value: 'on_sale', label: '판매중' },
+  { value: 'sold_out', label: '품절' },
 ];
 
 const STATUS_LABELS = STATUS_OPTIONS.reduce((acc, option) => {
@@ -16,7 +16,7 @@ const STATUS_LABELS = STATUS_OPTIONS.reduce((acc, option) => {
 function formatMoney(value) {
   const safe = Number(value ?? 0);
   if (!Number.isFinite(safe)) return '-';
-  return `${safe.toLocaleString('ko-KR')} KRW`;
+  return `${safe.toLocaleString('ko-KR')}원`;
 }
 
 function windowedPages(currentPage, totalPages, radius = 2) {
@@ -135,10 +135,10 @@ export default function AdminProductList() {
 
     try {
       await adminApi.changeProductStatus(prodId, nextStatus);
-      setNotice(`Product #${prodId} status updated.`);
+      setNotice(`상품 #${prodId} 상태가 변경되었습니다.`);
       await refetch();
     } catch (e) {
-      setActionError(e?.message || 'Failed to update product status.');
+      setActionError(e?.message || '상품 상태 변경에 실패했습니다.');
     } finally {
       setSavingProdId(null);
     }
@@ -148,12 +148,12 @@ export default function AdminProductList() {
     <section className={styles.wrap}>
       <div className={styles.topRow}>
         <div className={styles.titleArea}>
-          <h2 className={styles.title}>Room Service Products</h2>
+          <h2 className={styles.title}>룸서비스 상품</h2>
           <p className={styles.sub}>
-            Showing <strong>{filteredProducts.length}</strong> items
+            총 <strong>{filteredProducts.length}</strong>개
           </p>
           <p className={styles.hint}>
-            Data source: <code>/products</code> (currently on-sale items only)
+            데이터 소스: <code>/products</code> (현재 판매중 상품만 조회)
           </p>
         </div>
 
@@ -168,7 +168,7 @@ export default function AdminProductList() {
           >
             {[10, 20, 30, 50].map((optionSize) => (
               <option key={optionSize} value={optionSize}>
-                {optionSize} / page
+                {optionSize}개씩
               </option>
             ))}
           </select>
@@ -179,20 +179,20 @@ export default function AdminProductList() {
             onClick={refetch}
             disabled={loading || Boolean(savingProdId)}
           >
-            {loading ? 'Loading...' : 'Refresh'}
+            {loading ? '불러오는 중...' : '새로고침'}
           </button>
         </div>
       </div>
 
       <div className={styles.filterRow}>
         <label className={styles.filterItem}>
-          <span className={styles.filterLabel}>Status</span>
+          <span className={styles.filterLabel}>상태</span>
           <select
             className={styles.select}
             value={statusFilter}
             onChange={(e) => onChangeFilter(setStatusFilter)(e.target.value)}
           >
-            <option value="all">All</option>
+            <option value="all">전체</option>
             {STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -202,13 +202,13 @@ export default function AdminProductList() {
         </label>
 
         <label className={styles.filterItem}>
-          <span className={styles.filterLabel}>Code</span>
+          <span className={styles.filterLabel}>코드</span>
           <select
             className={styles.select}
             value={codeFilter}
             onChange={(e) => onChangeFilter(setCodeFilter)(e.target.value)}
           >
-            <option value="all">All</option>
+            <option value="all">전체</option>
             {codeOptions.map((code) => (
               <option key={code} value={code}>
                 {code}
@@ -218,11 +218,11 @@ export default function AdminProductList() {
         </label>
 
         <label className={styles.filterItem}>
-          <span className={styles.filterLabel}>Search</span>
+          <span className={styles.filterLabel}>검색</span>
           <input
             className={styles.input}
             value={keyword}
-            placeholder="ID / Name / Description / Affiliate"
+            placeholder="ID / 상품명 / 설명 / 제휴사"
             onChange={(e) => onChangeFilter(setKeyword)(e.target.value)}
           />
         </label>
@@ -237,29 +237,29 @@ export default function AdminProductList() {
             setPage(1);
           }}
         >
-          Reset Filter
+          필터 초기화
         </button>
       </div>
 
       <div className={styles.statusRow} aria-live="polite">
-        {loading ? 'Loading product data...' : notice}
+        {loading ? '상품 데이터를 불러오는 중...' : notice}
       </div>
 
       {error ? <div className={styles.errorBox}>{error}</div> : null}
       {actionError ? <div className={styles.errorBox}>{actionError}</div> : null}
 
       {!loading && pagedProducts.length === 0 ? (
-        <div className={styles.empty}>No products found for the current filter.</div>
+        <div className={styles.empty}>현재 조건에 맞는 상품이 없습니다.</div>
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Product</th>
-                <th>Price</th>
-                <th>Status</th>
-                <th>Code / Affiliate</th>
-                <th>Building Stock</th>
+                <th>상품</th>
+                <th>가격</th>
+                <th>상태</th>
+                <th>코드 / 제휴사</th>
+                <th>건물별 재고</th>
               </tr>
             </thead>
             <tbody>
@@ -301,7 +301,7 @@ export default function AdminProductList() {
                             onClick={() => onSaveStatus(product.prodId)}
                             disabled={Boolean(savingProdId)}
                           >
-                            {savingProdId === product.prodId ? 'Saving...' : 'Save'}
+                            {savingProdId === product.prodId ? '저장 중...' : '저장'}
                           </button>
                         </div>
                       </div>
@@ -309,21 +309,21 @@ export default function AdminProductList() {
                     <td>
                       <div>{product.code || '-'}</div>
                       <div className={styles.subCell}>
-                        Affiliate #{product.affiliateId ?? '-'}
+                        제휴사 #{product.affiliateId ?? '-'}
                       </div>
                     </td>
                     <td>
-                      <div className={styles.stockHead}>Total {totalStock}</div>
+                      <div className={styles.stockHead}>총 {totalStock}</div>
                       <div className={styles.stockWrap}>
                         {stocks.length === 0 ? (
-                          <span className={styles.stockEmpty}>No stock data</span>
+                          <span className={styles.stockEmpty}>재고 정보 없음</span>
                         ) : (
                           stocks.map((stock) => (
                             <span
                               key={`${product.prodId}_${stock.buildingId}`}
                               className={styles.stockChip}
                             >
-                              B{stock.buildingId}: {stock.stock}
+                              건물{stock.buildingId}: {stock.stock}
                             </span>
                           ))
                         )}
