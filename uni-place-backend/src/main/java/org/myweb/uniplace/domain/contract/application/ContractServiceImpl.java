@@ -18,6 +18,9 @@ import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.file.api.dto.response.FileUploadResponse;
 import org.myweb.uniplace.domain.file.application.FileService;
 import org.myweb.uniplace.domain.file.domain.enums.FileRefType;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.property.repository.RoomRepository;
 import org.myweb.uniplace.domain.user.domain.entity.User;
@@ -47,6 +50,7 @@ public class ContractServiceImpl implements ContractService {
     private final UserRepository userRepository;
     private final FileService fileService;
     private final ContractImageService contractImageService;
+    private final NotificationService notificationService;
 
     private String currentUserId() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -96,6 +100,13 @@ public class ContractServiceImpl implements ContractService {
 
         Contract saved = contractRepository.save(contract);
 
+        // 계약 신청 → 어드민 알림
+        safeNotifyAdmins(
+            NotificationType.CONTRACT_REQ.name(),
+            "계약 신청이 접수되었습니다. userId=" + userId + ", roomId=" + room.getRoomId(),
+            null
+        );
+
         if (request.getSignFile() != null && !request.getSignFile().isEmpty()) {
             FileUploadResponse uploadResp = fileService.uploadFiles(
                 FileUploadRequest.builder()
@@ -110,11 +121,10 @@ public class ContractServiceImpl implements ContractService {
                 saved = contractRepository.save(saved);
             }
         }
-        
-        // 2) ✅ 신청 즉시 계약서(PDF/이미지) 생성 + 저장 + contract_pdf_file_id 세팅
+
+        // 신청 즉시 계약서(PDF/이미지) 생성 + 저장 + contract_pdf_file_id 세팅
         if (saved.getContractPdfFileId() == null) {
             try {
-                // generateAndSave()에서 room/building 접근할 수 있으니 fetch join으로 다시 로드
                 Contract full = contractRepository.findWithRoomAndBuilding(saved.getContractId())
                     .orElse(saved);
 
@@ -128,9 +138,6 @@ public class ContractServiceImpl implements ContractService {
                 }
             } catch (Exception e) {
                 log.error("[Contract] 신청 즉시 계약서 생성 예외 contractId={}", saved.getContractId(), e);
-                // 정책: 여기서 예외를 던지면 계약 생성 자체가 롤백됨.
-                // 지금처럼 로그만 남기면 계약은 생성되지만 계약서 파일이 없을 수 있음.
-                // 원하면 throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR)로 바꿔도 됨.
             }
         }
 
@@ -229,6 +236,12 @@ public class ContractServiceImpl implements ContractService {
                 log.info("[UserRole] promoted to tenant by contract approval contractId={} userId={}",
                         c.getContractId(), c.getUser().getUserId());
             }
+
+            // 계약 승인 → 유저 알림
+            if (userId != null) {
+                safeNotify(userId, NotificationType.CONTRACT_CFM.name(),
+                    "계약이 승인되었습니다. 계약 번호: " + c.getContractId());
+            }
         }
 
         // ✅ (B) active 해제(취소/종료 등) 시: resident 자동 삭제
@@ -237,6 +250,11 @@ public class ContractServiceImpl implements ContractService {
             if (userId != null) {
                 residentRepository.deleteByContractIdAndUserId(c.getContractId(), userId);
                 log.info("[Resident] auto deleted by contract deactivation contractId={} userId={}", c.getContractId(), userId);
+
+                // 계약 취소/종료 → 유저 알림
+                safeNotify(userId, NotificationType.CONTRACT_CAN.name(),
+                    "계약이 변경되었습니다. 상태: " + request.getContractStatus().name()
+                    + ", 계약 번호: " + c.getContractId());
             }
         }
 
@@ -258,7 +276,7 @@ public class ContractServiceImpl implements ContractService {
 
         return ContractResponse.fromEntity(c);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public Page<AdminContractSummaryResponse> searchAdminContracts(
@@ -285,5 +303,24 @@ public class ContractServiceImpl implements ContractService {
             }
             return AdminContractSummaryResponse.fromEntity(c, pdfFileName);
         });
+    }
+
+    // ── 알림 헬퍼 ─────────────────────────────────────────────────
+    private void safeNotify(String userId, String code, String msg) {
+        try {
+            notificationService.notifyUser(userId, code, msg, null,
+                TargetType.notice, null, "/mypage/contracts");
+        } catch (Exception e) {
+            log.warn("[CONTRACT][NOTIFY] failed userId={} code={} reason={}", userId, code, e.getMessage());
+        }
+    }
+
+    private void safeNotifyAdmins(String code, String msg, Integer contractId) {
+        try {
+            notificationService.notifyAdmins(code, msg, null,
+                TargetType.notice, contractId, "/admin/contracts");
+        } catch (Exception e) {
+            log.warn("[CONTRACT][NOTIFY][ADMIN] code={} reason={}", code, e.getMessage());
+        }
     }
 }
