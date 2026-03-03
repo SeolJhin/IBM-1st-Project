@@ -13,6 +13,10 @@ public interface AuthService {
     UserTokenResponse kakaoComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
     UserTokenResponse googleComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
 
+    // ===== 닉네임 중복 체크 =====
+    /** 닉네임 사용 가능 여부 반환 (true = 사용 가능) */
+    boolean checkNicknameAvailable(String nickname);
+
     // ===== 아이디 찾기 =====
     /** 이름 + 전화번호로 마스킹된 이메일 반환 */
     String findEmail(FindEmailRequest req);

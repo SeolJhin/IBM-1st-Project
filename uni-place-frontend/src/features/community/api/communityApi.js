@@ -146,10 +146,15 @@ export const communityApi = {
     return requestForm('/boards', { method: 'POST', formData });
   },
 
-  updateBoard: (boardId, body) =>
-    request(`/boards/${boardId}`, { method: 'PATCH', body }),
+  updateBoard: (boardId, { boardTitle, boardCtnt } = {}) => {
+    const formData = new FormData();
+    if (boardTitle != null) formData.append('boardTitle', boardTitle);
+    if (boardCtnt != null) formData.append('boardCtnt', boardCtnt);
+    return requestForm(`/boards/${boardId}`, { method: 'PUT', formData });
+  },
 
-  deleteBoard: (boardId) => request(`/boards/${boardId}`, { method: 'DELETE' }),
+  deleteBoard: (boardId) =>
+    request(`/boards/${boardId}`, { method: 'DELETE', auth: true }),
 
   getReplies: (boardId, { auth = false } = {}) =>
     request(`/boards/${boardId}/replies`, { auth }),

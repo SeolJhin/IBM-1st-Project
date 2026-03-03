@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class UserResponse {
     private String userId;
     private String userNm;
+    private String userNickname;
     private String userEmail;
     private LocalDate userBirth;
     private String userTel;
@@ -30,6 +31,7 @@ public class UserResponse {
         return UserResponse.builder()
                 .userId(u.getUserId())
                 .userNm(u.getUserNm())
+                .userNickname(u.getUserNickname())
                 .userEmail(u.getUserEmail())
                 .userBirth(u.getUserBirth())
                 .userTel(u.getUserTel())

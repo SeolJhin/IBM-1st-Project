@@ -88,10 +88,19 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.DUPLICATE_TEL);
         }
 
+        String userNickname = req.getUserNickname() == null ? null : req.getUserNickname().trim();
+        if (userNickname == null || userNickname.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        if (userRepository.existsByUserNickname(userNickname)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+
         String userId = IdGenerator.generate("USR");
         User user = User.builder()
             .userId(userId)
             .userNm(req.getUserNm())
+            .userNickname(userNickname)
             .userEmail(userEmail)
             .userPwd(passwordEncoder.encode(req.getUserPwd()))
             .userBirth(req.getUserBirth())
@@ -635,6 +644,21 @@ public class AuthServiceImpl implements AuthService {
         prt.markUsed();
 
         log.info("[PWD_RESET] 비밀번호 변경 완료: userId={}", user.getUserId());
+    }
+
+    // ----------------------------------------------------------------
+    // 닉네임 중복 체크
+    // ----------------------------------------------------------------
+    @Override
+    public boolean checkNicknameAvailable(String nickname) {
+        if (nickname == null || nickname.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        String trimmed = nickname.trim();
+        if (userRepository.existsByUserNickname(trimmed)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+        return true;
     }
 
     // ----------------------------------------------------------------

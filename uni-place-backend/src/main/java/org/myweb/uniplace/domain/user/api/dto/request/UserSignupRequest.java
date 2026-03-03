@@ -15,6 +15,10 @@ public class UserSignupRequest {
 	@NotBlank(message = "이름(userNm)은 필수입니다.")
     private String userNm;
 	
+	@NotBlank(message = "닉네임(userNickname)은 필수입니다.")
+	@Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다.")
+	private String userNickname;
+	
 	@NotBlank(message = "이메일(userEmail)은 필수입니다.")
     @Email(message = "이메일(userEmail) 형식이 올바르지 않습니다.")
     private String userEmail;

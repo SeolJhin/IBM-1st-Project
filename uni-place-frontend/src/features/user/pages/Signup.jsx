@@ -13,25 +13,63 @@ export default function Signup() {
     userPwd2: '',
     userBirth: '',
     userTel: '',
+    userNickname: '',
   });
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const [nicknameStatus, setNicknameStatus] = useState(''); // '' | 'checking' | 'ok' | 'dup' | 'error'
+  const [nicknameChecked, setNicknameChecked] = useState(false);
 
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
+    if (name === 'userNickname') {
+      setNicknameStatus('');
+      setNicknameChecked(false);
+    }
+  };
+
+  const checkNickname = async () => {
+    const nickname = form.userNickname.trim();
+    if (!nickname) return setError('닉네임을 입력해주세요.');
+    if (nickname.length < 2 || nickname.length > 20)
+      return setError('닉네임은 2~20자로 입력해주세요.');
+    setNicknameStatus('checking');
+    setError('');
+    try {
+      const available = await authApi.checkNickname(nickname);
+      if (available) {
+        setNicknameStatus('ok');
+        setNicknameChecked(true);
+      } else {
+        setNicknameStatus('dup');
+        setNicknameChecked(false);
+      }
+    } catch {
+      setNicknameStatus('dup');
+      setNicknameChecked(false);
+    }
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    const { userNm, userEmail, userPwd, userPwd2, userBirth, userTel } = form;
+    const {
+      userNm,
+      userEmail,
+      userPwd,
+      userPwd2,
+      userBirth,
+      userTel,
+      userNickname,
+    } = form;
 
-    // ✅ 프론트 단 기본 검증
     if (!userNm.trim()) return setError('이름을 입력해주세요.');
+    if (!userNickname.trim()) return setError('닉네임을 입력해주세요.');
+    if (!nicknameChecked) return setError('닉네임 중복 확인을 해주세요.');
     if (!userEmail.trim()) return setError('이메일을 입력해주세요.');
     if (!userPwd) return setError('비밀번호를 입력해주세요.');
     if (userPwd.length < 8)
@@ -45,9 +83,10 @@ export default function Signup() {
 
       await authApi.signup({
         userNm: userNm.trim(),
+        userNickname: userNickname.trim(),
         userEmail: userEmail.trim(),
         userPwd,
-        userBirth, // type="date" -> yyyy-MM-dd
+        userBirth,
         userTel: userTel.trim(),
       });
 
@@ -103,6 +142,57 @@ export default function Signup() {
                     disabled={submitting}
                   />
                 </div>
+
+                <div className={styles.row}>
+                  <div className={styles.tag}>닉네임</div>
+                  <div style={{ display: 'flex', gap: 8, flex: 1 }}>
+                    <input
+                      className={styles.input}
+                      style={{ flex: 1 }}
+                      name="userNickname"
+                      value={form.userNickname}
+                      onChange={onChange}
+                      disabled={submitting}
+                      placeholder="2~20자"
+                      maxLength={20}
+                    />
+                    <button
+                      type="button"
+                      onClick={checkNickname}
+                      disabled={submitting || nicknameStatus === 'checking'}
+                      style={{
+                        padding: '0 14px',
+                        borderRadius: 8,
+                        background: nicknameChecked ? '#22c55e' : '#111',
+                        color: '#fff',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {nicknameStatus === 'checking'
+                        ? '확인 중…'
+                        : nicknameChecked
+                          ? '✓ 사용가능'
+                          : '중복확인'}
+                    </button>
+                  </div>
+                </div>
+                {nicknameStatus === 'dup' && (
+                  <div className={styles.error}>
+                    이미 사용 중인 닉네임입니다.
+                  </div>
+                )}
+                {nicknameStatus === 'ok' && (
+                  <div
+                    style={{ color: '#22c55e', fontSize: 13, marginBottom: 4 }}
+                  >
+                    사용 가능한 닉네임입니다.
+                  </div>
+                )}
 
                 <div className={styles.row}>
                   <div className={styles.tag}>이메일</div>

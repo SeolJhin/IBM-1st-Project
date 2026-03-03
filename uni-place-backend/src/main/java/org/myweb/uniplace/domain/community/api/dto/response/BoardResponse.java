@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.myweb.uniplace.domain.community.domain.entity.Board;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
+import org.myweb.uniplace.domain.user.domain.entity.User;
 
 import lombok.*;
 
@@ -40,13 +41,20 @@ public class BoardResponse {
 
     private List<FileResponse> files;
 
-    public static BoardResponse fromEntity(Board e, List<FileResponse> files, long likeCount, boolean likedByMe) {
-        String writer = e.isAnonymous() ? "익명(글쓴이)" : e.getUserId();
+    public static BoardResponse fromEntity(Board e, List<FileResponse> files, long likeCount, boolean likedByMe, User author) {
+        String displayName;
+        if (e.isAnonymous()) {
+            displayName = "익명(글쓴이)";
+        } else {
+            displayName = (author != null && author.getUserNickname() != null && !author.getUserNickname().isBlank())
+                    ? author.getUserNickname()
+                    : e.getUserId();
+        }
 
         return BoardResponse.builder()
                 .boardId(e.getBoardId())
                 .boardTitle(e.getBoardTitle())
-                .userId(writer)
+                .userId(displayName)
                 .realUserId(e.getUserId())   // 항상 실제 userId
                 .boardCtnt(e.getBoardCtnt())
                 .readCount(e.getReadCount())
@@ -64,7 +72,12 @@ public class BoardResponse {
                 .build();
     }
 
+    // 하위 호환 - User 없이 호출 시 (기존 userId 그대로 표시)
+    public static BoardResponse fromEntity(Board e, List<FileResponse> files, long likeCount, boolean likedByMe) {
+        return fromEntity(e, files, likeCount, likedByMe, null);
+    }
+
     public static BoardResponse fromEntity(Board e, long likeCount, boolean likedByMe) {
-        return fromEntity(e, null, likeCount, likedByMe);
+        return fromEntity(e, null, likeCount, likedByMe, null);
     }
 }

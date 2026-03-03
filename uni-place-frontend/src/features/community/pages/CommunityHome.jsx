@@ -732,7 +732,7 @@ export default function CommunityHome() {
                         ) : item?.anonymity === 'Y' ? (
                           '익명'
                         ) : (
-                          (item?.userId ?? '-')
+                          item?.userNickname || item?.userId || '-'
                         )}
                       </td>
                       <td className={styles.dateCell}>
