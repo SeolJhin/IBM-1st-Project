@@ -1,6 +1,8 @@
 package org.myweb.uniplace.domain.property.application;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Set;
 
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
@@ -117,23 +119,19 @@ public class RoomServiceImpl implements RoomService {
                 pageable
         );
 
+        // N+1 방지: 페이지 내 roomId 목록으로 파일 한 번에 조회
+        List<Integer> roomIds = page.getContent().stream()
+                .map(Room::getRoomId).toList();
+        Map<Integer, List<FileResponse>> filesMap =
+                fileService.getActiveFilesMap(FileRefType.ROOM.dbValue(), roomIds);
+
         return page.map(room -> {
-            List<FileResponse> files =
-                    fileService.getActiveFiles(FileRefType.ROOM.dbValue(), room.getRoomId());
-
-            FileResponse firstImage = null;
-            if (files != null) {
-                for (FileResponse f : files) {
-                    if (f != null && isImageExt(f.getFileType())) {
-                        firstImage = f;
-                        break;
-                    }
-                }
-            }
-
+            List<FileResponse> files = filesMap.getOrDefault(room.getRoomId(), List.of());
+            FileResponse firstImage = files.stream()
+                    .filter(f -> f != null && isImageExt(f.getFileType()))
+                    .findFirst().orElse(null);
             Integer thumbId  = (firstImage != null ? firstImage.getFileId()  : null);
             String  thumbUrl = (firstImage != null ? firstImage.getViewUrl() : null);
-
             return RoomSummaryResponse.fromEntity(room, thumbId, thumbUrl);
         });
     }

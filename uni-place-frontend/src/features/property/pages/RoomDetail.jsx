@@ -473,8 +473,17 @@ export default function RoomDetail() {
         {/* ── 건물 정보 ── */}
         <section className={styles.buildingQuickCard}>
           <div className={styles.bqcHeader}>
-            <span className={styles.bqcIcon}>🏢</span>
-            <span className={styles.bqcNm}>{room.buildingNm}</span>
+            <div className={styles.bqcHeaderLeft}>
+              <span className={styles.bqcIcon}>🏢</span>
+              <span className={styles.bqcNm}>{room.buildingNm}</span>
+            </div>
+            <button
+              className={styles.bqcDetailBtn}
+              onClick={() => navigate(`/buildings/${room.buildingId}`)}
+              type="button"
+            >
+              건물 상세 보기 →
+            </button>
           </div>
           <div className={styles.bqcGrid}>
             {room.buildingAddr && (
@@ -505,14 +514,17 @@ export default function RoomDetail() {
                 <span className={styles.bqcValue}>{room.buildingUsage}</span>
               </div>
             )}
+            {room.petAllowedYn != null && (
+              <div className={styles.bqcItem}>
+                <span className={styles.bqcLabel}>반려동물</span>
+                <span className={styles.bqcValue}>
+                  {room.petAllowedYn === 'Y' || room.petAllowedYn === 'y'
+                    ? '🐾 가능'
+                    : '🚫 불가'}
+                </span>
+              </div>
+            )}
           </div>
-          <button
-            className={styles.bqcDetailBtn}
-            onClick={() => navigate(`/buildings/${room.buildingId}`)}
-            type="button"
-          >
-            건물 상세 보기 →
-          </button>
         </section>
 
         {room.roomDesc && (

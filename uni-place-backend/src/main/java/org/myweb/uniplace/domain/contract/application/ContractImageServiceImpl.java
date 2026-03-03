@@ -144,6 +144,8 @@ public class ContractImageServiceImpl implements ContractImageService {
         Map<String, String> m = new HashMap<>();
 
         m.put("building_addr", safe(building != null ? building.getBuildingAddr() : ""));
+        m.put("land_category",  safe(building != null ? building.getLandCategory() : ""));
+        m.put("building_usage", safe(building != null ? building.getBuildingUsage() : ""));
         m.put("room_no",       safe(room != null ? String.valueOf(room.getRoomNo()) : ""));
         m.put("room_size",     room != null && room.getRoomSize() != null
                 ? room.getRoomSize().stripTrailingZeros().toPlainString() : "");
@@ -160,17 +162,17 @@ public class ContractImageServiceImpl implements ContractImageService {
                 ? contract.getSignAt().toLocalDate() : LocalDate.now();
         m.putAll(splitDate("sign", signDate));
 
-        // ✅ 임대인 정보: Building 엔티티 (건물주)
-        m.put("lessor_nm",   safe(building != null ? building.getBuildingLessorNm() : ""));
-        m.put("lessor_tel",  safe(building != null ? building.getBuildingLessorTel() : ""));
-        m.put("lessor_addr", safe(building != null ? building.getBuildingLessorAddr() : ""));
-        m.put("lessor_rrn",  maskRrn(building != null ? building.getBuildingLessorRrn() : ""));
+        // ✅ 임대인 정보: building.building_lessor* 컬럼 → key: building_lessor_*
+        m.put("building_lessor_nm",   safe(building != null ? building.getBuildingLessorNm() : ""));
+        m.put("building_lessor_tel",  safe(building != null ? building.getBuildingLessorTel() : ""));
+        m.put("building_lessor_addr", safe(building != null ? building.getBuildingLessorAddr() : ""));
+        m.put("building_lessor_rrn",  maskRrn(building != null ? building.getBuildingLessorRrn() : ""));
 
-        // ✅ 임차인 정보: Contract.lessor* 컬럼 (회원이 입력한 임차인 본인 정보)
-        m.put("lessee_nm",   safe(contract.getLessorNm()));
-        m.put("lessee_tel",  safe(contract.getLessorTel()));
-        m.put("lessee_addr", safe(contract.getLessorAddr()));
-        m.put("lessee_rrn",  maskRrn(contract.getLessorRrn()));
+        // ✅ 임차인 정보: contract.lessor* 컬럼 (DB 컬럼명은 lessor이지만 실제 임차인 정보) → key: lessor_*
+        m.put("lessor_nm",   safe(contract.getLessorNm()));
+        m.put("lessor_tel",  safe(contract.getLessorTel()));
+        m.put("lessor_addr", safe(contract.getLessorAddr()));
+        m.put("lessor_rrn",  maskRrn(contract.getLessorRrn()));
 
         return m;
     }

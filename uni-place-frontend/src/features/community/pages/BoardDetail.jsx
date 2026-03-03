@@ -157,6 +157,16 @@ function ReplyItem({
   const [editAnon, setEditAnon] = useState(
     String(initialReply.anonymity ?? 'N').toUpperCase() === 'Y'
   );
+
+  // props(initialReply)가 바뀌면(부모 loadReplies 후) 내부 state 동기화
+  useEffect(() => {
+    setReply(initialReply);
+    if (!editing) {
+      setEditText(initialReply.replyCtnt ?? '');
+      setEditAnon(String(initialReply.anonymity ?? 'N').toUpperCase() === 'Y');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialReply.replyId, initialReply.anonymity, initialReply.replyCtnt]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [children, setChildren] = useState([]);
@@ -219,11 +229,7 @@ function ReplyItem({
         replyCtnt: v,
         anonymity: editAnon ? 'Y' : 'N',
       });
-      setReply((prev) => ({
-        ...prev,
-        replyCtnt: v,
-        anonymity: editAnon ? 'Y' : 'N',
-      }));
+      await onRefresh(); // 댓글 목록 전체 재로드 → anonMap 재계산
       setEditing(false);
     } catch (e) {
       setErr(e?.message || '수정 실패');
@@ -490,6 +496,25 @@ export default function BoardDetail() {
 
   const fetchCount = useRef(0);
 
+  const reloadBoard = useCallback(async () => {
+    if (!boardId) return;
+    try {
+      const data = await communityApi.getBoard(boardId, { auth: isAdmin });
+      setBoard(data);
+      setLiked(data?.likedByMe ?? false);
+      setLikeCount(data?.likeCount ?? 0);
+      setBoardMineViaMe(false);
+      const nextRealAuthorId =
+        data?.realUserId ??
+        (String(data?.anonymity ?? 'N').toUpperCase() === 'Y'
+          ? ''
+          : (data?.userId ?? ''));
+      setRealAuthorId(nextRealAuthorId);
+    } catch {
+      // ignore
+    }
+  }, [boardId, isAdmin]);
+
   const loadReplies = useCallback(async () => {
     if (!boardId) return;
     try {
@@ -611,12 +636,8 @@ export default function BoardDetail() {
         boardCtnt: editContent,
         anonymity: editBoardAnon ? 'Y' : 'N',
       });
-      setBoard((prev) => ({
-        ...prev,
-        boardTitle: editTitle.trim(),
-        boardCtnt: editContent,
-        anonymity: editBoardAnon ? 'Y' : 'N',
-      }));
+      await reloadBoard();
+      await loadReplies();
       setBoardEditing(false);
     } catch (e) {
       setBoardEditErr(e?.message || '수정 실패');

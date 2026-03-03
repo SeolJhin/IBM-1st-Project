@@ -5,6 +5,8 @@ import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
@@ -99,6 +101,19 @@ public class FileServiceImpl implements FileService {
                 );
 
         return files.stream().map(FileResponse::fromEntity).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<Integer, List<FileResponse>> getActiveFilesMap(String parentType, List<Integer> parentIds) {
+        if (parentIds == null || parentIds.isEmpty()) return Map.of();
+        String normalized = normalizeParentType(parentType);
+        List<UploadFile> all = uploadFileRepository.findActiveByParentTypeAndParentIds(normalized, parentIds);
+        return all.stream()
+                .collect(Collectors.groupingBy(
+                        UploadFile::getFileParentId,
+                        Collectors.mapping(FileResponse::fromEntity, Collectors.toList())
+                ));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.file.application;
 
 import java.util.List;
+import java.util.Map;
 
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
@@ -12,6 +13,9 @@ public interface FileService {
 
     // ✅ 일반(조회시 삭제된 파일 제외)
     List<FileResponse> getActiveFiles(String parentType, Integer parentId);
+
+    /** N+1 방지: 여러 parentId의 파일을 한 번에 조회 → Map<parentId, List<FileResponse>> */
+    java.util.Map<Integer, List<FileResponse>> getActiveFilesMap(String parentType, List<Integer> parentIds);
     FileResponse getFile(Integer fileId);
 
     // ✅ 관리자(조회시 삭제된 파일 포함)

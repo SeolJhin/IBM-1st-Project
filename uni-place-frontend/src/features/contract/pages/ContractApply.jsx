@@ -141,7 +141,11 @@ export default function ContractApply() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const pd = Number(form.paymentDay);
-    if (!form.contractStart || !form.contractEnd || form.contractEnd < minContractEnd) {
+    if (
+      !form.contractStart ||
+      !form.contractEnd ||
+      form.contractEnd < minContractEnd
+    ) {
       setSubmitError('계약 종료일은 시작일로부터 최소 7일 이후여야 합니다.');
       return;
     }
@@ -161,11 +165,11 @@ export default function ContractApply() {
         contractStart: form.contractStart,
         contractEnd: form.contractEnd,
         paymentDay: pd,
-        // 임대인: Building에서 자동
-        lessorNm: room?.buildingLessorNm || '',
-        lessorTel: room?.buildingLessorTel || '',
-        lessorAddr: room?.buildingLessorAddr || '',
-        lessorRrn: room?.buildingLessorRrn || '',
+        // 임차인: 사용자가 직접 입력한 값
+        lessorNm: form.lessorNm,
+        lessorTel: form.lessorTel,
+        lessorAddr: form.lessorAddr,
+        lessorRrn: form.lessorRrn,
         signFile,
       });
       setSubmitOk(true);

@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.property.application;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
@@ -76,23 +77,18 @@ public class SpaceServiceImpl implements SpaceService {
                 pageable
         );
 
+        List<Integer> spaceIds = page.getContent().stream()
+                .map(CommonSpace::getSpaceId).toList();
+        Map<Integer, List<FileResponse>> filesMap =
+                fileService.getActiveFilesMap(FileRefType.SPACE.dbValue(), spaceIds);
+
         return page.map(space -> {
-            List<FileResponse> files =
-                    fileService.getActiveFiles(FileRefType.SPACE.dbValue(), space.getSpaceId());
-
-            FileResponse firstImage = null;
-            if (files != null) {
-                for (FileResponse f : files) {
-                    if (f != null && isImageExt(f.getFileType())) {
-                        firstImage = f;
-                        break;
-                    }
-                }
-            }
-
+            List<FileResponse> files = filesMap.getOrDefault(space.getSpaceId(), List.of());
+            FileResponse firstImage = files.stream()
+                    .filter(f -> f != null && isImageExt(f.getFileType()))
+                    .findFirst().orElse(null);
             Integer thumbId = (firstImage != null ? firstImage.getFileId() : null);
             String thumbUrl = (firstImage != null ? firstImage.getViewUrl() : null);
-
             return SpaceResponse.fromEntity(space, thumbId, thumbUrl);
         });
     }
