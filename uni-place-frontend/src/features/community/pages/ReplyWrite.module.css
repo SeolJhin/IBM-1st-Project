@@ -1,27 +1,26 @@
 .wrap {
   width: 100%;
-  border: 1px solid #eadcc5;
-  background: linear-gradient(180deg, #fffefb, #fff8ef);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
   border-radius: 12px;
   padding: 12px;
 }
 
 .textarea {
-  width: 100%;
+  width: 95%;
   resize: vertical;
   min-height: 88px;
-  border: 1px solid #dfd5c4;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 14px;
   line-height: 1.5;
   outline: none;
-  background: #fff;
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(217, 173, 91, 0.16);
+  border-color: rgba(0, 0, 0, 0.28);
   background: #fff;
 }
 
@@ -47,12 +46,12 @@
 
 .counter {
   font-size: 12px;
-  color: var(--muted);
+  color: rgba(0, 0, 0, 0.5);
 }
 
 .error {
   font-size: 12px;
-  color: #c43e3e;
+  color: #d32f2f;
 }
 
 .actions {
@@ -61,19 +60,14 @@
 }
 
 .cancelBtn {
-  border: 1px solid #d7cebc;
+  border: 1px solid rgba(0, 0, 0, 0.16);
   background: #fff;
-  color: var(--ink-soft);
+  color: rgba(0, 0, 0, 0.7);
   padding: 8px 12px;
   border-radius: 10px;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-}
-
-.cancelBtn:hover {
-  border-color: var(--primary);
-  background: #fff7e9;
 }
 
 .cancelBtn:disabled {
@@ -82,8 +76,8 @@
 }
 
 .submitBtn {
-  border: 1px solid var(--primary);
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border: none;
+  background: rgba(0, 0, 0, 0.86);
   color: #fff;
   padding: 8px 12px;
   border-radius: 10px;

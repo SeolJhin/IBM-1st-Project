@@ -94,8 +94,6 @@ public class ReplyServiceImpl implements ReplyService {
         Board board = boardRepository.findById(boardId)
             .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
-        String anonymity = nvlYn(request.getAnonymity(), "N");
-
         Reply reply = Reply.builder()
             .boardId(boardId)
             .userId(userId)
@@ -103,7 +101,6 @@ public class ReplyServiceImpl implements ReplyService {
             .parentId(null)
             .replyLev(1)
             .replySeq(1)
-            .anonymity(anonymity)
             .build();
 
         Reply saved = replyRepository.save(reply);
@@ -135,12 +132,6 @@ public class ReplyServiceImpl implements ReplyService {
         if (!Objects.equals(boardId, parent.getBoardId())) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
-        // 대댓글은 원댓글(lev=1)에만 허용하고 그 이상 깊이는 차단
-        if (parent.getReplyLev() != null && parent.getReplyLev() >= 2) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
-        }
-
-        String anonymity = nvlYn(request.getAnonymity(), "N");
 
         Reply child = Reply.builder()
             .boardId(boardId)
@@ -149,7 +140,6 @@ public class ReplyServiceImpl implements ReplyService {
             .parentId(parentId)
             .replyLev(2)
             .replySeq(1)
-            .anonymity(anonymity)
             .build();
 
         Reply saved = replyRepository.save(child);
@@ -173,8 +163,8 @@ public class ReplyServiceImpl implements ReplyService {
         Reply reply = replyRepository.findById(replyId)
             .orElseThrow(() -> new BusinessException(ErrorCode.REPLY_NOT_FOUND));
 
-        AuthUser authUser = requireCurrentAuthUser();
-        if (!canModifyReply(reply, authUser)) {
+        String me = requireCurrentUserId();
+        if (!me.equals(reply.getUserId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
@@ -188,8 +178,8 @@ public class ReplyServiceImpl implements ReplyService {
         Reply reply = replyRepository.findById(replyId)
             .orElseThrow(() -> new BusinessException(ErrorCode.REPLY_NOT_FOUND));
 
-        AuthUser authUser = requireCurrentAuthUser();
-        if (!canModifyReply(reply, authUser)) {
+        String me = requireCurrentUserId();
+        if (!me.equals(reply.getUserId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
@@ -225,30 +215,12 @@ public class ReplyServiceImpl implements ReplyService {
         }
     }
 
-    private String nvlYn(String v, String def) {
-        if (v == null || v.isBlank()) return def;
-        return "Y".equalsIgnoreCase(v) ? "Y" : "N";
-    }
-
     private String requireCurrentUserId() {
-        return requireCurrentAuthUser().getUserId();
-    }
-
-    private AuthUser requireCurrentAuthUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null) throw new BusinessException(ErrorCode.UNAUTHORIZED);
 
         Object p = auth.getPrincipal();
-        if (p instanceof AuthUser au) return au;
+        if (p instanceof AuthUser au) return au.getUserId();
         throw new BusinessException(ErrorCode.UNAUTHORIZED);
-    }
-
-    private boolean canModifyReply(Reply reply, AuthUser authUser) {
-        String role = authUser.getRole();
-        String userId = authUser.getUserId();
-
-        boolean isAdmin = role != null && "admin".equalsIgnoreCase(role.trim());
-        boolean isOwner = userId != null && userId.equals(reply.getUserId());
-        return isAdmin || isOwner;
     }
 }
