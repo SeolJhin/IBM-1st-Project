@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { communityApi } from '../api/communityApi';
@@ -15,6 +15,14 @@ import UserStatusModal from '../../user/components/UserStatusModal';
 import styles from './CommunityHome.module.css';
 import { reviewApi } from '../../review/api/reviewApi';
 import ReviewModal from '../../review/components/ReviewModal';
+
+function normalizeTab(value) {
+  const k = String(value ?? '').toUpperCase();
+  if (k === 'FREE') return 'FREE';
+  if (k === 'QUESTION') return 'QUESTION';
+  if (k === 'REVIEW') return 'REVIEW';
+  return 'ALL';
+}
 
 const TABS = [
   { key: 'ALL', label: '전체' },
@@ -237,9 +245,12 @@ function InlineImageBtn({ onInsert, disabled }) {
 // ── 메인 컴포넌트 ───────────────────────────────────────────────
 export default function CommunityHome() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('ALL');
+  const [activeTab, setActiveTab] = useState(() =>
+    normalizeTab(searchParams.get('tab'))
+  );
   const [reviewModal, setReviewModal] = useState(null); // { mode, reviewId? }
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -269,6 +280,11 @@ export default function CommunityHome() {
   const [searchType, setSearchType] = useState('title'); // 'title' | 'userId'
   const [searchKeyword, setSearchKeyword] = useState('');
   const [activeSearch, setActiveSearch] = useState({ type: '', keyword: '' });
+
+  useEffect(() => {
+    const nextTab = normalizeTab(searchParams.get('tab'));
+    setActiveTab((prev) => (prev === nextTab ? prev : nextTab));
+  }, [searchParams]);
 
   // 글 작성시 실제 코드값 (ALL탭은 자유로 기본)
   const effectiveCode = (() => {
@@ -508,6 +524,10 @@ export default function CommunityHome() {
                 onClick={() => {
                   setActiveTab(tab.key);
                   setShowWriter(false);
+                  const next = new URLSearchParams(searchParams);
+                  if (tab.key === 'ALL') next.delete('tab');
+                  else next.set('tab', tab.key);
+                  setSearchParams(next, { replace: true });
                 }}
               >
                 {tab.label}
@@ -723,7 +743,11 @@ export default function CommunityHome() {
                                 reviewId: item.reviewId,
                               });
                             } else {
-                              navigate(`/community/${boardId}`);
+                              const tabQuery =
+                                activeTab && activeTab !== 'ALL'
+                                  ? `?tab=${encodeURIComponent(activeTab)}`
+                                  : '';
+                              navigate(`/community/${boardId}${tabQuery}`);
                             }
                           }}
                         >
