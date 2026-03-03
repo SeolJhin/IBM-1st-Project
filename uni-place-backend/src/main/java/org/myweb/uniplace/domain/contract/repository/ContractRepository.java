@@ -59,6 +59,22 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
             @Param("st2") ContractStatus st2
     );
 
+    @Query("""
+        select count(c) > 0
+          from Contract c
+         where c.user.userId = :userId
+           and c.contractSt in (:st1, :st2)
+           and c.contractStart < :endDt
+           and c.contractEnd   > :startDt
+    """)
+    boolean existsOverlappedContractByUser(
+            @Param("userId") String userId,
+            @Param("startDt") LocalDate startDt,
+            @Param("endDt") LocalDate endDt,
+            @Param("st1") ContractStatus st1,
+            @Param("st2") ContractStatus st2
+    );
+
     // ✅ 추가: room + building fetch join (계약서 이미지 생성 시 LAZY 로딩 문제 방지)
     @Query("""
         select c

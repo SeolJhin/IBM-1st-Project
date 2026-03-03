@@ -12,6 +12,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ===============================
 -- 0) Drop All Tables
 -- ===============================
+DROP TABLE IF EXISTS password_reset_tokens;
 DROP TABLE IF EXISTS payment_refund;
 DROP TABLE IF EXISTS payment_attempt;
 DROP TABLE IF EXISTS payment_intent;
@@ -70,7 +71,6 @@ DROP TABLE IF EXISTS company_info;
 
 
 DROP TABLE IF EXISTS refresh_tokens;
-DROP TABLE IF EXISTS password_reset_tokens;
 DROP TABLE IF EXISTS social_accounts;
 DROP TABLE IF EXISTS users;
 
@@ -162,10 +162,8 @@ CREATE TABLE password_reset_tokens (
     used         TINYINT(1)   NOT NULL DEFAULT 0,
     created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX ix_prt_token   (token),
-    INDEX ix_prt_user_id (user_id),
-    CONSTRAINT fk_password_reset_tokens_user
-      FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+    INDEX ix_prt_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 
@@ -447,7 +445,7 @@ CREATE TABLE board (
   board_id    INT          AUTO_INCREMENT PRIMARY KEY,
   board_title VARCHAR(300) NOT NULL,
   user_id     VARCHAR(50)  NOT NULL,
-  board_ctnt  VARCHAR(3000),
+  board_ctnt  LONGTEXT,
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   read_count  INT          NOT NULL DEFAULT 0,
@@ -474,6 +472,7 @@ CREATE TABLE reply (
   parent_id  INT,
   reply_lev  INT           NOT NULL DEFAULT 1,
   reply_seq  INT           NOT NULL DEFAULT 1,
+  anonymity VARCHAR(1) NOT NULL DEFAULT 'N',
   KEY ix_reply_board  (board_id),
   KEY ix_reply_user   (user_id),
   KEY ix_reply_parent (parent_id),
@@ -567,7 +566,7 @@ CREATE TABLE complain (
   comp_ctnt  VARCHAR(3000),
   created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  comp_st    ENUM('in_progress','resolved') NOT NULL DEFAULT 'in_progress',
+  comp_st    ENUM('received', 'in_progress','resolved') NOT NULL DEFAULT 'in_progress',
   code       VARCHAR(20)   NOT NULL,
   file_ck    VARCHAR(1)    NOT NULL DEFAULT 'N',
   reply_ck   VARCHAR(1)    NOT NULL DEFAULT 'N',
@@ -838,5 +837,6 @@ CREATE TABLE payment_intent (
 
 
 SET FOREIGN_KEY_CHECKS = 1;
+
 
 

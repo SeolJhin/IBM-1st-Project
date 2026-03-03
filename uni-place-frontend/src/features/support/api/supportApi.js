@@ -180,7 +180,9 @@ export const supportApi = {
       const normalized = normalizeSupportCode(merged.code);
       merged.code = normalized === 'ALL' ? '' : normalized;
     }
-    return request(`/complains${buildQuery(merged)}`);
+    return request(`/complains${buildQuery(merged)}`, {
+      auth: true,
+    });
   },
   getMyComplains: (params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'compId', direct: 'DESC' };

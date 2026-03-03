@@ -46,6 +46,8 @@ public enum ErrorCode {
     // ===== Room =====
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "ROOM_404", "방을 찾을 수 없습니다."),
     CONTRACT_NOT_FOUND(HttpStatus.NOT_FOUND, "CONTRACT_404", "계약을 찾을 수 없습니다."),
+    CONTRACT_INVALID_PERIOD(HttpStatus.BAD_REQUEST, "CONTRACT_400_1", "계약 종료일은 시작일로부터 최소 7일 이후여야 합니다."),
+    CONTRACT_OVERLAP(HttpStatus.BAD_REQUEST, "CONTRACT_400_2", "이미 진행 중이거나 기간이 겹치는 계약이 있어 이중 계약을 진행할 수 없습니다."),
 
     // ===== Order =====
     ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "ORDER_404", "주문을 찾을 수 없습니다."),

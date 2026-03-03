@@ -1,5 +1,6 @@
 package org.myweb.uniplace.domain.contract.application;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -63,6 +64,7 @@ public class ContractServiceImpl implements ContractService {
     @Override
     public ContractResponse createContract(ContractCreateRequest request) {
         String userId = currentUserId();
+        validateContractPeriod(request.getContractStart(), request.getContractEnd());
 
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -72,14 +74,23 @@ public class ContractServiceImpl implements ContractService {
 
         if (room.isDeleted()) throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
 
-        boolean overlapped = contractRepository.existsOverlappedContract(
+        boolean roomOverlapped = contractRepository.existsOverlappedContract(
             room.getRoomId(),
             request.getContractStart(),
             request.getContractEnd(),
-            ContractStatus.active,
+            ContractStatus.requested,
             ContractStatus.active
         );
-        if (overlapped) throw new BusinessException(ErrorCode.BAD_REQUEST);
+        if (roomOverlapped) throw new BusinessException(ErrorCode.CONTRACT_OVERLAP);
+
+        boolean userOverlapped = contractRepository.existsOverlappedContractByUser(
+            userId,
+            request.getContractStart(),
+            request.getContractEnd(),
+            ContractStatus.requested,
+            ContractStatus.active
+        );
+        if (userOverlapped) throw new BusinessException(ErrorCode.CONTRACT_OVERLAP);
 
         Contract contract = Contract.builder()
             .user(user)
@@ -303,6 +314,15 @@ public class ContractServiceImpl implements ContractService {
             }
             return AdminContractSummaryResponse.fromEntity(c, pdfFileName);
         });
+    }
+
+    private void validateContractPeriod(LocalDate contractStart, LocalDate contractEnd) {
+        if (contractStart == null || contractEnd == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        if (contractEnd.isBefore(contractStart.plusDays(7))) {
+            throw new BusinessException(ErrorCode.CONTRACT_INVALID_PERIOD);
+        }
     }
 
     // ── 알림 헬퍼 ─────────────────────────────────────────────────
