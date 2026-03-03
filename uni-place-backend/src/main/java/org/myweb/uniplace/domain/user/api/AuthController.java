@@ -38,6 +38,11 @@ public class AuthController {
         return ApiResponse.ok();
     }
 
+    @GetMapping("/check-nickname")
+    public ApiResponse<Boolean> checkNickname(@RequestParam("nickname") String nickname) {
+        return ApiResponse.ok(authService.checkNicknameAvailable(nickname));
+    }
+
     @PostMapping("/login")
     public ApiResponse<UserTokenResponse> login(HttpServletRequest http, @Valid @RequestBody UserLoginRequest req) {
         return ApiResponse.ok(authService.login(req, http.getHeader("User-Agent"), extractIp(http)));

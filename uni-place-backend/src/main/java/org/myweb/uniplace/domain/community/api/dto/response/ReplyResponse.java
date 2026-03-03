@@ -3,6 +3,7 @@ package org.myweb.uniplace.domain.community.api.dto.response;
 import java.time.LocalDateTime;
 
 import org.myweb.uniplace.domain.community.domain.entity.Reply;
+import org.myweb.uniplace.domain.user.domain.entity.User;
 
 import lombok.*;
 
@@ -41,15 +42,20 @@ public class ReplyResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static ReplyResponse fromEntity(Reply e, long likeCount, boolean likedByMe) {
+    public static ReplyResponse fromEntity(Reply e, long likeCount, boolean likedByMe, User author) {
         boolean isAnon = "Y".equalsIgnoreCase(e.getAnonymity());
+
+        String displayName = null;
+        if (!isAnon) {
+            displayName = (author != null && author.getUserNickname() != null && !author.getUserNickname().isBlank())
+                    ? author.getUserNickname()
+                    : e.getUserId();
+        }
 
         return ReplyResponse.builder()
                 .replyId(e.getReplyId())
                 .boardId(e.getBoardId())
-                // 익명이면 userId를 null로 마스킹 → 프론트에서 anonMap으로 번호 매핑
-                .userId(isAnon ? null : e.getUserId())
-                // 본인 여부 확인용 실제 userId는 항상 내려보냄
+                .userId(displayName)
                 .realUserId(e.getUserId())
                 .anonymity(e.getAnonymity() != null ? e.getAnonymity() : "N")
                 .replyCtnt(e.getReplyCtnt())
@@ -61,5 +67,10 @@ public class ReplyResponse {
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
+    }
+
+    // 하위 호환
+    public static ReplyResponse fromEntity(Reply e, long likeCount, boolean likedByMe) {
+        return fromEntity(e, likeCount, likedByMe, null);
     }
 }

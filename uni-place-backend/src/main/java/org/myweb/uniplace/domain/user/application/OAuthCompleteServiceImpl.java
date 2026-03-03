@@ -18,8 +18,7 @@ import org.myweb.uniplace.domain.user.repository.SocialAccountRepository;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
-import org.myweb.uniplace.global.security.JwtProvider;
-import org.myweb.uniplace.global.util.IdGenerator;
+import org.myweb.uniplace.global.security.JwtProvider;import org.myweb.uniplace.global.util.IdGenerator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -76,6 +75,14 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
             throw new BusinessException(ErrorCode.DUPLICATE_TEL);
         }
 
+        String userNickname = req.getUserNickname() == null ? null : req.getUserNickname().trim();
+        if (userNickname == null || userNickname.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        if (userRepository.existsByUserNickname(userNickname)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+        }
+
         String userId = IdGenerator.generate("USR");
         String name = hasText(req.getUserNm()) ? req.getUserNm().trim() : (nickname != null ? nickname : "user");
 
@@ -90,6 +97,7 @@ public class OAuthCompleteServiceImpl implements OAuthCompleteService {
         User user = User.builder()
             .userId(userId)
             .userNm(name)
+            .userNickname(userNickname)
             .userEmail(resolvedEmail)
             .userPwd(encodedPwd)
             .userBirth(req.getUserBirth())

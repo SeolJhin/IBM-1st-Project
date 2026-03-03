@@ -43,13 +43,14 @@ function buildAnonMap(boardRealAuthorId, allReplies) {
   return map;
 }
 
-function displayName(userId, anonymity, anonMap, { isAdmin = false } = {}) {
+function displayName(reply, anonymity, anonMap, { isAdmin = false } = {}) {
+  const userId = reply?.userId;
   // ✅ 관리자는 익명 마스킹 없이 실제 userId 표시
   if (isAdmin) return userId ?? '-';
   if (String(anonymity ?? 'N').toUpperCase() === 'Y') {
     return anonMap[userId] ?? '익명';
   }
-  return userId ?? '-';
+  return reply?.userNickname || userId || '-';
 }
 
 /* ── 대댓글 작성 박스 ───────────────────────────────────── */
@@ -156,7 +157,7 @@ function ReplyItem({
   const [childLoading, setChildLoading] = useState(false);
 
   const isMine = myUserId && String(reply.userId) === String(myUserId);
-  const authorName = displayName(reply.userId, reply.anonymity, anonMap, {
+  const authorName = displayName(reply, reply.anonymity, anonMap, {
     isAdmin,
   });
   const isAuthorStyle = authorName === '익명(글쓴이)';
@@ -656,7 +657,7 @@ export default function BoardDetail() {
     ? realAuthorId || board?.userId || '-' // 관리자: 실제 userId (realAuthorId 우선)
     : board?.anonymity === 'Y'
       ? '익명(글쓴이)'
-      : (board?.userId ?? '-');
+      : board?.userNickname || board?.userId || '-';
 
   return (
     <div className={styles.page}>

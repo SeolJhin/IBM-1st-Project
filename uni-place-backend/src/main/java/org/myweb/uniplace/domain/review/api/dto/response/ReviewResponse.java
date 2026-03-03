@@ -7,6 +7,7 @@ import java.util.List;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.review.domain.entity.Review;
+import org.myweb.uniplace.domain.user.domain.entity.User;
 
 import lombok.*;
 
@@ -17,7 +18,8 @@ import lombok.*;
 public class ReviewResponse {
 
     private Integer reviewId;
-    private String userId;
+    private String userId;         // 표시용 (닉네임 or userId)
+    private String realUserId;     // 본인 여부 판단용 실제 userId
     private Integer roomId;
 
     /** 별점 1~5 */
@@ -52,7 +54,7 @@ public class ReviewResponse {
     private Integer roomNo;
 
     /** 방 정보까지 채우는 버전 */
-    public static ReviewResponse fromEntity(Review e, List<FileResponse> files, Room room) {
+    public static ReviewResponse fromEntity(Review e, List<FileResponse> files, Room room, User author) {
         Integer buildingId = null;
         String buildingNm  = null;
         Integer roomNo     = null;
@@ -65,9 +67,14 @@ public class ReviewResponse {
             }
         }
 
+        String displayName = (author != null && author.getUserNickname() != null && !author.getUserNickname().isBlank())
+                ? author.getUserNickname()
+                : e.getUserId();
+
         return ReviewResponse.builder()
                 .reviewId(e.getReviewId())
-                .userId(e.getUserId())
+                .userId(displayName)
+                .realUserId(e.getUserId())
                 .roomId(e.getRoomId())
                 .rating(e.getRating())
                 .reviewTitle(e.getReviewTitle())
@@ -85,14 +92,19 @@ public class ReviewResponse {
                 .build();
     }
 
+    /** 방 정보까지 채우는 버전 (author 없음, 하위 호환) */
+    public static ReviewResponse fromEntity(Review e, List<FileResponse> files, Room room) {
+        return fromEntity(e, files, room, null);
+    }
+
     /** 파일 없는 버전 */
     public static ReviewResponse fromEntity(Review e, List<FileResponse> files) {
-        return fromEntity(e, files, null);
+        return fromEntity(e, files, null, null);
     }
 
     /** 파일 없이 (엔티티만) */
     public static ReviewResponse fromEntity(Review e) {
-        return fromEntity(e, null, null);
+        return fromEntity(e, null, null, null);
     }
 
     /** 이미지 확장자인 첫 번째 파일의 viewUrl 반환 */

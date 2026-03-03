@@ -17,7 +17,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "users",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uq_users_email", columnNames = "user_email")
+                @UniqueConstraint(name = "uq_users_email", columnNames = "user_email"),
+                @UniqueConstraint(name = "uq_users_nickname", columnNames = "user_nickname")
         },
         indexes = {
                 @Index(name = "ix_users_tel", columnList = "user_tel")
@@ -43,6 +44,9 @@ public class User extends BaseTimeEntity {
 
     @Column(name = "user_tel", length = 20, nullable = false)
     private String userTel;
+
+    @Column(name = "user_nickname", length = 50)
+    private String userNickname;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "user_role", length = 20, nullable = false)
@@ -91,6 +95,7 @@ public class User extends BaseTimeEntity {
     public void changeTel(String newTel) { this.userTel = newTel; }
     public void changeEmail(String newEmail) { this.userEmail = newEmail; }
     public void changePwd(String newPwd) { this.userPwd = newPwd; }
+    public void changeNickname(String newNickname) { this.userNickname = newNickname; }
 
     // 관리자용
     public void changeRole(UserRole role) { this.userRole = role; }
