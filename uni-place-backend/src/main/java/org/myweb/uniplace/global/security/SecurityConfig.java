@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/login").permitAll()
                 .requestMatchers("/auth/refresh").permitAll()
                 .requestMatchers("/auth/logout").permitAll()
+                .requestMatchers("/auth/check-nickname").permitAll()
                 .requestMatchers("/auth/oauth2/kakao/complete").permitAll()
                 .requestMatchers("/auth/oauth2/google/complete").permitAll()
                 .requestMatchers("/error").permitAll()

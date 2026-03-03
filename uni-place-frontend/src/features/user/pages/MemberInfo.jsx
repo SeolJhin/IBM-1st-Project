@@ -59,12 +59,16 @@ function MeTab() {
     userEmail: '',
     userTel: '',
     userId: '',
+    userNickname: '',
   });
   const [currentPwd, setCurrentPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
+  const [nicknameStatus, setNicknameStatus] = useState('');
+  const [nicknameChecked, setNicknameChecked] = useState(false);
+  const [originalNickname, setOriginalNickname] = useState('');
 
   const loadMe = React.useCallback(async () => {
     setError('');
@@ -78,7 +82,10 @@ function MeTab() {
         userEmail: me?.userEmail ?? '',
         userTel: me?.userTel ?? '',
         userId: me?.userId ?? '',
+        userNickname: me?.userNickname ?? '',
       });
+      setOriginalNickname(me?.userNickname ?? '');
+      setNicknameChecked(true); // 기존 닉네임은 이미 사용 중이므로 변경 없으면 체크 불필요
     } catch (e) {
       setError(e?.message || '내 정보 조회에 실패했습니다.');
     } finally {
@@ -93,6 +100,38 @@ function MeTab() {
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
+    if (name === 'userNickname') {
+      setNicknameStatus('');
+      setNicknameChecked(value.trim() === originalNickname.trim());
+    }
+  };
+
+  const checkNickname = async () => {
+    const nickname = form.userNickname.trim();
+    if (!nickname) return setError('닉네임을 입력해주세요.');
+    if (nickname.length < 2 || nickname.length > 20)
+      return setError('닉네임은 2~20자로 입력해주세요.');
+    if (nickname === originalNickname.trim()) {
+      setNicknameStatus('ok');
+      setNicknameChecked(true);
+      return;
+    }
+    setNicknameStatus('checking');
+    setError('');
+    try {
+      const { authApi } = await import('../api/authApi');
+      const available = await authApi.checkNickname(nickname);
+      if (available) {
+        setNicknameStatus('ok');
+        setNicknameChecked(true);
+      } else {
+        setNicknameStatus('dup');
+        setNicknameChecked(false);
+      }
+    } catch {
+      setNicknameStatus('dup');
+      setNicknameChecked(false);
+    }
   };
 
   // 변경된 필드만 payload 구성
@@ -102,11 +141,14 @@ function MeTab() {
     const nextNm = form.userNm?.trim() ?? '';
     const nextEmail = form.userEmail?.trim() ?? '';
     const nextTel = form.userTel?.trim() ?? '';
+    const nextNickname = form.userNickname?.trim() ?? '';
     if (nextNm && nextNm !== (origin.userNm ?? '')) payload.userNm = nextNm;
     if (nextEmail && nextEmail !== (origin.userEmail ?? ''))
       payload.userEmail = nextEmail;
     if (nextTel && nextTel !== (origin.userTel ?? ''))
       payload.userTel = nextTel;
+    if (nextNickname && nextNickname !== (origin.userNickname ?? ''))
+      payload.userNickname = nextNickname;
     if (newPwd?.trim()) {
       payload.userPwd = newPwd.trim();
       payload.currentUserPwd = currentPwd.trim();
@@ -122,6 +164,11 @@ function MeTab() {
     const payload = buildPayload();
     if (!payload || Object.keys(payload).length === 0) {
       setMsg('변경된 내용이 없어 취소 처리되었습니다.');
+      return;
+    }
+    // 닉네임을 변경하려는 경우 중복확인 필요
+    if (payload.userNickname && !nicknameChecked) {
+      setError('닉네임 중복 확인을 해주세요.');
       return;
     }
     if (!currentPwd.trim()) {
@@ -191,6 +238,54 @@ function MeTab() {
               readOnly
               disabled
             />
+          </Field>
+          <Field label="닉네임">
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                className={styles.input}
+                style={{ flex: 1 }}
+                name="userNickname"
+                value={form.userNickname}
+                onChange={onChange}
+                disabled={submitting}
+                placeholder="2~20자"
+                maxLength={20}
+              />
+              <button
+                type="button"
+                onClick={checkNickname}
+                disabled={submitting || nicknameStatus === 'checking'}
+                style={{
+                  padding: '0 12px',
+                  borderRadius: 8,
+                  background: nicknameChecked ? '#22c55e' : '#111',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  height: 40,
+                }}
+              >
+                {nicknameStatus === 'checking'
+                  ? '확인 중…'
+                  : nicknameChecked
+                    ? '✓ 확인됨'
+                    : '중복확인'}
+              </button>
+            </div>
+            {nicknameStatus === 'dup' && (
+              <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                이미 사용 중인 닉네임입니다.
+              </div>
+            )}
+            {nicknameStatus === 'ok' && (
+              <div style={{ color: '#22c55e', fontSize: 12, marginTop: 4 }}>
+                사용 가능한 닉네임입니다.
+              </div>
+            )}
           </Field>
           <Field label="이메일">
             <input
@@ -822,7 +917,9 @@ export default function MemberInfo() {
 
               {myRoomSubTab === 'contracts' && <MyContractView />}
               {myRoomSubTab === 'rent-payment' && (
-                <MyMonthlyCharges focusContractId={searchParams.get('contractId')} />
+                <MyMonthlyCharges
+                  focusContractId={searchParams.get('contractId')}
+                />
               )}
             </div>
           )}
