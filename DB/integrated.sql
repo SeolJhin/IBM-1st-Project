@@ -115,6 +115,7 @@ CREATE TABLE common_code (
 CREATE TABLE users (
   user_id       VARCHAR(50)  PRIMARY KEY,
   user_nm       VARCHAR(50)  NOT NULL,
+  user_nickname VARCHAR(50)  NULL,
   user_email    VARCHAR(100) NOT NULL,
   user_pwd      VARCHAR(255) NOT NULL,
   user_birth    DATE         NOT NULL,
@@ -127,8 +128,11 @@ CREATE TABLE users (
   user_st       ENUM('active','inactive','banned') NOT NULL DEFAULT 'active',
   delete_yn     VARCHAR(1)   NOT NULL DEFAULT 'N',
   UNIQUE KEY uq_users_email (user_email),
+  UNIQUE KEY uq_users_nickname (user_nickname),
   KEY ix_users_tel (user_tel)
 ) ENGINE=InnoDB;
+
+
 
 
 CREATE TABLE refresh_tokens (

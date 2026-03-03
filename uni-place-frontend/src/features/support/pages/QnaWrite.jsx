@@ -9,7 +9,7 @@ const QNA_CATEGORIES = [
   { code: 'QNA_PAYMENT', label: '결제/환불' },
   { code: 'QNA_FACILITY', label: '시설 이용' },
   { code: 'QNA_ROOMSERVICE', label: '룸서비스' },
-  { code: 'QNA_MOVEINOUT', label: '입주/퇴실' },
+  { code: 'QNA_MOVEINOUT', label: '입주/퇴거' },
   { code: 'QNA_ETC', label: '기타' },
 ];
 
@@ -21,16 +21,14 @@ function normalizeRole(user) {
     user?.user_role ??
     user?.authority ??
     user?.authorities?.[0];
-  return String(raw ?? '')
-    .toLowerCase()
-    .replace('role_', '');
+  return String(raw ?? '').toLowerCase().replace('role_', '');
 }
 
 export default function QnaWrite() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { qnaId } = useParams();
-  const isEdit = !!qnaId;
+  const isEdit = Boolean(qnaId);
 
   const [form, setForm] = useState({ qnaTitle: '', qnaCtnt: '', code: '' });
   const [loading, setLoading] = useState(isEdit);
@@ -56,7 +54,7 @@ export default function QnaWrite() {
         });
       })
       .catch((err) => {
-        alert(err.message || '문의 내용을 불러오는 데 실패했습니다.');
+        alert(err.message || '문의 내용을 불러오지 못했습니다.');
         navigate('/support/qna');
       })
       .finally(() => setLoading(false));
@@ -69,13 +67,8 @@ export default function QnaWrite() {
       <div className={styles.container}>
         <div className={styles.card}>
           <h2 className={styles.sectionTitle}>접근 권한 없음</h2>
-          <p style={{ marginBottom: 16 }}>
-            1:1 문의 작성은 관리자와 입주자만 가능합니다.
-          </p>
-          <button
-            className={styles.pageBtn}
-            onClick={() => navigate('/support/qna')}
-          >
+          <p style={{ marginBottom: 16 }}>1:1 문의 작성은 관리자와 입주자만 가능합니다.</p>
+          <button className={styles.pageBtn} onClick={() => navigate('/support/qna')}>
             목록으로
           </button>
         </div>
@@ -88,13 +81,8 @@ export default function QnaWrite() {
       <div className={styles.container}>
         <div className={styles.card}>
           <h2 className={styles.sectionTitle}>접근 권한 없음</h2>
-          <p style={{ marginBottom: 16 }}>
-            1:1 문의 수정은 관리자만 가능합니다.
-          </p>
-          <button
-            className={styles.pageBtn}
-            onClick={() => navigate(`/support/qna/${qnaId}`)}
-          >
+          <p style={{ marginBottom: 16 }}>1:1 문의 수정은 관리자만 가능합니다.</p>
+          <button className={styles.pageBtn} onClick={() => navigate(`/support/qna/${qnaId}`)}>
             상세로
           </button>
         </div>
@@ -109,14 +97,17 @@ export default function QnaWrite() {
   };
 
   const handleSubmit = async () => {
-    if (!form.code) return alert('문의 유형을 선택해주세요.');
+    if (!isEdit && !form.code) return alert('문의 유형을 선택해주세요.');
     if (!form.qnaTitle.trim()) return alert('제목을 입력해주세요.');
     if (!form.qnaCtnt.trim()) return alert('내용을 입력해주세요.');
 
     setSubmitting(true);
     try {
       if (isEdit) {
-        await supportApi.updateQna(qnaId, form);
+        await supportApi.updateQna(qnaId, {
+          qnaTitle: form.qnaTitle,
+          qnaCtnt: form.qnaCtnt,
+        });
         alert('문의가 수정되었습니다.');
         navigate(`/support/qna/${qnaId}`);
       } else {
@@ -125,10 +116,7 @@ export default function QnaWrite() {
         navigate('/support/qna');
       }
     } catch (err) {
-      alert(
-        err.message ||
-          (isEdit ? '수정에 실패했습니다.' : '등록에 실패했습니다.')
-      );
+      alert(err.message || (isEdit ? '수정에 실패했습니다.' : '등록에 실패했습니다.'));
     } finally {
       setSubmitting(false);
     }
@@ -137,16 +125,14 @@ export default function QnaWrite() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h2 className={styles.sectionTitle}>
-          {isEdit ? '1:1 문의 수정' : '1:1 문의 작성'}
-        </h2>
+        <h2 className={styles.sectionTitle}>{isEdit ? '1:1 문의 수정' : '1:1 문의 작성'}</h2>
 
         <label className={styles.formLabel}>문의 유형</label>
         <select
           className={styles.formSelect}
           value={form.code}
           onChange={(e) => handleChange('code', e.target.value)}
-          disabled={submitting}
+          disabled={submitting || isEdit}
         >
           <option value="">유형 선택</option>
           {QNA_CATEGORIES.map((cat) => (
@@ -160,7 +146,7 @@ export default function QnaWrite() {
         <input
           className={styles.formInput}
           type="text"
-          placeholder="제목을 입력하세요"
+          placeholder="제목을 입력하세요."
           value={form.qnaTitle}
           onChange={(e) => handleChange('qnaTitle', e.target.value)}
           disabled={submitting}
@@ -169,33 +155,19 @@ export default function QnaWrite() {
         <label className={styles.formLabel}>내용</label>
         <textarea
           className={styles.formTextarea}
-          placeholder="문의 내용을 입력하세요"
+          placeholder="문의 내용을 입력하세요."
           value={form.qnaCtnt}
           onChange={(e) => handleChange('qnaCtnt', e.target.value)}
           disabled={submitting}
         />
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button
-            className={styles.buttonPrimary}
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {submitting
-              ? isEdit
-                ? '수정 중...'
-                : '등록 중...'
-              : isEdit
-                ? '수정'
-                : '등록'}
+          <button className={styles.buttonPrimary} onClick={handleSubmit} disabled={submitting}>
+            {submitting ? (isEdit ? '수정 중...' : '등록 중...') : isEdit ? '수정' : '등록'}
           </button>
           <button
             className={styles.pageBtn}
-            onClick={() =>
-              isEdit
-                ? navigate(`/support/qna/${qnaId}`)
-                : navigate('/support/qna')
-            }
+            onClick={() => (isEdit ? navigate(`/support/qna/${qnaId}`) : navigate('/support/qna'))}
             disabled={submitting}
           >
             취소

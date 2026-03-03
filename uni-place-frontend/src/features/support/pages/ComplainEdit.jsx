@@ -22,9 +22,7 @@ function normalizeRole(user) {
     user?.authority ??
     user?.authorities?.[0];
 
-  return String(raw ?? '')
-    .toLowerCase()
-    .replace('role_', '');
+  return String(raw ?? '').toLowerCase().replace('role_', '');
 }
 
 export default function ComplainEdit() {
@@ -76,13 +74,15 @@ export default function ComplainEdit() {
   };
 
   const handleSubmit = async () => {
-    if (!form.code) return alert('민원 유형을 선택해주세요.');
     if (!form.compTitle.trim()) return alert('제목을 입력해주세요.');
     if (!form.compCtnt.trim()) return alert('내용을 입력해주세요.');
 
     setSubmitting(true);
     try {
-      await supportApi.updateComplain(id, form);
+      await supportApi.updateComplain(id, {
+        compTitle: form.compTitle,
+        compCtnt: form.compCtnt,
+      });
       alert('수정되었습니다.');
       navigate(`/support/complain/${id}`);
     } catch (err) {
@@ -98,12 +98,7 @@ export default function ComplainEdit() {
         <h2 className={styles.sectionTitle}>민원 수정</h2>
 
         <label className={styles.formLabel}>민원 유형</label>
-        <select
-          className={styles.formSelect}
-          value={form.code}
-          onChange={(e) => handleChange('code', e.target.value)}
-          disabled={submitting}
-        >
+        <select className={styles.formSelect} value={form.code} disabled>
           <option value="">유형 선택</option>
           {COMPLAIN_CATEGORIES.map((cat) => (
             <option key={cat.code} value={cat.code}>
@@ -130,11 +125,7 @@ export default function ComplainEdit() {
         />
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button
-            className={styles.buttonPrimary}
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
+          <button className={styles.buttonPrimary} onClick={handleSubmit} disabled={submitting}>
             {submitting ? '수정 중...' : '수정'}
           </button>
           <button

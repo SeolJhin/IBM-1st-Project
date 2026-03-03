@@ -44,8 +44,11 @@ export default function AdminMonthlyChargeList() {
     setError('');
     try {
       const contractId = contractIdFilter.trim();
+      const parsedContractId = Number(contractId);
       const data = await adminApi.getMonthlyCharges(
-        contractId === '' ? undefined : Number(contractId)
+        contractId === '' || !Number.isFinite(parsedContractId)
+          ? undefined
+          : parsedContractId
       );
       const rows = Array.isArray(data) ? data : [];
       rows.sort((a, b) => Number(b?.chargeId ?? 0) - Number(a?.chargeId ?? 0));

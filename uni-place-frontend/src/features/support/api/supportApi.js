@@ -58,7 +58,9 @@ async function request(
     const message =
       (api && api.message) ||
       (payload && payload.message) ||
-      (typeof payload === 'string' ? payload : '요청에 실패했습니다.');
+      (typeof payload === 'string'
+        ? payload
+        : '\uC694\uCCAD\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.');
     const error = new Error(message);
     error.status = res.status;
     error.errorCode = api?.errorCode;
@@ -168,7 +170,14 @@ export const supportApi = {
       auth: true,
     }),
   updateQna: (qnaId, body) =>
-    request(`/qna/${qnaId}`, { method: 'PUT', body, auth: true }),
+    request(`/qna/${qnaId}`, {
+      method: 'PUT',
+      body: {
+        qnaTitle: body?.qnaTitle,
+        qnaCtnt: body?.qnaCtnt,
+      },
+      auth: true,
+    }),
   deleteQna: (qnaId) =>
     request(`/qna/${qnaId}`, { method: 'DELETE', auth: true }),
 
@@ -187,13 +196,17 @@ export const supportApi = {
   getMyComplains: (params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'compId', direct: 'DESC' };
     const merged = { ...defaults, ...params };
-    if (merged.code) {
-      const normalized = normalizeSupportCode(merged.code);
-      merged.code = normalized === 'ALL' ? '' : normalized;
-    }
-    return request(`/complains/me${buildQuery(merged)}`, {
+    return request(
+      `/complains/me${buildQuery({
+        page: merged.page,
+        size: merged.size,
+        sort: merged.sort,
+        direct: merged.direct,
+      })}`,
+      {
       auth: true,
-    });
+      }
+    );
   },
   getComplainDetail: (compId) =>
     request(`/complains/${compId}`, { auth: true }),
@@ -204,7 +217,14 @@ export const supportApi = {
       auth: true,
     }),
   updateComplain: (compId, body) =>
-    request(`/complains/${compId}`, { method: 'PUT', body, auth: true }),
+    request(`/complains/${compId}`, {
+      method: 'PUT',
+      body: {
+        compTitle: body?.compTitle,
+        compCtnt: body?.compCtnt,
+      },
+      auth: true,
+    }),
   updateComplainStatus: (compId, compSt) =>
     request(`/complains/${compId}/status`, {
       method: 'PATCH',

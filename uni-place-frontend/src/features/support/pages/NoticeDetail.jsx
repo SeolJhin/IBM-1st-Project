@@ -20,9 +20,7 @@ function normalizeRole(user) {
     user?.authority ??
     user?.authorities?.[0];
 
-  return String(raw ?? '')
-    .toLowerCase()
-    .replace('role_', '');
+  return String(raw ?? '').toLowerCase().replace('role_', '');
 }
 
 export default function NoticeDetail() {
@@ -63,7 +61,7 @@ export default function NoticeDetail() {
         setError(null);
       } catch (err) {
         if (!cancelled) {
-          setError(err.message || '공지사항을 불러오는 데 실패했습니다.');
+          setError(err.message || '공지사항을 불러오지 못했습니다.');
         }
       } finally {
         if (!cancelled) {
@@ -179,9 +177,7 @@ export default function NoticeDetail() {
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              {notice.importance === 'Y' && (
-                <span className={styles.statusBadge}>중요</span>
-              )}
+              {notice.importance === 'Y' && <span className={styles.statusBadge}>중요</span>}
               <h2 className={styles.cardTitle} style={{ margin: 0 }}>
                 {notice.noticeTitle}
               </h2>
@@ -203,11 +199,7 @@ export default function NoticeDetail() {
           <div style={{ marginTop: 20, display: 'flex', gap: 8 }}>
             {editing ? (
               <>
-                <button
-                  className={styles.buttonPrimary}
-                  onClick={handleSave}
-                  disabled={saving}
-                >
+                <button className={styles.buttonPrimary} onClick={handleSave} disabled={saving}>
                   {saving ? '저장 중...' : '저장'}
                 </button>
                 <button
@@ -223,11 +215,7 @@ export default function NoticeDetail() {
                 <button className={styles.buttonPrimary} onClick={() => setEditing(true)}>
                   수정
                 </button>
-                <button
-                  className={styles.pageBtn}
-                  onClick={handleDelete}
-                  disabled={deleting}
-                >
+                <button className={styles.pageBtn} onClick={handleDelete} disabled={deleting}>
                   {deleting ? '삭제 중...' : '삭제'}
                 </button>
               </>
@@ -246,4 +234,3 @@ export default function NoticeDetail() {
     </div>
   );
 }
-

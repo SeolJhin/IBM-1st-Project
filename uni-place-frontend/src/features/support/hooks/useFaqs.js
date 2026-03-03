@@ -1,10 +1,4 @@
 // features/support/hooks/useFaqs.js
-// FAQ 목록 조회 + 페이징
-//
-// [사용 예시]
-// const { faqs, pagination, loading, error, goToPage } = useFaqs();
-// const { faqs } = useFaqs({ size: 5, code: 'ROOM' }); // 카테고리 필터
-
 import { useCallback, useEffect, useState } from 'react';
 import { supportApi } from '../api/supportApi';
 
@@ -32,8 +26,6 @@ export function useFaqs(initialParams = {}) {
     setLoading(true);
     setError(null);
     try {
-      // PageResponse<FaqResponse>
-      // 필드: faqId, faqTitle, faqCtnt, createdAt, isActive, code
       const data = await supportApi.getFaqs(fetchParams);
       setFaqs(data?.content ?? []);
       setPagination({
@@ -45,7 +37,7 @@ export function useFaqs(initialParams = {}) {
         isLast: (data?.page ?? fetchParams.page) >= (data?.totalPages ?? 1),
       });
     } catch (err) {
-      setError(err?.message || 'FAQ를 불러오는 데 실패했습니다.');
+      setError(err?.message || 'FAQ를 불러오지 못했습니다.');
       setFaqs([]);
     } finally {
       setLoading(false);
@@ -69,7 +61,7 @@ export function useFaqs(initialParams = {}) {
   }, [fetchFaqs, params]);
 
   return {
-    faqs, // FaqResponse[]
+    faqs,
     pagination,
     loading,
     error,

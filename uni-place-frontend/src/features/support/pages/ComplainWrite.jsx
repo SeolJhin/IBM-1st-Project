@@ -22,9 +22,7 @@ function normalizeRole(user) {
     user?.authority ??
     user?.authorities?.[0];
 
-  return String(raw ?? '')
-    .toLowerCase()
-    .replace('role_', '');
+  return String(raw ?? '').toLowerCase().replace('role_', '');
 }
 
 export default function ComplainWrite() {
@@ -42,13 +40,8 @@ export default function ComplainWrite() {
       <div className={styles.container}>
         <div className={styles.card}>
           <h2 className={styles.sectionTitle}>접근 권한 없음</h2>
-          <p style={{ marginBottom: 16 }}>
-            민원 작성은 관리자와 입주민만 가능합니다.
-          </p>
-          <button
-            className={styles.pageBtn}
-            onClick={() => navigate('/support/complain')}
-          >
+          <p style={{ marginBottom: 16 }}>민원 작성은 관리자와 입주민만 가능합니다.</p>
+          <button className={styles.pageBtn} onClick={() => navigate('/support/complain')}>
             목록으로
           </button>
         </div>
@@ -108,7 +101,7 @@ export default function ComplainWrite() {
         <input
           className={styles.formInput}
           type="text"
-          placeholder="제목을 입력하세요"
+          placeholder="제목을 입력하세요."
           value={form.compTitle}
           onChange={(e) => handleChange('compTitle', e.target.value)}
           disabled={submitting}
@@ -117,18 +110,14 @@ export default function ComplainWrite() {
         <label className={styles.formLabel}>내용</label>
         <textarea
           className={styles.formTextarea}
-          placeholder="민원 내용을 입력하세요"
+          placeholder="민원 내용을 입력하세요."
           value={form.compCtnt}
           onChange={(e) => handleChange('compCtnt', e.target.value)}
           disabled={submitting}
         />
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button
-            className={styles.buttonPrimary}
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
+          <button className={styles.buttonPrimary} onClick={handleSubmit} disabled={submitting}>
             {submitting ? '등록 중...' : '등록'}
           </button>
           <button

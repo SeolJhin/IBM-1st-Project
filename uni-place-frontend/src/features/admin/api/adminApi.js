@@ -19,6 +19,13 @@ function buildQuery(params = {}) {
   return '?' + new URLSearchParams(entries).toString();
 }
 
+function pageableSort(sort, direct) {
+  const safeSort = String(sort ?? '').trim();
+  const safeDirect = String(direct ?? 'DESC').trim().toUpperCase();
+  if (!safeSort) return undefined;
+  return `${safeSort},${safeDirect === 'ASC' ? 'ASC' : 'DESC'}`;
+}
+
 async function parsePayload(res) {
   if (res.status === 204) return null;
 
@@ -111,7 +118,7 @@ async function fetchDashboardFallback() {
       { auth: true }
     ),
     request(
-      `/admin/banners${buildQuery({ page: 0, size: 1, sort: 'banId', direction: 'DESC' })}`,
+      `/admin/banners${buildQuery({ page: 0, size: 1, sort: pageableSort('banId', 'DESC') })}`,
       { auth: true }
     ),
     request(
@@ -493,9 +500,12 @@ export const adminApi = {
     sort = 'affiliateId',
     direct = 'DESC',
   } = {}) =>
-    request(`/admin/affiliates${buildQuery({ page, size, sort, direct })}`, {
-      auth: true,
-    }),
+    request(
+      `/admin/affiliates${buildQuery({ page, size, sort: pageableSort(sort, direct) })}`,
+      {
+        auth: true,
+      }
+    ),
   getAffiliateDetail: (affiliateId) =>
     request(`/admin/affiliates/${affiliateId}`, { auth: true }),
   createAffiliate: (body) =>
@@ -522,14 +532,14 @@ export const adminApi = {
   // banners
   getBanners: ({ page = 0, size = 10, sort = 'banId', direct = 'DESC' } = {}) =>
     request(
-      `/admin/banners${buildQuery({ page, size, sort, direction: direct })}`,
+      `/admin/banners${buildQuery({ page, size, sort: pageableSort(sort, direct) })}`,
       {
         auth: true,
       }
     ),
   getBannerDetail: async (banId) => {
     const data = await request(
-      `/admin/banners${buildQuery({ page: 0, size: 200, sort: 'banId', direction: 'DESC' })}`,
+      `/admin/banners${buildQuery({ page: 0, size: 200, sort: pageableSort('banId', 'DESC') })}`,
       { auth: true }
     );
     const items = data?.content ?? [];

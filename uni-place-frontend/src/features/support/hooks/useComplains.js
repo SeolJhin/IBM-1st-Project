@@ -24,30 +24,33 @@ export function useComplains(initialParams = {}, options = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchComplains = useCallback(async (fetchParams) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = isAdmin
-        ? await supportApi.getComplains(fetchParams)
-        : await supportApi.getMyComplains(fetchParams);
+  const fetchComplains = useCallback(
+    async (fetchParams) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = isAdmin
+          ? await supportApi.getComplains(fetchParams)
+          : await supportApi.getMyComplains(fetchParams);
 
-      setComplains(data?.content ?? []);
-      setPagination({
-        page: data?.page ?? fetchParams.page,
-        size: data?.size ?? fetchParams.size,
-        totalElements: data?.totalElements ?? 0,
-        totalPages: data?.totalPages ?? 0,
-        isFirst: (data?.page ?? fetchParams.page) === 1,
-        isLast: (data?.page ?? fetchParams.page) >= (data?.totalPages ?? 1),
-      });
-    } catch (err) {
-      setError(err?.message || '민원 목록을 불러오는 데 실패했습니다.');
-      setComplains([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [isAdmin]);
+        setComplains(data?.content ?? []);
+        setPagination({
+          page: data?.page ?? fetchParams.page,
+          size: data?.size ?? fetchParams.size,
+          totalElements: data?.totalElements ?? 0,
+          totalPages: data?.totalPages ?? 0,
+          isFirst: (data?.page ?? fetchParams.page) === 1,
+          isLast: (data?.page ?? fetchParams.page) >= (data?.totalPages ?? 1),
+        });
+      } catch (err) {
+        setError(err?.message || '민원 목록을 불러오지 못했습니다.');
+        setComplains([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [isAdmin]
+  );
 
   useEffect(() => {
     fetchComplains(params);

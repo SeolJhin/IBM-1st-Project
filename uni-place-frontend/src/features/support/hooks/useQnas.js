@@ -1,9 +1,4 @@
 // features/support/hooks/useQnas.js
-// QnA 목록 조회 + 페이징 (인증 필요)
-//
-// [사용 예시]
-// const { qnas, pagination, loading, error, goToPage } = useQnas();
-
 import { useCallback, useEffect, useState } from 'react';
 import { supportApi } from '../api/supportApi';
 
@@ -28,31 +23,31 @@ export function useQnas(initialParams = {}, options = {}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchQnas = useCallback(async (fetchParams) => {
-    if (!enabled) return;
-    setLoading(true);
-    setError(null);
-    try {
-      // PageResponse<QnaResponse>
-      // 필드: qnaId, parentId, qnaTitle, userId, qnaSt, readCount,
-      //       qnaCtnt, code, fileCk, replyCk, groupId, qnaLev, createdAt, updatedAt
-      const data = await supportApi.getQnas(fetchParams);
-      setQnas(data?.content ?? []);
-      setPagination({
-        page: data?.page ?? fetchParams.page,
-        size: data?.size ?? fetchParams.size,
-        totalElements: data?.totalElements ?? 0,
-        totalPages: data?.totalPages ?? 0,
-        isFirst: (data?.page ?? fetchParams.page) === 1,
-        isLast: (data?.page ?? fetchParams.page) >= (data?.totalPages ?? 1),
-      });
-    } catch (err) {
-      setError(err?.message || 'QnA 목록을 불러오는 데 실패했습니다.');
-      setQnas([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [enabled]);
+  const fetchQnas = useCallback(
+    async (fetchParams) => {
+      if (!enabled) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await supportApi.getQnas(fetchParams);
+        setQnas(data?.content ?? []);
+        setPagination({
+          page: data?.page ?? fetchParams.page,
+          size: data?.size ?? fetchParams.size,
+          totalElements: data?.totalElements ?? 0,
+          totalPages: data?.totalPages ?? 0,
+          isFirst: (data?.page ?? fetchParams.page) === 1,
+          isLast: (data?.page ?? fetchParams.page) >= (data?.totalPages ?? 1),
+        });
+      } catch (err) {
+        setError(err?.message || 'QnA 목록을 불러오지 못했습니다.');
+        setQnas([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [enabled]
+  );
 
   useEffect(() => {
     if (!enabled) return;
@@ -80,7 +75,7 @@ export function useQnas(initialParams = {}, options = {}) {
   }, [enabled, fetchQnas, params]);
 
   return {
-    qnas, // QnaResponse[]
+    qnas,
     pagination,
     loading,
     error,
