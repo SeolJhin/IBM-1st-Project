@@ -38,6 +38,19 @@ public interface UploadFileRepository extends JpaRepository<UploadFile, Integer>
     // ✅ Soft Delete (기존 그대로)
     // =========================
 
+    // ✅ 목록 조회 N+1 방지용: parentType + parentIds IN 쿼리
+    @Query("""
+        select f from UploadFile f
+         where f.fileParentType = :parentType
+           and f.fileParentId in :parentIds
+           and f.deleteYn = 'N'
+         order by f.fileId desc
+    """)
+    List<UploadFile> findActiveByParentTypeAndParentIds(
+            @Param("parentType") String parentType,
+            @Param("parentIds") List<Integer> parentIds
+    );
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
         update UploadFile f

@@ -730,10 +730,16 @@
 .bqcHeader {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 14px;
   padding-bottom: 12px;
   border-bottom: 1px solid #f0e8d4;
+}
+.bqcHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .bqcIcon {
   font-size: 18px;
@@ -771,8 +777,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-top: 14px;
-  padding: 8px 16px;
+  padding: 6px 14px;
   background: #faf5ec;
   border: 1.5px solid #e8d9bb;
   border-radius: 10px;
@@ -796,8 +801,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-top: 14px;
-  padding: 8px 16px;
+  padding: 6px 14px;
   background: #faf5ec;
   border: 1.5px solid #e8d9bb;
   border-radius: 10px;

@@ -2,6 +2,8 @@
 package org.myweb.uniplace.domain.property.application;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Set;
 
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
@@ -65,18 +67,16 @@ public class BuildingServiceImpl implements BuildingService {
     @Transactional(readOnly = true)
     public Page<BuildingSummaryResponse> searchPage(Pageable pageable) {
         Page<Building> page = buildingRepository.findAllByDeleteYn("N", pageable);
+        List<Integer> buildingIds = page.getContent().stream()
+                .map(Building::getBuildingId).toList();
+        Map<Integer, List<FileResponse>> filesMap =
+                fileService.getActiveFilesMap(FileRefType.BUILDING.dbValue(), buildingIds);
+
         return page.map(b -> {
-            List<FileResponse> files =
-                    fileService.getActiveFiles(FileRefType.BUILDING.dbValue(), b.getBuildingId());
-            FileResponse firstImage = null;
-            if (files != null) {
-                for (FileResponse f : files) {
-                    if (f != null && isImageExt(f.getFileType())) {
-                        firstImage = f;
-                        break;
-                    }
-                }
-            }
+            List<FileResponse> files = filesMap.getOrDefault(b.getBuildingId(), List.of());
+            FileResponse firstImage = files.stream()
+                    .filter(f -> f != null && isImageExt(f.getFileType()))
+                    .findFirst().orElse(null);
             Integer thumbId  = (firstImage != null ? firstImage.getFileId()  : null);
             String  thumbUrl = (firstImage != null ? firstImage.getViewUrl() : null);
             return BuildingSummaryResponse.fromEntity(b, thumbId, thumbUrl);
