@@ -17,8 +17,11 @@ function fmt(price) {
   return price == null ? '0' : Number(price).toLocaleString('ko-KR');
 }
 
+const ORDER_SERVICE_GOODS_ID = 1;
+
 async function prepareKakaoPay(orderId) {
   const res = await api.post('/payments/prepare', {
+    serviceGoodsId: ORDER_SERVICE_GOODS_ID,
     orderId,
     provider: 'KAKAO',
   });
