@@ -94,6 +94,8 @@ public class ReplyServiceImpl implements ReplyService {
         Board board = boardRepository.findById(boardId)
             .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));
 
+        String anonymity = nvlYn(request.getAnonymity(), "N");
+
         Reply reply = Reply.builder()
             .boardId(boardId)
             .userId(userId)
@@ -101,6 +103,7 @@ public class ReplyServiceImpl implements ReplyService {
             .parentId(null)
             .replyLev(1)
             .replySeq(1)
+            .anonymity(anonymity)
             .build();
 
         Reply saved = replyRepository.save(reply);
@@ -137,6 +140,8 @@ public class ReplyServiceImpl implements ReplyService {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
+        String anonymity = nvlYn(request.getAnonymity(), "N");
+
         Reply child = Reply.builder()
             .boardId(boardId)
             .userId(userId)
@@ -144,6 +149,7 @@ public class ReplyServiceImpl implements ReplyService {
             .parentId(parentId)
             .replyLev(2)
             .replySeq(1)
+            .anonymity(anonymity)
             .build();
 
         Reply saved = replyRepository.save(child);
@@ -217,6 +223,11 @@ public class ReplyServiceImpl implements ReplyService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String nvlYn(String v, String def) {
+        if (v == null || v.isBlank()) return def;
+        return "Y".equalsIgnoreCase(v) ? "Y" : "N";
     }
 
     private String requireCurrentUserId() {

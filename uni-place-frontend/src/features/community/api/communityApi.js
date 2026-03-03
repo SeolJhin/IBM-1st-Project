@@ -148,9 +148,10 @@ export const communityApi = {
   getChildReplies: (boardId, parentId) =>
     request(`/boards/${boardId}/replies/${parentId}/children`, { auth: false }),
 
-  createReply: (boardId, { replyCtnt } = {}) => {
+  createReply: (boardId, { replyCtnt, anonymity = 'N' } = {}) => {
     const formData = new FormData();
     formData.append('replyCtnt', replyCtnt ?? '');
+    formData.append('anonymity', anonymity);
     return requestForm(`/boards/${boardId}/replies`, {
       method: 'POST',
       formData,
@@ -158,9 +159,14 @@ export const communityApi = {
     });
   },
 
-  createChildReply: (boardId, parentId, { replyCtnt } = {}) => {
+  createChildReply: (
+    boardId,
+    parentId,
+    { replyCtnt, anonymity = 'N' } = {}
+  ) => {
     const formData = new FormData();
     formData.append('replyCtnt', replyCtnt ?? '');
+    formData.append('anonymity', anonymity);
     return requestForm(`/boards/${boardId}/replies/${parentId}/children`, {
       method: 'POST',
       formData,
@@ -180,4 +186,18 @@ export const communityApi = {
 
   deleteReply: (replyId) =>
     request(`/replies/${replyId}`, { method: 'DELETE', auth: true }),
+
+  // 게시글 좋아요
+  likeBoard: (boardId) =>
+    request(`/boards/${boardId}/likes`, { method: 'POST', auth: true }),
+
+  unlikeBoard: (boardId) =>
+    request(`/boards/${boardId}/likes`, { method: 'DELETE', auth: true }),
+
+  // 댓글 좋아요
+  likeReply: (replyId) =>
+    request(`/replies/${replyId}/likes`, { method: 'POST', auth: true }),
+
+  unlikeReply: (replyId) =>
+    request(`/replies/${replyId}/likes`, { method: 'DELETE', auth: true }),
 };

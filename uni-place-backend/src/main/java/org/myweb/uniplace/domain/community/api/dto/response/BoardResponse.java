@@ -17,8 +17,8 @@ public class BoardResponse {
     private Integer boardId;
     private String boardTitle;
 
-    // ✅ 익명글이면 "익명"
-    private String userId;
+    private String userId;       // 익명이면 "익명(글쓴이)", 아니면 실제 userId
+    private String realUserId;   // 항상 실제 userId (본인 여부 판단용, 클라이언트에서만 사용)
 
     private String boardCtnt;
 
@@ -32,10 +32,7 @@ public class BoardResponse {
     private String fileCk;
     private String replyCk;
 
-    // ✅ 좋아요 합계
     private long likeCount;
-
-    // ✅ 내가 좋아요 눌렀는지
     private boolean likedByMe;
 
     private LocalDateTime createdAt;
@@ -44,12 +41,13 @@ public class BoardResponse {
     private List<FileResponse> files;
 
     public static BoardResponse fromEntity(Board e, List<FileResponse> files, long likeCount, boolean likedByMe) {
-        String writer = e.isAnonymous() ? "익명" : e.getUserId();
+        String writer = e.isAnonymous() ? "익명(글쓴이)" : e.getUserId();
 
         return BoardResponse.builder()
                 .boardId(e.getBoardId())
                 .boardTitle(e.getBoardTitle())
                 .userId(writer)
+                .realUserId(e.getUserId())   // 항상 실제 userId
                 .boardCtnt(e.getBoardCtnt())
                 .readCount(e.getReadCount())
                 .code(e.getCode())

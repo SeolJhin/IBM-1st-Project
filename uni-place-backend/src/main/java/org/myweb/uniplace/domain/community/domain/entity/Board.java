@@ -25,7 +25,7 @@ public class Board {
     @Column(name = "user_id", nullable = false, length = 50)
     private String userId;
 
-    @Column(name = "board_ctnt", length = 3000)
+    @Column(name = "board_ctnt", columnDefinition = "LONGTEXT")
     private String boardCtnt;
 
     @Column(name = "created_at", nullable = false)

@@ -1,217 +1,577 @@
+/* ── 레이아웃 ─────────────────────────────────────────────── */
 .page {
   min-height: 100vh;
-  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  background: #f5f6fa;
 }
-
 .main {
-  max-width: 1080px;
+  flex: 1;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 24px 20px 48px;
+  width: 100%;
+  padding: 40px 24px 80px;
 }
 
+/* ── 헤더 ─────────────────────────────────────────────────── */
 .head {
-  margin-bottom: 16px;
+  margin-bottom: 28px;
 }
-
 .title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 6px;
+}
+.sub {
+  font-size: 14px;
+  color: #6b7280;
   margin: 0;
-  font-size: 28px;
-  font-weight: 800;
-  color: #111827;
 }
 
-.sub {
-  margin: 8px 0 0;
-  color: #4b5563;
+/* ── 탭 + 글쓰기 버튼 ─────────────────────────────────────── */
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
 }
 
 .tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
 .tabBtn {
-  height: 36px;
-  padding: 0 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 999px;
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1.5px solid #d1d5db;
   background: #fff;
   color: #374151;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  font-weight: 600;
+  transition: all 0.18s;
 }
-
+.tabBtn:hover {
+  border-color: #111;
+  color: #111;
+}
 .tabBtnActive {
-  background: #111827;
-  border-color: #111827;
-  color: #fff;
-}
-
-.writerBar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 12px;
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
 }
 
 .writeToggleBtn {
-  height: 36px;
-  padding: 0 14px;
-  border: 1px solid #111827;
-  border-radius: 8px;
-  background: #111827;
+  padding: 9px 22px;
+  background: #111;
   color: #fff;
-  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s;
+  flex-shrink: 0;
+}
+.writeToggleBtn:hover {
+  background: #333;
 }
 
+/* ── 글쓰기 폼 ────────────────────────────────────────────── */
 .writerBox {
   background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 28px 28px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .writerRow {
-  display: grid;
-  grid-template-columns: 72px 1fr;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.writerRowContent {
+  align-items: flex-start;
 }
 
 .writerLabel {
+  width: 48px;
+  font-size: 13px;
+  font-weight: 600;
   color: #374151;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.writerSelect,
-.writerInput,
-.writerTextarea {
-  width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 14px;
-  background: #fff;
+  padding-top: 9px;
+  flex-shrink: 0;
 }
 
 .writerFixed {
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 8px 10px;
-  background: #f8fafc;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  background: #f3f4f6;
+  border-radius: 7px;
+  font-size: 13px;
   color: #374151;
-  font-size: 14px;
+  font-weight: 500;
 }
 
-.writerTextarea {
-  resize: vertical;
+.writerSelect {
+  padding: 7px 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+}
+.writerSelect:focus {
+  border-color: #111;
+}
+
+.writerInput {
+  flex: 1;
+  padding: 9px 13px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 7px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+}
+.writerInput:focus {
+  border-color: #111;
+}
+
+.editorWrapper {
+  flex: 1;
+}
+
+.editorFooter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 8px 0 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+.imgInsertBtn {
+  padding: 6px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.imgInsertBtn:hover {
+  border-color: #111;
+}
+
+.imgCount {
+  font-size: 12px;
+  color: #6b7280;
 }
 
 .writerActions {
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.cancelWriteBtn {
+  padding: 9px 22px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.cancelWriteBtn:hover {
+  border-color: #111;
 }
 
 .submitBtn {
-  height: 36px;
-  padding: 0 14px;
-  border: 1px solid #1d4ed8;
-  border-radius: 8px;
-  background: #2563eb;
+  padding: 9px 28px;
+  background: #111;
   color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: 700;
+  transition: background 0.18s;
 }
-
+.submitBtn:hover {
+  background: #333;
+}
 .submitBtn:disabled {
-  opacity: 0.5;
+  background: #9ca3af;
   cursor: not-allowed;
 }
 
-.error {
-  margin-bottom: 12px;
-  color: #b91c1c;
+/* ── 리치에디터 ───────────────────────────────────────────── */
+.richEditor {
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
 }
 
-.state {
-  padding: 28px 0;
-  text-align: center;
-  color: #6b7280;
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 10px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  flex-wrap: wrap;
 }
 
-.tableWrap {
+.toolBtn {
+  width: 32px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.toolBtn:hover {
+  background: #e5e7eb;
+}
+
+.toolDivider {
+  width: 1px;
+  height: 20px;
+  background: #d1d5db;
+  margin: 0 4px;
+}
+
+.toolSelect {
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  font-size: 12px;
+  outline: none;
+  background: #fff;
+}
+
+.colorPicker {
+  position: relative;
+}
+.colorSwatchWrap {
+  width: 32px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 700;
+  background: transparent;
+  transition: background 0.12s;
+}
+.colorSwatchWrap:hover {
+  background: #e5e7eb;
+}
+.colorSwatchWrap:hover .colorDropdown {
+  display: grid;
+}
+
+.colorDropdown {
+  display: none;
+  position: absolute;
+  top: 34px;
+  left: 0;
+  grid-template-columns: repeat(3, 22px);
+  gap: 4px;
+  padding: 8px;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+}
+.colorBtn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  cursor: pointer;
+  outline: 1px solid #e5e7eb;
+  padding: 0;
+  transition: transform 0.12s;
+}
+.colorBtn:hover {
+  transform: scale(1.2);
+}
+
+.editorArea {
+  min-height: 180px;
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.7;
+  outline: none;
+  overflow-y: auto;
+}
+.editorArea:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+/* ── 에러 ─────────────────────────────────────────────────── */
+.error {
+  color: #ef4444;
+  font-size: 13px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border-radius: 7px;
+  border: 1px solid #fee2e2;
+}
+
+/* ── 게시글 테이블 ────────────────────────────────────────── */
+.tableWrap {
+  background: #fff;
+  border-radius: 14px;
   overflow: hidden;
+  border: 1.5px solid #e5e7eb;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  padding: 12px 14px;
-  border-bottom: 1px solid #f1f5f9;
-  text-align: left;
   font-size: 14px;
 }
 
-.table th {
-  background: #f8fafc;
-  color: #475569;
-}
-
-.titleCell {
-  color: #111827;
-  font-weight: 600;
-}
-
-.titleBtn {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #111827;
-  font: inherit;
-  font-weight: 600;
+.table thead th {
+  padding: 14px 16px;
+  background: #f9fafb;
   text-align: left;
-  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  border-bottom: 1.5px solid #e5e7eb;
 }
 
+.table thead th:not(:first-child):not(.colType) {
+  text-align: center;
+}
+
+.row {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.12s;
+}
+.row:last-child {
+  border-bottom: none;
+}
+.row:hover {
+  background: #fafafa;
+}
+
+.row td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+/* 분류 열 */
+.colType {
+  width: 80px;
+}
+.colAuthor {
+  width: 100px;
+  text-align: center !important;
+}
+.colDate {
+  width: 110px;
+  text-align: center !important;
+}
+.colNum {
+  width: 72px;
+  text-align: center !important;
+}
+
+/* 타입 배지 */
+.typeBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.type_free {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.type_question {
+  background: #fefce8;
+  color: #ca8a04;
+}
+.type_review {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+.type_notice {
+  background: #fff1f2;
+  color: #e11d48;
+}
+.type_default {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* 제목 */
+.titleCell {
+  max-width: 0;
+}
+.titleBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #111;
+  text-align: left;
+  padding: 0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
+  transition: color 0.15s;
+}
 .titleBtn:hover {
+  color: #2563eb;
   text-decoration: underline;
 }
+.fileIcon {
+  margin-left: 5px;
+  font-size: 12px;
+}
 
+/* 작성자 / 날짜 / 숫자 */
+.authorCell {
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+}
+.dateCell {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+.numCell {
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* 좋아요 버튼 */
+.likeBtn {
+  background: none;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.likeBtn:hover {
+  border-color: #f43f5e;
+  color: #f43f5e;
+  background: #fff1f2;
+}
+.likeBtnActive {
+  border-color: #f43f5e !important;
+  color: #f43f5e !important;
+  background: #fff1f2 !important;
+}
+
+/* ── 상태 메시지 ──────────────────────────────────────────── */
+.state {
+  text-align: center;
+  color: #9ca3af;
+  padding: 60px 0;
+  font-size: 15px;
+}
+
+/* ── 페이지네이션 ─────────────────────────────────────────── */
 .pagination {
-  margin-top: 16px;
   display: flex;
   justify-content: center;
   gap: 6px;
+  margin-top: 28px;
 }
 
 .pageBtn {
-  min-width: 34px;
-  height: 34px;
-  border: 1px solid #d1d5db;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1.5px solid #e5e7eb;
   border-radius: 8px;
   background: #fff;
+  color: #374151;
+  font-size: 14px;
   cursor: pointer;
+  transition: all 0.15s;
 }
-
+.pageBtn:hover:not(:disabled) {
+  border-color: #111;
+  color: #111;
+}
 .pageBtn:disabled {
-  opacity: 0.45;
+  color: #d1d5db;
   cursor: not-allowed;
 }
-
 .pageBtnActive {
-  background: #111827;
-  border-color: #111827;
-  color: #fff;
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+
+/* ── 익명 체크박스 ─────────────────────────────────────── */
+.anonymousRow {
+  display: flex;
+  align-items: center;
+  padding: 4px 0 12px;
+}
+
+.anonymousLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
+
+.anonymousCheck {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #111;
 }
