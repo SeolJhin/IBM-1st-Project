@@ -66,4 +66,22 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     	     order by b.boardId desc
     	""")
     	Page<Board> findByUserIdAndCodeOrderByBoardIdDesc(@Param("userId") String userId, @Param("code") String code, Pageable pageable);
+
+    // 제목 검색
+    @Query("""
+        select b from Board b
+         where (:code is null or b.code = :code)
+           and lower(b.boardTitle) like lower(concat('%', :keyword, '%'))
+         order by b.boardId desc
+    """)
+    Page<Board> searchByTitle(@Param("code") String code, @Param("keyword") String keyword, Pageable pageable);
+
+    // userId 검색
+    @Query("""
+        select b from Board b
+         where (:code is null or b.code = :code)
+           and lower(b.userId) like lower(concat('%', :keyword, '%'))
+         order by b.boardId desc
+    """)
+    Page<Board> searchByUserId(@Param("code") String code, @Param("keyword") String keyword, Pageable pageable);
 }

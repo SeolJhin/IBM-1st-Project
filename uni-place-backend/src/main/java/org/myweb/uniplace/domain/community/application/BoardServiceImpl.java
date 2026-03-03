@@ -13,6 +13,8 @@ import org.myweb.uniplace.domain.community.repository.ReplyRepository;
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.file.application.FileService;
+import org.myweb.uniplace.domain.user.domain.enums.UserStatus;
+import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.PageResponse;
@@ -37,6 +39,7 @@ public class BoardServiceImpl implements BoardService {
     private final ReplyRepository replyRepository;
     private final FileService fileService;
     private final BoardLikeRepository boardLikeRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -158,6 +161,13 @@ public class BoardServiceImpl implements BoardService {
         requireBoardWriteRole(authUser, boardCode);
         String userId = authUser.getUserId();
 
+        // banned 유저는 커뮤니티 글 작성 불가
+        userRepository.findById(userId).ifPresent(user -> {
+            if (user.getUserSt() == UserStatus.banned) {
+                throw new BusinessException(ErrorCode.FORBIDDEN);
+            }
+        });
+
         Board board = Board.builder()
                 .boardTitle(request.getBoardTitle())
                 .boardCtnt(request.getBoardCtnt())
@@ -240,6 +250,29 @@ public class BoardServiceImpl implements BoardService {
         boardRepository.deleteById(boardId);
     }
 
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<BoardResponse> searchBoards(String boardType, String searchType, String keyword, Pageable pageable) {
+        String normalizedCode = normalizeBoardCodeForFilter(boardType);
+        Pageable pageReq = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        String me = tryCurrentUserId();
+
+        Page<Board> page;
+        if ("userId".equalsIgnoreCase(searchType)) {
+            page = boardRepository.searchByUserId(normalizedCode, keyword == null ? "" : keyword, pageReq);
+        } else {
+            // default: title
+            page = boardRepository.searchByTitle(normalizedCode, keyword == null ? "" : keyword, pageReq);
+        }
+
+        Page<BoardResponse> mapped = page.map(b -> {
+            long cnt = boardLikeRepository.countByIdBoardId(b.getBoardId());
+            boolean liked = (me != null) && boardLikeRepository.existsByIdUserIdAndIdBoardId(me, b.getBoardId());
+            return BoardResponse.fromEntity(b, cnt, liked);
+        });
+        return PageResponse.of(mapped);
+    }
 
     private Map<Integer, Long> loadBoardLikeCounts(List<Integer> boardIds) {
         if (boardIds == null || boardIds.isEmpty()) return Map.of();

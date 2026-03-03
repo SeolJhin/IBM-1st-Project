@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.commerce.application;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.myweb.uniplace.domain.commerce.api.dto.request.RoomServiceOrderCreateRequest;
 import org.myweb.uniplace.domain.commerce.api.dto.request.RoomServiceOrderStatusRequest;
 import org.myweb.uniplace.domain.commerce.api.dto.response.RoomServiceOrderResponse;
@@ -13,6 +14,9 @@ import org.myweb.uniplace.domain.commerce.repository.RoomServiceOrderRepository;
 import org.myweb.uniplace.domain.contract.domain.entity.Contract;
 import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 import org.myweb.uniplace.domain.contract.repository.ContractRepository;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
@@ -28,6 +32,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -37,6 +42,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ContractRepository contractRepository;
+    private final NotificationService notificationService;
 
     @Override
     public RoomServiceOrderResponse createOrder(String userId, RoomServiceOrderCreateRequest request) {
@@ -72,6 +78,18 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             .build();
 
         roomServiceOrderRepository.save(roomServiceOrder);
+
+        // 주문 접수 → 어드민 알림
+        try {
+            notificationService.notifyAdmins(
+                NotificationType.ORDER_NEW.name(),
+                "룸서비스 주문이 접수되었습니다. userId=" + userId + ", roomId=" + tenantRoom.getRoomId(),
+                userId, TargetType.notice, null, "/admin/room-service-orders"
+            );
+        } catch (Exception e) {
+            log.warn("[ORDER][NOTIFY][ADMIN] reason={}", e.getMessage());
+        }
+
         return RoomServiceOrderResponse.from(roomServiceOrder);
     }
 
@@ -100,6 +118,19 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_SERVICE_ORDER_NOT_FOUND));
 
         order.updateStatus(request.getOrderSt());
+
+        // 상태 변경 → 유저 알림
+        try {
+            notificationService.notifyUser(
+                order.getUser().getUserId(),
+                NotificationType.ORDER_STATUS.name(),
+                "룸서비스 주문 상태가 변경되었습니다. 상태: " + request.getOrderSt().name(),
+                null, TargetType.notice, null, "/mypage/orders"
+            );
+        } catch (Exception e) {
+            log.warn("[ORDER][NOTIFY] status orderId={} reason={}", orderId, e.getMessage());
+        }
+
         return RoomServiceOrderResponse.from(order);
     }
 

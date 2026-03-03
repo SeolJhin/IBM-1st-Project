@@ -242,6 +242,18 @@ export const adminApi = {
       body: { userRole },
       auth: true,
     }),
+
+  // 관리자 게시글 삭제
+  adminDeleteBoard: (boardId) =>
+    request(`/admin/boards/${boardId}`, { method: 'DELETE', auth: true }),
+
+  // 관리자 댓글 삭제
+  adminDeleteReply: (replyId) =>
+    request(`/admin/replies/${replyId}`, { method: 'DELETE', auth: true }),
+
+  // 관리자 리뷰 삭제
+  adminDeleteReview: (reviewId) =>
+    request(`/admin/reviews/${reviewId}`, { method: 'DELETE', auth: true }),
   getResidents: () => request('/admin/residents', { auth: true }),
 
   // tour reservations

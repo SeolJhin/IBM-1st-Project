@@ -5,6 +5,8 @@ import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
+import { adminApi } from '../../admin/api/adminApi';
+import UserStatusModal from '../../user/components/UserStatusModal';
 import styles from './RoomDetail.module.css';
 import ImageGallery from '../../file/components/ImageGallery';
 import { toApiImageUrl } from '../../file/api/fileApi';
@@ -24,7 +26,7 @@ function StarRating({ value = 0, size = 'md' }) {
   );
 }
 
-function ReviewCard({ review }) {
+function ReviewCard({ review, isAdmin, onUserClick, onAdminDelete }) {
   return (
     <article className={styles.reviewCard}>
       {review.thumbnailUrl && (
@@ -35,12 +37,50 @@ function ReviewCard({ review }) {
       <div className={styles.reviewBody}>
         <div className={styles.reviewTop}>
           <StarRating value={review.rating} size="sm" />
-          <span className={styles.reviewUser}>{review.userId || '익명'}</span>
+          {isAdmin && review.userId ? (
+            <button
+              type="button"
+              onClick={() => onUserClick?.(review.userId)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                color: '#3b82f6',
+                fontWeight: 600,
+                fontSize: 13,
+              }}
+              title="회원 정보/상태 변경"
+            >
+              {review.userId}
+            </button>
+          ) : (
+            <span className={styles.reviewUser}>{review.userId || '익명'}</span>
+          )}
           <span className={styles.reviewDate}>
             {review.createdAt
               ? new Date(review.createdAt).toLocaleDateString('ko-KR')
               : ''}
           </span>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => onAdminDelete?.(review.reviewId)}
+              style={{
+                marginLeft: 'auto',
+                padding: '3px 10px',
+                borderRadius: 6,
+                background: '#fee2e2',
+                color: '#b91c1c',
+                border: '1px solid #fca5a5',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              삭제
+            </button>
+          )}
         </div>
         <h4 className={styles.reviewTitle}>{review.reviewTitle}</h4>
         <p className={styles.reviewCtnt}>
@@ -101,6 +141,7 @@ export default function RoomDetail() {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth(); // ← loading 추가
+  const isAdmin = String(user?.userRole ?? '').toLowerCase() === 'admin';
 
   const [room, setRoom] = useState(null);
   const [showContractModal, setShowContractModal] = useState(false);
@@ -112,6 +153,7 @@ export default function RoomDetail() {
   const [reviewPage, setReviewPage] = useState(1);
   const [reviewTotalPages, setReviewTotalPages] = useState(1);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [userStatusModalId, setUserStatusModalId] = useState(null);
 
   const [spaces, setSpaces] = useState([]);
   const [spacesLoading, setSpacesLoading] = useState(false);
@@ -193,6 +235,16 @@ export default function RoomDetail() {
       return;
     }
     navigate(`/reviews/write?roomId=${roomId}`);
+  };
+
+  const handleAdminDeleteReview = async (reviewId) => {
+    if (!window.confirm('관리자 권한으로 이 리뷰를 삭제할까요?')) return;
+    try {
+      await adminApi.adminDeleteReview(reviewId);
+      fetchReviews(reviewPage);
+    } catch (e) {
+      window.alert(e?.message || '삭제 실패');
+    }
   };
 
   const rentTypeLabel = { monthly_rent: '월세', stay: '단기' };
@@ -544,7 +596,13 @@ export default function RoomDetail() {
           {!reviewLoading && reviews.length > 0 && (
             <div className={styles.reviewList}>
               {reviews.map((r) => (
-                <ReviewCard key={r.reviewId} review={r} />
+                <ReviewCard
+                  key={r.reviewId}
+                  review={r}
+                  isAdmin={isAdmin}
+                  onUserClick={(uid) => setUserStatusModalId(uid)}
+                  onAdminDelete={handleAdminDeleteReview}
+                />
               ))}
             </div>
           )}
@@ -581,6 +639,15 @@ export default function RoomDetail() {
       </div>
 
       <Footer />
+
+      {isAdmin && userStatusModalId && (
+        <UserStatusModal
+          userId={userStatusModalId}
+          currentUserId={user?.userId}
+          onClose={() => setUserStatusModalId(null)}
+          onSaved={() => fetchReviews(reviewPage)}
+        />
+      )}
 
       {/* ── 계약 확인 모달 ── */}
       {showContractModal && (

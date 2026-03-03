@@ -3,7 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { communityApi } from '../api/communityApi';
+import { adminApi } from '../../admin/api/adminApi';
 import { useAuth } from '../../user/hooks/useAuth';
+import UserStatusModal from '../../user/components/UserStatusModal';
 import styles from './BoardDetail.module.css';
 
 function formatDateTime(value) {
@@ -41,21 +43,27 @@ function buildAnonMap(boardRealAuthorId, allReplies) {
   return map;
 }
 
-function displayName(userId, anonymity, anonMap) {
+function displayName(userId, anonymity, anonMap, { isAdmin = false } = {}) {
+  // ✅ 관리자는 익명 마스킹 없이 실제 userId 표시
+  if (isAdmin) return userId ?? '-';
   if (String(anonymity ?? 'N').toUpperCase() === 'Y') {
     return anonMap[userId] ?? '익명';
   }
-  return userId;
+  return userId ?? '-';
 }
 
 /* ── 대댓글 작성 박스 ───────────────────────────────────── */
-function ChildWriteBox({ boardId, parentId, onCreated, onCancel }) {
+function ChildWriteBox({ boardId, parentId, onCreated, onCancel, disabled }) {
   const [text, setText] = useState('');
   const [anon, setAnon] = useState(false);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
   const submit = async () => {
+    if (disabled) {
+      setErr('정지(banned) 상태의 계정은 커뮤니티 글을 작성할 수 없습니다.');
+      return;
+    }
     const v = text.trim();
     if (!v) {
       setErr('내용을 입력해 주세요.');
@@ -85,7 +93,7 @@ function ChildWriteBox({ boardId, parentId, onCreated, onCancel }) {
         onChange={(e) => setText(e.target.value)}
         placeholder="답글을 입력하세요"
         rows={3}
-        disabled={saving}
+        disabled={saving || disabled}
         autoFocus
       />
       {err && <div className={styles.replyErr}>{err}</div>}
@@ -95,7 +103,7 @@ function ChildWriteBox({ boardId, parentId, onCreated, onCancel }) {
             type="checkbox"
             checked={anon}
             onChange={(e) => setAnon(e.target.checked)}
-            disabled={saving}
+            disabled={saving || disabled}
           />
           익명
         </label>
@@ -116,7 +124,7 @@ function ChildWriteBox({ boardId, parentId, onCreated, onCancel }) {
             type="button"
             className={styles.saveBtn}
             onClick={submit}
-            disabled={saving || !text.trim()}
+            disabled={saving || disabled || !text.trim()}
           >
             {saving ? '등록 중…' : '답글 등록'}
           </button>
@@ -134,6 +142,9 @@ function ReplyItem({
   anonMap,
   onRefresh,
   isChild = false,
+  isAdmin = false,
+  disabledWrite = false,
+  onAdminUserClick,
 }) {
   const [reply, setReply] = useState(initialReply);
   const [showChildWrite, setShowChildWrite] = useState(false);
@@ -145,7 +156,9 @@ function ReplyItem({
   const [childLoading, setChildLoading] = useState(false);
 
   const isMine = myUserId && String(reply.userId) === String(myUserId);
-  const authorName = displayName(reply.userId, reply.anonymity, anonMap);
+  const authorName = displayName(reply.userId, reply.anonymity, anonMap, {
+    isAdmin,
+  });
   const isAuthorStyle = authorName === '익명(글쓴이)';
 
   useEffect(() => {
@@ -215,17 +228,44 @@ function ReplyItem({
     }
   };
 
+  const adminDeleteReply = async () => {
+    if (!window.confirm('관리자 권한으로 이 댓글을 삭제할까요?')) return;
+    try {
+      await adminApi.adminDeleteReply(reply.replyId);
+      onRefresh?.();
+    } catch (e) {
+      window.alert(e?.message || '삭제 실패');
+    }
+  };
+
   return (
     <div className={`${styles.replyItem} ${isChild ? styles.childReply : ''}`}>
       {isChild && <span className={styles.childArrow}>↳</span>}
 
       <div className={styles.replyHeader}>
         <div className={styles.replyMeta}>
-          <span
-            className={`${styles.replyAuthor} ${isAuthorStyle ? styles.replyAuthorOwner : ''}`}
-          >
-            {authorName}
-          </span>
+          {isAdmin && reply?.userId ? (
+            <button
+              type="button"
+              className={`${styles.replyAuthor} ${isAuthorStyle ? styles.replyAuthorOwner : ''}`}
+              style={{
+                background: 'transparent',
+                border: 0,
+                padding: 0,
+                cursor: 'pointer',
+              }}
+              onClick={() => onAdminUserClick?.(reply.userId)}
+              title="회원 정보/상태 변경"
+            >
+              {authorName}
+            </button>
+          ) : (
+            <span
+              className={`${styles.replyAuthor} ${isAuthorStyle ? styles.replyAuthorOwner : ''}`}
+            >
+              {authorName}
+            </span>
+          )}
           <span className={styles.replyDate}>
             {formatDateTime(reply.createdAt)}
           </span>
@@ -243,6 +283,12 @@ function ReplyItem({
               type="button"
               className={styles.replyMetaBtn}
               onClick={() => setShowChildWrite((v) => !v)}
+              disabled={disabledWrite}
+              title={
+                disabledWrite
+                  ? '정지(banned) 상태의 계정은 커뮤니티 글을 작성할 수 없습니다.'
+                  : ''
+              }
             >
               💬 답글
             </button>
@@ -267,6 +313,23 @@ function ReplyItem({
                 삭제
               </button>
             </>
+          )}
+          {isAdmin && !editing && (
+            <button
+              type="button"
+              className={`${styles.replyMetaBtn} ${styles.deleteBtn}`}
+              onClick={adminDeleteReply}
+              style={{
+                background: '#fee2e2',
+                color: '#b91c1c',
+                border: '1px solid #fca5a5',
+                borderRadius: 6,
+                padding: '2px 8px',
+                fontSize: 12,
+              }}
+            >
+              🗑 삭제
+            </button>
           )}
         </div>
       </div>
@@ -313,6 +376,7 @@ function ReplyItem({
           parentId={reply.replyId}
           onCreated={handleChildCreated}
           onCancel={() => setShowChildWrite(false)}
+          disabled={disabledWrite}
         />
       )}
 
@@ -335,6 +399,9 @@ function ReplyItem({
                     onRefresh?.();
                   }}
                   isChild
+                  isAdmin={isAdmin}
+                  disabledWrite={disabledWrite}
+                  onAdminUserClick={onAdminUserClick}
                 />
               ))}
             </div>
@@ -372,9 +439,19 @@ export default function BoardDetail() {
   const isLoggedIn = !!user;
   const myUserId = user?.userId ?? '';
 
+  const userRole = String(user?.userRole ?? '').toLowerCase();
+  const isAdmin = userRole === 'admin';
+  const isBanned = String(user?.userSt ?? '').toLowerCase() === 'banned';
+
+  const [userStatusModalId, setUserStatusModalId] = useState(null);
+
   // board.userId는 익명이면 "익명"으로 마스킹됨 → realAuthorId는 별도 보존
   const [realAuthorId, setRealAuthorId] = useState('');
-  const isBoardMine = !!myUserId && !!realAuthorId && myUserId === realAuthorId;
+  const [boardMineViaMe, setBoardMineViaMe] = useState(false);
+  const isBoardMine =
+    !!myUserId &&
+    ((!!realAuthorId && myUserId === realAuthorId) ||
+      (!realAuthorId && boardMineViaMe));
 
   // 익명 번호 맵: 루트 댓글 기준으로 계산
   const anonMap = buildAnonMap(realAuthorId, replies);
@@ -384,12 +461,12 @@ export default function BoardDetail() {
   const loadReplies = useCallback(async () => {
     if (!boardId) return;
     try {
-      const data = await communityApi.getReplies(boardId);
+      const data = await communityApi.getReplies(boardId, { auth: isAdmin });
       setReplies(Array.isArray(data) ? data : []);
     } catch {
       setReplies([]);
     }
-  }, [boardId]);
+  }, [boardId, isAdmin]);
 
   useEffect(() => {
     if (!boardId) {
@@ -405,16 +482,21 @@ export default function BoardDetail() {
     setError('');
 
     communityApi
-      .getBoard(boardId)
+      .getBoard(boardId, { auth: isAdmin })
       .then((data) => {
         if (fetchCount.current !== thisCount) return;
         setBoard(data);
         setLiked(data?.likedByMe ?? false);
         setLikeCount(data?.likeCount ?? 0);
-        // 익명 게시글이면 userId가 "익명"으로 오므로 myUserId와 비교 불가
-        // → anonymity='N'이면 userId 그대로, 'Y'이면 본인 여부는 myUserId 기반으로 처리
-        // 백엔드가 realUserId를 안 내려주므로 일단 anonymity 체크
-        setRealAuthorId(data?.realUserId ?? data?.userId ?? '');
+        // ✅ admin이면 백엔드에서 realUserId(userId) 내려올 수 있음
+        // ✅ 익명 게시글인데 realUserId를 못 받는 경우, /boards/me 목록으로 본인 여부 판별
+        setBoardMineViaMe(false);
+        const nextRealAuthorId =
+          data?.realUserId ??
+          (String(data?.anonymity ?? 'N').toUpperCase() === 'Y'
+            ? ''
+            : (data?.userId ?? ''));
+        setRealAuthorId(nextRealAuthorId);
         return loadReplies();
       })
       .catch((e) => {
@@ -426,12 +508,55 @@ export default function BoardDetail() {
         setLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId]);
+  }, [boardId, isAdmin, loadReplies]);
 
-  /* 게시글 작성자 본인 여부: 비익명이면 userId 비교, 익명이면 수정/삭제 버튼 숨김
-     (익명 게시글 수정은 백엔드에서 JWT로 검증하므로 시도는 가능하나
-      프론트에서는 비익명인 경우에만 버튼 표시) */
-  const showBoardActions = isBoardMine && board?.anonymity !== 'Y';
+  // ✅ 익명 게시글인데 realUserId를 못 받은 경우: 내 작성글 목록(/boards/me)에서 boardId가 있는지로 본인 여부 추정
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    if (!boardId) return;
+    if (String(board?.anonymity ?? 'N').toUpperCase() !== 'Y') return;
+    if (realAuthorId) return;
+
+    let mounted = true;
+    (async () => {
+      try {
+        let p = 1;
+        let total = 1;
+        const size = 50;
+        const limitPages = 10;
+
+        while (p <= total && p <= limitPages) {
+          const pageRes = await communityApi.myBoards({
+            page: p,
+            size,
+            boardType: 'ALL',
+          });
+          const content = Array.isArray(pageRes?.content)
+            ? pageRes.content
+            : [];
+          total = Math.max(1, Number(pageRes?.totalPages ?? 1));
+          const found = content.some(
+            (it) => String(it?.boardId ?? it?.id) === String(boardId)
+          );
+          if (found) {
+            if (mounted) setBoardMineViaMe(true);
+            return;
+          }
+          p += 1;
+        }
+        if (mounted) setBoardMineViaMe(false);
+      } catch {
+        if (mounted) setBoardMineViaMe(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isLoggedIn, boardId, board?.anonymity, realAuthorId]);
+
+  // ✅ 내가 작성한 글이면(익명 포함) 상세에서 수정/삭제 표시
+  const showBoardActions = isBoardMine;
 
   const startBoardEdit = () => {
     setEditTitle(board?.boardTitle ?? '');
@@ -475,6 +600,16 @@ export default function BoardDetail() {
     }
   };
 
+  const adminDeleteBoard = async () => {
+    if (!window.confirm('관리자 권한으로 이 게시글을 삭제할까요?')) return;
+    try {
+      await adminApi.adminDeleteBoard(boardId);
+      navigate('/community');
+    } catch (e) {
+      window.alert(e?.message || '삭제 실패');
+    }
+  };
+
   const handleBoardLike = async () => {
     if (!isLoggedIn) return;
     try {
@@ -488,6 +623,12 @@ export default function BoardDetail() {
   };
 
   const submitReply = async () => {
+    if (isBanned) {
+      setReplyErr(
+        '정지(banned) 상태의 계정은 커뮤니티 글을 작성할 수 없습니다.'
+      );
+      return;
+    }
     const v = replyText.trim();
     if (!v) {
       setReplyErr('내용을 입력해 주세요.');
@@ -511,8 +652,11 @@ export default function BoardDetail() {
   };
 
   /* 게시글 작성자 표시 */
-  const boardAuthorLabel =
-    board?.anonymity === 'Y' ? '익명(글쓴이)' : (board?.userId ?? '');
+  const boardAuthorLabel = isAdmin
+    ? realAuthorId || board?.userId || '-' // 관리자: 실제 userId (realAuthorId 우선)
+    : board?.anonymity === 'Y'
+      ? '익명(글쓴이)'
+      : (board?.userId ?? '-');
 
   return (
     <div className={styles.page}>
@@ -542,13 +686,32 @@ export default function BoardDetail() {
                 <div className={styles.articleInfo}>
                   <span className={styles.infoItem}>
                     ✍{' '}
-                    <span
-                      className={
-                        board?.anonymity === 'Y' ? styles.anonAuthor : ''
-                      }
-                    >
-                      {boardAuthorLabel}
-                    </span>
+                    {isAdmin && (realAuthorId || board?.userId) ? (
+                      <button
+                        type="button"
+                        className={styles.replyAuthor}
+                        style={{
+                          background: 'transparent',
+                          border: 0,
+                          padding: 0,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() =>
+                          setUserStatusModalId(realAuthorId || board.userId)
+                        }
+                        title="회원 정보/상태 변경"
+                      >
+                        {boardAuthorLabel}
+                      </button>
+                    ) : (
+                      <span
+                        className={
+                          board?.anonymity === 'Y' ? styles.anonAuthor : ''
+                        }
+                      >
+                        {boardAuthorLabel}
+                      </span>
+                    )}
                   </span>
                   <span className={styles.infoItem}>
                     🕐 {formatDateTime(board?.createdAt)}
@@ -571,6 +734,25 @@ export default function BoardDetail() {
                         onClick={deleteBoard}
                       >
                         삭제
+                      </button>
+                    </div>
+                  )}
+                  {isAdmin && !boardEditing && (
+                    <div
+                      className={styles.boardActions}
+                      style={{ marginLeft: 8 }}
+                    >
+                      <button
+                        type="button"
+                        className={`${styles.boardEditBtn} ${styles.boardDeleteBtn}`}
+                        onClick={adminDeleteBoard}
+                        style={{
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          borderColor: '#fca5a5',
+                        }}
+                      >
+                        🗑 관리자 삭제
                       </button>
                     </div>
                   )}
@@ -684,10 +866,16 @@ export default function BoardDetail() {
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="댓글을 입력하세요"
                     rows={3}
-                    disabled={replySaving}
+                    disabled={replySaving || isBanned}
                   />
                   {replyErr && (
                     <div className={styles.replyErr}>{replyErr}</div>
+                  )}
+                  {isBanned && !replyErr && (
+                    <div className={styles.replyErr}>
+                      정지(banned) 상태의 계정은 커뮤니티 글을 작성할 수
+                      없습니다.
+                    </div>
                   )}
                   <div className={styles.replyWriteFooter}>
                     <label className={styles.anonLabel}>
@@ -695,7 +883,7 @@ export default function BoardDetail() {
                         type="checkbox"
                         checked={replyAnon}
                         onChange={(e) => setReplyAnon(e.target.checked)}
-                        disabled={replySaving}
+                        disabled={replySaving || isBanned}
                       />
                       익명
                     </label>
@@ -709,7 +897,7 @@ export default function BoardDetail() {
                         type="button"
                         className={styles.replySubmitBtn}
                         onClick={submitReply}
-                        disabled={replySaving || !replyText.trim()}
+                        disabled={replySaving || isBanned || !replyText.trim()}
                       >
                         {replySaving ? '등록 중…' : '댓글 등록'}
                       </button>
@@ -734,6 +922,9 @@ export default function BoardDetail() {
                       myUserId={myUserId}
                       anonMap={anonMap}
                       onRefresh={loadReplies}
+                      isAdmin={isAdmin}
+                      disabledWrite={isBanned}
+                      onAdminUserClick={(uid) => setUserStatusModalId(uid)}
                     />
                   ))}
                 </div>
@@ -743,6 +934,18 @@ export default function BoardDetail() {
         )}
       </main>
       <Footer />
+
+      {isAdmin && userStatusModalId && (
+        <UserStatusModal
+          userId={userStatusModalId}
+          currentUserId={myUserId}
+          onClose={() => setUserStatusModalId(null)}
+          onSaved={() => {
+            // 정지/해제 바로 반영
+            loadReplies();
+          }}
+        />
+      )}
     </div>
   );
 }
