@@ -25,32 +25,32 @@ function typeLabel(code) {
 }
 
 /* ── 익명 번호 매핑 ──────────────────────────────────────────
- * boardRealAuthorId : 게시글 실제 작성자 userId
- * allReplies        : 루트 + 대댓글 전체 flat 배열
- * 반환: { userId → 표시명 }
- *   게시글 작성자      → "익명(글쓴이)"
- *   그 외 댓글 작성자  → 등장 순서로 "익명1", "익명2" ...
+ * 백엔드 ReplyResponse:
+ *   userId     = 비익명이면 닉네임, 익명이면 null
+ *   realUserId = 항상 실제 userId (본인 여부 판단용)
  */
 function buildAnonMap(boardRealAuthorId, allReplies) {
   const map = {};
   if (boardRealAuthorId) map[boardRealAuthorId] = '익명(글쓴이)';
   let counter = 1;
   for (const r of allReplies) {
-    const uid = r.userId;
+    // 익명 댓글은 realUserId를 키로 사용
+    const uid = r.realUserId ?? r.userId;
     if (!uid || map[uid]) continue;
     map[uid] = `익명${counter++}`;
   }
   return map;
 }
 
-function displayName(reply, anonymity, anonMap, { isAdmin = false } = {}) {
-  const userId = reply?.userId;
-  // ✅ 관리자는 익명 마스킹 없이 실제 userId 표시
-  if (isAdmin) return userId ?? '-';
-  if (String(anonymity ?? 'N').toUpperCase() === 'Y') {
-    return anonMap[userId] ?? '익명';
-  }
-  return reply?.userNickname || userId || '-';
+function displayName(item, anonMap, { isAdmin = false } = {}) {
+  const isAnon = String(item?.anonymity ?? 'N').toUpperCase() === 'Y';
+  // 비익명: 백엔드가 userId 필드에 닉네임을 담아서 내려줌
+  if (!isAnon) return item?.userId ?? '-';
+  // 익명 + 관리자: 닉네임(userId) 그대로 표시, 없으면 realUserId
+  if (isAdmin) return item?.userId ?? item?.realUserId ?? '익명';
+  // 익명 + 일반: anonMap으로 번호 매핑
+  const realId = item?.realUserId;
+  return anonMap[realId] ?? '익명';
 }
 
 /* ── 대댓글 작성 박스 ───────────────────────────────────── */
@@ -151,15 +151,18 @@ function ReplyItem({
   const [showChildWrite, setShowChildWrite] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(initialReply.replyCtnt ?? '');
+  const [editAnon, setEditAnon] = useState(
+    String(initialReply.anonymity ?? 'N').toUpperCase() === 'Y'
+  );
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [children, setChildren] = useState([]);
   const [childLoading, setChildLoading] = useState(false);
 
-  const isMine = myUserId && String(reply.userId) === String(myUserId);
-  const authorName = displayName(reply, reply.anonymity, anonMap, {
-    isAdmin,
-  });
+  // 본인 여부: realUserId 기준 (익명 댓글도 수정/삭제 가능해야 함)
+  const isMine =
+    myUserId && String(reply.realUserId ?? reply.userId) === String(myUserId);
+  const authorName = displayName(reply, anonMap, { isAdmin });
   const isAuthorStyle = authorName === '익명(글쓴이)';
 
   useEffect(() => {
@@ -209,8 +212,15 @@ function ReplyItem({
     setSaving(true);
     setErr('');
     try {
-      await communityApi.updateReply(reply.replyId, { replyCtnt: v });
-      setReply((prev) => ({ ...prev, replyCtnt: v }));
+      await communityApi.updateReply(reply.replyId, {
+        replyCtnt: v,
+        anonymity: editAnon ? 'Y' : 'N',
+      });
+      setReply((prev) => ({
+        ...prev,
+        replyCtnt: v,
+        anonymity: editAnon ? 'Y' : 'N',
+      }));
       setEditing(false);
     } catch (e) {
       setErr(e?.message || '수정 실패');
@@ -245,7 +255,7 @@ function ReplyItem({
 
       <div className={styles.replyHeader}>
         <div className={styles.replyMeta}>
-          {isAdmin && reply?.userId ? (
+          {isAdmin && (reply?.realUserId || reply?.userId) ? (
             <button
               type="button"
               className={`${styles.replyAuthor} ${isAuthorStyle ? styles.replyAuthorOwner : ''}`}
@@ -255,7 +265,9 @@ function ReplyItem({
                 padding: 0,
                 cursor: 'pointer',
               }}
-              onClick={() => onAdminUserClick?.(reply.userId)}
+              onClick={() =>
+                onAdminUserClick?.(reply.realUserId ?? reply.userId)
+              }
               title="회원 정보/상태 변경"
             >
               {authorName}
@@ -302,6 +314,9 @@ function ReplyItem({
                 onClick={() => {
                   setEditing(true);
                   setEditText(reply.replyCtnt ?? '');
+                  setEditAnon(
+                    String(reply.anonymity ?? 'N').toUpperCase() === 'Y'
+                  );
                 }}
               >
                 수정
@@ -346,12 +361,24 @@ function ReplyItem({
           />
           {err && <div className={styles.replyErr}>{err}</div>}
           <div className={styles.editBtns}>
+            <label className={styles.anonLabel} style={{ marginRight: 'auto' }}>
+              <input
+                type="checkbox"
+                checked={editAnon}
+                onChange={(e) => setEditAnon(e.target.checked)}
+                disabled={saving}
+              />
+              익명
+            </label>
             <button
               type="button"
               className={styles.cancelBtn}
               onClick={() => {
                 setEditing(false);
                 setErr('');
+                setEditAnon(
+                  String(reply.anonymity ?? 'N').toUpperCase() === 'Y'
+                );
               }}
               disabled={saving}
             >
@@ -434,6 +461,7 @@ export default function BoardDetail() {
   const [boardEditing, setBoardEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
+  const [editBoardAnon, setEditBoardAnon] = useState(false);
   const [boardSaving, setBoardSaving] = useState(false);
   const [boardEditErr, setBoardEditErr] = useState('');
 
@@ -562,6 +590,7 @@ export default function BoardDetail() {
   const startBoardEdit = () => {
     setEditTitle(board?.boardTitle ?? '');
     setEditContent(board?.boardCtnt ?? '');
+    setEditBoardAnon(String(board?.anonymity ?? 'N').toUpperCase() === 'Y');
     setBoardEditErr('');
     setBoardEditing(true);
   };
@@ -577,11 +606,13 @@ export default function BoardDetail() {
       await communityApi.updateBoard(boardId, {
         boardTitle: editTitle.trim(),
         boardCtnt: editContent,
+        anonymity: editBoardAnon ? 'Y' : 'N',
       });
       setBoard((prev) => ({
         ...prev,
         boardTitle: editTitle.trim(),
         boardCtnt: editContent,
+        anonymity: editBoardAnon ? 'Y' : 'N',
       }));
       setBoardEditing(false);
     } catch (e) {
@@ -652,12 +683,13 @@ export default function BoardDetail() {
     }
   };
 
-  /* 게시글 작성자 표시 */
+  /* 게시글 작성자 표시
+   * userId          = 익명이면 "익명(글쓴이)", 비익명이면 닉네임
+   * realUserNickname = 항상 실제 닉네임 (어드민용)
+   */
   const boardAuthorLabel = isAdmin
-    ? realAuthorId || board?.userId || '-' // 관리자: 실제 userId (realAuthorId 우선)
-    : board?.anonymity === 'Y'
-      ? '익명(글쓴이)'
-      : board?.userNickname || board?.userId || '-';
+    ? (board?.realUserNickname ?? board?.realUserId ?? '-') // 어드민: 항상 실제 닉네임
+    : (board?.userId ?? '-'); // 일반: userId가 이미 올바른 표시명
 
   return (
     <div className={styles.page}>
@@ -780,6 +812,18 @@ export default function BoardDetail() {
                     <div className={styles.replyErr}>{boardEditErr}</div>
                   )}
                   <div className={styles.editBtns}>
+                    <label
+                      className={styles.anonLabel}
+                      style={{ marginRight: 'auto' }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={editBoardAnon}
+                        onChange={(e) => setEditBoardAnon(e.target.checked)}
+                        disabled={boardSaving}
+                      />
+                      익명으로 공개
+                    </label>
                     <button
                       type="button"
                       className={styles.cancelBtn}

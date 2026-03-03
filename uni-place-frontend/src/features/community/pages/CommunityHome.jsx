@@ -715,24 +715,21 @@ export default function CommunityHome() {
                         </button>
                       </td>
                       <td className={styles.authorCell}>
-                        {isAdmin && (item?.realUserId || item?.userId) ? (
+                        {isAdmin && item?.realUserId ? (
                           <button
                             type="button"
                             className={styles.titleBtn}
                             onClick={() =>
-                              setUserStatusModalId(
-                                item.realUserId ?? item.userId
-                              )
+                              setUserStatusModalId(item.realUserId)
                             }
                             title="회원 정보/상태 변경"
                           >
-                            {/* 관리자: 익명 여부 관계없이 실제 userId 표시 */}
-                            {item.realUserId ?? item.userId}
+                            {/* 어드민: 항상 실제 닉네임 표시 (익명 여부 무관) */}
+                            {item.realUserNickname ?? item.realUserId}
                           </button>
-                        ) : item?.anonymity === 'Y' ? (
-                          '익명'
                         ) : (
-                          item?.userNickname || item?.userId || '-'
+                          // 일반 유저: userId가 이미 올바른 표시명
+                          <span>{item?.userId ?? '-'}</span>
                         )}
                       </td>
                       <td className={styles.dateCell}>

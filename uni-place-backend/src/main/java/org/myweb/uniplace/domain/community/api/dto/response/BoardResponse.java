@@ -18,8 +18,9 @@ public class BoardResponse {
     private Integer boardId;
     private String boardTitle;
 
-    private String userId;       // 익명이면 "익명(글쓴이)", 아니면 실제 userId
-    private String realUserId;   // 항상 실제 userId (본인 여부 판단용, 클라이언트에서만 사용)
+    private String userId;            // 익명이면 "익명(글쓴이)", 아니면 닉네임
+    private String realUserId;        // 항상 실제 userId (본인 여부 판단용)
+    private String realUserNickname;  // 항상 실제 닉네임 (어드민 표시용)
 
     private String boardCtnt;
 
@@ -42,20 +43,23 @@ public class BoardResponse {
     private List<FileResponse> files;
 
     public static BoardResponse fromEntity(Board e, List<FileResponse> files, long likeCount, boolean likedByMe, User author) {
+        String realNickname = (author != null && author.getUserNickname() != null && !author.getUserNickname().isBlank())
+                ? author.getUserNickname()
+                : e.getUserId();
+
         String displayName;
         if (e.isAnonymous()) {
             displayName = "익명(글쓴이)";
         } else {
-            displayName = (author != null && author.getUserNickname() != null && !author.getUserNickname().isBlank())
-                    ? author.getUserNickname()
-                    : e.getUserId();
+            displayName = realNickname;
         }
 
         return BoardResponse.builder()
                 .boardId(e.getBoardId())
                 .boardTitle(e.getBoardTitle())
                 .userId(displayName)
-                .realUserId(e.getUserId())   // 항상 실제 userId
+                .realUserId(e.getUserId())
+                .realUserNickname(realNickname)   // 어드민용: 항상 실제 닉네임
                 .boardCtnt(e.getBoardCtnt())
                 .readCount(e.getReadCount())
                 .code(e.getCode())
@@ -79,5 +83,10 @@ public class BoardResponse {
 
     public static BoardResponse fromEntity(Board e, long likeCount, boolean likedByMe) {
         return fromEntity(e, null, likeCount, likedByMe, null);
+    }
+
+    // 파일 없이 + User 포함
+    public static BoardResponse fromEntity(Board e, long likeCount, boolean likedByMe, User author) {
+        return fromEntity(e, null, likeCount, likedByMe, author);
     }
 }

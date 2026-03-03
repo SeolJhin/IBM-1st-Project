@@ -123,7 +123,10 @@ export const communityApi = {
   },
 
   myReplies: ({ page = 1, size = 10 } = {}) => {
-    const qs = new URLSearchParams({ page, size });
+    const qs = new URLSearchParams({
+      page: String(Math.max(0, Number(page || 1) - 1)),
+      size: String(size),
+    });
     return request(`/replies/me?${qs}`);
   },
 
@@ -146,15 +149,16 @@ export const communityApi = {
     return requestForm('/boards', { method: 'POST', formData });
   },
 
-  updateBoard: (boardId, { boardTitle, boardCtnt } = {}) => {
+  updateBoard: (boardId, { boardTitle, boardCtnt, anonymity, code } = {}) => {
     const formData = new FormData();
     if (boardTitle != null) formData.append('boardTitle', boardTitle);
     if (boardCtnt != null) formData.append('boardCtnt', boardCtnt);
+    if (anonymity != null) formData.append('anonymity', anonymity);
+    if (code != null) formData.append('code', code);
     return requestForm(`/boards/${boardId}`, { method: 'PUT', formData });
   },
 
-  deleteBoard: (boardId) =>
-    request(`/boards/${boardId}`, { method: 'DELETE', auth: true }),
+  deleteBoard: (boardId) => request(`/boards/${boardId}`, { method: 'DELETE' }),
 
   getReplies: (boardId, { auth = false } = {}) =>
     request(`/boards/${boardId}/replies`, { auth }),
@@ -188,9 +192,10 @@ export const communityApi = {
     });
   },
 
-  updateReply: (replyId, { replyCtnt } = {}) => {
+  updateReply: (replyId, { replyCtnt, anonymity } = {}) => {
     const formData = new FormData();
     formData.append('replyCtnt', replyCtnt ?? '');
+    if (anonymity !== undefined) formData.append('anonymity', anonymity);
     return requestForm(`/replies/${replyId}`, {
       method: 'PUT',
       formData,

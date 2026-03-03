@@ -270,8 +270,7 @@ export default function MyReviewsDetail() {
               }}
               title="회원 정보/상태 변경"
             >
-              {review.userId}
-              {review.userNickname ? ` (${review.userNickname})` : ''}
+              {review.userNickname ?? review.nickname ?? review.userId}
             </button>
           </div>
         )}

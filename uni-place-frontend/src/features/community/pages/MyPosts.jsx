@@ -9,8 +9,6 @@ const BOARD_CATEGORIES = [
   { value: 'ALL', label: '전체' },
   { value: 'FREE', label: '자유' },
   { value: 'QUESTION', label: '질문' },
-  { value: 'REVIEW', label: '후기' },
-  { value: 'MEMBER', label: '인원' },
 ];
 
 // 별점
@@ -174,7 +172,7 @@ export default function MyPosts() {
             <div
               key={r.reviewId}
               className={styles.reviewCard}
-              onClick={() => navigate(`/rooms/${r.roomId}`)}
+              onClick={() => navigate(`/reviews/${r.reviewId}`)}
             >
               {r.thumbnailUrl && (
                 <div className={styles.reviewThumb}>
@@ -216,7 +214,9 @@ export default function MyPosts() {
           <thead>
             <tr>
               <th className={styles.colNum}>번호</th>
-              <th className={styles.colTitle}>제목</th>
+              <th className={styles.colTitle}>
+                {tab === 'replies' ? '댓글 내용' : '제목'}
+              </th>
               <th className={styles.colDate}>날짜</th>
               <th className={styles.colView}>조회</th>
               <th className={styles.colLike}>❤️</th>
@@ -225,20 +225,48 @@ export default function MyPosts() {
           <tbody>
             {items.map((item, idx) => {
               const id = item.boardId ?? item.replyId ?? idx;
-              const title = item.boardTitle ?? item.replyContent ?? '-';
+              // 댓글은 replyCtnt, 게시글은 boardTitle
+              const title =
+                item.boardTitle ??
+                item.replyCtnt ??
+                item.replyContent ??
+                item.content ??
+                '-';
               const date = String(item.createdAt ?? '').slice(0, 10);
               const views = item.readCount ?? item.viewCnt ?? '-';
               const likes = item.likeCount ?? item.likeCnt ?? 0;
+              // 댓글은 해당 게시글로 이동, 게시글은 상세로 이동
+              const targetBoardId =
+                item.boardId ?? (tab === 'boards' ? item.id : null);
               return (
                 <tr
                   key={id}
                   className={styles.row}
-                  onClick={() => navigate(`/community/${item.boardId ?? ''}`)}
+                  onClick={() => {
+                    if (targetBoardId) navigate(`/community/${targetBoardId}`);
+                  }}
+                  style={{
+                    cursor: targetBoardId ? 'pointer' : 'default',
+                  }}
                 >
                   <td className={styles.colNum}>{(page - 1) * 10 + idx + 1}</td>
                   <td className={styles.colTitle}>
-                    {String(title).length > 32
-                      ? String(title).slice(0, 32) + '…'
+                    {tab === 'replies' && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: '#888',
+                          marginRight: 4,
+                          background: '#f3f4f6',
+                          borderRadius: 4,
+                          padding: '1px 5px',
+                        }}
+                      >
+                        💬 댓글
+                      </span>
+                    )}
+                    {String(title).length > 40
+                      ? String(title).slice(0, 40) + '…'
                       : title}
                   </td>
                   <td className={styles.colDate}>{date}</td>
