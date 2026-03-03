@@ -18,7 +18,9 @@ public class TourReservationResponse {
     private Integer tourId;
 
     private Integer buildingId;
+    private String buildingNm;
     private Integer roomId;
+    private Integer roomNo;
 
     private LocalDateTime tourStartAt;
     private LocalDateTime tourEndAt;
@@ -34,7 +36,9 @@ public class TourReservationResponse {
         return TourReservationResponse.builder()
                 .tourId(e.getTourId())
                 .buildingId(e.getBuilding() != null ? e.getBuilding().getBuildingId() : null)
+                .buildingNm(e.getBuilding() != null ? e.getBuilding().getBuildingNm() : null)
                 .roomId(e.getRoom() != null ? e.getRoom().getRoomId() : null)
+                .roomNo(e.getRoom() != null ? e.getRoom().getRoomNo() : null)
                 .tourStartAt(e.getTourStartAt())
                 .tourEndAt(e.getTourEndAt())
                 .tourNm(e.getTourNm())
