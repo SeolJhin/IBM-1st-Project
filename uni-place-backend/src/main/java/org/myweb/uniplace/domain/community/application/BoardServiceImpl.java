@@ -281,9 +281,15 @@ public class BoardServiceImpl implements BoardService {
         boolean isTenant = "tenant".equals(normalized);
         boolean isUser = "user".equals(normalized);
 
-        // 커뮤니티 질문 게시판은 일반회원(user)도 작성 허용
-        if ("BOARD_QUESTION".equalsIgnoreCase(boardCode)) {
+        // 자유 게시판: 로그인한 모든 사용자 (user, tenant, admin) 작성 허용
+        if ("BOARD_FREE".equalsIgnoreCase(boardCode)) {
             if (!isAdmin && !isTenant && !isUser) throw new BusinessException(ErrorCode.FORBIDDEN);
+            return;
+        }
+
+        // 질문 게시판: 입주자(tenant) 및 관리자(admin)만 작성 허용
+        if ("BOARD_QUESTION".equalsIgnoreCase(boardCode)) {
+            if (!isAdmin && !isTenant) throw new BusinessException(ErrorCode.FORBIDDEN);
             return;
         }
 
