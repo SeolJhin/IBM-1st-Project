@@ -38,7 +38,7 @@ export default function QnaWrite() {
 
   const role = normalizeRole(user);
   const isAdmin = role === 'admin';
-  const canCreate = role === 'admin' || role === 'user';
+  const canCreate = role === 'admin' || role === 'tenant';
 
   useEffect(() => {
     if (!isEdit || !isAdmin) {

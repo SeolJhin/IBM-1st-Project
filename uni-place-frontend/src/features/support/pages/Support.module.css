@@ -1,17 +1,25 @@
 .container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 60px 20px 100px;
+  padding: 32px 24px 80px;
 }
 
 .pageTitle {
-  font-size: 26px;
-  font-weight: 800;
-  text-align: center;
-  margin-top: 60px;
-  margin-bottom: 0px;
+  font-size: 24px;
+  font-weight: 700;
   color: var(--text);
+  margin: 0 0 4px;
   letter-spacing: -0.01em;
+}
+
+.pageSub {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+
+.pageHead {
+  margin-bottom: 24px;
 }
 
 .sectionTitle {
@@ -86,7 +94,7 @@
 .table th {
   background: var(--b-5);
   padding: 14px;
-  text-align: left;
+  text-align: center;
   font-weight: 700;
   font-size: 14px;
   border-bottom: 2px solid #a89e8e;
@@ -94,17 +102,10 @@
   letter-spacing: 0.01em;
 }
 
-/* 제목 컬럼 너비 */
-.table th:nth-child(2),
-.table td:nth-child(2) {
-  width: 55%;
-}
-
 .table td {
   padding: 16px 14px;
   border-bottom: 1px solid #c8b0b0;
   font-size: 14px;
-  max-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -152,6 +153,99 @@
   border-radius: 20px;
   font-size: 13px;
   font-weight: 600;
+}
+
+/* ── 글쓰기 버튼 영역 ── */
+.listActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+/* ── 유형 배지 (테이블 내 분류 표시) ── */
+.typeBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* notice */
+.type_notice {
+  background: #fff1f2;
+  color: #e11d48;
+}
+.type_event {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.type_operation {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+.type_policy {
+  background: #fefce8;
+  color: #ca8a04;
+}
+
+/* complain code */
+.type_personal {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+.type_facility {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.type_noise {
+  background: #fff7ed;
+  color: #ea580c;
+}
+.type_contract {
+  background: #fefce8;
+  color: #ca8a04;
+}
+.type_safety {
+  background: #fff1f2;
+  color: #e11d48;
+}
+.type_etc {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* qna code */
+.type_qna_contract {
+  background: #fefce8;
+  color: #ca8a04;
+}
+.type_qna_payment {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.type_qna_facility {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+.type_qna_roomservice {
+  background: #fff7ed;
+  color: #ea580c;
+}
+.type_qna_moveinout {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+/* faq / 공통 */
+.type_general {
+  background: #f3f4f6;
+  color: #374151;
+}
+.type_billing {
+  background: #eff6ff;
+  color: #2563eb;
 }
 
 /* ── 페이지네이션 ── */

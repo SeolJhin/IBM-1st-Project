@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -189,6 +190,9 @@ public class QnaServiceImpl implements QnaService {
         String mapped = mapSupportCode(rawCode);
         if ("ALL".equalsIgnoreCase(mapped)) return DEFAULT_SUPPORT_CODE;
 
+        // QNA_* 도메인 코드는 공통코드 테이블에 없으므로 DB 체크 없이 바로 저장
+        if (mapped.startsWith("QNA_")) return mapped;
+
         return commonCodeRepository.existsByCode(mapped) ? mapped : DEFAULT_SUPPORT_CODE;
     }
 
@@ -198,11 +202,11 @@ public class QnaServiceImpl implements QnaService {
         return switch (normalized) {
             case "SUP_GENERAL", "GENERAL" -> "SUP_GENERAL";
             case "SUP_BILLING", "BILLING" -> "SUP_BILLING";
+            // QNA_* 코드는 그대로 저장
+            case "QNA_CONTRACT", "QNA_PAYMENT", "QNA_FACILITY",
+                 "QNA_ROOMSERVICE", "QNA_MOVEINOUT", "QNA_ETC" -> normalized;
             default -> {
-                if (normalized.startsWith("QNA_")) {
-                    if (normalized.contains("PAY") || normalized.contains("BILL")) yield "SUP_BILLING";
-                    yield "SUP_GENERAL";
-                }
+                if (normalized.startsWith("QNA_")) yield normalized;
                 yield normalized;
             }
         };

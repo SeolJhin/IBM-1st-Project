@@ -13,6 +13,7 @@ import org.myweb.uniplace.domain.notification.application.NotificationService;
 import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentApproveRequest;
+import org.myweb.uniplace.domain.payment.api.dto.request.PaymentPrepareMonthlyBatchRequest;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentPrepareRequest;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentPrepareResponse;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentResponse;
@@ -44,6 +45,9 @@ import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 
 @Service
@@ -59,6 +63,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static final String TARGET_TYPE_ORDER = "order";
     private static final String TARGET_TYPE_MONTHLY_CHARGE = "monthly_charge";
+    private static final String MONTHLY_BATCH_IDEMPOTENCY_PREFIX = "MCB:";
 
     private final PaymentRepository paymentRepository;
     private final PaymentIntentRepository paymentIntentRepository;
@@ -186,8 +191,150 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    public PaymentPrepareResponse prepareMonthlyChargeBatch(String userId, PaymentPrepareMonthlyBatchRequest request) {
+        if (request == null || request.getServiceGoodsId() == null || !hasText(request.getProvider())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        List<Integer> chargeIds = normalizeChargeIds(request.getChargeIds());
+        if (chargeIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        List<MonthlyCharge> charges = new ArrayList<>();
+        List<Integer> payableChargeIds = new ArrayList<>();
+        Integer contractId = null;
+        BigDecimal totalPrice = BigDecimal.ZERO;
+
+        for (Integer chargeId : chargeIds) {
+            MonthlyCharge charge = monthlyChargeRepository.findById(chargeId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
+
+            if (!contractRepository.existsByContractIdAndUser_UserId(charge.getContractId(), userId)) {
+                throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+            }
+
+            String st = String.valueOf(charge.getChargeSt()).toLowerCase();
+            boolean payableStatus = MonthlyCharge.ST_UNPAID.equalsIgnoreCase(st) || "overdue".equals(st);
+            if (!payableStatus) {
+                // 이미 납부된 청구는 제외하고 남은 미납분만 결제 준비
+                continue;
+            }
+
+            if (contractId == null) {
+                contractId = charge.getContractId();
+            } else if (!Objects.equals(contractId, charge.getContractId())) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST);
+            }
+
+            if (charge.getPrice() == null) {
+                throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+            }
+            totalPrice = totalPrice.add(charge.getPrice());
+            charges.add(charge);
+            payableChargeIds.add(chargeId);
+        }
+
+        if (charges.isEmpty()) {
+            throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
+        }
+
+        validateServiceGoodsMapping(request.getServiceGoodsId(), TARGET_TYPE_MONTHLY_CHARGE);
+        String idempotencyKey = MONTHLY_BATCH_IDEMPOTENCY_PREFIX + joinChargeIds(payableChargeIds);
+
+        Payment existing = paymentRepository
+            .findTopByUserIdAndIdempotencyKeyOrderByPaymentIdDesc(userId, idempotencyKey)
+            .orElse(null);
+        if (existing != null) {
+            return buildPrepareResponse(existing);
+        }
+
+        Payment payment = Payment.builder()
+            .userId(userId)
+            .serviceGoodsId(request.getServiceGoodsId())
+            .currency("KRW")
+            .totalPrice(totalPrice)
+            .capturedPrice(BigDecimal.ZERO)
+            .paymentMethodId(request.getPaymentMethodId())
+            .provider(request.getProvider())
+            .merchantUid(IdGenerator.generate("PAY"))
+            .idempotencyKey(idempotencyKey)
+            .targetId(charges.get(0).getChargeId())
+            .targetType(TARGET_TYPE_MONTHLY_CHARGE)
+            .paymentSt(ST_READY)
+            .build();
+
+        try {
+            paymentRepository.save(payment);
+        } catch (DataIntegrityViolationException e) {
+            Payment dup = paymentRepository
+                .findTopByUserIdAndIdempotencyKeyOrderByPaymentIdDesc(userId, idempotencyKey)
+                .orElse(null);
+            if (dup != null) {
+                return buildPrepareResponse(dup);
+            }
+            throw e;
+        }
+
+        return readyPayment(payment, "monthly-rent-batch");
+    }
+
+    @Override
     public PaymentResponse approve(String userId, PaymentApproveRequest request) {
         return approveInternal(userId, request);
+    }
+
+    private PaymentPrepareResponse readyPayment(Payment payment, String itemName) {
+        String providerSlug = payment.getProvider() == null ? "kakao" : payment.getProvider().toLowerCase();
+        String callbackQuery = "?pid=" + payment.getPaymentId()
+            + "&mu=" + URLEncoder.encode(payment.getMerchantUid(), StandardCharsets.UTF_8);
+        String approvalUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/approval" + callbackQuery;
+        String cancelUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/cancel" + callbackQuery;
+        String failUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/fail" + callbackQuery;
+
+        PaymentGateway gateway = paymentGatewayFactory.get(payment.getProvider());
+        PaymentGatewayReadyResponse gwRes = gateway.ready(
+            PaymentGatewayReadyRequest.builder()
+                .paymentId(payment.getPaymentId())
+                .userId(payment.getUserId())
+                .orderId(payment.getMerchantUid())
+                .itemName(itemName)
+                .quantity(1)
+                .totalPrice(payment.getTotalPrice())
+                .taxFreePrice(BigDecimal.ZERO)
+                .approvalUrl(approvalUrl)
+                .cancelUrl(cancelUrl)
+                .failUrl(failUrl)
+                .build()
+        );
+        if (gwRes == null) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+
+        PaymentIntent intent = PaymentIntent.builder()
+            .paymentId(payment.getPaymentId())
+            .provider(payment.getProvider())
+            .intentSt(PaymentIntentStatus.READY_OK)
+            .providerRefId(gwRes.getProviderRefId())
+            .appSchemeUrl(firstNonBlank(
+                gwRes.getRedirectAppUrl(),
+                gwRes.getRedirectMobileUrl(),
+                gwRes.getRedirectPcUrl()
+            ))
+            .returnUrl(approvalUrl)
+            .pgReadyJson(gwRes.getPgReadyJson())
+            .build();
+        paymentIntentRepository.save(intent);
+
+        return PaymentPrepareResponse.builder()
+            .paymentId(payment.getPaymentId())
+            .merchantUid(payment.getMerchantUid())
+            .paymentSt(ST_READY)
+            .providerRefId(gwRes.getProviderRefId())
+            .redirectPcUrl(gwRes.getRedirectPcUrl())
+            .redirectMobileUrl(gwRes.getRedirectMobileUrl())
+            .redirectAppUrl(gwRes.getRedirectAppUrl())
+            .build();
     }
 
     @Override
@@ -424,6 +571,39 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         if (TARGET_TYPE_MONTHLY_CHARGE.equals(payment.getTargetType())) {
+            if (isMonthlyBatchPayment(payment)) {
+                List<Integer> ids = parseMonthlyBatchChargeIds(payment.getIdempotencyKey());
+                if (ids.isEmpty()) {
+                    throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+                }
+                BigDecimal total = BigDecimal.ZERO;
+                for (Integer id : ids) {
+                    MonthlyCharge c = monthlyChargeRepository.findById(id)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
+                    if (c.getPaymentId() != null && !Objects.equals(c.getPaymentId(), payment.getPaymentId())) {
+                        throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
+                    }
+                    if (c.getPrice() == null) {
+                        throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+                    }
+                    total = total.add(c.getPrice());
+                    String st = String.valueOf(c.getChargeSt()).toLowerCase();
+                    if (MonthlyCharge.ST_UNPAID.equalsIgnoreCase(st) || "overdue".equals(st)) {
+                        c.markPaid(payment.getPaymentId());
+                        continue;
+                    }
+                    if (MonthlyCharge.ST_PAID.equalsIgnoreCase(st)
+                        && Objects.equals(c.getPaymentId(), payment.getPaymentId())) {
+                        continue;
+                    }
+                    throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
+                }
+                if (payment.getTotalPrice() == null || total.compareTo(payment.getTotalPrice()) != 0) {
+                    throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+                }
+                return;
+            }
+
             MonthlyCharge charge = monthlyChargeRepository.findById(payment.getTargetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
             if (charge.getPaymentId() != null && !Objects.equals(charge.getPaymentId(), payment.getPaymentId())) {
@@ -456,6 +636,36 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         if (TARGET_TYPE_MONTHLY_CHARGE.equals(payment.getTargetType())) {
+            if (isMonthlyBatchPayment(payment)) {
+                List<Integer> ids = parseMonthlyBatchChargeIds(payment.getIdempotencyKey());
+                if (ids.isEmpty()) {
+                    throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+                }
+                BigDecimal total = BigDecimal.ZERO;
+                for (Integer id : ids) {
+                    MonthlyCharge charge = monthlyChargeRepository.findById(id)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
+                    String st = String.valueOf(charge.getChargeSt()).toLowerCase();
+                    if (!MonthlyCharge.ST_UNPAID.equalsIgnoreCase(st)
+                        && !"overdue".equals(st)
+                        && !(MonthlyCharge.ST_PAID.equalsIgnoreCase(st)
+                        && Objects.equals(charge.getPaymentId(), payment.getPaymentId()))) {
+                        throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
+                    }
+                    if (charge.getPaymentId() != null && !Objects.equals(charge.getPaymentId(), payment.getPaymentId())) {
+                        throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
+                    }
+                    if (charge.getPrice() == null) {
+                        throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+                    }
+                    total = total.add(charge.getPrice());
+                }
+                if (payment.getTotalPrice() == null || total.compareTo(payment.getTotalPrice()) != 0) {
+                    throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+                }
+                return;
+            }
+
             MonthlyCharge charge = monthlyChargeRepository.findById(payment.getTargetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
 
@@ -493,6 +703,47 @@ public class PaymentServiceImpl implements PaymentService {
             }
         }
         return null;
+    }
+
+    private static boolean isMonthlyBatchPayment(Payment payment) {
+        return payment != null
+            && TARGET_TYPE_MONTHLY_CHARGE.equals(payment.getTargetType())
+            && hasText(payment.getIdempotencyKey())
+            && payment.getIdempotencyKey().startsWith(MONTHLY_BATCH_IDEMPOTENCY_PREFIX);
+    }
+
+    private static List<Integer> normalizeChargeIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        LinkedHashSet<Integer> dedup = new LinkedHashSet<>();
+        for (Integer id : ids) {
+            if (id != null && id > 0) dedup.add(id);
+        }
+        return new ArrayList<>(dedup);
+    }
+
+    private static List<Integer> parseMonthlyBatchChargeIds(String idempotencyKey) {
+        if (!hasText(idempotencyKey) || !idempotencyKey.startsWith(MONTHLY_BATCH_IDEMPOTENCY_PREFIX)) {
+            return List.of();
+        }
+        String raw = idempotencyKey.substring(MONTHLY_BATCH_IDEMPOTENCY_PREFIX.length());
+        if (!hasText(raw)) return List.of();
+
+        LinkedHashSet<Integer> out = new LinkedHashSet<>();
+        for (String token : raw.split(",")) {
+            String t = token.trim();
+            if (t.isEmpty()) continue;
+            try {
+                int id = Integer.parseInt(t);
+                if (id > 0) out.add(id);
+            } catch (NumberFormatException ignored) {
+                return List.of();
+            }
+        }
+        return new ArrayList<>(out);
+    }
+
+    private static String joinChargeIds(List<Integer> ids) {
+        return String.join(",", ids.stream().map(String::valueOf).toList());
     }
 
     private PaymentPrepareResponse buildPrepareResponse(Payment payment) {

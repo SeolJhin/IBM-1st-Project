@@ -3,6 +3,24 @@ package org.myweb.uniplace.domain.notification.domain.enums;
 
 public enum NotificationType {
 
+    // ===== contract =====
+    CONTRACT_REQ,   // 계약 신청 (관리자 수신)
+    CONTRACT_CFM,   // 계약 승인 (유저 수신)
+    CONTRACT_CAN,   // 계약 취소/반려 (유저 수신)
+
+    // ===== support (QnA / 민원) =====
+    QNA_NEW,        // QnA 질문 접수 (관리자 수신)
+    QNA_ANSWERED,   // QnA 답변 등록 (질문자 수신)
+    COMP_NEW,       // 민원 접수 (관리자 수신)
+    COMP_REPLIED,   // 민원 답변 (민원인 수신)
+
+    // ===== room service / order =====
+    ORDER_NEW,      // 룸서비스 주문 접수 (관리자 수신)
+    ORDER_STATUS,   // 룸서비스 주문 상태변경 (유저 수신)
+
+    // ===== billing =====
+    BILL_NEW,       // 월 청구서 생성 (유저 수신)
+
     // ===== community =====
     BRD_LIKE,       // 게시글 좋아요
     RPL_LIKE,       // 댓글 좋아요
