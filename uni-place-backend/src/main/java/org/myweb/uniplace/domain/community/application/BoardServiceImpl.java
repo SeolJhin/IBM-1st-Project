@@ -139,8 +139,10 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public BoardResponse getBoardDetail(int boardId) {
-        boardRepository.incrementReadCount(boardId);
+    public BoardResponse getBoardDetail(int boardId, boolean increaseReadCount) {
+        if (increaseReadCount) {
+            boardRepository.incrementReadCount(boardId);
+        }
 
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BOARD_NOT_FOUND));

@@ -11,7 +11,7 @@ public interface BoardService {
 
     PageResponse<BoardResponse> getBoardList(String boardType, Pageable pageable);
 
-    BoardResponse getBoardDetail(int boardId);
+    BoardResponse getBoardDetail(int boardId, boolean increaseReadCount);
 
     void createBoard(BoardCreateRequest request, MultipartFile file);
 

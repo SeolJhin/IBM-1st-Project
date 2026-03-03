@@ -8,6 +8,24 @@ import { useAuth } from '../../user/hooks/useAuth';
 import UserStatusModal from '../../user/components/UserStatusModal';
 import styles from './BoardDetail.module.css';
 
+const READ_COUNT_DEDUPE_MS = 1500;
+
+function shouldIncreaseBoardReadCount(boardId) {
+  if (!boardId) return false;
+
+  const key = `community-board-read:${boardId}`;
+  const now = Date.now();
+
+  try {
+    const prev = Number(sessionStorage.getItem(key) || 0);
+    if (now - prev < READ_COUNT_DEDUPE_MS) return false;
+    sessionStorage.setItem(key, String(now));
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 function formatDateTime(value) {
   if (!value) return '-';
   const d = new Date(value);
@@ -499,7 +517,10 @@ export default function BoardDetail() {
   const reloadBoard = useCallback(async () => {
     if (!boardId) return;
     try {
-      const data = await communityApi.getBoard(boardId, { auth: isAdmin });
+      const data = await communityApi.getBoard(boardId, {
+        auth: isAdmin,
+        increaseReadCount: false,
+      });
       setBoard(data);
       setLiked(data?.likedByMe ?? false);
       setLikeCount(data?.likeCount ?? 0);
@@ -537,9 +558,10 @@ export default function BoardDetail() {
 
     setLoading(true);
     setError('');
+    const increaseReadCount = shouldIncreaseBoardReadCount(boardId);
 
     communityApi
-      .getBoard(boardId, { auth: isAdmin })
+      .getBoard(boardId, { auth: isAdmin, increaseReadCount })
       .then((data) => {
         if (fetchCount.current !== thisCount) return;
         setBoard(data);
