@@ -9,8 +9,6 @@ const BOARD_CATEGORIES = [
   { value: 'ALL', label: '전체' },
   { value: 'FREE', label: '자유' },
   { value: 'QUESTION', label: '질문' },
-  { value: 'REVIEW', label: '후기' },
-  { value: 'MEMBER', label: '인원' },
 ];
 
 // 별점
