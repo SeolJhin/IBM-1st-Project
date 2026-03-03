@@ -4,15 +4,15 @@ import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 
+const CODE_LABEL = {
+  SUP_GENERAL: { label: '일반',     cls: 'type_general' },
+  SUP_BILLING: { label: '요금/정산', cls: 'type_billing' },
+};
+
 function normalizeRole(user) {
   const raw =
-    user?.userRole ??
-    user?.role ??
-    user?.userRl ??
-    user?.user_role ??
-    user?.authority ??
-    user?.authorities?.[0];
-
+    user?.userRole ?? user?.role ?? user?.userRl ??
+    user?.user_role ?? user?.authority ?? user?.authorities?.[0];
   return String(raw ?? '').toLowerCase().replace('role_', '');
 }
 
@@ -23,169 +23,84 @@ export default function FaqList() {
   const [openId, setOpenId] = useState(null);
   const [showWriter, setShowWriter] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [writeForm, setWriteForm] = useState({
-    faqTitle: '',
-    faqCtnt: '',
-    code: 'SUP_GENERAL',
-  });
+  const [writeForm, setWriteForm] = useState({ faqTitle: '', faqCtnt: '', code: 'SUP_GENERAL' });
   const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({
-    faqTitle: '',
-    faqCtnt: '',
-    code: 'SUP_GENERAL',
-  });
+  const [editForm, setEditForm] = useState({ faqTitle: '', faqCtnt: '', code: 'SUP_GENERAL' });
   const [editSubmitting, setEditSubmitting] = useState(false);
 
   const isAdmin = normalizeRole(user) === 'admin';
-
-  const toggle = (id) => setOpenId((prev) => (prev === id ? null : id));
-
-  const handleChange = (field, value) => {
-    setWriteForm((prev) => ({ ...prev, [field]: value }));
-  };
+  const toggle = (id) => setOpenId((p) => (p === id ? null : id));
+  const handleChange = (field, value) => setWriteForm((p) => ({ ...p, [field]: value }));
 
   const startEdit = (faq) => {
-    setEditingId(faq.faqId);
-    setOpenId(faq.faqId);
-    setEditForm({
-      faqTitle: faq.faqTitle ?? '',
-      faqCtnt: faq.faqCtnt ?? '',
-      code: faq.code ?? 'SUP_GENERAL',
-    });
+    setEditingId(faq.faqId); setOpenId(faq.faqId);
+    setEditForm({ faqTitle: faq.faqTitle ?? '', faqCtnt: faq.faqCtnt ?? '', code: faq.code ?? 'SUP_GENERAL' });
   };
+  const cancelEdit = () => { setEditingId(null); setEditForm({ faqTitle: '', faqCtnt: '', code: 'SUP_GENERAL' }); };
 
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditForm({
-      faqTitle: '',
-      faqCtnt: '',
-      code: 'SUP_GENERAL',
-    });
-  };
-
-  const handleCreateFaq = async () => {
-    if (!isAdmin) {
-      alert('관리자만 FAQ를 등록할 수 있습니다.');
-      return;
-    }
-
-    const title = writeForm.faqTitle.trim();
-    const content = writeForm.faqCtnt.trim();
-    if (!title) return alert('제목을 입력해주세요.');
-    if (!content) return alert('내용을 입력해주세요.');
-
+  const handleCreate = async () => {
+    if (!writeForm.faqTitle.trim()) return alert('제목을 입력해주세요.');
+    if (!writeForm.faqCtnt.trim()) return alert('내용을 입력해주세요.');
     setSubmitting(true);
     try {
-      await supportApi.createFaq({
-        faqTitle: title,
-        faqCtnt: content,
-        code: writeForm.code,
-      });
-      setWriteForm({
-        faqTitle: '',
-        faqCtnt: '',
-        code: 'SUP_GENERAL',
-      });
-      setShowWriter(false);
-      await refetch();
-      alert('FAQ가 등록되었습니다.');
-    } catch (e) {
-      alert(e.message || 'FAQ 등록에 실패했습니다.');
-    } finally {
-      setSubmitting(false);
-    }
+      await supportApi.createFaq(writeForm);
+      setWriteForm({ faqTitle: '', faqCtnt: '', code: 'SUP_GENERAL' });
+      setShowWriter(false); await refetch(); alert('FAQ가 등록되었습니다.');
+    } catch (e) { alert(e.message || '등록에 실패했습니다.');
+    } finally { setSubmitting(false); }
   };
 
-  const handleUpdateFaq = async (faqId) => {
-    if (!isAdmin) return;
-    const title = editForm.faqTitle.trim();
-    const content = editForm.faqCtnt.trim();
-    if (!title) return alert('제목을 입력해주세요.');
-    if (!content) return alert('내용을 입력해주세요.');
-
+  const handleUpdate = async (faqId) => {
+    if (!editForm.faqTitle.trim()) return alert('제목을 입력해주세요.');
+    if (!editForm.faqCtnt.trim()) return alert('내용을 입력해주세요.');
     setEditSubmitting(true);
     try {
-      await supportApi.updateFaq(faqId, {
-        faqTitle: title,
-        faqCtnt: content,
-        code: editForm.code,
-      });
-      await refetch();
-      cancelEdit();
-      alert('FAQ가 수정되었습니다.');
-    } catch (e) {
-      alert(e.message || 'FAQ 수정에 실패했습니다.');
-    } finally {
-      setEditSubmitting(false);
-    }
+      await supportApi.updateFaq(faqId, editForm);
+      await refetch(); cancelEdit(); alert('FAQ가 수정되었습니다.');
+    } catch (e) { alert(e.message || '수정에 실패했습니다.');
+    } finally { setEditSubmitting(false); }
   };
 
-  const handleDeleteFaq = async (faqId) => {
-    if (!isAdmin) return;
+  const handleDelete = async (faqId) => {
     if (!window.confirm('FAQ를 삭제하시겠습니까?')) return;
-
     try {
-      await supportApi.deleteFaq(faqId);
-      await refetch();
-      if (editingId === faqId) {
-        cancelEdit();
-      }
-      alert('FAQ가 삭제되었습니다.');
-    } catch (e) {
-      alert(e.message || 'FAQ 삭제에 실패했습니다.');
-    }
+      await supportApi.deleteFaq(faqId); await refetch();
+      if (editingId === faqId) cancelEdit(); alert('FAQ가 삭제되었습니다.');
+    } catch (e) { alert(e.message || '삭제에 실패했습니다.'); }
   };
 
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
-  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
+  if (error)   return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
   return (
     <div className={styles.container}>
+      <div className={styles.pageHead}>
+        <h2 className={styles.pageTitle}>FAQ</h2>
+      </div>
+
       {isAdmin && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <div className={styles.listActions}>
             <button className={styles.buttonPrimary} onClick={() => setShowWriter((v) => !v)}>
-              {showWriter ? '작성 닫기' : 'FAQ 글쓰기'}
+              {showWriter ? '✕ 닫기' : '✏ FAQ 글쓰기'}
             </button>
           </div>
-
           {showWriter && (
             <div className={styles.card} style={{ marginBottom: 16 }}>
               <label className={styles.formLabel}>제목</label>
-              <input
-                className={styles.formInput}
-                value={writeForm.faqTitle}
-                onChange={(e) => handleChange('faqTitle', e.target.value)}
-                maxLength={100}
-                disabled={submitting}
-              />
-
-              <label className={styles.formLabel}>분류 코드</label>
-              <select
-                className={styles.formSelect}
-                value={writeForm.code}
-                onChange={(e) => handleChange('code', e.target.value)}
-                disabled={submitting}
-              >
+              <input className={styles.formInput} value={writeForm.faqTitle}
+                onChange={(e) => handleChange('faqTitle', e.target.value)} maxLength={100} disabled={submitting} />
+              <label className={styles.formLabel}>분류</label>
+              <select className={styles.formSelect} value={writeForm.code}
+                onChange={(e) => handleChange('code', e.target.value)} disabled={submitting}>
                 <option value="SUP_GENERAL">일반</option>
                 <option value="SUP_BILLING">요금/정산</option>
               </select>
-
               <label className={styles.formLabel}>내용</label>
-              <textarea
-                className={styles.formTextarea}
-                value={writeForm.faqCtnt}
-                onChange={(e) => handleChange('faqCtnt', e.target.value)}
-                maxLength={3000}
-                disabled={submitting}
-              />
-
+              <textarea className={styles.formTextarea} value={writeForm.faqCtnt}
+                onChange={(e) => handleChange('faqCtnt', e.target.value)} maxLength={3000} disabled={submitting} />
               <div style={{ marginTop: 12 }}>
-                <button
-                  className={styles.buttonPrimary}
-                  onClick={handleCreateFaq}
-                  disabled={submitting}
-                >
+                <button className={styles.buttonPrimary} onClick={handleCreate} disabled={submitting}>
                   {submitting ? '등록 중...' : '등록'}
                 </button>
               </div>
@@ -203,18 +118,16 @@ export default function FaqList() {
           faqs.map((faq) => {
             const isOpen = openId === faq.faqId;
             const isEditing = editingId === faq.faqId;
+            const codeMeta = CODE_LABEL[faq.code] ?? { label: faq.code ?? '', cls: 'type_general' };
 
             return (
-              <div
-                key={faq.faqId}
-                className={`${styles.accordionItem} ${isOpen ? styles.accordionItemOpen : ''}`}
-              >
-                <button
-                  className={styles.accordionHeader}
-                  onClick={() => toggle(faq.faqId)}
-                  type="button"
-                >
+              <div key={faq.faqId} className={`${styles.accordionItem} ${isOpen ? styles.accordionItemOpen : ''}`}>
+                <button className={styles.accordionHeader} onClick={() => toggle(faq.faqId)} type="button">
                   <span className={styles.accordionQ}>Q</span>
+                  {/* 유형 배지 */}
+                  <span className={`${styles.typeBadge} ${styles[codeMeta.cls]}`} style={{ flexShrink: 0 }}>
+                    {codeMeta.label}
+                  </span>
                   <span className={styles.accordionTitle}>{faq.faqTitle}</span>
                   <span className={styles.accordionIcon}>{isOpen ? '-' : '+'}</span>
                 </button>
@@ -226,79 +139,34 @@ export default function FaqList() {
                       {isEditing ? (
                         <>
                           <label className={styles.formLabel}>제목</label>
-                          <input
-                            className={styles.formInput}
-                            value={editForm.faqTitle}
-                            onChange={(e) =>
-                              setEditForm((prev) => ({ ...prev, faqTitle: e.target.value }))
-                            }
-                            maxLength={100}
-                            disabled={editSubmitting}
-                          />
-
-                          <label className={styles.formLabel}>분류 코드</label>
-                          <select
-                            className={styles.formSelect}
-                            value={editForm.code}
-                            onChange={(e) =>
-                              setEditForm((prev) => ({ ...prev, code: e.target.value }))
-                            }
-                            disabled={editSubmitting}
-                          >
+                          <input className={styles.formInput} value={editForm.faqTitle}
+                            onChange={(e) => setEditForm((p) => ({ ...p, faqTitle: e.target.value }))}
+                            maxLength={100} disabled={editSubmitting} />
+                          <label className={styles.formLabel}>분류</label>
+                          <select className={styles.formSelect} value={editForm.code}
+                            onChange={(e) => setEditForm((p) => ({ ...p, code: e.target.value }))} disabled={editSubmitting}>
                             <option value="SUP_GENERAL">일반</option>
                             <option value="SUP_BILLING">요금/정산</option>
                           </select>
-
                           <label className={styles.formLabel}>내용</label>
-                          <textarea
-                            className={styles.formTextarea}
-                            value={editForm.faqCtnt}
-                            onChange={(e) =>
-                              setEditForm((prev) => ({ ...prev, faqCtnt: e.target.value }))
-                            }
-                            maxLength={3000}
-                            disabled={editSubmitting}
-                          />
-
+                          <textarea className={styles.formTextarea} value={editForm.faqCtnt}
+                            onChange={(e) => setEditForm((p) => ({ ...p, faqCtnt: e.target.value }))}
+                            maxLength={3000} disabled={editSubmitting} />
                           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                            <button
-                              className={styles.buttonPrimary}
-                              type="button"
-                              onClick={() => handleUpdateFaq(faq.faqId)}
-                              disabled={editSubmitting}
-                            >
+                            <button className={styles.buttonPrimary} type="button"
+                              onClick={() => handleUpdate(faq.faqId)} disabled={editSubmitting}>
                               {editSubmitting ? '저장 중...' : '저장'}
                             </button>
-                            <button
-                              className={styles.pageBtn}
-                              type="button"
-                              onClick={cancelEdit}
-                              disabled={editSubmitting}
-                            >
-                              취소
-                            </button>
+                            <button className={styles.pageBtn} type="button" onClick={cancelEdit} disabled={editSubmitting}>취소</button>
                           </div>
                         </>
                       ) : (
                         <p className={styles.accordionContent}>{faq.faqCtnt}</p>
                       )}
-
                       {isAdmin && !isEditing && (
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                          <button
-                            className={styles.buttonPrimary}
-                            type="button"
-                            onClick={() => startEdit(faq)}
-                          >
-                            수정
-                          </button>
-                          <button
-                            className={styles.pageBtn}
-                            type="button"
-                            onClick={() => handleDeleteFaq(faq.faqId)}
-                          >
-                            삭제
-                          </button>
+                          <button className={styles.buttonPrimary} type="button" onClick={() => startEdit(faq)}>수정</button>
+                          <button className={styles.pageBtn} type="button" onClick={() => handleDelete(faq.faqId)}>삭제</button>
                         </div>
                       )}
                     </div>
@@ -312,26 +180,11 @@ export default function FaqList() {
 
       {pagination.totalPages > 1 && (
         <div className={styles.pagination}>
-          <button
-            className={styles.pageBtn}
-            disabled={pagination.isFirst}
-            onClick={() => goToPage(pagination.page - 1)}
-          >
-            이전
-          </button>
-          <span className={styles.pageInfo}>
-            {pagination.page} / {pagination.totalPages}
-          </span>
-          <button
-            className={styles.pageBtn}
-            disabled={pagination.isLast}
-            onClick={() => goToPage(pagination.page + 1)}
-          >
-            다음
-          </button>
+          <button className={styles.pageBtn} disabled={pagination.isFirst} onClick={() => goToPage(pagination.page - 1)}>이전</button>
+          <span className={styles.pageInfo}>{pagination.page} / {pagination.totalPages}</span>
+          <button className={styles.pageBtn} disabled={pagination.isLast} onClick={() => goToPage(pagination.page + 1)}>다음</button>
         </div>
       )}
     </div>
   );
 }
-
