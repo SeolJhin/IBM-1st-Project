@@ -8,18 +8,22 @@ async function request(
   path,
   { method = 'GET', body, headers = {}, auth = false } = {}
 ) {
-  const res = await fetchWithAuthRetry(path, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(auth && getAccessToken()
-        ? { Authorization: `Bearer ${getAccessToken()}` }
-        : {}),
-      ...headers,
+  const res = await fetchWithAuthRetry(
+    path,
+    {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth && getAccessToken()
+          ? { Authorization: `Bearer ${getAccessToken()}` }
+          : {}),
+        ...headers,
+      },
+      credentials: 'same-origin',
+      body: body ? JSON.stringify(body) : undefined,
     },
-    credentials: 'same-origin',
-    body: body ? JSON.stringify(body) : undefined,
-  }, { auth });
+    { auth }
+  );
 
   if (res.status === 204) return null;
 
@@ -38,7 +42,7 @@ async function request(
     const message =
       (api && api.message) ||
       (payload && payload.message) ||
-      (typeof payload === 'string' ? payload : '?붿껌???ㅽ뙣?덉뒿?덈떎.');
+      (typeof payload === 'string' ? payload : '요청에 실패했습니다.');
     const error = new Error(message);
     error.status = res.status;
     error.errorCode = api?.errorCode;
@@ -68,7 +72,7 @@ export const reservationApi = {
     direct = 'DESC',
   }) => {
     const q = buildQuery({ buildingId, date, page, size, sort, direct });
-    // ???섏젙: tenant/濡쒓렇???ъ슜?먮쭔 ?묎렐?섎룄濡?留됲??덉쓣 ???덉쑝???좏겙 ?ы븿
+    // 주의: tenant(입주자) / 로그인한 사용자만 예약 가능하도록 서버에서 권한 검사 포함
     return request(`/space-reservations/spaces${q}`, { auth: true });
   },
 
@@ -101,7 +105,7 @@ export const reservationApi = {
     direct = 'DESC',
   }) => {
     const q = buildQuery({ buildingId, buildingNm, page, size, sort, direct });
-    return request(`/tour-reservations/rooms${q}`); // 怨듦컻 API ?덉긽
+    return request(`/tour-reservations/rooms${q}`); // 공개 API (인증 불필요)
   },
 
   reservableTourSlots: ({ buildingId, roomId, date }) => {
@@ -123,4 +127,3 @@ export const reservationApi = {
   cancelTourReservation: (tourId, body) =>
     request(`/tour-reservations/cancel/${tourId}`, { method: 'PUT', body }),
 };
-

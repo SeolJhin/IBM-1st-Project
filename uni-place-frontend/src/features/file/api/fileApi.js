@@ -26,7 +26,7 @@ function unwrap(res, payload) {
     const msg =
       (api && api.message) ||
       (payload && payload.message) ||
-      'File API request failed';
+      '파일 API 요청에 실패했습니다.';
     const err = new Error(msg);
     err.status = res.status;
     throw err;
@@ -47,7 +47,7 @@ export function toApiImageUrl(url) {
 export const fileApi = {
   /**
    * GET /files?fileParentType=&fileParentId=
-   * 삭제되지 않은 파일 목록 (public)
+   * 삭제되지 않은 파일 목록 (공개)
    */
   getFiles: async (fileParentType, fileParentId) => {
     const url = `${API}/files?fileParentType=${encodeURIComponent(fileParentType)}&fileParentId=${fileParentId}`;
@@ -58,7 +58,7 @@ export const fileApi = {
 
   /**
    * GET /files/admin?fileParentType=&fileParentId=
-   * 삭제된 파일 포함 (admin)
+   * 삭제된 파일 포함 (관리자 전용)
    */
   getFilesAdmin: async (fileParentType, fileParentId) => {
     const token = getToken();
