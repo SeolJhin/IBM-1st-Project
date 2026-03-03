@@ -15,6 +15,10 @@ public class KakaoSignupCompleteRequest {
     @NotBlank(message = "signupToken is required")
     private String signupToken;
 
+    @NotBlank(message = "닉네임(userNickname)은 필수입니다.")
+    @Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다.")
+    private String userNickname;
+
     @NotBlank(message = "userNm is required")
     private String userNm;
 

@@ -56,6 +56,9 @@ export const authApi = {
       body: data,
     }),
 
+  checkNickname: (nickname) =>
+    request(`/auth/check-nickname?nickname=${encodeURIComponent(nickname)}`),
+
   login: ({ userEmail, userPwd, deviceId }) =>
     request('/auth/login', {
       method: 'POST',
@@ -81,16 +84,16 @@ export const authApi = {
       auth: true,
     }),
 
-  kakaoComplete: ({ signupToken, userNm, userBirth, userTel }) =>
+  kakaoComplete: ({ signupToken, userNm, userBirth, userTel, userNickname }) =>
     request('/auth/oauth2/kakao/complete', {
       method: 'POST',
-      body: { signupToken, userNm, userBirth, userTel },
+      body: { signupToken, userNm, userBirth, userTel, userNickname },
     }),
 
-  googleComplete: ({ signupToken, userNm, userBirth, userTel }) =>
+  googleComplete: ({ signupToken, userNm, userBirth, userTel, userNickname }) =>
     request('/auth/oauth2/google/complete', {
       method: 'POST',
-      body: { signupToken, userNm, userBirth, userTel },
+      body: { signupToken, userNm, userBirth, userTel, userNickname },
     }),
 
   me: () => request('/users/me', { auth: true }),

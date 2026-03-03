@@ -14,6 +14,9 @@ public class UserUpdateRequest {
 
     private String userTel;
 
+    @Size(min = 2, max = 20, message = "닉네임은 2자 이상 20자 이하여야 합니다.")
+    private String userNickname;
+
     @Size(min = 8, message = "Current password must be at least 8 characters.")
     private String currentUserPwd;
 

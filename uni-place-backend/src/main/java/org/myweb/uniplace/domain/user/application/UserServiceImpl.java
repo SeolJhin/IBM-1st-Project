@@ -101,6 +101,16 @@ public class UserServiceImpl implements UserService {
             pwdChanged = true;
         }
 
+        String newNickname = req.getUserNickname() == null ? null : req.getUserNickname().trim();
+        if (hasText(newNickname)) {
+            if (!newNickname.equals(user.getUserNickname())) {
+                if (userRepository.existsByUserNickname(newNickname)) {
+                    throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+                }
+                user.changeNickname(newNickname);
+            }
+        }
+
         notifyIfChanged(user, emailChanged, telChanged, pwdChanged);
 
         return UserResponse.from(user);
