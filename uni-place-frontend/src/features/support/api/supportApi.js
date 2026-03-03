@@ -58,7 +58,7 @@ async function request(
     const message =
       (api && api.message) ||
       (payload && payload.message) ||
-      (typeof payload === 'string' ? payload : '?붿껌???ㅽ뙣?덉뒿?덈떎.');
+      (typeof payload === 'string' ? payload : '요청에 실패했습니다.');
     const error = new Error(message);
     error.status = res.status;
     error.errorCode = api?.errorCode;
@@ -180,7 +180,9 @@ export const supportApi = {
       const normalized = normalizeSupportCode(merged.code);
       merged.code = normalized === 'ALL' ? '' : normalized;
     }
-    return request(`/complains${buildQuery(merged)}`);
+    return request(`/complains${buildQuery(merged)}`, {
+      auth: true,
+    });
   },
   getMyComplains: (params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'compId', direct: 'DESC' };

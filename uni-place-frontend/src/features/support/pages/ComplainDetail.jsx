@@ -5,6 +5,7 @@ import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 
 const STATUS_MAP = {
+  received: '접수완료',
   in_progress: '처리중',
   resolved: '처리완료',
 };
@@ -18,9 +19,7 @@ function normalizeRole(user) {
     user?.authority ??
     user?.authorities?.[0];
 
-  return String(raw ?? '')
-    .toLowerCase()
-    .replace('role_', '');
+  return String(raw ?? '').toLowerCase().replace('role_', '');
 }
 
 export default function ComplainDetail() {
@@ -30,7 +29,7 @@ export default function ComplainDetail() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [statusValue, setStatusValue] = useState('in_progress');
+  const [statusValue, setStatusValue] = useState('received');
   const [statusSubmitting, setStatusSubmitting] = useState(false);
 
   const isAdmin = normalizeRole(user) === 'admin';
@@ -41,7 +40,7 @@ export default function ComplainDetail() {
       .getComplainDetail(id)
       .then((res) => {
         setData(res);
-        setStatusValue(res?.compSt ?? 'in_progress');
+        setStatusValue(res?.compSt ?? 'received');
       })
       .catch((err) =>
         setError(err.message || '민원 정보를 불러오는 데 실패했습니다.')
@@ -49,7 +48,7 @@ export default function ComplainDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
+  if (loading) return <div style={{ padding: 24 }}>로딩중..</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
   if (!data) return null;
 
@@ -103,9 +102,15 @@ export default function ComplainDetail() {
           </span>
         </div>
 
-        <div className={styles.cardMeta} style={{ marginBottom: 24 }}>
+        <div className={styles.cardMeta} style={{ marginBottom: 8 }}>
           {data.createdAt ? data.createdAt.slice(0, 10) : '-'}
         </div>
+        {isAdmin && (
+          <div className={styles.cardMeta} style={{ marginBottom: 24 }}>
+            작성자 ID: {data.userId || '-'}
+          </div>
+        )}
+        {!isAdmin && <div style={{ marginBottom: 24 }} />}
 
         <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{data.compCtnt}</div>
 
@@ -119,6 +124,7 @@ export default function ComplainDetail() {
                 disabled={statusSubmitting}
                 style={{ maxWidth: 180 }}
               >
+                <option value="received">접수완료</option>
                 <option value="in_progress">처리중</option>
                 <option value="resolved">처리완료</option>
               </select>
@@ -127,7 +133,7 @@ export default function ComplainDetail() {
                 onClick={handleUpdateStatus}
                 disabled={statusSubmitting}
               >
-                {statusSubmitting ? '변경 중...' : '처리상태 변경'}
+                {statusSubmitting ? '변경 중..' : '처리상태 변경'}
               </button>
             </div>
 
@@ -156,4 +162,3 @@ export default function ComplainDetail() {
     </div>
   );
 }
-

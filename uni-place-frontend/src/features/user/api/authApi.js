@@ -37,7 +37,7 @@ async function request(
       (api && api.message) ||
       (payload && payload.message) ||
       (typeof payload === 'string' ? payload : null);
-    const error = new Error(rawMessage || 'Request failed.');
+    const error = new Error(rawMessage || '요청에 실패했습니다.');
     error.status = res.status;
     error.errorCode = api?.errorCode;
     error.data = payload;
