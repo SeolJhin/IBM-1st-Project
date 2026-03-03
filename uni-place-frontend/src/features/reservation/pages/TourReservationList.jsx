@@ -31,7 +31,12 @@ function TourCard({ item, onCancel }) {
     <div className={styles.card}>
       <div className={styles.cardTop}>
         <div>
-          <p className={styles.cardRoomId}>방 #{item.roomId ?? '-'}</p>
+          {item.buildingNm && (
+            <p className={styles.cardBuilding}>🏢 {item.buildingNm}</p>
+          )}
+          <p className={styles.cardRoomId}>
+            {item.roomNo ? `${item.roomNo}호` : `방 #${item.roomId ?? '-'}`}
+          </p>
           <p className={styles.cardTime}>
             {formatDt(startAt)} ~ {formatDt(endAt).slice(11)}
           </p>

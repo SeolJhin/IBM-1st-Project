@@ -54,6 +54,22 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional(readOnly = true)
+    public PageResponse<ReviewResponse> getAllReviews(Pageable pageable) {
+        Pageable pageReq = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        Page<Review> page = reviewRepository.findAllByOrderByReviewIdDesc(pageReq);
+
+        Page<ReviewResponse> mapped = page.map(r -> {
+            List<FileResponse> files = loadThumbnailOnly(r);
+            Room room = roomRepository.findById(r.getRoomId()).orElse(null);
+            User author = userRepository.findById(r.getUserId()).orElse(null);
+            return ReviewResponse.fromEntity(r, files, room, author);
+        });
+
+        return PageResponse.of(mapped);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PageResponse<ReviewResponse> getReviewListByRoom(Integer roomId, Pageable pageable) {
         Pageable pageReq = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<Review> page = reviewRepository.findByRoomIdOrderByReviewIdDesc(roomId, pageReq);

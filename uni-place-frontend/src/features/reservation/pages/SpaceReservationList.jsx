@@ -28,7 +28,9 @@ function SpaceCard({ item, onCancel }) {
     <div className={styles.card}>
       <div className={styles.cardTop}>
         <div>
-          <p className={styles.cardSpaceId}>공용공간 #{item.spaceId ?? '-'}</p>
+          <p className={styles.cardSpaceId}>
+            {item.spaceNm ?? `공용공간 #${item.spaceId ?? '-'}`}
+          </p>
           <p className={styles.cardTime}>
             {fmt(startAt)} ~ {fmt(endAt).slice(11)}
           </p>
@@ -41,9 +43,6 @@ function SpaceCard({ item, onCancel }) {
         </span>
         {item.buildingNm && (
           <span className={styles.metaItem}>🏢 {item.buildingNm}</span>
-        )}
-        {item.spaceNm && (
-          <span className={styles.metaItem}>🛋️ {item.spaceNm}</span>
         )}
       </div>
       <div className={styles.cardBottom}>

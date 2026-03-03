@@ -13,6 +13,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface ReviewService {
 
+    /** 전체 리뷰 목록 (커뮤니티 후기탭용) */
+    PageResponse<ReviewResponse> getAllReviews(Pageable pageable);
+
     /** 방별 리뷰 목록 (게시판형 페이징) */
     PageResponse<ReviewResponse> getReviewListByRoom(Integer roomId, Pageable pageable);
 

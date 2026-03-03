@@ -31,10 +31,13 @@ function typeLabel(code) {
  */
 function buildAnonMap(boardRealAuthorId, allReplies) {
   const map = {};
+  // 게시글 작성자: 익명 댓글 작성 시 '익명(글쓴이)'로 표시
   if (boardRealAuthorId) map[boardRealAuthorId] = '익명(글쓴이)';
   let counter = 1;
   for (const r of allReplies) {
-    // 익명 댓글은 realUserId를 키로 사용
+    // 익명 댓글만 번호 부여
+    const isAnon = String(r?.anonymity ?? 'N').toUpperCase() === 'Y';
+    if (!isAnon) continue;
     const uid = r.realUserId ?? r.userId;
     if (!uid || map[uid]) continue;
     map[uid] = `익명${counter++}`;

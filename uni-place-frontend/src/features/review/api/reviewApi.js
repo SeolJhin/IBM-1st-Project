@@ -51,6 +51,20 @@ export const reviewApi = {
    * GET /reviews?roomId={roomId}&page=0&size=10
    * → PageResponse<ReviewResponse>  (public)
    */
+  /**
+   * GET /reviews  (roomId 없이 전체)
+   * → PageResponse<ReviewResponse>  (public)
+   */
+  getAll: (params = {}) =>
+    api
+      .get('/reviews', {
+        params: {
+          page: params.page ?? 0,
+          size: params.size ?? 10,
+        },
+      })
+      .then(unwrap),
+
   getListByRoom: (roomId, params = {}) =>
     api
       .get('/reviews', {
@@ -58,7 +72,6 @@ export const reviewApi = {
           roomId,
           page: params.page ?? 0,
           size: params.size ?? 10,
-          sort: params.sort ?? 'reviewId,desc',
         },
       })
       .then(unwrap),
@@ -73,7 +86,6 @@ export const reviewApi = {
         params: {
           page: params.page ?? 0,
           size: params.size ?? 10,
-          sort: params.sort ?? 'reviewId,desc',
         },
       })
       .then(unwrap),

@@ -88,6 +88,12 @@
   margin-bottom: 48px;
   align-items: start;
 }
+.galleryCol {
+  min-width: 0;
+}
+.infoCol {
+  min-width: 0;
+}
 
 /* ── 갤러리 ── */
 .galleryMain {
@@ -710,4 +716,102 @@
   color: #c0392b;
   text-align: center;
   line-height: 1.3;
+}
+
+/* ── 건물 퀵카드 ── */
+.buildingQuickCard {
+  background: #fff;
+  border-radius: 16px;
+  border: 1.5px solid #f0e8d4;
+  padding: 20px 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+}
+.bqcHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0e8d4;
+}
+.bqcIcon {
+  font-size: 18px;
+  line-height: 1;
+}
+.bqcNm {
+  font-size: 16px;
+  font-weight: 800;
+  color: #201812;
+  letter-spacing: -0.3px;
+}
+.bqcGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+.bqcItem {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bqcLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a89070;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.bqcValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a2e20;
+}
+.bqcLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 8px 16px;
+  background: #faf5ec;
+  border: 1.5px solid #e8d9bb;
+  border-radius: 10px;
+  color: #7a5a1e;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+  width: fit-content;
+}
+.bqcLink:hover {
+  background: #fef3d8;
+  border-color: #d9ad5b;
+  color: #5a3e0e;
+}
+
+.bqcDetailBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 8px 16px;
+  background: #faf5ec;
+  border: 1.5px solid #e8d9bb;
+  border-radius: 10px;
+  color: #7a5a1e;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+  width: fit-content;
+}
+.bqcDetailBtn:hover {
+  background: #fef3d8;
+  border-color: #d9ad5b;
+  color: #5a3e0e;
 }
