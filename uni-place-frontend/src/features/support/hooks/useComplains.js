@@ -27,8 +27,7 @@ export function useComplains(initialParams = {}) {
     setLoading(true);
     setError(null);
     try {
-      // ✅ 여기만 변경됨
-      const data = await supportApi.getMyComplains(fetchParams);
+      const data = await supportApi.getComplains(fetchParams);
 
       setComplains(data?.content ?? []);
       setPagination({
