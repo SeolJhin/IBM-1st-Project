@@ -39,6 +39,18 @@ public class BoardController {
     }
     
     
+    // 게시판 검색 (제목 또는 userId)
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<PageResponse<BoardResponse>>> boardSearch(
+            @RequestParam(name = "boardType", required = false) String boardType,
+            @RequestParam(name = "searchType", defaultValue = "title") String searchType,
+            @RequestParam(name = "keyword", required = false, defaultValue = "") String keyword,
+            @PageableDefault(size = 10, sort = "boardId", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(boardService.searchBoards(boardType, searchType, keyword, pageable)));
+    }
+
     // 게시판 조회
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<BoardResponse>>> boardList(

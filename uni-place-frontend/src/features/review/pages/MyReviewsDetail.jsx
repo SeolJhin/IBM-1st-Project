@@ -2,6 +2,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useReviewDetail, useReviewActions } from '../hooks/useReviews';
+import { useAuth } from '../../user/hooks/useAuth';
+import { adminApi } from '../../admin/api/adminApi';
+import UserStatusModal from '../../user/components/UserStatusModal';
 import styles from './ReviewDetail.module.css';
 import { toApiImageUrl } from '../../file/api/fileApi';
 
@@ -135,14 +138,28 @@ function Lightbox({ images, index, onClose }) {
 export default function MyReviewsDetail() {
   const { reviewId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { review, loading, error } = useReviewDetail(Number(reviewId));
   const { remove, submitting } = useReviewActions();
   const [lightbox, setLightbox] = useState(null);
+  const [userStatusModalId, setUserStatusModalId] = useState(null);
+
+  const isAdmin = String(user?.userRole ?? '').toLowerCase() === 'admin';
 
   const handleDelete = async () => {
     if (!window.confirm('리뷰를 삭제할까요?')) return;
     const ok = await remove(Number(reviewId));
     if (ok) navigate('/reviews/my', { replace: true });
+  };
+
+  const handleAdminDelete = async () => {
+    if (!window.confirm('관리자 권한으로 이 리뷰를 삭제할까요?')) return;
+    try {
+      await adminApi.adminDeleteReview(Number(reviewId));
+      navigate(-1);
+    } catch (e) {
+      window.alert(e?.message || '삭제 실패');
+    }
   };
 
   if (loading)
@@ -202,10 +219,61 @@ export default function MyReviewsDetail() {
           >
             삭제
           </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={handleAdminDelete}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 8,
+                background: '#fee2e2',
+                color: '#b91c1c',
+                border: '1px solid #fca5a5',
+                cursor: 'pointer',
+                fontWeight: 600,
+                fontSize: 14,
+              }}
+            >
+              🗑 관리자 삭제
+            </button>
+          )}
         </div>
       </div>
 
       <div className={styles.body}>
+        {/* 작성자 정보 (관리자용) */}
+        {isAdmin && review?.userId && (
+          <div
+            style={{
+              marginBottom: 12,
+              padding: '8px 14px',
+              background: '#f0f9ff',
+              borderRadius: 8,
+              border: '1px solid #bae6fd',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
+            <span style={{ fontSize: 13, color: '#555' }}>작성자:</span>
+            <button
+              type="button"
+              onClick={() => setUserStatusModalId(review.userId)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#3b82f6',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: 14,
+                padding: 0,
+              }}
+              title="회원 정보/상태 변경"
+            >
+              {review.userId}
+            </button>
+          </div>
+        )}
         <div className={styles.roomBadge}>
           <span className={styles.buildingNm}>
             {review.buildingNm ?? '건물 정보 없음'}
@@ -256,6 +324,14 @@ export default function MyReviewsDetail() {
           )}
         </p>
       </div>
+
+      {isAdmin && userStatusModalId && (
+        <UserStatusModal
+          userId={userStatusModalId}
+          currentUserId={user?.userId}
+          onClose={() => setUserStatusModalId(null)}
+        />
+      )}
     </div>
   );
 }

@@ -9,7 +9,9 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { communityApi } from '../api/communityApi';
+import { adminApi } from '../../admin/api/adminApi';
 import { useAuth } from '../../user/hooks/useAuth';
+import UserStatusModal from '../../user/components/UserStatusModal';
 import styles from './CommunityHome.module.css';
 
 const TABS = [
@@ -256,6 +258,14 @@ export default function CommunityHome() {
   const userRole = String(user?.userRole ?? '').toLowerCase();
   const isAdmin = userRole === 'admin';
   const isTenant = userRole === 'tenant';
+  const isBanned = String(user?.userSt ?? '').toLowerCase() === 'banned';
+
+  const [userStatusModalId, setUserStatusModalId] = useState(null);
+
+  // 검색 상태
+  const [searchType, setSearchType] = useState('title'); // 'title' | 'userId'
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [activeSearch, setActiveSearch] = useState({ type: '', keyword: '' });
 
   // 글 작성시 실제 코드값 (ALL탭은 자유로 기본)
   const effectiveCode = (() => {
@@ -283,17 +293,39 @@ export default function CommunityHome() {
     setLoading(true);
     setError('');
     try {
-      const data = await communityApi.getBoards({
-        page,
-        size: 10,
-        boardType: activeTab,
-      });
+      let data;
+      if (activeSearch.keyword && activeSearch.keyword.trim()) {
+        data = await communityApi.searchBoards({
+          page,
+          size: 10,
+          boardType: activeTab,
+          searchType: activeSearch.type || 'title',
+          keyword: activeSearch.keyword.trim(),
+          auth: isAdmin,
+        });
+      } else {
+        data = await communityApi.getBoards({
+          page,
+          size: 10,
+          boardType: activeTab,
+          auth: isAdmin,
+        });
+      }
       const content = Array.isArray(data?.content)
         ? data.content
         : Array.isArray(data)
           ? data
           : [];
-      setItems(content);
+
+      // 공지(importance=Y)는 상단 고정, 나머지는 최신순(boardId desc)
+      const sorted = [...content].sort((a, b) => {
+        const aNotice = a?.importance === 'Y' ? 0 : 1;
+        const bNotice = b?.importance === 'Y' ? 0 : 1;
+        if (aNotice !== bNotice) return aNotice - bNotice;
+        return (b?.boardId ?? 0) - (a?.boardId ?? 0);
+      });
+
+      setItems(sorted);
       setTotalPages(Math.max(1, Number(data?.totalPages ?? 1)));
     } catch (e) {
       setItems([]);
@@ -302,17 +334,41 @@ export default function CommunityHome() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, page]);
+  }, [activeTab, page, isAdmin, activeSearch]);
 
   useEffect(() => {
     load();
   }, [load]);
   useEffect(() => {
     setPage(1);
+    setSearchKeyword('');
+    setActiveSearch({ type: '', keyword: '' });
   }, [activeTab]);
   useEffect(() => {
     if (!canOpenWriter) setShowWriter(false);
   }, [canOpenWriter]);
+
+  const handleSearch = () => {
+    setPage(1);
+    setActiveSearch({ type: searchType, keyword: searchKeyword });
+  };
+
+  const handleSearchReset = () => {
+    setSearchKeyword('');
+    setActiveSearch({ type: '', keyword: '' });
+    setPage(1);
+  };
+
+  const handleAdminDeleteBoard = async (boardId, e) => {
+    e.stopPropagation();
+    if (!window.confirm('관리자 권한으로 이 게시글을 삭제할까요?')) return;
+    try {
+      await adminApi.adminDeleteBoard(boardId);
+      await load();
+    } catch (err) {
+      window.alert(err?.message || '삭제 실패');
+    }
+  };
 
   const pageButtons = useMemo(() => {
     const from = Math.max(1, page - 2);
@@ -351,6 +407,11 @@ export default function CommunityHome() {
   const submitPost = async () => {
     if (!isLoggedIn) {
       setError('로그인이 필요합니다.');
+      return;
+    }
+
+    if (isBanned) {
+      setError('정지(banned) 상태의 계정은 커뮤니티 글을 작성할 수 없습니다.');
       return;
     }
     const title = writeTitle.trim();
@@ -455,6 +516,80 @@ export default function CommunityHome() {
           )}
         </div>
 
+        {/* 검색 바 */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            margin: '12px 0',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <select
+            value={searchType}
+            onChange={(e) => setSearchType(e.target.value)}
+            style={{
+              padding: '8px 10px',
+              borderRadius: 8,
+              border: '1px solid #ddd',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            <option value="title">제목</option>
+            {isAdmin && <option value="userId">아이디</option>}
+          </select>
+          <input
+            type="text"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            placeholder="검색어 입력"
+            style={{
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: '1px solid #ddd',
+              fontSize: 14,
+              minWidth: 200,
+              flex: 1,
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleSearch}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 8,
+              background: '#111',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            검색
+          </button>
+          {activeSearch.keyword && (
+            <button
+              type="button"
+              onClick={handleSearchReset}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 8,
+                background: '#f3f4f6',
+                color: '#444',
+                border: '1px solid #ddd',
+                cursor: 'pointer',
+                fontSize: 14,
+              }}
+            >
+              초기화
+            </button>
+          )}
+        </div>
+
         {/* 글쓰기 폼 */}
         {canOpenWriter && showWriter && (
           <section className={styles.writerBox}>
@@ -518,12 +653,18 @@ export default function CommunityHome() {
                 type="button"
                 className={styles.submitBtn}
                 onClick={submitPost}
-                disabled={submitting || !writeTitle.trim()}
+                disabled={submitting || !writeTitle.trim() || isBanned}
               >
                 {submitting ? '등록 중...' : '등록'}
               </button>
             </div>
           </section>
+        )}
+
+        {showWriter && isBanned && (
+          <div className={styles.error}>
+            정지(banned) 상태의 계정은 커뮤니티 글을 작성할 수 없습니다.
+          </div>
         )}
 
         {!showWriter && error && <div className={styles.error}>{error}</div>}
@@ -544,6 +685,7 @@ export default function CommunityHome() {
                   <th className={styles.colDate}>작성일</th>
                   <th className={styles.colNum}>조회</th>
                   <th className={styles.colNum}>좋아요</th>
+                  {isAdmin && <th className={styles.colNum}>관리</th>}
                 </tr>
               </thead>
               <tbody>
@@ -573,7 +715,25 @@ export default function CommunityHome() {
                         </button>
                       </td>
                       <td className={styles.authorCell}>
-                        {item?.userId ?? '-'}
+                        {isAdmin && (item?.realUserId || item?.userId) ? (
+                          <button
+                            type="button"
+                            className={styles.titleBtn}
+                            onClick={() =>
+                              setUserStatusModalId(
+                                item.realUserId ?? item.userId
+                              )
+                            }
+                            title="회원 정보/상태 변경"
+                          >
+                            {/* 관리자: 익명 여부 관계없이 실제 userId 표시 */}
+                            {item.realUserId ?? item.userId}
+                          </button>
+                        ) : item?.anonymity === 'Y' ? (
+                          '익명'
+                        ) : (
+                          (item?.userId ?? '-')
+                        )}
                       </td>
                       <td className={styles.dateCell}>
                         {formatDate(item?.createdAt)}
@@ -588,6 +748,26 @@ export default function CommunityHome() {
                           {item?.likedByMe ? '❤️' : '🤍'} {item?.likeCount ?? 0}
                         </button>
                       </td>
+                      {isAdmin && (
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={(e) => handleAdminDeleteBoard(boardId, e)}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: 6,
+                              background: '#fee2e2',
+                              color: '#b91c1c',
+                              border: '1px solid #fca5a5',
+                              cursor: 'pointer',
+                              fontSize: 12,
+                              fontWeight: 600,
+                            }}
+                          >
+                            삭제
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -629,6 +809,15 @@ export default function CommunityHome() {
         )}
       </main>
       <Footer />
+
+      {isAdmin && userStatusModalId && (
+        <UserStatusModal
+          userId={userStatusModalId}
+          currentUserId={user?.userId}
+          onClose={() => setUserStatusModalId(null)}
+          onSaved={() => load()}
+        />
+      )}
     </div>
   );
 }
