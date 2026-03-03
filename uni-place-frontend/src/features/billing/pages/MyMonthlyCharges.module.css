@@ -1,0 +1,200 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.filterBox {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.table thead th {
+  font-size: 13px;
+  background: #fcfcfc;
+  color: #444;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stepper button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d6d6d6;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.stepper span {
+  width: 26px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.maxText {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.footerBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 15px;
+  background: #fff;
+}
+
+.payRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.payBtn {
+  border: none;
+  border-radius: 10px;
+  background: #111;
+  color: #fff;
+  font-weight: 700;
+  padding: 11px 18px;
+  cursor: pointer;
+}
+
+.stateBox {
+  padding: 20px;
+  border: 1px dashed #d0d5dd;
+  border-radius: 12px;
+  text-align: center;
+  color: #555;
+}
+
+.errorBox {
+  border: 1px solid #f3c9c9;
+  background: #fff4f4;
+  color: #9d2d2d;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modalAmount {
+  font-size: 15px;
+}
+
+.kakaoBtn {
+  border: none;
+  border-radius: 10px;
+  background: #fee500;
+  color: #2e2e2e;
+  font-weight: 800;
+  padding: 11px 14px;
+  cursor: pointer;
+}
+
+.kakaoBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refreshMiniBtn {
+  border: 1px solid #d8d8d8;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.qrList {
+  display: grid;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.qrCard {
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.qrTitle {
+  font-size: 13px;
+  color: #444;
+}
+
+.qrImage {
+  width: 230px;
+  height: 230px;
+  object-fit: contain;
+}
+
+.qrLink {
+  color: #0f5ec4;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .filterBox {
+    grid-template-columns: 1fr;
+  }
+}

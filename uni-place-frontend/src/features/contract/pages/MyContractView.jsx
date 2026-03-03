@@ -407,11 +407,7 @@ function ContractCard({ contract }) {
                 type="button"
                 className={styles.payBtn}
                 onClick={() => {
-                  // TODO: 월세 결제 기능 연결
-                  console.log(
-                    '월세 결제 clicked, contractId:',
-                    contract.contractId
-                  );
+                  window.location.href = `/me?tab=myroom&sub=rent-payment&contractId=${contract.contractId}`;
                 }}
               >
                 💳 월세 결제
@@ -424,11 +420,7 @@ function ContractCard({ contract }) {
                 type="button"
                 className={styles.payHistoryBtn}
                 onClick={() => {
-                  // TODO: 결제 조회 기능 연결
-                  console.log(
-                    '결제 조회 clicked, contractId:',
-                    contract.contractId
-                  );
+                  window.location.href = `/me?tab=myroom&sub=rent-payment&contractId=${contract.contractId}`;
                 }}
               >
                 🧾 결제 조회
