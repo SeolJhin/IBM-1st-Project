@@ -24,11 +24,34 @@ function normalizeByCode(item, code, message) {
   const pid = paymentId(item, message);
   const amt = paymentAmount(message);
   const provider = readValue(message, 'provider');
-  const unlockAt = readValue(message, 'unlockAt') || readValue(message, '해제시각');
+  const unlockAt =
+    readValue(message, 'unlockAt') || readValue(message, '해제시각');
   const deviceId = readValue(message, 'deviceId');
   const ip = readValue(message, 'ip');
 
   switch (code) {
+    case 'CONTRACT_REQ':
+      return '계약 신청이 접수되었습니다.';
+    case 'CONTRACT_CFM':
+      return hasKorean(message) ? message : '계약이 승인되었습니다.';
+    case 'CONTRACT_CAN':
+      return hasKorean(message) ? message : '계약 상태가 변경되었습니다.';
+    case 'QNA_NEW':
+      return 'QnA 질문이 접수되었습니다.';
+    case 'QNA_ANSWERED':
+      return '문의하신 QnA에 답변이 등록되었습니다.';
+    case 'COMP_NEW':
+      return '민원이 접수되었습니다.';
+    case 'COMP_REPLIED':
+      return '접수하신 민원에 답변이 등록되었습니다.';
+    case 'ORDER_NEW':
+      return '룸서비스 주문이 접수되었습니다.';
+    case 'ORDER_STATUS':
+      return hasKorean(message)
+        ? message
+        : '룸서비스 주문 상태가 변경되었습니다.';
+    case 'BILL_NEW':
+      return hasKorean(message) ? message : '새 청구서가 등록되었습니다.';
     case 'BRD_LIKE':
       return '작성하신 게시글에 좋아요가 눌렸습니다.';
     case 'RPL_LIKE':
@@ -68,9 +91,13 @@ function normalizeByCode(item, code, message) {
         ? `결제가 완료되었습니다. (paymentId=${pid}${amt ? `, 결제금액=${amt}` : ''})`
         : '결제가 완료되었습니다.';
     case 'PAY_FAIL':
-      return pid ? `결제에 실패했습니다. (paymentId=${pid})` : '결제에 실패했습니다.';
+      return pid
+        ? `결제에 실패했습니다. (paymentId=${pid})`
+        : '결제에 실패했습니다.';
     case 'PAY_RETRY':
-      return pid ? `결제를 다시 시도합니다. (paymentId=${pid})` : '결제를 다시 시도합니다.';
+      return pid
+        ? `결제를 다시 시도합니다. (paymentId=${pid})`
+        : '결제를 다시 시도합니다.';
     case 'PAY_REFUND':
       return hasKorean(message) ? message : '환불이 완료되었습니다.';
     case 'PAY_STATUS_ADMIN':
@@ -84,7 +111,9 @@ function normalizeByCode(item, code, message) {
     case 'PAY_BATCH_FAIL':
       return '결제 배치 처리에 실패했습니다.';
     case 'SEC_NEW_DEVICE': {
-      const bits = [deviceId && `기기=${deviceId}`, ip && `IP=${ip}`].filter(Boolean);
+      const bits = [deviceId && `기기=${deviceId}`, ip && `IP=${ip}`].filter(
+        Boolean
+      );
       return bits.length
         ? `새 기기 로그인이 감지되었습니다. (${bits.join(', ')})`
         : '새 기기 로그인이 감지되었습니다.';
@@ -130,7 +159,8 @@ function fallbackByCode(code, target) {
   const normalizedCode = str(code).toUpperCase();
   const normalizedTarget = str(target).toLowerCase();
 
-  if (normalizedCode.includes('CONTRACT')) return '계약 관련 알림이 도착했습니다.';
+  if (normalizedCode.includes('CONTRACT'))
+    return '계약 관련 알림이 도착했습니다.';
   if (
     normalizedCode.includes('ROOMSERVICE') ||
     normalizedCode.includes('ROOM_SERVICE') ||
@@ -161,27 +191,69 @@ function fallbackByCode(code, target) {
 function replaceLegacyEnglish(message) {
   let out = str(message);
   out = out.replace(/Email has been changed\.?/gi, '이메일이 변경되었습니다.');
-  out = out.replace(/Phone number has been changed\.?/gi, '전화번호가 변경되었습니다.');
-  out = out.replace(/Password has been changed\.?/gi, '비밀번호가 변경되었습니다.');
-  out = out.replace(/Social account linked\.?/gi, '소셜 계정 연동이 완료되었습니다.');
-  out = out.replace(/Abnormal API access detected\.?/gi, '비정상 API 접근이 감지되었습니다.');
-  out = out.replace(/Abnormal login traffic detected\.?/gi, '비정상 로그인 트래픽이 감지되었습니다.');
-  out = out.replace(/New device login detected\.?/gi, '새 기기 로그인이 감지되었습니다.');
-  out = out.replace(/Admin login success\.?/gi, '관리자 로그인 성공 알림입니다.');
+  out = out.replace(
+    /Phone number has been changed\.?/gi,
+    '전화번호가 변경되었습니다.'
+  );
+  out = out.replace(
+    /Password has been changed\.?/gi,
+    '비밀번호가 변경되었습니다.'
+  );
+  out = out.replace(
+    /Social account linked\.?/gi,
+    '소셜 계정 연동이 완료되었습니다.'
+  );
+  out = out.replace(
+    /Abnormal API access detected\.?/gi,
+    '비정상 API 접근이 감지되었습니다.'
+  );
+  out = out.replace(
+    /Abnormal login traffic detected\.?/gi,
+    '비정상 로그인 트래픽이 감지되었습니다.'
+  );
+  out = out.replace(
+    /New device login detected\.?/gi,
+    '새 기기 로그인이 감지되었습니다.'
+  );
+  out = out.replace(
+    /Admin login success\.?/gi,
+    '관리자 로그인 성공 알림입니다.'
+  );
   out = out.replace(/Admin login locked\.?/gi, '관리자 계정이 잠겼습니다.');
   out = out.replace(
     /Login blocked for 5 minutes due to repeated failures\.?/gi,
     '반복된 로그인 실패로 5분 동안 로그인이 차단되었습니다.'
   );
-  out = out.replace(/Bulk user change detected\.?/gi, '대량 사용자 변경이 감지되었습니다.');
-  out = out.replace(/Admin changed user status\.?/gi, '관리자가 사용자 상태를 변경했습니다.');
-  out = out.replace(/Admin changed user role\.?/gi, '관리자가 사용자 권한을 변경했습니다.');
+  out = out.replace(
+    /Bulk user change detected\.?/gi,
+    '대량 사용자 변경이 감지되었습니다.'
+  );
+  out = out.replace(
+    /Admin changed user status\.?/gi,
+    '관리자가 사용자 상태를 변경했습니다.'
+  );
+  out = out.replace(
+    /Admin changed user role\.?/gi,
+    '관리자가 사용자 권한을 변경했습니다.'
+  );
   out = out.replace(/Contract approved\.?/gi, '계약이 승인되었습니다.');
   out = out.replace(/Contract rejected\.?/gi, '계약이 반려되었습니다.');
-  out = out.replace(/Contract status updated\.?/gi, '계약 상태가 변경되었습니다.');
-  out = out.replace(/Room service order created\.?/gi, '룸서비스 주문이 접수되었습니다.');
-  out = out.replace(/Room service order updated\.?/gi, '룸서비스 주문 상태가 변경되었습니다.');
-  out = out.replace(/Room service order cancelled\.?/gi, '룸서비스 주문이 취소되었습니다.');
+  out = out.replace(
+    /Contract status updated\.?/gi,
+    '계약 상태가 변경되었습니다.'
+  );
+  out = out.replace(
+    /Room service order created\.?/gi,
+    '룸서비스 주문이 접수되었습니다.'
+  );
+  out = out.replace(
+    /Room service order updated\.?/gi,
+    '룸서비스 주문 상태가 변경되었습니다.'
+  );
+  out = out.replace(
+    /Room service order cancelled\.?/gi,
+    '룸서비스 주문이 취소되었습니다.'
+  );
   return out;
 }
 

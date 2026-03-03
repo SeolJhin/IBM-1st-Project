@@ -82,14 +82,34 @@ async function requestForm(
 }
 
 export const communityApi = {
-  getBoards: ({ page = 1, size = 10, boardType } = {}) => {
+  getBoards: ({ page = 1, size = 10, boardType, auth = false } = {}) => {
     const qs = new URLSearchParams({
       page: String(Math.max(0, Number(page || 1) - 1)),
       size: String(size),
     });
     const normalized = normalizeBoardCode(boardType);
     if (normalized && normalized !== 'ALL') qs.set('boardType', normalized);
-    return request(`/boards?${qs}`, { auth: false });
+    return request(`/boards?${qs}`, { auth });
+  },
+
+  // 커뮤니티 검색 (title 또는 userId)
+  searchBoards: ({
+    page = 1,
+    size = 10,
+    boardType,
+    searchType = 'title',
+    keyword = '',
+    auth = false,
+  } = {}) => {
+    const qs = new URLSearchParams({
+      page: String(Math.max(0, Number(page || 1) - 1)),
+      size: String(size),
+      searchType,
+      keyword,
+    });
+    const normalized = normalizeBoardCode(boardType);
+    if (normalized && normalized !== 'ALL') qs.set('boardType', normalized);
+    return request(`/boards/search?${qs}`, { auth });
   },
 
   myBoards: ({ page = 1, size = 10, boardType } = {}) => {
@@ -107,7 +127,8 @@ export const communityApi = {
     return request(`/replies/me?${qs}`);
   },
 
-  getBoard: (boardId) => request(`/boards/${boardId}`, { auth: false }),
+  getBoard: (boardId, { auth = false } = {}) =>
+    request(`/boards/${boardId}`, { auth }),
 
   createBoard: ({
     boardTitle,
@@ -130,11 +151,11 @@ export const communityApi = {
 
   deleteBoard: (boardId) => request(`/boards/${boardId}`, { method: 'DELETE' }),
 
-  getReplies: (boardId) =>
-    request(`/boards/${boardId}/replies`, { auth: false }),
+  getReplies: (boardId, { auth = false } = {}) =>
+    request(`/boards/${boardId}/replies`, { auth }),
 
-  getChildReplies: (boardId, parentId) =>
-    request(`/boards/${boardId}/replies/${parentId}/children`, { auth: false }),
+  getChildReplies: (boardId, parentId, { auth = false } = {}) =>
+    request(`/boards/${boardId}/replies/${parentId}/children`, { auth }),
 
   createReply: (boardId, { replyCtnt, anonymity = 'N' } = {}) => {
     const formData = new FormData();

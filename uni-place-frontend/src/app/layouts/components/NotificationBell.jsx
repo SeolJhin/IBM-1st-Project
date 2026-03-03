@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notificationApi } from '../../../features/notification/api/notificationApi';
+import { useAuth } from '../../../features/user/hooks/useAuth';
 import { localizeNotificationMessage } from '../../../features/notification/utils/localizeNotificationMessage';
 import { resolveNotificationPath } from '../../../features/notification/utils/resolveNotificationPath';
 import Modal from '../../../shared/components/Modal/Modal';
@@ -45,6 +46,7 @@ function timeAgo(dateStr) {
 
 export default function NotificationBell() {
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
   const [open, setOpen] = useState(false);
   const [notiModalOpen, setNotiModalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -54,7 +56,7 @@ export default function NotificationBell() {
   const pollBlockedRef = useRef(false);
 
   const fetchUnreadCount = useCallback(async () => {
-    if (pollBlockedRef.current) return;
+    if (pollBlockedRef.current || !isLoggedIn) return;
     try {
       const res = await notificationApi.getUnread({ page: 0, size: 1 });
       setUnreadCount(res?.unreadCount ?? 0);
@@ -63,16 +65,22 @@ export default function NotificationBell() {
         pollBlockedRef.current = true;
       }
     }
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => {
+    // 로그인 상태 바뀌면 pollBlocked 리셋
+    pollBlockedRef.current = false;
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
     fetchUnreadCount();
     const id = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(id);
-  }, [fetchUnreadCount]);
+  }, [fetchUnreadCount, isLoggedIn]);
 
   const loadDropdown = useCallback(async () => {
-    if (pollBlockedRef.current) return;
+    if (pollBlockedRef.current || !isLoggedIn) return;
     setLoading(true);
     try {
       const res = await notificationApi.getUnread({ page: 0, size: 20 });
@@ -85,7 +93,7 @@ export default function NotificationBell() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isLoggedIn]);
 
   const handleOpen = useCallback(() => {
     const next = !open;
@@ -108,7 +116,9 @@ export default function NotificationBell() {
     e.stopPropagation();
     try {
       await notificationApi.markRead(notificationId);
-      setItems((prev) => prev.filter((n) => n.notificationId !== notificationId));
+      setItems((prev) =>
+        prev.filter((n) => n.notificationId !== notificationId)
+      );
       setUnreadCount((c) => Math.max(0, c - 1));
     } catch {
       // ignore
@@ -186,14 +196,20 @@ export default function NotificationBell() {
                     onClick={() => handleItemClick(item)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && handleItemClick(item)}
+                    onKeyDown={(e) =>
+                      e.key === 'Enter' && handleItemClick(item)
+                    }
                   >
                     <div className={styles.dropItemLeft}>
                       <span className={styles.typeBadge}>
                         {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
                       </span>
-                      <p className={styles.dropMsg}>{localizeNotificationMessage(item)}</p>
-                      <span className={styles.dropTime}>{timeAgo(item.createdAt)}</span>
+                      <p className={styles.dropMsg}>
+                        {localizeNotificationMessage(item)}
+                      </p>
+                      <span className={styles.dropTime}>
+                        {timeAgo(item.createdAt)}
+                      </span>
                     </div>
                     <div className={styles.dropItemRight}>
                       <span className={styles.dot} />
@@ -231,7 +247,9 @@ export default function NotificationBell() {
         size="md"
       >
         <Suspense
-          fallback={<div style={{ padding: 24, textAlign: 'center' }}>로딩 중...</div>}
+          fallback={
+            <div style={{ padding: 24, textAlign: 'center' }}>로딩 중...</div>
+          }
         >
           <NotificationList inlineMode />
         </Suspense>
