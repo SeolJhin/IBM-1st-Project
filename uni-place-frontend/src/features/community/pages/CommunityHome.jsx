@@ -13,6 +13,8 @@ import { adminApi } from '../../admin/api/adminApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import UserStatusModal from '../../user/components/UserStatusModal';
 import styles from './CommunityHome.module.css';
+import { reviewApi } from '../../review/api/reviewApi';
+import ReviewModal from '../../review/components/ReviewModal';
 
 const TABS = [
   { key: 'ALL', label: '전체' },
@@ -238,6 +240,7 @@ export default function CommunityHome() {
   const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState('ALL');
+  const [reviewModal, setReviewModal] = useState(null); // { mode, reviewId? }
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -294,6 +297,14 @@ export default function CommunityHome() {
     setError('');
     try {
       let data;
+      // 후기탭: reviews 테이블 전체 조회
+      if (activeTab === 'REVIEW') {
+        data = await reviewApi.getAll({ page: page - 1, size: 10 });
+        const content = Array.isArray(data?.content) ? data.content : [];
+        setItems(content);
+        setTotalPages(Math.max(1, Number(data?.totalPages ?? 1)));
+        return;
+      }
       if (activeSearch.keyword && activeSearch.keyword.trim()) {
         data = await communityApi.searchBoards({
           page,
@@ -705,9 +716,24 @@ export default function CommunityHome() {
                         <button
                           type="button"
                           className={styles.titleBtn}
-                          onClick={() => navigate(`/community/${boardId}`)}
+                          onClick={() => {
+                            if (activeTab === 'REVIEW') {
+                              setReviewModal({
+                                mode: 'detail',
+                                reviewId: item.reviewId,
+                              });
+                            } else {
+                              navigate(`/community/${boardId}`);
+                            }
+                          }}
                         >
-                          {item?.boardTitle ?? item?.title ?? '(제목 없음)'}
+                          {activeTab === 'REVIEW'
+                            ? item?.reviewTitle ||
+                              item?.reviewCtnt?.slice(0, 40) ||
+                              '(내용 없음)'
+                            : (item?.boardTitle ??
+                              item?.title ??
+                              '(제목 없음)')}
                           {(item?.fileCk === 'Y' ||
                             item?.files?.length > 0) && (
                             <span className={styles.fileIcon}>📎</span>
@@ -715,7 +741,22 @@ export default function CommunityHome() {
                         </button>
                       </td>
                       <td className={styles.authorCell}>
-                        {isAdmin && item?.realUserId ? (
+                        {activeTab === 'REVIEW' ? (
+                          <span
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <span style={{ color: '#d9ad5b', fontSize: 12 }}>
+                              {'★'.repeat(item.rating ?? 0)}
+                            </span>
+                            <span style={{ fontSize: 12, color: '#9a8c70' }}>
+                              {item?.userId ?? '-'}
+                            </span>
+                          </span>
+                        ) : isAdmin && item?.realUserId ? (
                           <button
                             type="button"
                             className={styles.titleBtn}
@@ -724,11 +765,9 @@ export default function CommunityHome() {
                             }
                             title="회원 정보/상태 변경"
                           >
-                            {/* 어드민: 항상 실제 닉네임 표시 (익명 여부 무관) */}
                             {item.realUserNickname ?? item.realUserId}
                           </button>
                         ) : (
-                          // 일반 유저: userId가 이미 올바른 표시명
                           <span>{item?.userId ?? '-'}</span>
                         )}
                       </td>
@@ -806,6 +845,19 @@ export default function CommunityHome() {
         )}
       </main>
       <Footer />
+
+      {reviewModal && (
+        <ReviewModal
+          mode={reviewModal.mode}
+          reviewId={reviewModal.reviewId}
+          roomId={reviewModal.roomId}
+          onClose={() => setReviewModal(null)}
+          onSaved={() => {
+            setReviewModal(null);
+            load();
+          }}
+        />
+      )}
 
       {isAdmin && userStatusModalId && (
         <UserStatusModal

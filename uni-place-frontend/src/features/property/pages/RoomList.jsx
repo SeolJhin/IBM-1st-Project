@@ -632,7 +632,7 @@ export default function RoomList() {
   }, [activeTab, bldgLoaded]);
 
   // 페이지 윈도우: 현재 페이지 기준 앞뒤 4개씩만 표시 (최대 10개)
-  function pageWindow(current, total, radius = 4) {
+  function pageWindow(current, total, radius = 2) {
     const from = Math.max(1, current - radius);
     const to = Math.min(total, current + radius);
     const result = [];

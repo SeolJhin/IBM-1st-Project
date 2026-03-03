@@ -115,6 +115,7 @@ export default function BuildingDetail() {
   const [rooms, setRooms] = useState([]);
   const [roomPage, setRoomPage] = useState(1);
   const [roomTotalPages, setRoomTotalPages] = useState(1);
+  const [roomTotalCount, setRoomTotalCount] = useState(0);
   const [roomLoading, setRoomLoading] = useState(false);
   const [spaces, setSpaces] = useState([]);
   const [spacePage, setSpacePage] = useState(1);
@@ -143,6 +144,7 @@ export default function BuildingDetail() {
       .then((data) => {
         setRooms(data?.content ?? []);
         setRoomTotalPages(data?.totalPages ?? 1);
+        setRoomTotalCount(data?.totalElements ?? 0);
       })
       .catch(() => setRooms([]))
       .finally(() => setRoomLoading(false));
@@ -381,7 +383,8 @@ export default function BuildingDetail() {
           <div className={styles.tabContent}>
             <div className={styles.sectionHeaderRow}>
               <h2 className={styles.sectionTitle}>
-                이 빌딩의 방 ({rooms.length}개)
+                이 빌딩의 방 (
+                {roomTotalCount > 0 ? roomTotalCount : rooms.length}개)
               </h2>
               <button
                 className={styles.goListBtn}
@@ -421,8 +424,13 @@ export default function BuildingDetail() {
                 >
                   ‹
                 </button>
-                {Array.from({ length: roomTotalPages }, (_, i) => i + 1).map(
-                  (p) => (
+                {(() => {
+                  const from = Math.max(1, roomPage - 2);
+                  const to = Math.min(roomTotalPages, roomPage + 2);
+                  return Array.from(
+                    { length: to - from + 1 },
+                    (_, i) => from + i
+                  ).map((p) => (
                     <button
                       key={p}
                       className={`${styles.pgBtn} ${p === roomPage ? styles.pgBtnActive : ''}`}
@@ -430,8 +438,8 @@ export default function BuildingDetail() {
                     >
                       {p}
                     </button>
-                  )
-                )}
+                  ));
+                })()}
                 <button
                   disabled={roomPage === roomTotalPages}
                   onClick={() => setRoomPage((p) => p + 1)}
@@ -489,8 +497,13 @@ export default function BuildingDetail() {
                 >
                   ‹
                 </button>
-                {Array.from({ length: spaceTotalPages }, (_, i) => i + 1).map(
-                  (p) => (
+                {(() => {
+                  const from = Math.max(1, spacePage - 2);
+                  const to = Math.min(spaceTotalPages, spacePage + 2);
+                  return Array.from(
+                    { length: to - from + 1 },
+                    (_, i) => from + i
+                  ).map((p) => (
                     <button
                       key={p}
                       className={`${styles.pgBtn} ${p === spacePage ? styles.pgBtnActive : ''}`}
@@ -498,8 +511,8 @@ export default function BuildingDetail() {
                     >
                       {p}
                     </button>
-                  )
-                )}
+                  ));
+                })()}
                 <button
                   disabled={spacePage === spaceTotalPages}
                   onClick={() => setSpacePage((p) => p + 1)}

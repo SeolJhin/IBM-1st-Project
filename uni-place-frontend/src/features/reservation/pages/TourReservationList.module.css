@@ -227,6 +227,12 @@
   align-items: flex-start;
   gap: 12px;
 }
+.cardBuilding {
+  margin: 0 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9a8c70;
+}
 .cardRoomId {
   margin: 0 0 4px;
   font-size: 13px;

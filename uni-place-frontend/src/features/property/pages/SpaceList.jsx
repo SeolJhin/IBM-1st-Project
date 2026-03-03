@@ -162,7 +162,13 @@ export default function SpaceList() {
     }
   };
 
-  const pages = Array.from({ length: pagination.totalPages }, (_, i) => i + 1);
+  const pages = (() => {
+    const cur = query.page;
+    const total = pagination.totalPages;
+    const from = Math.max(1, cur - 2);
+    const to = Math.min(total, cur + 2);
+    return Array.from({ length: to - from + 1 }, (_, i) => from + i);
+  })();
 
   return (
     <div className={styles.page}>

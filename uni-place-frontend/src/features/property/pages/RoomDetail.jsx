@@ -10,6 +10,8 @@ import UserStatusModal from '../../user/components/UserStatusModal';
 import styles from './RoomDetail.module.css';
 import ImageGallery from '../../file/components/ImageGallery';
 import { toApiImageUrl } from '../../file/api/fileApi';
+import { reviewApi } from '../../review/api/reviewApi';
+import ReviewModal from '../../review/components/ReviewModal';
 
 function StarRating({ value = 0, size = 'md' }) {
   return (
@@ -26,12 +28,22 @@ function StarRating({ value = 0, size = 'md' }) {
   );
 }
 
-function ReviewCard({ review, isAdmin, onUserClick, onAdminDelete }) {
+function ReviewCard({
+  review,
+  isAdmin,
+  onUserClick,
+  onAdminDelete,
+  onCardClick,
+}) {
   return (
-    <article className={styles.reviewCard}>
+    <article
+      className={styles.reviewCard}
+      onClick={onCardClick}
+      style={{ cursor: onCardClick ? 'pointer' : 'default' }}
+    >
       {review.thumbnailUrl && (
         <div className={styles.reviewThumb}>
-          <img src={review.thumbnailUrl} alt="리뷰 이미지" />
+          <img src={toApiImageUrl(review.thumbnailUrl)} alt="리뷰 이미지" />
         </div>
       )}
       <div className={styles.reviewBody}>
@@ -149,6 +161,7 @@ export default function RoomDetail() {
   const [roomError, setRoomError] = useState(null);
 
   const [reviewSummary, setReviewSummary] = useState(null);
+  const [reviewModal, setReviewModal] = useState(null); // { mode, reviewId? }
   const [reviews, setReviews] = useState([]);
   const [reviewPage, setReviewPage] = useState(1);
   const [reviewTotalPages, setReviewTotalPages] = useState(1);
@@ -182,9 +195,9 @@ export default function RoomDetail() {
 
   useEffect(() => {
     if (!roomId) return;
-    fetch(`/reviews/rooms/${roomId}/summary`)
-      .then((r) => r.json())
-      .then((r) => setReviewSummary(r.data))
+    reviewApi
+      .getRoomSummary(roomId)
+      .then((data) => setReviewSummary(data))
       .catch(() => {});
   }, [roomId]);
 
@@ -193,11 +206,10 @@ export default function RoomDetail() {
       if (!roomId) return;
       setReviewLoading(true);
       try {
-        const res = await fetch(
-          `/reviews?roomId=${roomId}&page=${p - 1}&size=5&sort=reviewId&direction=DESC`
-        );
-        const json = await res.json();
-        const data = json.data;
+        const data = await reviewApi.getListByRoom(roomId, {
+          page: p - 1,
+          size: 5,
+        });
         setReviews(data?.content ?? []);
         setReviewTotalPages(data?.totalPages ?? 1);
       } catch {
@@ -234,7 +246,7 @@ export default function RoomDetail() {
       navigate('/login', { state: { from: `/rooms/${roomId}` } });
       return;
     }
-    navigate(`/reviews/write?roomId=${roomId}`);
+    setReviewModal({ mode: 'write' });
   };
 
   const handleAdminDeleteReview = async (reviewId) => {
@@ -315,53 +327,6 @@ export default function RoomDetail() {
         <div className={styles.topGrid}>
           <div className={styles.galleryCol}>
             <ImageGallery files={room.files} />
-
-            {/* ── 건물 빠른 정보 ── */}
-            <div className={styles.buildingQuickCard}>
-              <div className={styles.bqcHeader}>
-                <span className={styles.bqcIcon}>🏢</span>
-                <span className={styles.bqcNm}>{room.buildingNm}</span>
-              </div>
-              <div className={styles.bqcGrid}>
-                {room.buildingAddr && (
-                  <div className={styles.bqcItem}>
-                    <span className={styles.bqcLabel}>위치</span>
-                    <span className={styles.bqcValue}>{room.buildingAddr}</span>
-                  </div>
-                )}
-                {room.parkingCapacity != null && (
-                  <div className={styles.bqcItem}>
-                    <span className={styles.bqcLabel}>주차</span>
-                    <span className={styles.bqcValue}>
-                      {room.parkingCapacity}대
-                    </span>
-                  </div>
-                )}
-                {room.existElv && (
-                  <div className={styles.bqcItem}>
-                    <span className={styles.bqcLabel}>엘리베이터</span>
-                    <span className={styles.bqcValue}>
-                      {room.existElv === 'Y' ? '있음' : '없음'}
-                    </span>
-                  </div>
-                )}
-                {room.buildingUsage && (
-                  <div className={styles.bqcItem}>
-                    <span className={styles.bqcLabel}>용도</span>
-                    <span className={styles.bqcValue}>
-                      {room.buildingUsage}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <button
-                className={styles.bqcDetailBtn}
-                onClick={() => navigate(`/buildings/${room.buildingId}`)}
-                type="button"
-              >
-                건물 상세 보기 →
-              </button>
-            </div>
           </div>
 
           <div className={styles.infoPanel}>
@@ -505,6 +470,51 @@ export default function RoomDetail() {
         </div>
 
         {/* ── 방 설명 ── */}
+        {/* ── 건물 정보 ── */}
+        <section className={styles.buildingQuickCard}>
+          <div className={styles.bqcHeader}>
+            <span className={styles.bqcIcon}>🏢</span>
+            <span className={styles.bqcNm}>{room.buildingNm}</span>
+          </div>
+          <div className={styles.bqcGrid}>
+            {room.buildingAddr && (
+              <div className={styles.bqcItem}>
+                <span className={styles.bqcLabel}>위치</span>
+                <span className={styles.bqcValue}>{room.buildingAddr}</span>
+              </div>
+            )}
+            {room.parkingCapacity != null && (
+              <div className={styles.bqcItem}>
+                <span className={styles.bqcLabel}>주차</span>
+                <span className={styles.bqcValue}>
+                  {room.parkingCapacity}대
+                </span>
+              </div>
+            )}
+            {room.existElv && (
+              <div className={styles.bqcItem}>
+                <span className={styles.bqcLabel}>엘리베이터</span>
+                <span className={styles.bqcValue}>
+                  {room.existElv === 'Y' ? '있음' : '없음'}
+                </span>
+              </div>
+            )}
+            {room.buildingUsage && (
+              <div className={styles.bqcItem}>
+                <span className={styles.bqcLabel}>용도</span>
+                <span className={styles.bqcValue}>{room.buildingUsage}</span>
+              </div>
+            )}
+          </div>
+          <button
+            className={styles.bqcDetailBtn}
+            onClick={() => navigate(`/buildings/${room.buildingId}`)}
+            type="button"
+          >
+            건물 상세 보기 →
+          </button>
+        </section>
+
         {room.roomDesc && (
           <section className={styles.descSection}>
             <h2 className={styles.sectionTitle}>방 소개</h2>
@@ -602,6 +612,9 @@ export default function RoomDetail() {
                   isAdmin={isAdmin}
                   onUserClick={(uid) => setUserStatusModalId(uid)}
                   onAdminDelete={handleAdminDeleteReview}
+                  onCardClick={() =>
+                    setReviewModal({ mode: 'detail', reviewId: r.reviewId })
+                  }
                 />
               ))}
             </div>
@@ -615,17 +628,22 @@ export default function RoomDetail() {
               >
                 ‹
               </button>
-              {Array.from({ length: reviewTotalPages }, (_, i) => i + 1).map(
-                (p) => (
-                  <button
-                    key={p}
-                    className={`${styles.rpBtn} ${p === reviewPage ? styles.rpBtnActive : ''}`}
-                    onClick={() => setReviewPage(p)}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
+              {(() => {
+                const from = Math.max(1, reviewPage - 2);
+                const to = Math.min(reviewTotalPages, reviewPage + 2);
+                return Array.from(
+                  { length: to - from + 1 },
+                  (_, i) => from + i
+                );
+              })().map((p) => (
+                <button
+                  key={p}
+                  className={`${styles.rpBtn} ${p === reviewPage ? styles.rpBtnActive : ''}`}
+                  onClick={() => setReviewPage(p)}
+                >
+                  {p}
+                </button>
+              ))}
               <button
                 disabled={reviewPage === reviewTotalPages}
                 onClick={() => setReviewPage((p) => p + 1)}
@@ -639,6 +657,22 @@ export default function RoomDetail() {
       </div>
 
       <Footer />
+
+      {reviewModal && (
+        <ReviewModal
+          mode={reviewModal.mode}
+          reviewId={reviewModal.reviewId}
+          roomId={roomId}
+          onClose={() => setReviewModal(null)}
+          onSaved={() => {
+            fetchReviews(reviewPage);
+            reviewApi
+              .getRoomSummary(roomId)
+              .then(setReviewSummary)
+              .catch(() => {});
+          }}
+        />
+      )}
 
       {isAdmin && userStatusModalId && (
         <UserStatusModal

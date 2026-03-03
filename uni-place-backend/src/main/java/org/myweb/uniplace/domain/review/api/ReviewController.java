@@ -30,19 +30,21 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    // [GET] /reviews?roomId={roomId}&page=0&size=10
+    // [GET] /reviews?roomId={roomId}&page=0&size=10  (roomId 없으면 전체 조회)
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ReviewResponse>>> reviewList(
             @RequestParam(name = "roomId", required = false) Integer roomId,
             @PageableDefault(size = 10, sort = "reviewId", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        if (roomId == null) {
-            // ※ roomId 빠졌을 때 UNAUTHORIZED는 의미가 안 맞음 → BAD_REQUEST 추천
-            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        System.out.println("[DEBUG] GET /reviews roomId=" + roomId + " page=" + pageable.getPageNumber() + " size=" + pageable.getPageSize());
+        if (roomId != null) {
+            return ResponseEntity.ok(
+                    ApiResponse.ok(reviewService.getReviewListByRoom(roomId, pageable))
+            );
         }
         return ResponseEntity.ok(
-                ApiResponse.ok(reviewService.getReviewListByRoom(roomId, pageable))
+                ApiResponse.ok(reviewService.getAllReviews(pageable))
         );
     }
 
