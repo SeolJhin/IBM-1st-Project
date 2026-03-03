@@ -28,10 +28,14 @@ export function useComplains(initialParams = {}, options = {}) {
     setLoading(true);
     setError(null);
     try {
+<<<<<<< HEAD
       // ✅ 여기만 변경됨
       const data = isAdmin
         ? await supportApi.getComplains(fetchParams)
         : await supportApi.getMyComplains(fetchParams);
+=======
+      const data = await supportApi.getComplains(fetchParams);
+>>>>>>> 67cf15dfe5cf9efd002ce0bc695e6e9cfb7e9914
 
       setComplains(data?.content ?? []);
       setPagination({

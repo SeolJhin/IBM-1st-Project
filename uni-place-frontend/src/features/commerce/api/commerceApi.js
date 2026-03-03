@@ -1,7 +1,7 @@
 // features/commerce/api/commerceApi.js
-// UniPlace 諛깆뿏??湲곗?
-// - 紐⑤뱺 ?묐떟? ApiResponse<T> ?뺥깭: { success, data, errorCode, message }
-// - buildingId 異붽?: ?곹뭹 紐⑸줉? buildingStocks 留??ы븿, 二쇰Ц ?앹꽦 ??buildingId ?꾩닔
+// UniPlace 커머스 API
+// - 모든 응답은 ApiResponse<T> 형태: { success, data, errorCode, message }
+// - buildingId 주의: 상품 목록은 buildingStocks 안에 포함, 주문 생성 시 buildingId 필수
 
 import { fetchWithAuthRetry } from '../../../app/http/apiBase';
 
@@ -13,18 +13,22 @@ async function request(
   path,
   { method = 'GET', body, headers = {}, auth = false } = {}
 ) {
-  const res = await fetchWithAuthRetry(path, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(auth && getAccessToken()
-        ? { Authorization: `Bearer ${getAccessToken()}` }
-        : {}),
-      ...headers,
+  const res = await fetchWithAuthRetry(
+    path,
+    {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(auth && getAccessToken()
+          ? { Authorization: `Bearer ${getAccessToken()}` }
+          : {}),
+        ...headers,
+      },
+      credentials: 'same-origin',
+      body: body ? JSON.stringify(body) : undefined,
     },
-    credentials: 'same-origin',
-    body: body ? JSON.stringify(body) : undefined,
-  }, { auth });
+    { auth }
+  );
 
   if (res.status === 204) return null;
 
@@ -43,7 +47,7 @@ async function request(
     const message =
       (api && api.message) ||
       (payload && payload.message) ||
-      (typeof payload === 'string' ? payload : '?붿껌???ㅽ뙣?덉뒿?덈떎.');
+      (typeof payload === 'string' ? payload : '요청에 실패했습니다.');
     const error = new Error(message);
     error.status = res.status;
     error.errorCode = api?.errorCode;
@@ -55,12 +59,12 @@ async function request(
 }
 
 export const commerceApi = {
-  // ===== ProductController (/products) ???몄쬆 遺덊븘??=====
+  // ===== ProductController (/products) 관련 API =====
 
   /**
-   * ?꾩껜 ?곹뭹 紐⑸줉 (on_sale ?곹깭留? ??鍮뚮뵫蹂??ш퀬 ?ы븿
+   * 전체 상품 목록 조회 (on_sale 상태인 것만 빌딩별 재고 포함)
    * @returns {Promise<ProductWithBuildingStockResponse[]>}
-   * 媛???ぉ: { prodId, prodNm, prodPrice, code, prodDesc, prodSt, affiliateId,
+   * 응답 예시: { prodId, prodNm, prodPrice, code, prodDesc, prodSt, affiliateId,
    *            buildingStocks: { [buildingId]: stock } }
    */
   getProducts: () => request('/products'),
@@ -70,13 +74,13 @@ export const commerceApi = {
   getProductImages: (prodId) => request(`/products/${prodId}/images`),
 
   /**
-   * ?뱀젙 ?곹뭹??鍮뚮뵫蹂??ш퀬 紐⑸줉
+   * 특정 상품의 빌딩별 재고 목록 조회
    * @returns {Promise<ProductBuildingStockResponse[]>}
    */
   getProductBuildingStocks: (prodId) =>
     request(`/products/${prodId}/building-stocks`),
 
-  // ===== CartController (/cart) ???몄쬆 ?꾩슂 =====
+  // ===== CartController (/cart) 관련 API =====
 
   getCart: () => request('/cart', { auth: true }),
 
@@ -91,12 +95,12 @@ export const commerceApi = {
 
   clearCart: () => request('/cart/clear', { method: 'DELETE', auth: true }),
 
-  // ===== OrderController (/orders) ???몄쬆 ?꾩슂 =====
+  // ===== OrderController (/orders) 관련 API =====
 
   /**
-   * 二쇰Ц ?앹꽦
+   * 주문 생성
    * @param {{
-   *   buildingId: number,       ??鍮뚮뵫 ID (?꾩닔, ?ш퀬 李④컧 湲곗?)
+   *   buildingId: number,       // 픽업 빌딩 ID (필수, 재고 확인 기준)
    *   items: Array<{ prodId: number, orderQuantity: number }>
    * }} body
    */
@@ -110,7 +114,7 @@ export const commerceApi = {
   cancelOrder: (orderId) =>
     request(`/orders/${orderId}/cancel`, { method: 'PATCH', auth: true }),
 
-  // ===== RoomServiceOrderController (/room-services) ???몄쬆 ?꾩슂 =====
+  // ===== RoomServiceOrderController (/room-services) 관련 API =====
 
   createRoomServiceOrder: ({ orderId, roomId, roomServiceDesc } = {}) =>
     request('/room-services', {
@@ -127,4 +131,3 @@ export const commerceApi = {
       auth: true,
     }),
 };
-
