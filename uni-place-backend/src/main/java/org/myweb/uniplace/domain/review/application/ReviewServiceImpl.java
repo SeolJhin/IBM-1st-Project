@@ -18,6 +18,8 @@ import org.myweb.uniplace.domain.review.api.dto.response.ReviewResponse;
 import org.myweb.uniplace.domain.review.api.dto.response.ReviewRoomSummaryResponse;
 import org.myweb.uniplace.domain.review.domain.entity.Review;
 import org.myweb.uniplace.domain.review.repository.ReviewRepository;
+import org.myweb.uniplace.domain.user.domain.entity.User;
+import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.PageResponse;
@@ -44,6 +46,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final RoomRepository roomRepository;
     private final FileService fileService;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
     // ─────────────────────────────────────────────────────────────────────
     // 조회
@@ -55,12 +58,12 @@ public class ReviewServiceImpl implements ReviewService {
         Pageable pageReq = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<Review> page = reviewRepository.findByRoomIdOrderByReviewIdDesc(roomId, pageReq);
 
-        // 목록에서는 roomId가 모두 동일하므로 Room을 한 번만 조회
         Room room = roomRepository.findById(roomId).orElse(null);
 
         Page<ReviewResponse> mapped = page.map(r -> {
             List<FileResponse> files = loadThumbnailOnly(r);
-            return ReviewResponse.fromEntity(r, files, room);
+            User author = userRepository.findById(r.getUserId()).orElse(null);
+            return ReviewResponse.fromEntity(r, files, room, author);
         });
 
         return PageResponse.of(mapped);
@@ -73,11 +76,11 @@ public class ReviewServiceImpl implements ReviewService {
         Pageable pageReq = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<Review> page = reviewRepository.findByUserIdOrderByReviewIdDesc(userId, pageReq);
 
-        // 내 리뷰는 방이 각각 다를 수 있으므로 건별 조회
+        User author = userRepository.findById(userId).orElse(null);
         Page<ReviewResponse> mapped = page.map(r -> {
             List<FileResponse> files = loadThumbnailOnly(r);
             Room room = roomRepository.findById(r.getRoomId()).orElse(null);
-            return ReviewResponse.fromEntity(r, files, room);
+            return ReviewResponse.fromEntity(r, files, room, author);
         });
 
         return PageResponse.of(mapped);
@@ -94,8 +97,9 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         Room room = roomRepository.findById(review.getRoomId()).orElse(null);
+        User author = userRepository.findById(review.getUserId()).orElse(null);
 
-        return ReviewResponse.fromEntity(review, files, room);
+        return ReviewResponse.fromEntity(review, files, room, author);
     }
 
     @Override

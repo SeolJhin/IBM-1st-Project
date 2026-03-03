@@ -53,7 +53,8 @@ public class BoardServiceImpl implements BoardService {
             Page<BoardResponse> mapped = page.map(b -> {
                 long cnt = boardLikeRepository.countByIdBoardId(b.getBoardId());
                 boolean liked = (me != null) && boardLikeRepository.existsByIdUserIdAndIdBoardId(me, b.getBoardId());
-                return BoardResponse.fromEntity(b, cnt, liked);
+                org.myweb.uniplace.domain.user.domain.entity.User author = userRepository.findById(b.getUserId()).orElse(null);
+                return BoardResponse.fromEntity(b, cnt, liked, author);
             });
             return PageResponse.of(mapped);
         }
@@ -84,7 +85,8 @@ public class BoardServiceImpl implements BoardService {
                 .map(b -> {
                     long cnt = likeCountMap.getOrDefault(b.getBoardId(), 0L);
                     boolean liked = (me != null) && boardLikeRepository.existsByIdUserIdAndIdBoardId(me, b.getBoardId());
-                    return BoardResponse.fromEntity(b, cnt, liked);
+                    org.myweb.uniplace.domain.user.domain.entity.User author = userRepository.findById(b.getUserId()).orElse(null);
+                    return BoardResponse.fromEntity(b, cnt, liked, author);
                 })
                 .toList();
 
@@ -95,7 +97,8 @@ public class BoardServiceImpl implements BoardService {
                 .map(b -> {
                     long cnt = likeCountMap.getOrDefault(b.getBoardId(), 0L);
                     boolean liked = (me != null) && boardLikeRepository.existsByIdUserIdAndIdBoardId(me, b.getBoardId());
-                    return BoardResponse.fromEntity(b, cnt, liked);
+                    org.myweb.uniplace.domain.user.domain.entity.User author = userRepository.findById(b.getUserId()).orElse(null);
+                    return BoardResponse.fromEntity(b, cnt, liked, author);
                 })
                 .toList();
 
@@ -126,10 +129,11 @@ public class BoardServiceImpl implements BoardService {
         }
 
         String me = userId;
+        org.myweb.uniplace.domain.user.domain.entity.User meUser = userRepository.findById(userId).orElse(null);
         Page<BoardResponse> mapped = page.map(b -> {
             long cnt = boardLikeRepository.countByIdBoardId(b.getBoardId());
             boolean liked = boardLikeRepository.existsByIdUserIdAndIdBoardId(me, b.getBoardId());
-            return BoardResponse.fromEntity(b, cnt, liked);
+            return BoardResponse.fromEntity(b, cnt, liked, meUser);
         });
         return PageResponse.of(mapped);
     }
@@ -151,7 +155,8 @@ public class BoardServiceImpl implements BoardService {
         String me = tryCurrentUserId();
         boolean liked = (me != null) && boardLikeRepository.existsByIdUserIdAndIdBoardId(me, boardId);
 
-        return BoardResponse.fromEntity(board, files, likeCount, liked);
+        org.myweb.uniplace.domain.user.domain.entity.User author = userRepository.findById(board.getUserId()).orElse(null);
+        return BoardResponse.fromEntity(board, files, likeCount, liked, author);
     }
 
     @Override
@@ -269,7 +274,8 @@ public class BoardServiceImpl implements BoardService {
         Page<BoardResponse> mapped = page.map(b -> {
             long cnt = boardLikeRepository.countByIdBoardId(b.getBoardId());
             boolean liked = (me != null) && boardLikeRepository.existsByIdUserIdAndIdBoardId(me, b.getBoardId());
-            return BoardResponse.fromEntity(b, cnt, liked);
+            org.myweb.uniplace.domain.user.domain.entity.User author = userRepository.findById(b.getUserId()).orElse(null);
+            return BoardResponse.fromEntity(b, cnt, liked, author);
         });
         return PageResponse.of(mapped);
     }

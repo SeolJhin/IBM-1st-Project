@@ -15,6 +15,8 @@ import org.myweb.uniplace.domain.community.repository.ReplyLikeRepository;
 import org.myweb.uniplace.domain.community.repository.ReplyRepository;
 import org.myweb.uniplace.domain.notification.application.NotificationService;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
+import org.myweb.uniplace.domain.user.domain.entity.User;
+import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.security.AuthUser;
@@ -37,6 +39,7 @@ public class ReplyServiceImpl implements ReplyService {
     private final BoardRepository boardRepository;
     private final ReplyLikeRepository replyLikeRepository;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
     
     @Override
@@ -47,10 +50,11 @@ public class ReplyServiceImpl implements ReplyService {
         Page<Reply> page = replyRepository.findByUserIdOrderByReplyIdDesc(userId, pageReq);
 
         String me = userId;
+        User author = userRepository.findById(userId).orElse(null);
         Page<ReplyResponse> mapped = page.map(r -> {
             long cnt = replyLikeRepository.countByIdReplyId(r.getReplyId());
             boolean liked = replyLikeRepository.existsByIdUserIdAndIdReplyId(me, r.getReplyId());
-            return ReplyResponse.fromEntity(r, cnt, liked);
+            return ReplyResponse.fromEntity(r, cnt, liked, author);
         });
         return PageResponse.of(mapped);
     }
@@ -66,7 +70,8 @@ public class ReplyServiceImpl implements ReplyService {
             .map(r -> {
                 long cnt = likeCountMap.getOrDefault(r.getReplyId(), 0L);
                 boolean liked = (me != null) && replyLikeRepository.existsByIdUserIdAndIdReplyId(me, r.getReplyId());
-                return ReplyResponse.fromEntity(r, cnt, liked);
+                User author = userRepository.findById(r.getUserId()).orElse(null);
+                return ReplyResponse.fromEntity(r, cnt, liked, author);
             })
             .toList();
     }
@@ -82,7 +87,8 @@ public class ReplyServiceImpl implements ReplyService {
             .map(r -> {
                 long cnt = likeCountMap.getOrDefault(r.getReplyId(), 0L);
                 boolean liked = (me != null) && replyLikeRepository.existsByIdUserIdAndIdReplyId(me, r.getReplyId());
-                return ReplyResponse.fromEntity(r, cnt, liked);
+                User author = userRepository.findById(r.getUserId()).orElse(null);
+                return ReplyResponse.fromEntity(r, cnt, liked, author);
             })
             .toList();
     }
@@ -170,6 +176,9 @@ public class ReplyServiceImpl implements ReplyService {
 
         if (request.getReplyCtnt() != null) {
             reply.setReplyCtnt(request.getReplyCtnt());
+        }
+        if (request.getAnonymity() != null) {
+            reply.setAnonymity(request.getAnonymity());
         }
     }
 

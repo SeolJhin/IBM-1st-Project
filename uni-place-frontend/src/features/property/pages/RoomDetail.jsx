@@ -37,10 +37,10 @@ function ReviewCard({ review, isAdmin, onUserClick, onAdminDelete }) {
       <div className={styles.reviewBody}>
         <div className={styles.reviewTop}>
           <StarRating value={review.rating} size="sm" />
-          {isAdmin && review.userId ? (
+          {isAdmin && review.realUserId ? (
             <button
               type="button"
-              onClick={() => onUserClick?.(review.userId)}
+              onClick={() => onUserClick?.(review.realUserId)}
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -52,10 +52,10 @@ function ReviewCard({ review, isAdmin, onUserClick, onAdminDelete }) {
               }}
               title="회원 정보/상태 변경"
             >
-              {review.userId}
+              {review.userId ?? review.realUserId}
             </button>
           ) : (
-            <span className={styles.reviewUser}>{review.userId || '익명'}</span>
+            <span className={styles.reviewUser}>{review.userId || '-'}</span>
           )}
           <span className={styles.reviewDate}>
             {review.createdAt
