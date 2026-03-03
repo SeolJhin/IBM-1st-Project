@@ -70,6 +70,7 @@ DROP TABLE IF EXISTS company_info;
 
 
 DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS password_reset_tokens;
 DROP TABLE IF EXISTS social_accounts;
 DROP TABLE IF EXISTS users;
 
@@ -151,6 +152,22 @@ CREATE TABLE refresh_tokens (
   CONSTRAINT fk_refresh_tokens_user
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE password_reset_tokens (
+    id           VARCHAR(50)  NOT NULL PRIMARY KEY,
+    user_id      VARCHAR(50)  NOT NULL,
+    token        VARCHAR(100) NOT NULL UNIQUE,
+    expires_at   DATETIME     NOT NULL,
+    used         TINYINT(1)   NOT NULL DEFAULT 0,
+    created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX ix_prt_token   (token),
+    INDEX ix_prt_user_id (user_id),
+    CONSTRAINT fk_password_reset_tokens_user
+      FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
 
 
 CREATE TABLE social_accounts (
@@ -821,6 +838,5 @@ CREATE TABLE payment_intent (
 
 
 SET FOREIGN_KEY_CHECKS = 1;
-
 
 

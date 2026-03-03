@@ -34,6 +34,7 @@ public class PaymentCallbackController {
         @RequestParam(value = "orderId", required = false) String orderId,
         @RequestParam(value = "amount", required = false) BigDecimal amount
     ) {
+        log.info("[PAYMENT_CALLBACK][APPROVAL] provider={}, pid={}, mu={}", provider, paymentId, merchantUid);
         paymentService.recordReturnedParams(paymentId, toCallbackParamsJson(
             provider, paymentId, merchantUid, pgToken, naverPaymentId, paymentKey, orderId, amount
         ));
@@ -52,7 +53,13 @@ public class PaymentCallbackController {
             req.setPaymentKey(paymentKey);
         }
 
-        return paymentService.approveFromCallback(req);
+        PaymentResponse response = paymentService.approveFromCallback(req);
+        log.info("[PAYMENT_CALLBACK][APPROVAL_OK] provider={}, pid={}, st={}",
+            provider,
+            response != null ? response.getPaymentId() : null,
+            response != null ? response.getPaymentSt() : null
+        );
+        return response;
     }
 
     @GetMapping("/{provider}/cancel")

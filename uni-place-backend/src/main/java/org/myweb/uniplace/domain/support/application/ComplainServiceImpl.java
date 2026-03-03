@@ -115,6 +115,9 @@ public class ComplainServiceImpl implements ComplainService {
         String mapped = mapSupportCode(rawCode);
         if ("ALL".equalsIgnoreCase(mapped)) return DEFAULT_SUPPORT_CODE;
 
+        // COMP_* 도메인 코드는 공통코드 테이블에 없으므로 DB 체크 없이 바로 저장
+        if (mapped.startsWith("COMP_")) return mapped;
+
         return commonCodeRepository.existsByCode(mapped) ? mapped : DEFAULT_SUPPORT_CODE;
     }
 
@@ -124,11 +127,11 @@ public class ComplainServiceImpl implements ComplainService {
         return switch (normalized) {
             case "SUP_GENERAL", "GENERAL" -> "SUP_GENERAL";
             case "SUP_BILLING", "BILLING" -> "SUP_BILLING";
+            // COMP_* 코드는 그대로 저장
+            case "COMP_PERSONAL", "COMP_FACILITY", "COMP_NOISE",
+                 "COMP_CONTRACT", "COMP_SAFETY", "COMP_ETC" -> normalized;
             default -> {
-                if (normalized.startsWith("COMP_")) {
-                    if (normalized.contains("BILL") || normalized.contains("PAY")) yield "SUP_BILLING";
-                    yield "SUP_GENERAL";
-                }
+                if (normalized.startsWith("COMP_")) yield normalized;
                 yield normalized;
             }
         };

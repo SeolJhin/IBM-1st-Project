@@ -5,6 +5,7 @@ import org.myweb.uniplace.domain.billing.api.dto.request.MonthlyChargeCreateRequ
 import org.myweb.uniplace.domain.billing.api.dto.response.MonthlyChargeDetailResponse;
 import org.myweb.uniplace.domain.billing.api.dto.response.MonthlyChargeResponse;
 import org.myweb.uniplace.domain.billing.domain.entity.MonthlyCharge;
+import org.myweb.uniplace.domain.contract.domain.entity.Contract;
 import org.myweb.uniplace.domain.billing.repository.MonthlyChargeRepository;
 import org.myweb.uniplace.domain.contract.repository.ContractRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
@@ -12,6 +13,8 @@ import org.myweb.uniplace.global.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 
 @Service
@@ -53,9 +56,9 @@ public class MonthlyChargeServiceImpl implements MonthlyChargeService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<MonthlyChargeResponse> getByContract(String userId, Integer contractId) {
         assertContractOwnership(userId, contractId);
+        ensureMonthlyRentCharges(contractId);
 
         return monthlyChargeRepository.findByContractIdOrderByBillingDtDesc(contractId)
                 .stream()
@@ -80,6 +83,38 @@ public class MonthlyChargeServiceImpl implements MonthlyChargeService {
         boolean owner = contractRepository.existsByContractIdAndUser_UserId(contractId, userId);
         if (!owner) {
             throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
+        }
+    }
+
+    private void ensureMonthlyRentCharges(Integer contractId) {
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CONTRACT_NOT_FOUND));
+
+        LocalDate start = contract.getContractStart();
+        LocalDate end = contract.getContractEnd();
+        if (start == null || end == null || start.isAfter(end) || contract.getRentPrice() == null) {
+            return;
+        }
+
+        YearMonth cursor = YearMonth.from(start);
+        YearMonth endMonth = YearMonth.from(end);
+
+        while (!cursor.isAfter(endMonth)) {
+            String billingDt = cursor.toString(); // yyyy-MM
+            monthlyChargeRepository.findByContractIdAndBillingDtAndChargeType(
+                    contractId,
+                    billingDt,
+                    "rent"
+            ).orElseGet(() -> monthlyChargeRepository.save(
+                    MonthlyCharge.builder()
+                            .contractId(contractId)
+                            .chargeType("rent")
+                            .billingDt(billingDt)
+                            .price(contract.getRentPrice())
+                            .build()
+            ));
+
+            cursor = cursor.plusMonths(1);
         }
     }
 }

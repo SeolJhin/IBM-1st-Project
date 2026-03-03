@@ -43,8 +43,6 @@ export default function Support() {
       />
 
       <main style={{ overflow: 'visible' }}>
-        <h2 className={styles.pageTitle}>{titleMap[variant]}</h2>
-
         <Outlet />
       </main>
 

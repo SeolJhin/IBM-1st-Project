@@ -145,6 +145,13 @@ public class UserServiceImpl implements UserService {
             actorAdminId,
             "/admin/users/" + user.getUserId()
         );
+        // 본인에게도 알림
+        String statusMsg = switch (req.getUserSt()) {
+            case banned   -> "계정이 이용 정지되었습니다. 커뮤니티 글/댓글 작성이 제한됩니다.";
+            case inactive -> "계정이 비활성화되었습니다.";
+            default       -> "계정이 정상 상태로 복구되었습니다.";
+        };
+        safeNotify(user.getUserId(), NotificationType.ADM_USER_STATUS_CHG.name(), statusMsg);
         detectBulkAdminChange(actorAdminId, "STATUS");
         return UserResponse.from(user);
     }

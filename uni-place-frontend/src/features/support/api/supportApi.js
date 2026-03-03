@@ -14,10 +14,8 @@ function normalizeSupportCode(value) {
   if (upper === 'SUP_GENERAL' || upper === 'GENERAL') return 'SUP_GENERAL';
   if (upper === 'SUP_BILLING' || upper === 'BILLING') return 'SUP_BILLING';
 
-  if (upper.startsWith('QNA_') || upper.startsWith('COMP_')) {
-    if (upper.includes('PAY') || upper.includes('BILL')) return 'SUP_BILLING';
-    return 'SUP_GENERAL';
-  }
+  // COMP_*, QNA_* 는 그대로 백엔드로 전달 (서버에서 직접 처리)
+  if (upper.startsWith('QNA_') || upper.startsWith('COMP_')) return upper;
 
   return upper;
 }
