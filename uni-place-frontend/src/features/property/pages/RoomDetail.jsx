@@ -227,7 +227,7 @@ export default function RoomDetail() {
 
   const handleTourReservation = () => {
     navigate(
-      `/tour-reservation?roomId=${roomId}&buildingId=${room?.buildingId}&roomNo=${room?.roomNo}`
+      `/reservations/tour/create?roomId=${roomId}&buildingId=${room?.buildingId}&roomNo=${room?.roomNo}`
     );
   };
 

@@ -448,6 +448,7 @@ export default function TourReservationCreate({
                     color: '#7a6a50',
                   }}
                 >
+                  {selectedBuilding?.buildingNm ?? '-'} {'>'}{' '}
                   {selectedRoomInfo.roomNm ?? `방 #${selectedRoomInfo.roomId}`}{' '}
                   · {date} · {selectedSlot.startAt?.slice(11, 16)}~
                   {selectedSlot.endAt?.slice(11, 16)}
@@ -743,6 +744,7 @@ export default function TourReservationCreate({
                     color: '#7a6a50',
                   }}
                 >
+                  {selectedBuilding?.buildingNm ?? '-'} {'>'}{' '}
                   {selectedRoomInfo.roomNm ?? `방 #${selectedRoomInfo.roomId}`}{' '}
                   · {date} · {selectedSlot.startAt?.slice(11, 16)}~
                   {selectedSlot.endAt?.slice(11, 16)}
