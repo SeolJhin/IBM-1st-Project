@@ -5,15 +5,15 @@ import { billingApi } from '../api/billingApi';
 import styles from './MyMonthlyCharges.module.css';
 
 const CONTRACT_FILTERS = [
-  { key: 'ongoing', label: '怨꾩빟 吏꾪뻾/?덉젙' },
-  { key: 'ended', label: '怨꾩빟 留뚮즺' },
+  { key: 'ongoing', label: '계약 진행/예정' },
+  { key: 'ended', label: '계약 만료' },
 ];
 
 const BILLING_FILTERS = [
-  { key: 'all', label: '?꾩껜' },
-  { key: 'unpaid', label: '誘몃궔?댁뿭' },
-  { key: 'paid', label: '寃곗젣 ?꾨즺' },
-  { key: 'overdue', label: '?곗껜 ?댁뿭' },
+  { key: 'all', label: '전체' },
+  { key: 'unpaid', label: '미납내역' },
+  { key: 'paid', label: '결제 완료' },
+  { key: 'overdue', label: '연체 내역' },
 ];
 
 function hasText(value) {
@@ -109,16 +109,16 @@ function summarizeContract(contract, charges, now) {
   const remainingMonths = Math.max(0, totalMonths - paidMonths);
 
   let statusKey = 'paid';
-  let statusLabel = '?꾨궔';
+  let statusLabel = '완납';
   if (overdueCharges.length > 0) {
     statusKey = 'overdue';
-    statusLabel = `?곗껜(${overdueCharges.length})`;
+    statusLabel = `연체(${overdueCharges.length})`;
   } else if (paidMonths < scheduledMonths) {
     statusKey = 'unpaid';
-    statusLabel = `誘몃궔(${scheduledMonths - paidMonths})`;
+    statusLabel = `미납(${scheduledMonths - paidMonths})`;
   } else if (paidMonths > scheduledMonths) {
     statusKey = 'paid';
-    statusLabel = `?좊궔(${paidMonths - scheduledMonths})`;
+    statusLabel = `선납(${paidMonths - scheduledMonths})`;
   }
 
   const firstPayable = payableCharges[0] || null;
@@ -133,7 +133,7 @@ function summarizeContract(contract, charges, now) {
     buildingNm: contract.buildingNm || '-',
     roomNo: contract.roomNo || '-',
     contractStatusKey: toStatusKey(contract.contractStatus),
-    monthProgress: `${totalMonths}媛쒖썡 / ?덉젙 ${scheduledMonths} / ?⑹엯 ${paidMonths}`,
+    monthProgress: `${totalMonths}개월 / 예정 ${scheduledMonths} / 납입 ${paidMonths}`,
     totalMonths,
     scheduledMonths,
     paidMonths,
@@ -193,7 +193,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
       );
       setRows(nextRows);
     } catch (e) {
-      setError(e?.message || '??? ??? ??????????? ????????');
+      setError(e?.message || '월세 정보를 불러오지 못했습니다.');
       setRows([]);
     } finally {
       setLoading(false);
@@ -287,13 +287,13 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
     );
     if (payableRemain <= 0) {
       setPayError(
-        '紐⑤뱺 ?붿꽭瑜??⑸??섏뀲?듬땲?? ?붿씠??吏遺덊븯?????놁뒿?덈떎.'
+        '모든 월세를 납부하셨습니다. 더이상 지불하실 수 없습니다.'
       );
       return;
     }
 
     if (selectedRows.length === 0) {
-      setPayError('寃곗젣????ぉ???좏깮?섍퀬 吏遺??덉젙 ?섎? 1 ?댁긽?쇰줈 ?ㅼ젙?댁＜?몄슂.');
+      setPayError('결제할 항목을 선택하고 지불 예정 횟수를 1 이상으로 설정해주세요.');
       return;
     }
     setPayError('');
@@ -314,15 +314,15 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
         const available = row.payableChargeIds.length;
         if (Number(row.maxPlan || 0) <= 0) {
           throw new Error(
-            '紐⑤뱺 ?붿꽭瑜??⑸??섏뀲?듬땲?? ?붿씠??吏遺덊븯?????놁뒿?덈떎.'
+            '모든 월세를 납부하셨습니다. 더이상 지불하실 수 없습니다.'
           );
         }
         if (needed > available) {
           throw new Error(
-            `${row.buildingNm} ${row.roomNo}?몃뒗 ?꾩옱 ${available}媛쒖썡遺꾨쭔 泥?뎄 ?앹꽦?섏뼱 寃곗젣?????덉뒿?덈떎.`
+            `${row.buildingNm} ${row.roomNo}호는 현재 ${available}개월분만 청구 생성되어 결제할 수 있습니다.`
           );
         }
-        titleParts.push(`${row.buildingNm} ${row.roomNo}??${needed}媛쒖썡`);
+        titleParts.push(`${row.buildingNm} ${row.roomNo}호 ${needed}개월`);
         for (let i = 0; i < needed; i += 1) {
           selectedChargeIds.push(row.payableChargeIds[i]);
         }
@@ -332,7 +332,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
       const openUrl =
         pay?.redirectPcUrl || pay?.redirectMobileUrl || pay?.redirectAppUrl;
       if (!hasText(openUrl)) {
-        throw new Error('移댁뭅?ㅽ럹??寃곗젣 URL??媛?몄삤吏 紐삵뻽?듬땲??');
+        throw new Error('카카오페이 결제 URL을 가져오지 못했습니다.');
       }
       setQrItems([
         {
@@ -343,7 +343,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
         },
       ]);
     } catch (e) {
-      setPayError(e?.message || '移댁뭅?ㅽ럹??QR ?앹꽦???ㅽ뙣?덉뒿?덈떎.');
+      setPayError(e?.message || '카카오페이 QR 생성에 실패했습니다.');
     } finally {
       setPayLoading(false);
     }
@@ -353,7 +353,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
     <section className={styles.wrap}>
       <div className={styles.filterBox}>
         <div className={styles.filterGroup}>
-          <strong>怨꾩빟 ?꾪꽣</strong>
+          <strong>계약 필터</strong>
           {CONTRACT_FILTERS.map((item) => (
             <label key={item.key} className={styles.checkboxLabel}>
               <input
@@ -367,7 +367,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
         </div>
 
         <div className={styles.filterGroup}>
-          <strong>泥?뎄 ?곹깭 ?꾪꽣</strong>
+          <strong>청구 상태 필터</strong>
           {BILLING_FILTERS.map((item) => (
             <label key={item.key} className={styles.checkboxLabel}>
               <input
@@ -381,10 +381,10 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
         </div>
       </div>
 
-      {loading && <div className={styles.stateBox}>遺덈윭?ㅻ뒗 以?..</div>}
+      {loading && <div className={styles.stateBox}>불러오는 중..</div>}
       {!loading && error && <div className={styles.errorBox}>{error}</div>}
       {!loading && !error && shownRows.length === 0 && (
-        <div className={styles.stateBox}>?쒖떆???붿꽭 寃곗젣 ?댁뿭???놁뒿?덈떎.</div>
+        <div className={styles.stateBox}>표시할 월세 결제 내역이 없습니다.</div>
       )}
 
       {!loading && !error && shownRows.length > 0 && (
@@ -396,11 +396,11 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
                   <th />
                   <th>건물명</th>
                   <th>방호실</th>
-                  <th>怨꾩빟/?덉젙/?⑹엯</th>
+                  <th>계약/예정/납입</th>
                   <th>청구월</th>
-                  <th>?곹깭</th>
-                  <th>吏遺??덉젙</th>
-                  <th>媛寃???</th>
+                  <th>상태</th>
+                  <th>지불 예정</th>
+                  <th>가격(원)</th>
                 </tr>
               </thead>
               <tbody>
@@ -439,7 +439,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
                           {'>'}
                         </button>
                       </div>
-                      <div className={styles.maxText}>理쒕? {row.maxPlan}</div>
+                      <div className={styles.maxText}>최대 {row.maxPlan}</div>
                     </td>
                     <td>{formatMoney(row.monthlyRent)}</td>
                   </tr>
@@ -449,9 +449,9 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
           </div>
 
           <div className={styles.footerBar}>
-            <div>寃곗젣 湲덉븸</div>
+            <div>결제 금액</div>
             <div>
-              珥?<strong>{formatMoney(totalAmount)}</strong>
+              총 <strong>{formatMoney(totalAmount)}</strong>
             </div>
           </div>
 
@@ -459,7 +459,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
 
           <div className={styles.payRow}>
             <button type="button" className={styles.payBtn} onClick={openPay}>
-              寃곗젣?섍린
+              결제하기
             </button>
           </div>
         </>
@@ -471,12 +471,12 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
           setPayOpen(false);
           loadData();
         }}
-        title="寃곗젣 ?섎떒 ?좏깮"
+        title="결제 수단 선택"
         size="md"
       >
         <div className={styles.modalBody}>
           <div className={styles.modalAmount}>
-            寃곗젣 ?덉젙 湲덉븸: <strong>{formatMoney(totalAmount)}</strong>
+            결제 예정 금액: <strong>{formatMoney(totalAmount)}</strong>
           </div>
 
           <button
@@ -488,7 +488,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
             {payLoading ? 'QR 생성 중..' : '카카오페이'}
           </button>
           <button type="button" className={styles.refreshMiniBtn} onClick={loadData}>
-            寃곗젣 ?곹깭 ?덈줈怨좎묠
+            결제 상태 새로고침
           </button>
 
           {payError && <div className={styles.errorBox}>{payError}</div>}
@@ -500,9 +500,9 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
                   <div className={styles.qrTitle}>
                     {idx + 1}. {item.title} / {formatMoney(item.totalPrice)}
                   </div>
-                  <img src={item.qrImageUrl} alt="移댁뭅?ㅽ럹??QR" className={styles.qrImage} />
+                  <img src={item.qrImageUrl} alt="카카오페이 QR" className={styles.qrImage} />
                   <a href={item.url} target="_blank" rel="noreferrer" className={styles.qrLink}>
-                    寃곗젣李??닿린
+                    결제창 열기
                   </a>
                 </div>
               ))}
@@ -513,4 +513,3 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
     </section>
   );
 }
-
