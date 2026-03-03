@@ -9,4 +9,5 @@ import lombok.*;
 @Builder
 public class ReplyUpdateRequest {
     private String replyCtnt;
+    private String anonymity; // "Y" or "N"
 }

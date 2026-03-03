@@ -35,13 +35,16 @@ public class Reply {
     private LocalDateTime updatedAt;
 
     @Column(name = "parent_id")
-    private Integer parentId; // null이면 댓글, 값 있으면 대댓글
+    private Integer parentId;
 
     @Column(name = "reply_lev", nullable = false)
-    private Integer replyLev; // 기본 1
+    private Integer replyLev;
 
     @Column(name = "reply_seq", nullable = false)
-    private Integer replySeq; // 기본 1 (정렬/순번)
+    private Integer replySeq;
+
+    @Column(name = "anonymity", nullable = false, length = 1)
+    private String anonymity;
 
     @PrePersist
     public void prePersist() {
@@ -50,6 +53,7 @@ public class Reply {
         if (updatedAt == null) updatedAt = now;
         if (replyLev == null) replyLev = 1;
         if (replySeq == null) replySeq = 1;
+        if (anonymity == null) anonymity = "N";
     }
 
     @PreUpdate
