@@ -5,8 +5,8 @@ import { adminApi } from '../../api/adminApi';
 export default function AdminMonthlyChargeDetail() {
   return (
     <AdminEndpointDetailProbe
-      title="Admin Monthly Charge Detail"
-      idLabel="Charge ID"
+      title="?? ?? ??"
+      idLabel="?? ID"
       fetcher={(id) => adminApi.getMonthlyChargeDetail(id)}
       parseId={(v) => (v === '' ? '' : Number(v))}
     />
