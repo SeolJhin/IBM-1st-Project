@@ -7,7 +7,7 @@ const unwrap = (res) => {
   const d = res.data;
   if (d && typeof d === 'object' && 'success' in d) {
     if (d.success) return d.data;
-    throw new Error(d.message || 'API error');
+    throw new Error(d.message || 'API요청에 실패했습니다.');
   }
   return d;
 };
