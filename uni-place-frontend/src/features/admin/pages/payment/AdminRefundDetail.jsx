@@ -5,8 +5,8 @@ import { adminApi } from '../../api/adminApi';
 export default function AdminRefundDetail() {
   return (
     <AdminEndpointDetailProbe
-      title="Admin Refund Detail"
-      idLabel="Refund ID"
+      title="?? ?? ??"
+      idLabel="?? ID"
       fetcher={(id) => adminApi.getRefundDetail(id)}
       parseId={(v) => (v === '' ? '' : Number(v))}
     />

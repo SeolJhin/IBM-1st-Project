@@ -5,8 +5,8 @@ import { adminApi } from '../../api/adminApi';
 export default function AdminPaymentDetail() {
   return (
     <AdminEndpointDetailProbe
-      title="Admin Payment Detail"
-      idLabel="Payment ID"
+      title="?? ?? ??"
+      idLabel="?? ID"
       fetcher={(id) => adminApi.getPaymentDetail(id)}
       parseId={(v) => (v === '' ? '' : Number(v))}
     />
