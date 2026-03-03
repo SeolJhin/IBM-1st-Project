@@ -73,8 +73,11 @@ public class BoardController {
 
     // 게시판 상세 보기
     @GetMapping("/{boardId}")
-    public ResponseEntity<ApiResponse<BoardResponse>> boardDetail(@PathVariable("boardId") int boardId) {
-        return ResponseEntity.ok(ApiResponse.ok(boardService.getBoardDetail(boardId)));
+    public ResponseEntity<ApiResponse<BoardResponse>> boardDetail(
+            @PathVariable("boardId") int boardId,
+            @RequestParam(name = "increaseReadCount", defaultValue = "true") boolean increaseReadCount
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(boardService.getBoardDetail(boardId, increaseReadCount)));
     }
 
     // 게시글 좋아요 등록

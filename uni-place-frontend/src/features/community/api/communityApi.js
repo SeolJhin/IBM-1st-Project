@@ -130,8 +130,15 @@ export const communityApi = {
     return request(`/replies/me?${qs}`);
   },
 
-  getBoard: (boardId, { auth = false } = {}) =>
-    request(`/boards/${boardId}`, { auth }),
+  getBoard: (
+    boardId,
+    { auth = false, increaseReadCount = true } = {}
+  ) => {
+    const qs = new URLSearchParams();
+    if (increaseReadCount === false) qs.set('increaseReadCount', 'false');
+    const q = qs.toString();
+    return request(`/boards/${boardId}${q ? `?${q}` : ''}`, { auth });
+  },
 
   createBoard: ({
     boardTitle,
