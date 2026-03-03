@@ -33,7 +33,7 @@ export function AdminEndpointListProbe({
       const result = await fetcher(prepared);
       setData(result);
     } catch (e) {
-      setError(e?.message || 'Failed to load endpoint');
+      setError(e?.message || '데이터를 불러오는 중 오류가 발생했습니다.');
       setData(null);
     } finally {
       setLoading(false);
@@ -68,15 +68,17 @@ export function AdminEndpointListProbe({
 
       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
         <button type="button" onClick={load} disabled={loading}>
-          {loading ? 'Loading...' : 'Fetch endpoint'}
+          {loading ? '불러오는 중...' : '데이터 조회'}
         </button>
         <span style={{ fontSize: 12, color: '#6b7280', alignSelf: 'center' }}>
-          Count: {guessCount(data)}
+          개수: {guessCount(data)}
         </span>
       </div>
 
       {error ? (
-        <div style={{ marginTop: 10, color: '#b91c1c', fontSize: 13 }}>{error}</div>
+        <div style={{ marginTop: 10, color: '#b91c1c', fontSize: 13 }}>
+          {error}
+        </div>
       ) : null}
 
       <pre
@@ -112,7 +114,7 @@ export function AdminEndpointDetailProbe({
   const load = useCallback(async () => {
     const value = parseId ? parseId(id) : id;
     if (value === '' || value === null || value === undefined) {
-      setError(`${idLabel} is required`);
+      setError(`${idLabel} 값이 필요합니다.`);
       setData(null);
       return;
     }
@@ -123,7 +125,7 @@ export function AdminEndpointDetailProbe({
       const result = await fetcher(value);
       setData(result);
     } catch (e) {
-      setError(e?.message || 'Failed to load endpoint');
+      setError(e?.message || '데이터를 불러오는 중 오류가 발생했습니다.');
       setData(null);
     } finally {
       setLoading(false);
@@ -144,12 +146,14 @@ export function AdminEndpointDetailProbe({
 
       <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
         <button type="button" onClick={load} disabled={loading}>
-          {loading ? 'Loading...' : 'Fetch endpoint'}
+          {loading ? '불러오는 중...' : '데이터 조회'}
         </button>
       </div>
 
       {error ? (
-        <div style={{ marginTop: 10, color: '#b91c1c', fontSize: 13 }}>{error}</div>
+        <div style={{ marginTop: 10, color: '#b91c1c', fontSize: 13 }}>
+          {error}
+        </div>
       ) : null}
 
       <pre

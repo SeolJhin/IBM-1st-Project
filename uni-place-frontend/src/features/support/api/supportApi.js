@@ -60,7 +60,7 @@ async function request(
     const message =
       (api && api.message) ||
       (payload && payload.message) ||
-      (typeof payload === 'string' ? payload : '?붿껌???ㅽ뙣?덉뒿?덈떎.');
+      (typeof payload === 'string' ? payload : '요청에 실패했습니다.');
     const error = new Error(message);
     error.status = res.status;
     error.errorCode = api?.errorCode;

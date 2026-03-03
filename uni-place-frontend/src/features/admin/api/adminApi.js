@@ -37,7 +37,9 @@ function unwrapOrThrow(res, payload) {
     const message =
       (api && api.message) ||
       (payload && payload.message) ||
-      (typeof payload === 'string' ? payload : 'Request failed');
+      (typeof payload === 'string'
+        ? payload
+        : '요청 처리 중 오류가 발생했습니다.');
     const error = new Error(message);
     error.status = res.status;
     error.errorCode = api?.errorCode;
@@ -130,7 +132,9 @@ async function fetchDashboardFallback() {
 
   if (fulfilledCount === 0) {
     const firstError = settled.find((result) => result.status === 'rejected');
-    throw firstError?.reason || new Error('Failed to load dashboard data');
+    throw (
+      firstError?.reason || new Error('대시보드 데이터를 불러오지 못했습니다.')
+    );
   }
 
   const getCount = (result) =>
