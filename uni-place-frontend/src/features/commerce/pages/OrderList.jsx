@@ -29,6 +29,20 @@ function fmtDate(d) {
   });
 }
 
+function resolvePaymentToast(search) {
+  const payment = new URLSearchParams(search || '').get('payment');
+  if (payment === 'success') {
+    return '카카오페이 결제가 완료되었습니다. 주문 내역에서 확인하세요.';
+  }
+  if (payment === 'cancel') {
+    return '결제가 취소되었습니다.';
+  }
+  if (payment === 'fail') {
+    return '결제가 실패했습니다. 다시 시도해 주세요.';
+  }
+  return '';
+}
+
 export default function OrderList({
   inlineMode = false,
   onNav,
@@ -46,7 +60,7 @@ export default function OrderList({
   };
 
   const [toast, setToast] = useState(
-    propToast || location.state?.toastMsg || ''
+    propToast || location.state?.toastMsg || resolvePaymentToast(location.search)
   );
   useEffect(() => {
     if (!toast) return;
@@ -56,6 +70,10 @@ export default function OrderList({
   useEffect(() => {
     if (propToast) setToast(propToast);
   }, [propToast]);
+  useEffect(() => {
+    const msg = resolvePaymentToast(location.search);
+    if (msg) setToast(msg);
+  }, [location.search]);
 
   const inner = (
     <div>
