@@ -20,4 +20,6 @@ public interface BoardService {
     void deleteBoard(int boardId);
     
     PageResponse<BoardResponse> getMyBoards(String boardType, Pageable pageable);
+
+    PageResponse<BoardResponse> searchBoards(String boardType, String searchType, String keyword, Pageable pageable);
 }
