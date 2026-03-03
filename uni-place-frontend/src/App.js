@@ -67,7 +67,7 @@ import AdminShell from './features/admin/components/AdminShell';
 import AdminInfo from './features/admin/pages/AdminInfo';
 
 import AdminMonthlyChargeList from './features/admin/pages/billing/AdminMonthlyChargeList';
-import AdminContractList from './features/admin/pages/contract/AdminContractList';
+import AdminContractHub from './features/admin/pages/contract/AdminContractHub';
 import AdminResidentList from './features/admin/pages/contract/AdminResidentList';
 
 import AdminPayHub from './features/admin/pages/payment/AdminPayHub';
@@ -209,7 +209,7 @@ export default function App() {
                 <Route index element={<Navigate to="tours" replace />} />
               </Route>
 
-              <Route path="contracts" element={<AdminContractList />} />
+              <Route path="contracts" element={<AdminContractHub />} />
 
               <Route path="system" element={<AdminSystemHub />}>
                 <Route path="banners" element={<AdminBannerList />} />

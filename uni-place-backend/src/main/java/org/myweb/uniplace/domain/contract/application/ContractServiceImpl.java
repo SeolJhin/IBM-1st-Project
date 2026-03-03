@@ -21,6 +21,7 @@ import org.myweb.uniplace.domain.file.domain.enums.FileRefType;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.property.repository.RoomRepository;
 import org.myweb.uniplace.domain.user.domain.entity.User;
+import org.myweb.uniplace.domain.user.domain.enums.UserRole;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
@@ -219,6 +220,14 @@ public class ContractServiceImpl implements ContractService {
                     );
                     log.info("[Resident] auto created by contract approval contractId={} userId={}", c.getContractId(), userId);
                 }
+            }
+
+            // 계약 승인 시 일반회원(user) -> 입주민(tenant)으로 자동 승격
+            if (c.getUser() != null && c.getUser().getUserRole() == UserRole.user) {
+                c.getUser().changeRole(UserRole.tenant);
+                userRepository.save(c.getUser());
+                log.info("[UserRole] promoted to tenant by contract approval contractId={} userId={}",
+                        c.getContractId(), c.getUser().getUserId());
             }
         }
 
