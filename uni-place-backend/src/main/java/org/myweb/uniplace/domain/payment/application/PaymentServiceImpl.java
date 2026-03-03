@@ -8,6 +8,8 @@ import org.myweb.uniplace.domain.billing.repository.MonthlyChargeRepository;
 import org.myweb.uniplace.domain.commerce.domain.entity.Order;
 import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
 import org.myweb.uniplace.domain.commerce.repository.OrderRepository;
+import org.myweb.uniplace.domain.contract.domain.entity.Contract;
+import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 import org.myweb.uniplace.domain.contract.repository.ContractRepository;
 import org.myweb.uniplace.domain.notification.application.NotificationService;
 import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
@@ -213,9 +215,10 @@ public class PaymentServiceImpl implements PaymentService {
             if (!contractRepository.existsByContractIdAndUser_UserId(charge.getContractId(), userId)) {
                 throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
             }
+            validateMonthlyChargeContractStatus(charge.getContractId());
 
             String st = String.valueOf(charge.getChargeSt()).toLowerCase();
-            boolean payableStatus = MonthlyCharge.ST_UNPAID.equalsIgnoreCase(st) || "overdue".equals(st);
+            boolean payableStatus = MonthlyCharge.ST_UNPAID.equalsIgnoreCase(st);
             if (!payableStatus) {
                 // 이미 납부된 청구는 제외하고 남은 미납분만 결제 준비
                 continue;
@@ -542,6 +545,7 @@ public class PaymentServiceImpl implements PaymentService {
         if (!contractRepository.existsByContractIdAndUser_UserId(charge.getContractId(), userId)) {
             throw new BusinessException(ErrorCode.PAYMENT_ACCESS_DENIED);
         }
+        validateMonthlyChargeContractStatus(charge.getContractId());
 
         if (!MonthlyCharge.ST_UNPAID.equalsIgnoreCase(charge.getChargeSt())) {
             throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
@@ -580,6 +584,7 @@ public class PaymentServiceImpl implements PaymentService {
                 for (Integer id : ids) {
                     MonthlyCharge c = monthlyChargeRepository.findById(id)
                         .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
+                    validateMonthlyChargeContractStatus(c.getContractId());
                     if (c.getPaymentId() != null && !Objects.equals(c.getPaymentId(), payment.getPaymentId())) {
                         throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
                     }
@@ -588,7 +593,7 @@ public class PaymentServiceImpl implements PaymentService {
                     }
                     total = total.add(c.getPrice());
                     String st = String.valueOf(c.getChargeSt()).toLowerCase();
-                    if (MonthlyCharge.ST_UNPAID.equalsIgnoreCase(st) || "overdue".equals(st)) {
+                    if (MonthlyCharge.ST_UNPAID.equalsIgnoreCase(st)) {
                         c.markPaid(payment.getPaymentId());
                         continue;
                     }
@@ -606,6 +611,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             MonthlyCharge charge = monthlyChargeRepository.findById(payment.getTargetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
+            validateMonthlyChargeContractStatus(charge.getContractId());
             if (charge.getPaymentId() != null && !Objects.equals(charge.getPaymentId(), payment.getPaymentId())) {
                 return;
             }
@@ -645,9 +651,9 @@ public class PaymentServiceImpl implements PaymentService {
                 for (Integer id : ids) {
                     MonthlyCharge charge = monthlyChargeRepository.findById(id)
                         .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
+                    validateMonthlyChargeContractStatus(charge.getContractId());
                     String st = String.valueOf(charge.getChargeSt()).toLowerCase();
                     if (!MonthlyCharge.ST_UNPAID.equalsIgnoreCase(st)
-                        && !"overdue".equals(st)
                         && !(MonthlyCharge.ST_PAID.equalsIgnoreCase(st)
                         && Objects.equals(charge.getPaymentId(), payment.getPaymentId()))) {
                         throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
@@ -668,6 +674,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             MonthlyCharge charge = monthlyChargeRepository.findById(payment.getTargetId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.BILLING_CHARGE_NOT_FOUND));
+            validateMonthlyChargeContractStatus(charge.getContractId());
 
             if (!MonthlyCharge.ST_UNPAID.equalsIgnoreCase(charge.getChargeSt())) {
                 throw new BusinessException(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
@@ -683,6 +690,14 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+    }
+
+    private void validateMonthlyChargeContractStatus(Integer contractId) {
+        Contract contract = contractRepository.findById(contractId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.CONTRACT_NOT_FOUND));
+        if (contract.getContractSt() == ContractStatus.cancelled) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
     }
 
     private static String trimMessage(String message) {

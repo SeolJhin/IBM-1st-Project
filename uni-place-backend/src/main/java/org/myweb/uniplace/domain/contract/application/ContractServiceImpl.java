@@ -83,15 +83,6 @@ public class ContractServiceImpl implements ContractService {
         );
         if (roomOverlapped) throw new BusinessException(ErrorCode.CONTRACT_OVERLAP);
 
-        boolean userOverlapped = contractRepository.existsOverlappedContractByUser(
-            userId,
-            request.getContractStart(),
-            request.getContractEnd(),
-            ContractStatus.requested,
-            ContractStatus.active
-        );
-        if (userOverlapped) throw new BusinessException(ErrorCode.CONTRACT_OVERLAP);
-
         Contract contract = Contract.builder()
             .user(user)
             .room(room)
