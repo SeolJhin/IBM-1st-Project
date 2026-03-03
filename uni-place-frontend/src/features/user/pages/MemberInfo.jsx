@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 
 // ── 탭 컴포넌트 import ────────────────────────────────────────
 import MyContractView from '../../contract/pages/MyContractView';
+import MyMonthlyCharges from '../../billing/pages/MyMonthlyCharges';
 import MyPosts from '../../community/pages/MyPosts';
 import { useQnas } from '../../support/hooks/useQnas';
 import { useComplains } from '../../support/hooks/useComplains';
@@ -39,12 +40,12 @@ const TAB = {
 };
 
 const SIDE_ITEMS = [
-  { key: TAB.ME, label: '내 정보' },
-  { key: TAB.MYROOM, label: '마이룸' },
-  { key: TAB.POSTS, label: '작성 목록' },
-  { key: TAB.SPACE, label: '공용 시설' },
-  { key: TAB.TOUR, label: '사전 방문' },
-  { key: TAB.ROOMSERVICE, label: '룸서비스' },
+  { key: TAB.ME, label: '\uB0B4 \uC815\uBCF4' },
+  { key: TAB.MYROOM, label: '\uB0B4 \uACC4\uC57D' },
+  { key: TAB.POSTS, label: '\uC791\uC131 \uBAA9\uB85D' },
+  { key: TAB.SPACE, label: '\uACF5\uC6A9 \uC2DC\uC124' },
+  { key: TAB.TOUR, label: '\uC0AC\uC804 \uBC29\uBB38' },
+  { key: TAB.ROOMSERVICE, label: '\uB8F8\uC11C\uBE44\uC2A4' },
 ];
 
 // ── 내 정보 탭 (로컬) ─────────────────────────────────────────
@@ -715,6 +716,11 @@ export default function MemberInfo() {
   const urlSub = searchParams.get('sub') || '';
 
   const [activeTab, setActiveTab] = useState(urlTab);
+  const [myRoomSubTab, setMyRoomSubTab] = useState(
+    urlTab === TAB.MYROOM && urlSub === 'rent-payment'
+      ? 'rent-payment'
+      : 'contracts'
+  );
   const [spaceSubTab, setSpaceSubTab] = useState(
     urlTab === TAB.SPACE && urlSub === 'list' ? 'list' : 'create'
   );
@@ -734,6 +740,8 @@ export default function MemberInfo() {
     const tab = searchParams.get('tab') || TAB.ME;
     const sub = searchParams.get('sub') || '';
     setActiveTab(tab);
+    if (tab === TAB.MYROOM)
+      setMyRoomSubTab(sub === 'rent-payment' ? 'rent-payment' : 'contracts');
     if (tab === TAB.SPACE) setSpaceSubTab(sub === 'list' ? 'list' : 'create');
     if (tab === TAB.POSTS)
       setPostsSubTab(sub === 'support' ? 'support' : 'community');
@@ -786,9 +794,36 @@ export default function MemberInfo() {
           {activeTab === TAB.MYROOM && (
             <div className={styles.card}>
               <div className={styles.cardHeader}>
-                <h1 className={styles.title}>🏠 마이룸</h1>
+                <h1 className={styles.title}>{'\uB0B4 \uACC4\uC57D'}</h1>
               </div>
-              <MyContractView />
+
+              <div className={styles.subTabRow}>
+                <button
+                  type="button"
+                  className={`${styles.subTab} ${myRoomSubTab === 'contracts' ? styles.subTabActive : ''}`}
+                  onClick={() => {
+                    setMyRoomSubTab('contracts');
+                    setSearchParams({ tab: TAB.MYROOM, sub: 'contracts' });
+                  }}
+                >
+                  {'\uB0B4 \uACC4\uC57D'}
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.subTab} ${myRoomSubTab === 'rent-payment' ? styles.subTabActive : ''}`}
+                  onClick={() => {
+                    setMyRoomSubTab('rent-payment');
+                    setSearchParams({ tab: TAB.MYROOM, sub: 'rent-payment' });
+                  }}
+                >
+                  {'\uC6D4\uC138 \uACB0\uC81C'}
+                </button>
+              </div>
+
+              {myRoomSubTab === 'contracts' && <MyContractView />}
+              {myRoomSubTab === 'rent-payment' && (
+                <MyMonthlyCharges focusContractId={searchParams.get('contractId')} />
+              )}
             </div>
           )}
 

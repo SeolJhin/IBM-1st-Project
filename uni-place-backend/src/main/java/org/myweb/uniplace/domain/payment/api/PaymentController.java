@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import org.myweb.uniplace.domain.payment.application.PaymentService;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentPrepareRequest;
+import org.myweb.uniplace.domain.payment.api.dto.request.PaymentPrepareMonthlyBatchRequest;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentApproveRequest;
 import org.myweb.uniplace.domain.payment.api.dto.request.RetryPaymentRequest;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentPrepareResponse;
@@ -30,6 +31,17 @@ public class PaymentController {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         return paymentService.prepare(authUser.getUserId(), request);
+    }
+
+    @PostMapping("/prepare/monthly-batch")
+    public PaymentPrepareResponse prepareMonthlyBatch(
+        @AuthenticationPrincipal AuthUser authUser,
+        @RequestBody PaymentPrepareMonthlyBatchRequest request
+    ) {
+        if (authUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return paymentService.prepareMonthlyChargeBatch(authUser.getUserId(), request);
     }
 
     @PostMapping("/approve")
