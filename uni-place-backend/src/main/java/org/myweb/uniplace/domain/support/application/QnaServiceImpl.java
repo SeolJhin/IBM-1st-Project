@@ -1,7 +1,11 @@
 package org.myweb.uniplace.domain.support.application;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.myweb.uniplace.domain.commoncode.repository.CommonCodeRepository;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.support.api.dto.request.*;
 import org.myweb.uniplace.domain.support.api.dto.response.QnaResponse;
 import org.myweb.uniplace.domain.support.domain.entity.Qna;
@@ -15,10 +19,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -28,6 +32,7 @@ public class QnaServiceImpl implements QnaService {
 
     private final QnaRepository qnaRepository;
     private final CommonCodeRepository commonCodeRepository;
+    private final NotificationService notificationService;
 
     // ────────────────────────── 조회 ──────────────────────────
 
@@ -98,7 +103,20 @@ public class QnaServiceImpl implements QnaService {
                 .groupId(request.getGroupId())
                 .qnaLev(request.getQnaLev() != null ? request.getQnaLev() : 0)
                 .build();
-        return QnaResponse.from(qnaRepository.save(qna));
+        Qna saved = qnaRepository.save(qna);
+
+        // QnA 질문 접수 → 어드민 알림
+        try {
+            notificationService.notifyAdmins(
+                NotificationType.QNA_NEW.name(),
+                "새 QnA 질문이 접수되었습니다. qnaId=" + saved.getQnaId() + ", userId=" + userId,
+                userId, TargetType.notice, null, "/admin/qna"
+            );
+        } catch (Exception e) {
+            log.warn("[QNA][NOTIFY][ADMIN] qnaId={} reason={}", saved.getQnaId(), e.getMessage());
+        }
+
+        return QnaResponse.from(saved);
     }
 
     @Override
@@ -138,7 +156,21 @@ public class QnaServiceImpl implements QnaService {
         // 질문 상태를 complete 로 변경
         question.updateStatus(QnaStatus.complete);
 
-        return QnaResponse.from(qnaRepository.save(answer));
+        Qna saved = qnaRepository.save(answer);
+
+        // QnA 답변 등록 → 질문자 알림
+        try {
+            notificationService.notifyUser(
+                question.getUserId(),
+                NotificationType.QNA_ANSWERED.name(),
+                "문의하신 QnA에 답변이 등록되었습니다.",
+                adminUserId, TargetType.notice, null, "/support/qna/" + qnaId
+            );
+        } catch (Exception e) {
+            log.warn("[QNA][NOTIFY] answered qnaId={} reason={}", qnaId, e.getMessage());
+        }
+
+        return QnaResponse.from(saved);
     }
 
     @Override
@@ -190,7 +222,6 @@ public class QnaServiceImpl implements QnaService {
         String mapped = mapSupportCode(rawCode);
         if ("ALL".equalsIgnoreCase(mapped)) return DEFAULT_SUPPORT_CODE;
 
-        // QNA_* 도메인 코드는 공통코드 테이블에 없으므로 DB 체크 없이 바로 저장
         if (mapped.startsWith("QNA_")) return mapped;
 
         return commonCodeRepository.existsByCode(mapped) ? mapped : DEFAULT_SUPPORT_CODE;
@@ -202,7 +233,6 @@ public class QnaServiceImpl implements QnaService {
         return switch (normalized) {
             case "SUP_GENERAL", "GENERAL" -> "SUP_GENERAL";
             case "SUP_BILLING", "BILLING" -> "SUP_BILLING";
-            // QNA_* 코드는 그대로 저장
             case "QNA_CONTRACT", "QNA_PAYMENT", "QNA_FACILITY",
                  "QNA_ROOMSERVICE", "QNA_MOVEINOUT", "QNA_ETC" -> normalized;
             default -> {
