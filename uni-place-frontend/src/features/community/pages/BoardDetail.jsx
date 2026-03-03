@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { communityApi } from '../api/communityApi';
@@ -470,8 +470,17 @@ function ReplyItem({
 /* ── 메인 페이지 ─────────────────────────────────────────── */
 export default function BoardDetail() {
   const { boardId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const tab = String(
+    new URLSearchParams(location.search).get('tab') ?? ''
+  ).toUpperCase();
+  const communityListUrl =
+    tab === 'FREE' || tab === 'QUESTION' || tab === 'REVIEW'
+      ? `/community?tab=${tab}`
+      : '/community';
 
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -672,7 +681,7 @@ export default function BoardDetail() {
     if (!window.confirm('게시글을 삭제할까요?')) return;
     try {
       await communityApi.deleteBoard(boardId);
-      navigate('/community');
+      navigate(communityListUrl);
     } catch (e) {
       window.alert(e?.message || '삭제 실패');
     }
@@ -682,7 +691,7 @@ export default function BoardDetail() {
     if (!window.confirm('관리자 권한으로 이 게시글을 삭제할까요?')) return;
     try {
       await adminApi.adminDeleteBoard(boardId);
-      navigate('/community');
+      navigate(communityListUrl);
     } catch (e) {
       window.alert(e?.message || '삭제 실패');
     }
@@ -744,7 +753,7 @@ export default function BoardDetail() {
         <button
           type="button"
           className={styles.backBtn}
-          onClick={() => navigate('/community')}
+          onClick={() => navigate(communityListUrl)}
         >
           ← 목록으로
         </button>
