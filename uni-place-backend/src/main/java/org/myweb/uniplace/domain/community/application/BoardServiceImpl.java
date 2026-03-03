@@ -312,7 +312,7 @@ public class BoardServiceImpl implements BoardService {
         }
 
         // 그 외 게시판은 기존처럼 작성자 본인만 허용
-        return isAdmin || isOwner;
+        return isOwner;
     }
 
     private String nvlYn(String v, String def) {
