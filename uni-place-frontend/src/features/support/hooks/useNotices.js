@@ -1,10 +1,4 @@
 // features/support/hooks/useNotices.js
-// 공지사항 목록 조회 + 페이징
-//
-// [사용 예시]
-// const { notices, pagination, loading, error, goToPage } = useNotices();
-// const { notices } = useNotices({ size: 5, sort: 'importance' });
-
 import { useCallback, useEffect, useState } from 'react';
 import { supportApi } from '../api/supportApi';
 
@@ -32,10 +26,6 @@ export function useNotices(initialParams = {}) {
     setLoading(true);
     setError(null);
     try {
-      // PageResponse<NoticeResponse>
-      // 필드: noticeId, noticeTitle, userId, noticeCtnt,
-      //       importance, impEndAt, readCount, noticeSt,
-      //       fileCk, code, createdAt, updatedAt
       const data = await supportApi.getNotices(fetchParams);
       setNotices(data?.content ?? []);
       setPagination({
@@ -47,7 +37,7 @@ export function useNotices(initialParams = {}) {
         isLast: (data?.page ?? fetchParams.page) >= (data?.totalPages ?? 1),
       });
     } catch (err) {
-      setError(err?.message || '공지사항을 불러오는 데 실패했습니다.');
+      setError(err?.message || '공지사항을 불러오지 못했습니다.');
       setNotices([]);
     } finally {
       setLoading(false);
@@ -71,7 +61,7 @@ export function useNotices(initialParams = {}) {
   }, [fetchNotices, params]);
 
   return {
-    notices, // NoticeResponse[]
+    notices,
     pagination,
     loading,
     error,

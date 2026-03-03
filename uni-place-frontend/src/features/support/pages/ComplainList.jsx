@@ -39,12 +39,9 @@ export default function ComplainList() {
   const role = normalizeRole(user);
   const isAdmin = role === 'admin';
   const canCreate = role === 'admin' || role === 'tenant';
-  const { complains, pagination, loading, error, goToPage } = useComplains(
-    {},
-    { isAdmin }
-  );
+  const { complains, pagination, loading, error, goToPage } = useComplains({}, { isAdmin });
 
-  if (loading) return <div style={{ padding: 24 }}>로딩중..</div>;
+  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
 
   return (
@@ -55,10 +52,7 @@ export default function ComplainList() {
 
       {canCreate && (
         <div className={styles.listActions}>
-          <button
-            className={styles.buttonPrimary}
-            onClick={() => navigate('/support/complain/write')}
-          >
+          <button className={styles.buttonPrimary} onClick={() => navigate('/support/complain/write')}>
             민원 작성
           </button>
         </div>
@@ -80,43 +74,27 @@ export default function ComplainList() {
             <tr>
               <td
                 colSpan={isAdmin ? 6 : 5}
-                style={{
-                  textAlign: 'center',
-                  padding: 32,
-                  color: 'var(--muted)',
-                }}
+                style={{ textAlign: 'center', padding: 32, color: 'var(--muted)' }}
               >
                 접수된 민원이 없습니다.
               </td>
             </tr>
           ) : (
             complains.map((item) => {
-              const meta = CODE_META[item.code] ?? {
-                label: item.code ?? '-',
-                cls: 'type_etc',
-              };
+              const meta = CODE_META[item.code] ?? { label: item.code ?? '-', cls: 'type_etc' };
               return (
                 <tr key={item.compId}>
-                  <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
-                    {item.compId}
-                  </td>
+                  <td style={{ textAlign: 'center', color: 'var(--muted)' }}>{item.compId}</td>
                   <td style={{ textAlign: 'center' }}>
-                    <span className={`${styles.typeBadge} ${styles[meta.cls]}`}>
-                      {meta.label}
-                    </span>
+                    <span className={`${styles.typeBadge} ${styles[meta.cls]}`}>{meta.label}</span>
                   </td>
                   <td>
-                    <Link
-                      to={`/support/complain/${item.compId}`}
-                      className={styles.tableLink}
-                    >
+                    <Link to={`/support/complain/${item.compId}`} className={styles.tableLink}>
                       {item.compTitle}
                     </Link>
                   </td>
                   {isAdmin && (
-                    <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
-                      {item.userId || '-'}
-                    </td>
+                    <td style={{ textAlign: 'center', color: 'var(--muted)' }}>{item.userId || '-'}</td>
                   )}
                   <td style={{ textAlign: 'center' }}>
                     <span
@@ -126,13 +104,7 @@ export default function ComplainList() {
                       {STATUS_MAP[item.compSt] ?? item.compSt}
                     </span>
                   </td>
-                  <td
-                    style={{
-                      textAlign: 'center',
-                      color: 'var(--muted)',
-                      fontSize: 13,
-                    }}
-                  >
+                  <td style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
                     {item.createdAt ? item.createdAt.slice(0, 10) : '-'}
                   </td>
                 </tr>

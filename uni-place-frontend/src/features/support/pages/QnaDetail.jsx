@@ -17,9 +17,7 @@ function normalizeRole(user) {
     user?.user_role ??
     user?.authority ??
     user?.authorities?.[0];
-  return String(raw ?? '')
-    .toLowerCase()
-    .replace('role_', '');
+  return String(raw ?? '').toLowerCase().replace('role_', '');
 }
 
 export default function QnaDetail() {
@@ -57,7 +55,7 @@ export default function QnaDetail() {
         setAnswerCtnt('');
       }
     } catch (err) {
-      setError(err.message || '문의 내용을 불러오는 데 실패했습니다.');
+      setError(err.message || '문의 내용을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }

@@ -42,13 +42,11 @@ export default function ComplainDetail() {
         setData(res);
         setStatusValue(res?.compSt ?? 'received');
       })
-      .catch((err) =>
-        setError(err.message || '민원 정보를 불러오는 데 실패했습니다.')
-      )
+      .catch((err) => setError(err.message || '민원 정보를 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div style={{ padding: 24 }}>로딩중..</div>;
+  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
   if (!data) return null;
 
@@ -133,15 +131,12 @@ export default function ComplainDetail() {
                 onClick={handleUpdateStatus}
                 disabled={statusSubmitting}
               >
-                {statusSubmitting ? '변경 중..' : '처리상태 변경'}
+                {statusSubmitting ? '변경 중...' : '처리상태 변경'}
               </button>
             </div>
 
             <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
-              <button
-                className={styles.buttonPrimary}
-                onClick={() => navigate(`/support/complain/edit/${id}`)}
-              >
+              <button className={styles.buttonPrimary} onClick={() => navigate(`/support/complain/edit/${id}`)}>
                 수정
               </button>
               <button className={styles.pageBtn} onClick={handleDelete}>

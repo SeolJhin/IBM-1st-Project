@@ -39,6 +39,7 @@ import QnaWrite from '../../features/support/pages/QnaWrite';
 import ComplainList from '../../features/support/pages/ComplainList';
 import ComplainDetail from '../../features/support/pages/ComplainDetail';
 import ComplainWrite from '../../features/support/pages/ComplainWrite';
+import ComplainEdit from '../../features/support/pages/ComplainEdit';
 
 // ── 권한 필요 ────────────────────────────────────────────────────
 import RequireAuth from '../../app/router/guards/RequireAuth';
@@ -108,10 +109,18 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: '/support/complain/:compId',
+    path: '/support/complain/:id',
     element: (
       <RequireAuth>
         <ComplainDetail />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: '/support/complain/edit/:id',
+    element: (
+      <RequireAuth>
+        <ComplainEdit />
       </RequireAuth>
     ),
   },
