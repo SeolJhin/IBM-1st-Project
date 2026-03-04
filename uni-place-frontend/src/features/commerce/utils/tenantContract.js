@@ -16,7 +16,10 @@ function isActiveNow(contract, now = new Date()) {
 }
 
 export function pickActiveTenantContract(contracts) {
-  const list = Array.isArray(contracts) ? contracts : [];
-  return list.find((contract) => isActiveNow(contract)) || null;
+  return pickActiveTenantContracts(contracts)[0] || null;
 }
 
+export function pickActiveTenantContracts(contracts) {
+  const list = Array.isArray(contracts) ? contracts : [];
+  return list.filter((contract) => isActiveNow(contract));
+}

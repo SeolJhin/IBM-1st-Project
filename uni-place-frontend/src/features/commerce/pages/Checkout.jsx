@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import { useCart } from '../hooks/useCart';
@@ -54,18 +54,29 @@ export default function Checkout({
     propBuildingNm ?? location.state?.selectedBuildingNm ?? '';
 
   const {
-    contract: tenantContract,
+    contracts: tenantContracts,
     loading: tenantLoading,
     error: tenantError,
   } = useTenantContract();
-
-  const selectedBuildingId = tenantContract?.buildingId ?? fallbackBuildingId;
-  const selectedBuildingNm = tenantContract?.buildingNm ?? fallbackBuildingNm;
 
   const { cart, clear } = useCart();
   const { createOrder } = useOrderCreate();
   const items = cart?.items ?? [];
   const total = cart?.totalAmount ?? 0;
+  const cartBuildingId = items[0]?.buildingId ?? null;
+  const selectedBuildingId =
+    fallbackBuildingId ?? cartBuildingId ?? tenantContracts[0]?.buildingId ?? null;
+  const selectedBuildingNm =
+    fallbackBuildingNm ||
+    tenantContracts.find((c) => c?.buildingId === selectedBuildingId)?.buildingNm ||
+    '';
+  const roomContracts = tenantContracts.filter(
+    (c) => c?.buildingId === selectedBuildingId && c?.roomId != null
+  );
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const selectedRoomContract = roomContracts.find(
+    (c) => c.roomId === selectedRoomId
+  );
 
   const [form, setForm] = useState({
     name: '',
@@ -92,22 +103,42 @@ export default function Checkout({
   }, []);
 
   useEffect(() => {
-    if (!tenantContract?.roomNo) return;
-    setForm((prev) => ({ ...prev, roomNo: String(tenantContract.roomNo) }));
-  }, [tenantContract?.roomNo]);
+    setSelectedRoomId((prev) => {
+      if (prev && roomContracts.some((c) => c.roomId === prev)) return prev;
+      return roomContracts[0]?.roomId ?? null;
+    });
+  }, [roomContracts]);
+
+  useEffect(() => {
+    if (!selectedRoomContract?.roomNo) return;
+    setForm((prev) => ({ ...prev, roomNo: String(selectedRoomContract.roomNo) }));
+  }, [selectedRoomContract?.roomNo]);
 
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleRoomSelect = (e) => {
+    const nextRoomId = e.target.value ? Number(e.target.value) : null;
+    setSelectedRoomId(nextRoomId);
+    const matched = roomContracts.find((c) => c.roomId === nextRoomId);
+    setForm((prev) => ({
+      ...prev,
+      roomNo: matched?.roomNo ? String(matched.roomNo) : '',
+    }));
+  };
+
   const validate = () => {
     if (tenantLoading) return '입주 계약 정보를 확인 중입니다.';
-    if (!tenantContract) {
+    if (!tenantContracts.length) {
       return tenantError || '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.';
     }
     if (!selectedBuildingId) {
       return '빌딩 정보를 확인하지 못했습니다.';
+    }
+    if (!selectedRoomId || !selectedRoomContract) {
+      return '계약된 호실을 선택해주세요.';
     }
     if (!form.roomNo.trim()) {
       return '호실 정보를 확인하지 못했습니다.';
@@ -147,6 +178,7 @@ export default function Checkout({
       if (payMethod === 'meet') {
         await createOrder({
           buildingId: selectedBuildingId,
+          roomId: selectedRoomId,
           items: orderItems,
           roomServiceDesc: desc,
         });
@@ -157,6 +189,7 @@ export default function Checkout({
       } else if (payMethod === 'kakao') {
         const order = await createOrder({
           buildingId: selectedBuildingId,
+          roomId: selectedRoomId,
           items: orderItems,
           roomServiceDesc: desc,
         });
@@ -221,21 +254,19 @@ export default function Checkout({
                 {selectedBuildingNm ? (
                   <span className={styles.buildingSelected}>
                     🏢 {selectedBuildingNm}
-                    {!tenantContract && (
-                      <button
-                        type="button"
-                        className={styles.changeBuildingBtn}
-                        onClick={() =>
-                          go('/commerce/room-service', {
-                            selectedBuildingId,
-                            selectedBuildingNm,
-                          })
-                        }
-                        disabled={submitting}
-                      >
-                        변경
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className={styles.changeBuildingBtn}
+                      onClick={() =>
+                        go('/commerce/room-service', {
+                          selectedBuildingId,
+                          selectedBuildingNm,
+                        })
+                      }
+                      disabled={submitting}
+                    >
+                      변경
+                    </button>
                   </span>
                 ) : (
                   <button
@@ -255,17 +286,19 @@ export default function Checkout({
                 방 번호 <span className={styles.req}>*</span>
               </label>
               <div className={styles.inputUnit}>
-                <input
-                  className={styles.input}
-                  name="roomNo"
-                  value={form.roomNo}
-                  onChange={onChange}
-                  placeholder="예: 301"
-                  maxLength={10}
-                  disabled={submitting || !selectedBuildingId || !!tenantContract}
-                  readOnly={!!tenantContract}
-                />
-                <span className={styles.unitText}>호</span>
+                <select
+                  className={styles.select}
+                  value={selectedRoomId ?? ''}
+                  onChange={handleRoomSelect}
+                  disabled={submitting || roomContracts.length === 0}
+                >
+                  <option value="">계약된 호실 선택</option>
+                  {roomContracts.map((c) => (
+                    <option key={c.contractId ?? c.roomId} value={c.roomId}>
+                      {c.roomNo}호
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

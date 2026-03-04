@@ -26,7 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,7 +51,11 @@ public class OrderServiceImpl implements OrderService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        Contract tenantContract = resolveTenantContract(userId, request.getBuildingId());
+        Contract tenantContract = resolveTenantContract(
+            userId,
+            request.getBuildingId(),
+            request.getRoomId()
+        );
 
         Integer buildingId = tenantContract.getRoom() == null || tenantContract.getRoom().getBuilding() == null
             ? null
@@ -169,7 +175,11 @@ public class OrderServiceImpl implements OrderService {
         return orderPage.map(OrderResponse::from);
     }
 
-    private Contract resolveTenantContract(String userId, Integer requestedBuildingId) {
+    private Contract resolveTenantContract(
+        String userId,
+        Integer requestedBuildingId,
+        Integer requestedRoomId
+    ) {
         List<Contract> contracts = contractRepository.findActiveContractsWithRoomAndBuilding(
             userId,
             ContractStatus.active,
@@ -180,20 +190,22 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.ROOM_SERVICE_TENANT_ONLY);
         }
 
-        Contract contract = contracts.get(0);
-        Integer tenantBuildingId = contract.getRoom() == null || contract.getRoom().getBuilding() == null
-            ? null
-            : contract.getRoom().getBuilding().getBuildingId();
+        List<Contract> candidates = contracts.stream()
+            .filter(c -> c.getRoom() != null && c.getRoom().getRoomId() != null)
+            .filter(c -> c.getRoom().getBuilding() != null && c.getRoom().getBuilding().getBuildingId() != null)
+            .filter(c -> requestedBuildingId == null
+                || Objects.equals(c.getRoom().getBuilding().getBuildingId(), requestedBuildingId))
+            .filter(c -> requestedRoomId == null
+                || Objects.equals(c.getRoom().getRoomId(), requestedRoomId))
+            .sorted(Comparator.comparing(Contract::getContractStart).reversed()
+                .thenComparing(Contract::getContractId, Comparator.reverseOrder()))
+            .collect(Collectors.toList());
 
-        if (tenantBuildingId == null) {
-            throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
-        }
-
-        if (requestedBuildingId != null && !tenantBuildingId.equals(requestedBuildingId)) {
+        if (candidates.isEmpty()) {
             throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
         }
 
-        return contract;
+        return candidates.get(0);
     }
 
     private static String trimToNull(String value) {

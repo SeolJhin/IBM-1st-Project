@@ -8,6 +8,7 @@ import java.util.List;
 public class OrderCreateRequest {
 
     private Integer buildingId;
+    private Integer roomId;
     private String roomServiceDesc;
     private List<OrderItemDto> items;
 

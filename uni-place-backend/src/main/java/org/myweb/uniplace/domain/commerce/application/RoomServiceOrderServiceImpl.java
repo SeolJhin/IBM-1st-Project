@@ -28,8 +28,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -53,7 +55,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        Contract tenantContract = resolveTenantContract(userId);
+        Contract tenantContract = resolveTenantContract(userId, request.getRoomId());
         Room tenantRoom = tenantContract.getRoom();
         if (tenantRoom == null || tenantRoom.getRoomId() == null) {
             throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
@@ -189,7 +191,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
         return orderRepository.save(created);
     }
 
-    private Contract resolveTenantContract(String userId) {
+    private Contract resolveTenantContract(String userId, Integer requestedRoomId) {
         List<Contract> contracts = contractRepository.findActiveContractsWithRoomAndBuilding(
             userId,
             ContractStatus.active,
@@ -200,7 +202,18 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             throw new BusinessException(ErrorCode.ROOM_SERVICE_TENANT_ONLY);
         }
 
-        return contracts.get(0);
+        List<Contract> candidates = contracts.stream()
+            .filter(c -> c.getRoom() != null && c.getRoom().getRoomId() != null)
+            .filter(c -> requestedRoomId == null || Objects.equals(c.getRoom().getRoomId(), requestedRoomId))
+            .sorted(Comparator.comparing(Contract::getContractStart).reversed()
+                .thenComparing(Contract::getContractId, Comparator.reverseOrder()))
+            .collect(Collectors.toList());
+
+        if (candidates.isEmpty()) {
+            throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
+
+        return candidates.get(0);
     }
 
     private static String trimToNull(String value) {
