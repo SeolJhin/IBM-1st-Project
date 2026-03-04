@@ -43,6 +43,9 @@ export default function ContractApply() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
+  /* 같은 방·같은 건물의 기존 계약 기간 (blocked ranges) */
+  const [blockedRanges, setBlockedRanges] = useState([]); // [{start, end}]
+
   /* 계약 유형 */
   const [rentType, setRentType] = useState('monthly_rent');
 
@@ -90,13 +93,31 @@ export default function ContractApply() {
       .getRoomDetail(roomId)
       .then((data) => {
         setRoom(data);
-        // 임대인 정보를 building에서 자동 채움 (백엔드 @NotBlank 통과)
-        // 임대인 정보는 room 상태에서 직접 참조 (hidden input으로 전송)
       })
       .catch((err) =>
         setLoadError(err?.message || '방 정보를 불러올 수 없습니다.')
       )
       .finally(() => setLoading(false));
+  }, [roomId]);
+
+  /* 내 계약 목록 → 같은 방의 active/requested 기간 추출 */
+  useEffect(() => {
+    if (!roomId) return;
+    contractApi
+      .myContracts()
+      .then((list) => {
+        const ranges = (list ?? [])
+          .filter(
+            (c) =>
+              c.roomId === roomId &&
+              ['active', 'requested'].includes(
+                String(c.contractStatus ?? '').toLowerCase()
+              )
+          )
+          .map((c) => ({ start: c.contractStart, end: c.contractEnd }));
+        setBlockedRanges(ranges);
+      })
+      .catch(() => {});
   }, [roomId]);
 
   /* 로그인 체크 */
@@ -107,6 +128,16 @@ export default function ContractApply() {
       });
     }
   }, [loading, authLoading, user, navigate]);
+
+  /* 특정 날짜가 차단 범위에 포함되는지 */
+  const isDateBlocked = (dateStr) => {
+    return blockedRanges.some((r) => dateStr >= r.start && dateStr <= r.end);
+  };
+
+  /* 선택한 기간이 기존 계약과 겹치는지 */
+  const hasOverlap = (start, end) => {
+    return blockedRanges.some((r) => start <= r.end && end >= r.start);
+  };
 
   /* ── 핸들러 ── */
   const handleChange = (e) => {
@@ -149,6 +180,12 @@ export default function ContractApply() {
     }
     if (!form.contractEnd || form.contractEnd < minContractEnd) {
       setSubmitError('계약 종료일은 시작일로부터 최소 7일 이후여야 합니다.');
+      return;
+    }
+    if (hasOverlap(form.contractStart, form.contractEnd)) {
+      setSubmitError(
+        '선택한 기간이 이미 진행 중인 계약 기간과 겹칩니다. 다른 날짜를 선택해주세요.'
+      );
       return;
     }
     if (!pd || pd < 1 || pd > 31) {
@@ -435,10 +472,15 @@ export default function ContractApply() {
                       name="contractStart"
                       value={form.contractStart}
                       onChange={handleChange}
-                      className={styles.docInput}
+                      className={`${styles.docInput} ${isDateBlocked(form.contractStart) ? styles.docInputBlocked : ''}`}
                       min={todayStr()}
                       required
                     />
+                    {isDateBlocked(form.contractStart) && (
+                      <span className={styles.dateBlockedMsg}>
+                        ⚠ 기존 계약 기간과 겹칩니다
+                      </span>
+                    )}
                   </div>
                   <div className={styles.docCell}>
                     <span className={styles.docLabel}>
@@ -449,12 +491,32 @@ export default function ContractApply() {
                       name="contractEnd"
                       value={form.contractEnd}
                       onChange={handleChange}
-                      className={styles.docInput}
+                      className={`${styles.docInput} ${isDateBlocked(form.contractEnd) ? styles.docInputBlocked : ''}`}
                       min={minContractEnd}
                       required
                     />
+                    {isDateBlocked(form.contractEnd) && (
+                      <span className={styles.dateBlockedMsg}>
+                        ⚠ 기존 계약 기간과 겹칩니다
+                      </span>
+                    )}
                   </div>
                 </div>
+                {/* 기존 계약 기간 안내 */}
+                {blockedRanges.length > 0 && (
+                  <div className={styles.blockedRangesNotice}>
+                    <span className={styles.blockedRangesIcon}>🔒</span>
+                    <span>
+                      이 방의 진행 중인 계약 기간:&nbsp;
+                      {blockedRanges.map((r, i) => (
+                        <strong key={i}>
+                          {r.start} ~ {r.end}
+                          {i < blockedRanges.length - 1 ? ', ' : ''}
+                        </strong>
+                      ))}
+                    </span>
+                  </div>
+                )}
                 <div className={styles.docRow}>
                   <div className={styles.docCell}>
                     <span className={styles.docLabel}>

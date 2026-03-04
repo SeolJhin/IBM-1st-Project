@@ -307,7 +307,9 @@ function ProductFormModal({
           {err && <div className={styles.formErr}>{err}</div>}
           <div className={styles.formGrid}>
             <label className={styles.formLabel}>
-              상품명 <span className={styles.req}>*</span>
+              <span>
+                상품명 <span className={styles.req}>*</span>
+              </span>
               <input
                 className={styles.formInput}
                 value={form.prodNm}
@@ -317,7 +319,9 @@ function ProductFormModal({
               />
             </label>
             <label className={styles.formLabel}>
-              카테고리 <span className={styles.req}>*</span>
+              <span>
+                카테고리 <span className={styles.req}>*</span>
+              </span>
               <select
                 className={styles.formSelect}
                 value={form.code}
@@ -331,7 +335,9 @@ function ProductFormModal({
               </select>
             </label>
             <label className={styles.formLabel}>
-              가격 (원) <span className={styles.req}>*</span>
+              <span>
+                가격 (원) <span className={styles.req}>*</span>
+              </span>
               <input
                 type="number"
                 min="0"

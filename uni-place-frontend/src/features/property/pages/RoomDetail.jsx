@@ -12,6 +12,9 @@ import ImageGallery from '../../file/components/ImageGallery';
 import { toApiImageUrl } from '../../file/api/fileApi';
 import { reviewApi } from '../../review/api/reviewApi';
 import ReviewModal from '../../review/components/ReviewModal';
+import Modal from '../../../shared/components/Modal/Modal';
+import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
+import TourReservationList from '../../reservation/pages/TourReservationList';
 
 function StarRating({ value = 0, size = 'md' }) {
   return (
@@ -168,6 +171,9 @@ export default function RoomDetail() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [userStatusModalId, setUserStatusModalId] = useState(null);
 
+  const [tourCreateOpen, setTourCreateOpen] = useState(false);
+  const [tourListOpen, setTourListOpen] = useState(false);
+
   const [spaces, setSpaces] = useState([]);
   const [spacesLoading, setSpacesLoading] = useState(false);
 
@@ -226,9 +232,7 @@ export default function RoomDetail() {
   }, [fetchReviews, reviewPage]);
 
   const handleTourReservation = () => {
-    navigate(
-      `/reservations/tour/create?roomId=${roomId}&buildingId=${room?.buildingId}&roomNo=${room?.roomNo}`
-    );
+    setTourCreateOpen(true);
   };
 
   // 계약하기 버튼
@@ -456,16 +460,36 @@ export default function RoomDetail() {
             })()}
 
             {/* ── 방 예약 버튼 ── */}
-            <button
-              className={styles.tourReservationBtn}
-              onClick={handleTourReservation}
-              type="button"
-            >
-              📅 방 사전 방문 예약하기
-            </button>
-            <p className={styles.tourReservationHint}>
-              방문 예약 후 현장에서 직접 확인해보세요
-            </p>
+            {(() => {
+              const canTour = room.roomSt === 'available';
+              const tourBlockMsg = {
+                reserved: '예약 중인 방은 방문 예약이 불가합니다',
+                contracted: '계약 중인 방은 방문 예약이 불가합니다',
+                repair: '수리 중인 방은 방문 예약이 불가합니다',
+                cleaning: '청소 중인 방은 방문 예약이 불가합니다',
+              }[room.roomSt];
+              return (
+                <>
+                  <button
+                    className={`${styles.tourReservationBtn} ${!canTour ? styles.tourReservationBtnDisabled : ''}`}
+                    onClick={canTour ? handleTourReservation : undefined}
+                    type="button"
+                    disabled={!canTour}
+                    title={!canTour ? tourBlockMsg : ''}
+                  >
+                    📅 방 사전 방문 예약하기
+                  </button>
+                  {!canTour && tourBlockMsg && (
+                    <p className={styles.tourBlockedHint}>{tourBlockMsg}</p>
+                  )}
+                  {canTour && (
+                    <p className={styles.tourReservationHint}>
+                      방문 예약 후 현장에서 직접 확인해보세요
+                    </p>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
 
@@ -790,6 +814,46 @@ export default function RoomDetail() {
           </div>
         </div>
       )}
+
+      {/* ── 사전 방문 예약 생성 모달 ── */}
+      <Modal
+        open={tourCreateOpen}
+        onClose={() => setTourCreateOpen(false)}
+        title="📅 사전 방문 예약"
+        size="lg"
+      >
+        <TourReservationCreate
+          inlineMode
+          initialBuildingId={room?.buildingId}
+          initialRoomId={String(roomId)}
+          onGoList={() => {
+            setTourCreateOpen(false);
+            setTourListOpen(true);
+          }}
+          onSuccess={() => {
+            setTourCreateOpen(false);
+            setTourListOpen(true);
+          }}
+          onClose={() => setTourCreateOpen(false)}
+        />
+      </Modal>
+
+      {/* ── 사전 방문 예약 조회 모달 ── */}
+      <Modal
+        open={tourListOpen}
+        onClose={() => setTourListOpen(false)}
+        title="📋 방문 예약 조회"
+        size="lg"
+      >
+        <TourReservationList
+          inlineMode
+          onGoCreate={() => {
+            setTourListOpen(false);
+            setTourCreateOpen(true);
+          }}
+          onClose={() => setTourListOpen(false)}
+        />
+      </Modal>
     </div>
   );
 }

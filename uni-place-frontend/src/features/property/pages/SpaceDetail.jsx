@@ -7,8 +7,6 @@ import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './SpaceDetail.module.css';
 import { toApiImageUrl } from '../../../shared/utils/imageUrl';
-import Modal from '../../../shared/components/Modal/Modal';
-import SpaceReservationCreate from '../../reservation/pages/SpaceReservationCreate';
 import ImageGallery from '../../file/components/ImageGallery';
 
 export default function SpaceDetail() {
@@ -17,7 +15,6 @@ export default function SpaceDetail() {
   const { user } = useAuth();
   const [findMenuOpen, setFindMenuOpen] = useState(false);
   const [permError, setPermError] = useState('');
-  const [spaceReserveOpen, setSpaceReserveOpen] = useState(false);
 
   const [space, setSpace] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,11 +63,13 @@ export default function SpaceDetail() {
       navigate('/login', { state: { from: `/spaces/${spaceId}` } });
       return;
     }
-    if (user.userRole !== 'TENANT') {
+    if (String(user.userRole ?? '').toLowerCase() !== 'tenant') {
       setPermError('공용공간 예약은 입주자(TENANT) 권한이 필요합니다.');
       return;
     }
-    setSpaceReserveOpen(true);
+    navigate(
+      `/me?tab=space&sub=create&spaceId=${spaceId}&buildingId=${space?.buildingId}`
+    );
   };
 
   if (loading) {
@@ -408,23 +407,6 @@ export default function SpaceDetail() {
       </div>
 
       <Footer />
-
-      <Modal
-        open={spaceReserveOpen}
-        onClose={() => setSpaceReserveOpen(false)}
-        title="🛋️ 공용공간 예약"
-        size="lg"
-      >
-        <SpaceReservationCreate
-          inlineMode
-          initSpaceId={spaceId ? Number(spaceId) : null}
-          initBuildingId={space?.buildingId ? Number(space.buildingId) : null}
-          onSuccess={() => {
-            setSpaceReserveOpen(false);
-            navigate('/me?tab=space&sub=list');
-          }}
-        />
-      </Modal>
     </div>
   );
 }

@@ -17,17 +17,21 @@ export default function TourReservationCreate({
   onSuccess,
   onClose,
   onGoList,
+  initialBuildingId = null, // RoomDetail에서 직접 전달
+  initialRoomId: propRoomId = '',
 }) {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // URL에서 자동 선택값 읽기
-  const initRoomId = searchParams.get('roomId')
-    ? String(searchParams.get('roomId'))
-    : '';
-  const initBuildingId = searchParams.get('buildingId')
-    ? Number(searchParams.get('buildingId'))
-    : null;
+  // URL 또는 prop에서 자동 선택값 읽기
+  const initRoomId =
+    propRoomId ||
+    (searchParams.get('roomId') ? String(searchParams.get('roomId')) : '');
+  const initBuildingId =
+    initialBuildingId ??
+    (searchParams.get('buildingId')
+      ? Number(searchParams.get('buildingId'))
+      : null);
 
   // 빌딩 목록
   const [buildings, setBuildings] = useState([]);
