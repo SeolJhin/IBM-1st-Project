@@ -78,7 +78,7 @@ public class ComplainServiceImpl implements ComplainService {
             notificationService.notifyAdmins(
                 NotificationType.COMP_NEW.name(),
                 "새 민원이 접수되었습니다. compId=" + saved.getCompId() + ", userId=" + userId,
-                userId, TargetType.notice, null, "/admin/complain"
+                userId, TargetType.notice, null, "/admin/support/complain/" + saved.getCompId()
             );
         } catch (Exception e) {
             log.warn("[COMP][NOTIFY][ADMIN] compId={} reason={}", saved.getCompId(), e.getMessage());

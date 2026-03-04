@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
@@ -26,6 +26,10 @@ export default function ComplainDetail() {
   const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const complainListPath = location.pathname.startsWith('/admin/')
+    ? '/admin/support/complain'
+    : '/support/complain';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,9 +51,15 @@ export default function ComplainDetail() {
         setData(res);
         setStatusValue(res?.compSt ?? 'received');
       })
-      .catch((err) => setError(err.message || '민원 정보를 불러오지 못했습니다.'))
+      .catch((err) => {
+        if (Number(err?.status) === 404) {
+          navigate(complainListPath, { replace: true });
+          return;
+        }
+        setError(err.message || '민원 정보를 불러오지 못했습니다.');
+      })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, navigate, complainListPath]);
 
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
@@ -59,7 +69,7 @@ export default function ComplainDetail() {
     if (!window.confirm('민원을 삭제하시겠습니까?')) return;
     try {
       await supportApi.deleteComplain(id);
-      navigate('/support/complain');
+      navigate(complainListPath);
     } catch (e) {
       alert(e.message || '삭제에 실패했습니다.');
     }
@@ -160,7 +170,7 @@ export default function ComplainDetail() {
 
       <button
         className={styles.pageBtn}
-        onClick={() => navigate('/support/complain')}
+        onClick={() => navigate(complainListPath)}
         style={{ marginTop: 16 }}
       >
         목록으로
