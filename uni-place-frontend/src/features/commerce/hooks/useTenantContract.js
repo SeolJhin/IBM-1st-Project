@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { contractApi } from '../../contract/api/contractApi';
 import {
   pickActiveTenantContract,

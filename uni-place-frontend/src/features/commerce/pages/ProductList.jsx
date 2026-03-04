@@ -1,4 +1,4 @@
-﻿// src/features/commerce/pages/ProductList.jsx
+// src/features/commerce/pages/ProductList.jsx
 // inlineMode: MemberInfo 탭 내에서 사용 시 true (navigate 대신 onNav 콜백)
 
 import React, {

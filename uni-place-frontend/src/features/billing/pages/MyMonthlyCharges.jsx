@@ -149,12 +149,6 @@ function summarizeContract(contract, charges, now) {
   };
 }
 
-function buildQrImageUrl(text) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=230x230&data=${encodeURIComponent(
-    text
-  )}`;
-}
-
 export default function MyMonthlyCharges({ focusContractId = null }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -333,14 +327,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
       if (!hasText(openUrl)) {
         throw new Error('카카오페이 결제 URL을 가져오지 못했습니다.');
       }
-      setQrItems([
-        {
-          title: titleParts.join(' / '),
-          url: openUrl,
-          qrImageUrl: buildQrImageUrl(openUrl),
-          totalPrice: totalAmount,
-        },
-      ]);
+      window.location.href = openUrl;
     } catch (e) {
       setPayError(e?.message || '카카오페이 QR 생성에 실패했습니다.');
     } finally {
