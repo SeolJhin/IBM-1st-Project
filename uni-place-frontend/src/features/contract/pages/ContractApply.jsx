@@ -16,13 +16,17 @@ const toDateStr = (d) => d.toISOString().slice(0, 10);
 const todayStr = () => toDateStr(new Date());
 
 const addMonths = (base, m) => {
+  if (!base) return '';
   const d = new Date(base);
+  if (isNaN(d.getTime())) return '';
   d.setMonth(d.getMonth() + m);
   d.setDate(d.getDate() - 1);
   return toDateStr(d);
 };
 const addDays = (base, days) => {
+  if (!base) return '';
   const d = new Date(base);
+  if (isNaN(d.getTime())) return '';
   d.setDate(d.getDate() + days);
   return toDateStr(d);
 };
@@ -144,12 +148,16 @@ export default function ContractApply() {
     const { name, value } = e.target;
     setForm((f) => {
       const next = { ...f, [name]: value };
-      if (
-        name === 'contractStart' &&
-        next.contractEnd &&
-        next.contractEnd < addDays(value, MIN_CONTRACT_DAYS)
-      ) {
-        next.contractEnd = addDays(value, MIN_CONTRACT_DAYS);
+      if (name === 'contractStart') {
+        if (!value) {
+          // 시작일 삭제 시 종료일도 초기화
+          next.contractEnd = '';
+        } else if (
+          next.contractEnd &&
+          next.contractEnd < addDays(value, MIN_CONTRACT_DAYS)
+        ) {
+          next.contractEnd = addDays(value, MIN_CONTRACT_DAYS);
+        }
       }
       return next;
     });

@@ -54,6 +54,13 @@ public interface TourReservationRepository extends JpaRepository<TourReservation
             Pageable pageable
     );
 
+    // 전체 상태 조회 (취소/완료 포함)
+    Page<TourReservationEntity> findByTourTelAndTourPwd(
+            String tourTel,
+            String tourPwd,
+            Pageable pageable
+    );
+
     TourReservationEntity findByTourIdAndTourTelAndTourPwd(Integer tourId, String tourTel, String tourPwd);
     
     boolean existsByTourTelAndTourStartAtAndTourEndAtAndTourStNotIn(

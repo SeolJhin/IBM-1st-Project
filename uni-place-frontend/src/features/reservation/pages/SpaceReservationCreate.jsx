@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { propertyApi } from '../../property/api/propertyApi';
 import { reservationApi } from '../api/reservationApi';
+import { contractApi } from '../../contract/api/contractApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
@@ -69,13 +70,30 @@ export default function SpaceReservationCreate({
     setBLoading(true);
     setBError('');
     try {
+      // 내 계약 목록에서 active 상태인 건물만 필터링
+      const contracts = await contractApi.myContracts();
+      const activeBuildingIds = new Set(
+        (contracts ?? [])
+          .filter(
+            (c) => String(c.contractStatus ?? '').toLowerCase() === 'active'
+          )
+          .map((c) => c.buildingId)
+      );
+      if (activeBuildingIds.size === 0) {
+        setBuildings([]);
+        setBLoading(false);
+        return;
+      }
       const page = await propertyApi.getBuildings({
         page: 1,
         size: 50,
         sort: 'buildingId',
         direct: 'DESC',
       });
-      setBuildings(page?.content ?? []);
+      const filtered = (page?.content ?? []).filter((b) =>
+        activeBuildingIds.has(Number(b.buildingId))
+      );
+      setBuildings(filtered);
     } catch (e) {
       setBError(e?.message || '빌딩 조회 실패');
       setBuildings([]);
@@ -210,6 +228,12 @@ export default function SpaceReservationCreate({
           </button>
         </div>
         {bError && <p className={styles.errMsg}>{bError}</p>}
+        {!bLoading && buildings.length === 0 && !bError && (
+          <p className={styles.errMsg}>
+            ⚠ 현재 계약 중인 건물이 없습니다. 공용공간 예약은 활성 계약이 있는
+            건물만 가능합니다.
+          </p>
+        )}
         <BuildingSlotButtons
           buildings={buildings}
           selectedId={selectedBuilding?.buildingId}

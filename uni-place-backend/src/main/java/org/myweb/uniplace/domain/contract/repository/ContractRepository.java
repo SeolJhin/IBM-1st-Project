@@ -113,4 +113,18 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
             @Param("endTo") LocalDate endTo,
             Pageable pageable
     );
+    
+ // 같은 건물에 active 계약이 있는지 확인
+    @Query("""
+        select count(c) > 0
+          from Contract c
+         where c.user.userId = :userId
+           and c.room.building.buildingId = :buildingId
+           and c.contractSt = :status
+    """)
+    boolean existsActiveContractByUserAndBuilding(
+            @Param("userId") String userId,
+            @Param("buildingId") Integer buildingId,
+            @Param("status") ContractStatus status
+    );
 }

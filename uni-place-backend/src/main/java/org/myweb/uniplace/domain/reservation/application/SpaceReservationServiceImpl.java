@@ -13,6 +13,7 @@ import org.myweb.uniplace.domain.property.domain.entity.Building;
 import org.myweb.uniplace.domain.property.domain.entity.CommonSpace;
 import org.myweb.uniplace.domain.property.repository.BuildingRepository;
 import org.myweb.uniplace.domain.property.repository.SpaceRepository;
+import org.myweb.uniplace.domain.contract.repository.ContractRepository;
 
 import org.myweb.uniplace.domain.reservation.api.dto.request.CancelSpaceReservationRequest;
 import org.myweb.uniplace.domain.reservation.api.dto.request.CreateSpaceReservationRequest;
@@ -23,6 +24,7 @@ import org.myweb.uniplace.domain.reservation.domain.enums.SpaceFixedSlot;
 import org.myweb.uniplace.domain.reservation.domain.enums.SpaceReservationStatus;
 import org.myweb.uniplace.domain.reservation.domain.policy.ReservationValidator;
 import org.myweb.uniplace.domain.reservation.domain.policy.SpaceReservationConflictPolicy;
+import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 import org.myweb.uniplace.domain.reservation.repository.SpaceReservationRepository;
 
 import org.myweb.uniplace.domain.user.domain.entity.User;
@@ -52,6 +54,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
     private final SpaceReservationRepository spaceReservationRepository;
     private final BuildingRepository buildingRepository;
     private final SpaceRepository spaceRepository;
+    private final ContractRepository contractRepository;
 
     private final SpaceService spaceService;
     private final UserRepository userRepository;
@@ -150,6 +153,14 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
         }
         if (user.getUserSt() != UserStatus.active || "Y".equalsIgnoreCase(user.getDeleteYN())) {
             throw new BusinessException(ErrorCode.SPACE_RESERVATION_USER_INACTIVE);
+        }
+
+        // ✅ 같은 건물에 active 계약이 있는 입주자만 예약 가능
+        boolean hasActiveContract = contractRepository.existsActiveContractByUserAndBuilding(
+                me.getUserId(), request.getBuildingId(), ContractStatus.active
+        );
+        if (!hasActiveContract) {
+            throw new BusinessException(ErrorCode.SPACE_RESERVATION_BUILDING_MISMATCH);
         }
 
         if (request == null) {
@@ -302,9 +313,8 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
-        Page<SpaceReservationEntity> page = spaceReservationRepository.findByUser_UserIdAndSrStNotIn(
+        Page<SpaceReservationEntity> page = spaceReservationRepository.findByUser_UserId(
                 me.getUserId(),
-                INACTIVE,
                 pageable
         );
 

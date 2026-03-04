@@ -5,6 +5,7 @@ import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import { useAuth } from '../../user/hooks/useAuth';
+import { contractApi } from '../../contract/api/contractApi';
 import styles from './SpaceDetail.module.css';
 import { toApiImageUrl } from '../../../shared/utils/imageUrl';
 import ImageGallery from '../../file/components/ImageGallery';
@@ -57,7 +58,7 @@ export default function SpaceDetail() {
   }, [findMenuOpen]);
 
   // 공용공간 예약 버튼 → 로그인 필요 + TENANT 권한 필요
-  const handleReservation = () => {
+  const handleReservation = async () => {
     setPermError('');
     if (!user) {
       navigate('/login', { state: { from: `/spaces/${spaceId}` } });
@@ -65,6 +66,24 @@ export default function SpaceDetail() {
     }
     if (String(user.userRole ?? '').toLowerCase() !== 'tenant') {
       setPermError('공용공간 예약은 입주자(TENANT) 권한이 필요합니다.');
+      return;
+    }
+    // 같은 건물 active 계약 여부 확인
+    try {
+      const contracts = await contractApi.myContracts();
+      const hasActiveHere = (contracts ?? []).some(
+        (c) =>
+          String(c.contractStatus ?? '').toLowerCase() === 'active' &&
+          c.buildingId === Number(space?.buildingId)
+      );
+      if (!hasActiveHere) {
+        setPermError(
+          '계약 중인 건물이 아닙니다. 해당 건물에 활성 계약이 있어야 예약할 수 있습니다.'
+        );
+        return;
+      }
+    } catch {
+      setPermError('계약 정보를 확인할 수 없습니다. 다시 시도해주세요.');
       return;
     }
     navigate(

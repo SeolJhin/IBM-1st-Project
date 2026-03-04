@@ -122,6 +122,7 @@ public enum ErrorCode {
     SPACE_RESERVATION_ACCESS_DENIED(HttpStatus.FORBIDDEN, "SPACE_RSV_403", "해당 예약에 접근 권한이 없습니다."),
     SPACE_RESERVATION_TENANT_ONLY(HttpStatus.FORBIDDEN, "SPACE_RSV_403_1", "입주자만 공용공간을 예약할 수 있습니다."),
     SPACE_RESERVATION_USER_INACTIVE(HttpStatus.FORBIDDEN, "SPACE_RSV_403_2", "비활성 상태의 계정은 예약할 수 없습니다."),
+    SPACE_RESERVATION_BUILDING_MISMATCH(HttpStatus.FORBIDDEN, "SPACE_RSV_403_3", "해당 건물에 활성 계약이 있는 입주자만 예약할 수 있습니다."),
 
     // ===== Admin / Tour Reservation =====
     TOUR_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "TOUR_ST_404", "해당 투어 예약 상태를 찾을 수 없습니다."),

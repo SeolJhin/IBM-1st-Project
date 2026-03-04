@@ -3,6 +3,7 @@ package org.myweb.uniplace.domain.review.application;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
@@ -61,11 +62,29 @@ public class ReviewServiceImpl implements ReviewService {
         Pageable pageReq = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
         Page<Review> page = reviewRepository.findAllByOrderByReviewIdDesc(pageReq);
 
+        List<Integer> reviewIds = page.map(Review::getReviewId).getContent();
+
+        // likeCount 배치 조회
+        Map<Integer, Long> likeCountMap = new java.util.HashMap<>();
+        if (!reviewIds.isEmpty()) {
+            reviewLikeRepository.countGroupByReviewIds(reviewIds)
+                    .forEach(row -> likeCountMap.put(((Number) row[0]).intValue(), (Long) row[1]));
+        }
+
+        // likedByMe 배치 조회
+        String currentUserId = currentUserIdOrNull();
+        java.util.Set<Integer> likedIds = new java.util.HashSet<>();
+        if (currentUserId != null && !reviewIds.isEmpty()) {
+            likedIds.addAll(reviewLikeRepository.findLikedReviewIds(currentUserId, reviewIds));
+        }
+
         Page<ReviewResponse> mapped = page.map(r -> {
             List<FileResponse> files = loadThumbnailOnly(r);
             Room room = roomRepository.findById(r.getRoomId()).orElse(null);
             User author = userRepository.findById(r.getUserId()).orElse(null);
-            return ReviewResponse.fromEntity(r, files, room, author);
+            long likeCount = likeCountMap.getOrDefault(r.getReviewId(), 0L);
+            boolean likedByMe = likedIds.contains(r.getReviewId());
+            return ReviewResponse.fromEntity(r, files, room, author, likeCount, likedByMe);
         });
 
         return PageResponse.of(mapped);
@@ -79,10 +98,26 @@ public class ReviewServiceImpl implements ReviewService {
 
         Room room = roomRepository.findById(roomId).orElse(null);
 
+        List<Integer> reviewIds = page.map(Review::getReviewId).getContent();
+
+        Map<Integer, Long> likeCountMap = new java.util.HashMap<>();
+        if (!reviewIds.isEmpty()) {
+            reviewLikeRepository.countGroupByReviewIds(reviewIds)
+                    .forEach(row -> likeCountMap.put(((Number) row[0]).intValue(), (Long) row[1]));
+        }
+
+        String currentUserId = currentUserIdOrNull();
+        java.util.Set<Integer> likedIds = new java.util.HashSet<>();
+        if (currentUserId != null && !reviewIds.isEmpty()) {
+            likedIds.addAll(reviewLikeRepository.findLikedReviewIds(currentUserId, reviewIds));
+        }
+
         Page<ReviewResponse> mapped = page.map(r -> {
             List<FileResponse> files = loadThumbnailOnly(r);
             User author = userRepository.findById(r.getUserId()).orElse(null);
-            return ReviewResponse.fromEntity(r, files, room, author);
+            long likeCount = likeCountMap.getOrDefault(r.getReviewId(), 0L);
+            boolean likedByMe = likedIds.contains(r.getReviewId());
+            return ReviewResponse.fromEntity(r, files, room, author, likeCount, likedByMe);
         });
 
         return PageResponse.of(mapped);
