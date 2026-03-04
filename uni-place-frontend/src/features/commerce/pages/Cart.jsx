@@ -38,14 +38,13 @@ function extractStockMap(products, buildingId) {
 
 function CartItemRow({
   item,
-  localQty,
   stock,
   applying,
-  onSetQty,
-  onApply,
+  onChangeQty,
   onRemove,
   actionLoading,
 }) {
+  const localQty = item.orderQuantity;
   const [inputStr, setInputStr] = useState(String(localQty));
   const isFocused = useRef(false);
   useEffect(() => {
@@ -53,13 +52,12 @@ function CartItemRow({
   }, [localQty]);
 
   const maxQty = stock != null ? stock : 9999;
-  const isDirty = localQty !== item.orderQuantity;
   const atMax = stock != null && localQty >= stock;
   const lineTotal = Number(item.orderPrice) * localQty;
 
   const setQty = (v) => {
     const clamped = Math.max(1, Math.min(v, maxQty));
-    onSetQty(item.cartItemId, clamped);
+    if (clamped !== localQty) onChangeQty(item, clamped);
     if (!isFocused.current) setInputStr(String(clamped));
   };
 
@@ -99,7 +97,7 @@ function CartItemRow({
               Math.min(isNaN(parsed) ? 1 : parsed, maxQty)
             );
             setInputStr(String(clamped));
-            if (clamped !== localQty) onSetQty(item.cartItemId, clamped);
+            if (clamped !== localQty) onChangeQty(item, clamped);
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.target.blur();
@@ -119,15 +117,6 @@ function CartItemRow({
         >
           +
         </button>
-        {isDirty && (
-          <button
-            className={styles.applyBtn}
-            onClick={() => onApply(item, localQty)}
-            disabled={actionLoading || applying}
-          >
-            {applying ? '적용 중…' : '적용'}
-          </button>
-        )}
       </div>
       <span className={styles.itemTotal}>{fmt(lineTotal)}원</span>
       <button
@@ -180,32 +169,13 @@ export default function Cart({
       .finally(() => setStockLoading(false));
   }, [selectedBuildingId]);
 
-  const [qtyMap, setQtyMap] = useState({});
   const [applyingId, setApplyingId] = useState(null);
-  useEffect(() => {
-    setQtyMap((prev) => {
-      const next = { ...prev };
-      items.forEach((i) => {
-        if (applyingId !== i.cartItemId) next[i.cartItemId] = i.orderQuantity;
-      });
-      return next;
-    });
-  }, [items, applyingId]);
 
-  const handleSetQty = useCallback(
-    (cartItemId, qty) => setQtyMap((prev) => ({ ...prev, [cartItemId]: qty })),
-    []
-  );
-
-  const handleApply = useCallback(
+  const handleChangeQty = useCallback(
     async (item, newQty) => {
       const stock = stockMap[item.prodId] ?? null;
       if (stock !== null && newQty > stock) {
         alert(`[${item.prodNm}] 재고 초과입니다. (재고: ${stock}개)`);
-        setQtyMap((prev) => ({
-          ...prev,
-          [item.cartItemId]: item.orderQuantity,
-        }));
         return;
       }
       setApplyingId(item.cartItemId);
@@ -213,10 +183,6 @@ export default function Cart({
         await updateItem(item.cartItemId, { quantity: newQty });
       } catch (e) {
         alert(e.message || '수량 변경에 실패했습니다.');
-        setQtyMap((prev) => ({
-          ...prev,
-          [item.cartItemId]: item.orderQuantity,
-        }));
       } finally {
         setApplyingId(null);
       }
@@ -248,16 +214,6 @@ export default function Cart({
       go('/commerce/room-service');
       return;
     }
-    const hasDirty = items.some(
-      (i) => (qtyMap[i.cartItemId] ?? i.orderQuantity) !== i.orderQuantity
-    );
-    if (
-      hasDirty &&
-      !window.confirm(
-        '수량 변경 중 적용하지 않은 항목이 있습니다.\n그대로 주문하시겠습니까?'
-      )
-    )
-      return;
     go('/commerce/checkout', { selectedBuildingId, selectedBuildingNm });
   };
 
@@ -265,12 +221,12 @@ export default function Cart({
     let qty = 0,
       amt = 0;
     items.forEach((i) => {
-      const q = qtyMap[i.cartItemId] ?? i.orderQuantity;
+      const q = i.orderQuantity;
       qty += q;
       amt += Number(i.orderPrice) * q;
     });
     return { localTotalQty: qty, localTotalAmt: amt };
-  }, [items, qtyMap]);
+  }, [items]);
 
   const inner = (
     <div>
@@ -325,11 +281,9 @@ export default function Cart({
               <CartItemRow
                 key={item.cartItemId}
                 item={item}
-                localQty={qtyMap[item.cartItemId] ?? item.orderQuantity}
                 stock={stockMap[item.prodId] ?? null}
                 applying={applyingId === item.cartItemId}
-                onSetQty={handleSetQty}
-                onApply={handleApply}
+                onChangeQty={handleChangeQty}
                 onRemove={handleRemove}
                 actionLoading={actionLoading}
               />
@@ -444,3 +398,4 @@ export default function Cart({
     </div>
   );
 }
+

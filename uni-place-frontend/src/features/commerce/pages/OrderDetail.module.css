@@ -1,5 +1,9 @@
 /* src/features/commerce/pages/OrderDetail.module.css */
 
+.root {
+  width: min(920px, 100%);
+}
+
 .header {
   display: flex;
   align-items: center;
