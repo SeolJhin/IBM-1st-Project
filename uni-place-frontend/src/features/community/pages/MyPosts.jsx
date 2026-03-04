@@ -138,15 +138,6 @@ export default function MyPosts() {
       {/* ── 헤더 ── */}
       <div className={styles.listHeader}>
         <span className={styles.total}>총 {totalElements}건</span>
-        {tab === 'boards' && (
-          <button
-            type="button"
-            className={styles.writeBtn}
-            onClick={() => navigate('/community/write')}
-          >
-            게시글 등록
-          </button>
-        )}
       </div>
 
       {/* ── 목록 ── */}

@@ -60,7 +60,9 @@ export default function OrderList({
   };
 
   const [toast, setToast] = useState(
-    propToast || location.state?.toastMsg || resolvePaymentToast(location.search)
+    propToast ||
+      location.state?.toastMsg ||
+      resolvePaymentToast(location.search)
   );
   useEffect(() => {
     if (!toast) return;
@@ -155,6 +157,19 @@ export default function OrderList({
                   </span>
                 )}
               </div>
+              {(order.roomServiceOrders ?? []).length > 0 &&
+                (() => {
+                  const rs = order.roomServiceOrders[0];
+                  const roomLabel = [
+                    rs.buildingNm,
+                    rs.roomNo ? `${rs.roomNo}호` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' ');
+                  return roomLabel ? (
+                    <div className={styles.roomInfo}>{roomLabel}</div>
+                  ) : null;
+                })()}
               <div className={styles.cardBottom}>
                 <span className={styles.orderDate}>
                   {fmtDate(order.orderCreatedAt)}
