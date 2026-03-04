@@ -154,7 +154,15 @@ function MeTab() {
       payload.currentUserPwd = currentPwd.trim();
     }
     return payload;
-  }, [origin, form.userNm, form.userEmail, form.userTel, newPwd, currentPwd]);
+  }, [
+    origin,
+    form.userNm,
+    form.userEmail,
+    form.userTel,
+    form.userNickname,
+    newPwd,
+    currentPwd,
+  ]);
 
   const onSubmitUpdate = async (e) => {
     e.preventDefault();

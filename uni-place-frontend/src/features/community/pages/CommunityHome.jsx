@@ -597,7 +597,6 @@ export default function CommunityHome() {
             <option value="title">제목</option>
             {isAdmin && <option value="userId">아이디</option>}
             <option value="nickname">닉네임</option>
-            {isAdmin && <option value="userNickname">닉네임</option>}
           </select>
           <input
             type="text"

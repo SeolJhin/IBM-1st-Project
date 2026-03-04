@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.myweb.uniplace.domain.community.domain.entity.Board;
+import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
@@ -84,4 +85,14 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
          order by b.boardId desc
     """)
     Page<Board> searchByUserId(@Param("code") String code, @Param("keyword") String keyword, Pageable pageable);
+
+    // 닉네임 검색 (users 테이블 JOIN)
+    @Query("""
+        select b from Board b
+          join User u on u.userId = b.userId
+         where (:code is null or b.code = :code)
+           and lower(u.userNickname) like lower(concat('%', :keyword, '%'))
+         order by b.boardId desc
+    """)
+    Page<Board> searchByNickname(@Param("code") String code, @Param("keyword") String keyword, Pageable pageable);
 }
