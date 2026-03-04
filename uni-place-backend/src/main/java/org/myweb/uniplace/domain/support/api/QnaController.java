@@ -117,22 +117,30 @@ public class QnaController {
         return ApiResponse.ok(qnaService.create(requireUserId(authUser), request));
     }
 
-    // 질문 수정: 관리자만
-    @PreAuthorize("hasRole('ADMIN')")
+    // 질문 수정: 관리자 + 입주민(본인)
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT')")
     @PutMapping("/{qnaId}")
     public ApiResponse<QnaResponse> update(
+            @AuthenticationPrincipal AuthUser authUser,
             @PathVariable("qnaId") Integer qnaId,
             @Valid @RequestBody QnaUpdateRequest request
     ) {
+        if (!isAdmin(authUser)) {
+            qnaService.get(qnaId, requireUserId(authUser), false); // 본인 소유 확인 (권한 없으면 서비스에서 예외)
+        }
         return ApiResponse.ok(qnaService.update(qnaId, request));
     }
 
-    // 질문 삭제: 관리자만
-    @PreAuthorize("hasRole('ADMIN')")
+    // 질문 삭제: 관리자 + 입주민(본인)
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT')")
     @DeleteMapping("/{qnaId}")
     public ApiResponse<Void> delete(
+            @AuthenticationPrincipal AuthUser authUser,
             @PathVariable("qnaId") Integer qnaId
     ) {
+        if (!isAdmin(authUser)) {
+            qnaService.get(qnaId, requireUserId(authUser), false); // 본인 소유 확인
+        }
         qnaService.delete(qnaId);
         return ApiResponse.ok();
     }

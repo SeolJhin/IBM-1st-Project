@@ -87,7 +87,7 @@ public class ComplainController {
     }
 
     /** 민원 등록 */
-    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT')")
     @PostMapping
     public ApiResponse<ComplainResponse> create(
             @AuthenticationPrincipal AuthUser authUser,
@@ -97,12 +97,19 @@ public class ComplainController {
     }
 
     /** 민원 수정 */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT')")
     @PutMapping("/{compId}")
     public ApiResponse<ComplainResponse> update(
+            @AuthenticationPrincipal AuthUser authUser,
             @PathVariable("compId") Integer compId,
             @Valid @RequestBody ComplainUpdateRequest request
     ) {
+        if (!isAdmin(authUser)) {
+            ComplainResponse existing = complainService.get(compId);
+            if (!requireUserId(authUser).equals(existing.getUserId())) {
+                throw new BusinessException(ErrorCode.FORBIDDEN);
+            }
+        }
         return ApiResponse.ok(complainService.update(compId, request));
     }
 
@@ -127,11 +134,18 @@ public class ComplainController {
     }
 
     /** 민원 삭제 */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT')")
     @DeleteMapping("/{compId}")
     public ApiResponse<Void> delete(
+            @AuthenticationPrincipal AuthUser authUser,
             @PathVariable("compId") Integer compId
     ) {
+        if (!isAdmin(authUser)) {
+            ComplainResponse existing = complainService.get(compId);
+            if (!requireUserId(authUser).equals(existing.getUserId())) {
+                throw new BusinessException(ErrorCode.FORBIDDEN);
+            }
+        }
         complainService.delete(compId);
         return ApiResponse.ok();
     }
