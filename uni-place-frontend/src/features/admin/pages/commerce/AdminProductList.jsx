@@ -1,162 +1,658 @@
-import React, { useEffect, useMemo, useState } from 'react';
+// features/admin/pages/commerce/AdminProductList.jsx
+// 룸서비스 상품 관리 - 추가/수정/삭제 + 빌딩별 재고 관리
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { adminApi } from '../../api/adminApi';
-import { useAdminProductList } from '../../hooks/useAdminProducts';
 import styles from './AdminProductList.module.css';
 
+// ─── 상수 ─────────────────────────────────────────────────────────────────
 const STATUS_OPTIONS = [
   { value: 'on_sale', label: '판매중' },
   { value: 'sold_out', label: '품절' },
 ];
+const STATUS_MAP = { on_sale: '판매중', sold_out: '품절' };
 
-const STATUS_LABELS = STATUS_OPTIONS.reduce((acc, option) => {
-  acc[option.value] = option.label;
-  return acc;
-}, {});
+const CODE_FALLBACK = [
+  { code: 'PROD_FOOD', label: '식음료' },
+  { code: 'PROD_CLEAN', label: '청소' },
+  { code: 'PROD_DAILY', label: '생활용품' },
+  { code: 'PROD_ELEC', label: '전자/가전' },
+  { code: 'PROD_HEALTH', label: '건강/위생' },
+];
 
-function formatMoney(value) {
-  const safe = Number(value ?? 0);
-  if (!Number.isFinite(safe)) return '-';
-  return `${safe.toLocaleString('ko-KR')}원`;
-}
+const EMPTY_FORM = {
+  prodNm: '',
+  prodPrice: '',
+  prodStock: '',
+  code: 'PROD_FOOD',
+  prodDesc: '',
+  affiliateId: '',
+};
 
-function windowedPages(currentPage, totalPages, radius = 2) {
+// ─── 유틸 ──────────────────────────────────────────────────────────────────
+const fmt = (v) => Number(v ?? 0).toLocaleString('ko-KR') + '원';
+const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+
+function windowedPages(cur, total, r = 2) {
+  const from = Math.max(1, cur - r);
+  const to = Math.min(total, cur + r);
   const pages = [];
-  const from = Math.max(1, currentPage - radius);
-  const to = Math.min(totalPages, currentPage + radius);
-  for (let page = from; page <= to; page += 1) pages.push(page);
+  for (let p = from; p <= to; p++) pages.push(p);
   return pages;
 }
 
+// ─── StatusBadge ──────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
   const key = String(status ?? '').toLowerCase();
   return (
     <span
       className={`${styles.badge} ${key === 'sold_out' ? styles.badgeSoldOut : styles.badgeOnSale}`}
     >
-      {STATUS_LABELS[key] ?? status ?? '-'}
+      {STATUS_MAP[key] ?? status ?? '-'}
     </span>
   );
 }
 
-function toStockEntries(map) {
-  if (!map || typeof map !== 'object') return [];
-  return Object.entries(map)
-    .map(([buildingId, stock]) => ({
-      buildingId: Number(buildingId),
-      stock: Number(stock ?? 0),
-    }))
-    .sort((a, b) => a.buildingId - b.buildingId);
-}
+// ─── BuildingStockPanel ────────────────────────────────────────────────────
+function BuildingStockPanel({ prodId, onClose }) {
+  const [rows, setRows] = useState([]); // { buildingId, buildingNm, stock }
+  const [loading, setLoading] = useState(true);
+  const [inputs, setInputs] = useState({});
+  const [saving, setSaving] = useState(null);
+  const [msg, setMsg] = useState('');
 
-export default function AdminProductList() {
-  const { products, loading, error, refetch } = useAdminProductList();
-
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [codeFilter, setCodeFilter] = useState('all');
-  const [keyword, setKeyword] = useState('');
-
-  const [page, setPage] = useState(1);
-  const [size, setSize] = useState(20);
-
-  const [editableStatus, setEditableStatus] = useState({});
-  const [savingProdId, setSavingProdId] = useState(null);
-  const [actionError, setActionError] = useState('');
-  const [notice, setNotice] = useState('');
-
-  useEffect(() => {
-    const next = {};
-    products.forEach((product) => {
-      next[product.prodId] = product.prodSt ?? 'on_sale';
-    });
-    setEditableStatus(next);
-  }, [products]);
-
-  const codeOptions = useMemo(() => {
-    const set = new Set();
-    products.forEach((product) => {
-      const code = String(product.code ?? '').trim();
-      if (code) set.add(code);
-    });
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [products]);
-
-  const filteredProducts = useMemo(() => {
-    const query = keyword.trim().toLowerCase();
-    return [...products]
-      .sort((a, b) => Number(b.prodId ?? 0) - Number(a.prodId ?? 0))
-      .filter((product) => {
-        if (statusFilter !== 'all' && product.prodSt !== statusFilter) return false;
-        if (codeFilter !== 'all' && String(product.code ?? '') !== codeFilter) {
-          return false;
-        }
-        if (!query) return true;
-
-        const haystack = [
-          product.prodId,
-          product.prodNm,
-          product.prodDesc,
-          product.code,
-          product.affiliateId,
-        ]
-          .map((item) => String(item ?? '').toLowerCase())
-          .join(' ');
-
-        return haystack.includes(query);
-      });
-  }, [codeFilter, keyword, products, statusFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / size));
-  const safePage = Math.min(page, totalPages);
-
-  const pagedProducts = useMemo(() => {
-    const from = (safePage - 1) * size;
-    const to = from + size;
-    return filteredProducts.slice(from, to);
-  }, [filteredProducts, safePage, size]);
-
-  const pages = useMemo(() => windowedPages(safePage, totalPages), [safePage, totalPages]);
-
-  useEffect(() => {
-    if (page !== safePage) setPage(safePage);
-  }, [page, safePage]);
-
-  const onChangeFilter = (setter) => (value) => {
-    setter(value);
-    setPage(1);
-  };
-
-  const onSaveStatus = async (prodId) => {
-    const nextStatus = editableStatus[prodId];
-    if (!nextStatus || savingProdId) return;
-
-    setSavingProdId(prodId);
-    setActionError('');
-    setNotice('');
-
+  const load = useCallback(async () => {
+    setLoading(true);
     try {
-      await adminApi.changeProductStatus(prodId, nextStatus);
-      setNotice(`상품 #${prodId} 상태가 변경되었습니다.`);
-      await refetch();
-    } catch (e) {
-      setActionError(e?.message || '상품 상태 변경에 실패했습니다.');
+      // 전체 빌딩 목록 + 현재 상품 재고 병렬 조회
+      const [buildingsData, stocksData] = await Promise.all([
+        adminApi.getBuildings({ page: 1, size: 100 }),
+        adminApi.getProductBuildingStocks(prodId),
+      ]);
+
+      const buildings = Array.isArray(buildingsData)
+        ? buildingsData
+        : (buildingsData?.content ?? []);
+      const stocks = Array.isArray(stocksData) ? stocksData : [];
+
+      // buildingId → stock 맵
+      const stockMap = {};
+      stocks.forEach((s) => {
+        stockMap[s.buildingId] = s.stock;
+      });
+
+      // 전체 빌딩 기준으로 병합 (재고 없으면 0)
+      const merged = buildings
+        .map((b) => ({
+          buildingId: b.buildingId,
+          buildingNm: b.buildingNm ?? `건물 #${b.buildingId}`,
+          stock: stockMap[b.buildingId] ?? 0,
+        }))
+        .sort((a, b) => a.buildingId - b.buildingId);
+
+      setRows(merged);
+      const m = {};
+      merged.forEach((r) => {
+        m[r.buildingId] = String(r.stock);
+      });
+      setInputs(m);
+    } catch {
+      setMsg('재고 정보를 불러오지 못했습니다.');
     } finally {
-      setSavingProdId(null);
+      setLoading(false);
+    }
+  }, [prodId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleSave = async (buildingId) => {
+    const stock = Number(inputs[buildingId] ?? 0);
+    if (isNaN(stock) || stock < 0) {
+      setMsg('0 이상의 숫자를 입력하세요.');
+      return;
+    }
+    setSaving(buildingId);
+    setMsg('');
+    try {
+      await adminApi.upsertProductBuildingStock(prodId, buildingId, stock);
+      setMsg(`저장 완료`);
+      await load();
+      setTimeout(() => setMsg(''), 2000);
+    } catch (e) {
+      setMsg(e?.message || '저장 실패');
+    } finally {
+      setSaving(null);
     }
   };
 
   return (
+    <div className={styles.stockPanel}>
+      <div className={styles.stockPanelHeader}>
+        <span className={styles.stockPanelTitle}>🏢 건물별 재고 편집</span>
+        <button type="button" className={styles.closeBtn} onClick={onClose}>
+          ✕
+        </button>
+      </div>
+      {msg && <div className={styles.stockMsg}>{msg}</div>}
+      {loading ? (
+        <div className={styles.stockLoading}>불러오는 중...</div>
+      ) : rows.length === 0 ? (
+        <div className={styles.stockEmpty}>등록된 건물이 없습니다.</div>
+      ) : (
+        <div className={styles.stockList}>
+          {rows.map((r) => (
+            <div key={r.buildingId} className={styles.stockRow}>
+              <span className={styles.stockBuildingLabel}>{r.buildingNm}</span>
+              <span className={styles.stockCurrent}>현재: {r.stock}</span>
+              <input
+                type="number"
+                min="0"
+                className={styles.stockInput}
+                value={inputs[r.buildingId] ?? ''}
+                onChange={(e) =>
+                  setInputs((prev) => ({
+                    ...prev,
+                    [r.buildingId]: e.target.value,
+                  }))
+                }
+              />
+              <button
+                type="button"
+                className={styles.stockSaveBtn}
+                disabled={saving === r.buildingId}
+                onClick={() => handleSave(r.buildingId)}
+              >
+                {saving === r.buildingId ? '저장 중' : '저장'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ProductFormModal ──────────────────────────────────────────────────────
+function ProductFormModal({
+  product,
+  codeOptions,
+  affiliateOptions,
+  onClose,
+  onSaved,
+}) {
+  const isEdit = !!product;
+  const [form, setForm] = useState(
+    isEdit
+      ? {
+          prodNm: product.prodNm ?? '',
+          prodPrice: String(product.prodPrice ?? ''),
+          prodStock: String(product.prodStock ?? ''),
+          code: product.code ?? 'PROD_FOOD',
+          prodDesc: product.prodDesc ?? '',
+          affiliateId:
+            product.affiliateId != null ? String(product.affiliateId) : '',
+        }
+      : EMPTY_FORM
+  );
+  const [statusVal, setStatusVal] = useState(
+    isEdit ? (product.prodSt ?? 'on_sale') : 'on_sale'
+  );
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const set = (k) => (e) =>
+    setForm((prev) => ({ ...prev, [k]: e.target.value }));
+
+  const validate = () => {
+    if (!form.prodNm.trim()) return '상품명을 입력하세요.';
+    if (
+      !form.prodPrice ||
+      isNaN(Number(form.prodPrice)) ||
+      Number(form.prodPrice) < 0
+    )
+      return '올바른 가격을 입력하세요.';
+    if (
+      !form.prodStock ||
+      isNaN(Number(form.prodStock)) ||
+      Number(form.prodStock) < 0
+    )
+      return '올바른 재고 수량을 입력하세요.';
+    if (!form.code) return '카테고리를 선택하세요.';
+    if (!form.prodDesc.trim()) return '상품 설명을 입력하세요.';
+    return '';
+  };
+
+  const handleSubmit = async () => {
+    const errMsg = validate();
+    if (errMsg) {
+      setErr(errMsg);
+      return;
+    }
+    setSaving(true);
+    setErr('');
+    const body = {
+      prodNm: form.prodNm.trim(),
+      prodPrice: Number(form.prodPrice),
+      prodStock: Number(form.prodStock),
+      code: form.code,
+      prodDesc: form.prodDesc.trim(),
+      affiliateId: form.affiliateId ? Number(form.affiliateId) : null,
+    };
+    try {
+      if (isEdit) {
+        await adminApi.updateProduct(product.prodId, body);
+        if (statusVal !== product.prodSt) {
+          await adminApi.changeProductStatus(product.prodId, statusVal);
+        }
+      } else {
+        await adminApi.createProduct(body);
+      }
+      onSaved();
+    } catch (e) {
+      setErr(e?.message || (isEdit ? '수정 실패' : '등록 실패'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className={styles.modalOverlay}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className={styles.modal}>
+        <div className={styles.modalHeader}>
+          <h3 className={styles.modalTitle}>
+            {isEdit ? '상품 수정' : '상품 등록'}
+          </h3>
+          <button type="button" className={styles.closeBtn} onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <div className={styles.modalBody}>
+          {err && <div className={styles.formErr}>{err}</div>}
+          <div className={styles.formGrid}>
+            <label className={styles.formLabel}>
+              상품명 <span className={styles.req}>*</span>
+              <input
+                className={styles.formInput}
+                value={form.prodNm}
+                onChange={set('prodNm')}
+                placeholder="예: 아메리카노"
+                maxLength={50}
+              />
+            </label>
+            <label className={styles.formLabel}>
+              카테고리 <span className={styles.req}>*</span>
+              <select
+                className={styles.formSelect}
+                value={form.code}
+                onChange={set('code')}
+              >
+                {codeOptions.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.formLabel}>
+              가격 (원) <span className={styles.req}>*</span>
+              <input
+                type="number"
+                min="0"
+                className={styles.formInput}
+                value={form.prodPrice}
+                onChange={set('prodPrice')}
+                placeholder="4500"
+              />
+            </label>
+            <label className={styles.formLabel}>
+              기본 재고 <span className={styles.req}>*</span>
+              <input
+                type="number"
+                min="0"
+                className={styles.formInput}
+                value={form.prodStock}
+                onChange={set('prodStock')}
+                placeholder="100"
+              />
+            </label>
+            {isEdit && (
+              <label className={styles.formLabel}>
+                판매 상태
+                <select
+                  className={styles.formSelect}
+                  value={statusVal}
+                  onChange={(e) => setStatusVal(e.target.value)}
+                >
+                  {STATUS_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <label className={styles.formLabel}>
+              제휴사
+              <select
+                className={styles.formSelect}
+                value={form.affiliateId}
+                onChange={set('affiliateId')}
+              >
+                <option value="">없음</option>
+                {affiliateOptions.map((a) => (
+                  <option key={a.affiliateId} value={String(a.affiliateId)}>
+                    {a.affiliateNm}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className={styles.formLabelFull}>
+            상품 설명 <span className={styles.req}>*</span>
+            <textarea
+              className={styles.formTextarea}
+              value={form.prodDesc}
+              onChange={set('prodDesc')}
+              placeholder="상품 설명을 입력하세요"
+              rows={3}
+              maxLength={2000}
+            />
+          </label>
+        </div>
+        <div className={styles.modalFooter}>
+          <button
+            type="button"
+            className={styles.btnCancel}
+            onClick={onClose}
+            disabled={saving}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            className={styles.btnPrimary}
+            onClick={handleSubmit}
+            disabled={saving}
+          >
+            {saving ? '저장 중...' : isEdit ? '수정 완료' : '등록'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── DeleteConfirmModal ────────────────────────────────────────────────────
+function DeleteConfirmModal({ product, onClose, onDeleted }) {
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+
+  const handleDelete = async () => {
+    setLoading(true);
+    setErr('');
+    try {
+      await adminApi.deleteProduct(product.prodId);
+      onDeleted();
+    } catch (e) {
+      setErr(e?.message || '삭제 실패');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className={styles.modalOverlay}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className={styles.modal} style={{ maxWidth: 420 }}>
+        <div className={styles.modalHeader}>
+          <h3 className={styles.modalTitle}>상품 삭제</h3>
+          <button type="button" className={styles.closeBtn} onClick={onClose}>
+            ✕
+          </button>
+        </div>
+        <div className={styles.modalBody}>
+          {err && <div className={styles.formErr}>{err}</div>}
+          <p className={styles.deleteMsg}>
+            <strong>
+              #{product.prodId} {product.prodNm}
+            </strong>{' '}
+            상품을 삭제하시겠습니까?
+          </p>
+          <p className={styles.deleteWarn}>
+            주문 내역이 있는 상품은 삭제되지 않을 수 있습니다.
+          </p>
+        </div>
+        <div className={styles.modalFooter}>
+          <button
+            type="button"
+            className={styles.btnCancel}
+            onClick={onClose}
+            disabled={loading}
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            className={styles.btnDanger}
+            onClick={handleDelete}
+            disabled={loading}
+          >
+            {loading ? '삭제 중...' : '삭제 확인'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── 메인 컴포넌트 ─────────────────────────────────────────────────────────
+export default function AdminProductList() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+
+  const [codeOptions, setCodeOptions] = useState(CODE_FALLBACK);
+  const [affiliateOptions, setAffiliateOptions] = useState([]); // { affiliateId, affiliateNm }
+
+  // 필터
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [codeFilter, setCodeFilter] = useState('all');
+  const [keyword, setKeyword] = useState('');
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(20);
+
+  // 모달
+  const [formModal, setFormModal] = useState(null); // null | 'create' | product obj
+  const [deleteModal, setDeleteModal] = useState(null); // null | product obj
+  const [stockPanel, setStockPanel] = useState(null); // null | prodId
+
+  // 빠른 상태 변경
+  const [statusEdit, setStatusEdit] = useState({});
+  const [statusSaving, setStatusSaving] = useState(null);
+
+  const noticeTid = useRef(null);
+  const showNotice = (msg) => {
+    setNotice(msg);
+    clearTimeout(noticeTid.current);
+    noticeTid.current = setTimeout(() => setNotice(''), 3000);
+  };
+
+  // 전체 상품 로드 (관리자용 - sold_out 포함)
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await adminApi.getAllProductsAdmin();
+      const list = Array.isArray(data) ? data : [];
+      setProducts(list);
+      const m = {};
+      list.forEach((p) => {
+        m[p.prodId] = p.prodSt ?? 'on_sale';
+      });
+      setStatusEdit(m);
+    } catch {
+      // 폴백: on_sale만 반환하는 공개 API
+      try {
+        const data = await adminApi.getProducts();
+        const list = Array.isArray(data) ? data : [];
+        setProducts(list);
+        const m = {};
+        list.forEach((p) => {
+          m[p.prodId] = p.prodSt ?? 'on_sale';
+        });
+        setStatusEdit(m);
+      } catch (e2) {
+        setError(e2?.message || '상품 목록을 불러오지 못했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 공통코드 로드
+  const fetchCodes = useCallback(async () => {
+    try {
+      const data = await adminApi.getCommonCodes('PRODUCT_CATEGORY');
+      if (Array.isArray(data) && data.length > 0) {
+        setCodeOptions(
+          data.map((c) => ({
+            code: c.code,
+            label: c.codeValue ?? c.code_value ?? c.code,
+          }))
+        );
+      }
+    } catch {
+      /* fallback 유지 */
+    }
+  }, []);
+
+  // 제휴사 목록 로드
+  const fetchAffiliates = useCallback(async () => {
+    try {
+      const data = await adminApi.getAffiliates({ page: 0, size: 100 });
+      const list = Array.isArray(data) ? data : (data?.content ?? []);
+      setAffiliateOptions(
+        list.map((a) => ({
+          affiliateId: a.affiliateId,
+          affiliateNm: a.affiliateNm ?? `제휴사 #${a.affiliateId}`,
+        }))
+      );
+    } catch {
+      /* 실패해도 수동 입력 폴백 */
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCodes();
+    fetchAffiliates();
+  }, [fetchProducts, fetchCodes, fetchAffiliates]);
+
+  // 필터
+  const filteredProducts = useMemo(() => {
+    const q = keyword.trim().toLowerCase();
+    return [...products]
+      .sort((a, b) => Number(b.prodId ?? 0) - Number(a.prodId ?? 0))
+      .filter((p) => {
+        if (statusFilter !== 'all' && String(p.prodSt ?? '') !== statusFilter)
+          return false;
+        if (codeFilter !== 'all' && String(p.code ?? '') !== codeFilter)
+          return false;
+        if (!q) return true;
+        return [p.prodId, p.prodNm, p.prodDesc, p.code, p.affiliateId]
+          .map((v) => String(v ?? '').toLowerCase())
+          .join(' ')
+          .includes(q);
+      });
+  }, [products, statusFilter, codeFilter, keyword]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / size));
+  const safePage = clamp(page, 1, totalPages);
+  const pagedProducts = useMemo(() => {
+    const from = (safePage - 1) * size;
+    return filteredProducts.slice(from, from + size);
+  }, [filteredProducts, safePage, size]);
+  const pages = useMemo(
+    () => windowedPages(safePage, totalPages),
+    [safePage, totalPages]
+  );
+  useEffect(() => {
+    if (page !== safePage) setPage(safePage);
+  }, [page, safePage]);
+
+  const resetFilters = () => {
+    setStatusFilter('all');
+    setCodeFilter('all');
+    setKeyword('');
+    setPage(1);
+  };
+
+  // 빠른 상태 저장
+  const handleQuickStatus = async (prodId) => {
+    const next = statusEdit[prodId];
+    if (!next || statusSaving) return;
+    setStatusSaving(prodId);
+    try {
+      await adminApi.changeProductStatus(prodId, next);
+      showNotice(`#${prodId} 상태 변경 완료`);
+      await fetchProducts();
+    } catch (e) {
+      setError(e?.message || '상태 변경 실패');
+    } finally {
+      setStatusSaving(null);
+    }
+  };
+
+  const codeLabel = (code) =>
+    codeOptions.find((c) => c.code === code)?.label ?? code ?? '-';
+
+  const affiliateName = (id) => {
+    if (id == null) return '-';
+    return (
+      affiliateOptions.find((a) => a.affiliateId === id)?.affiliateNm ??
+      `#${id}`
+    );
+  };
+
+  const getBuildingStocks = (p) => {
+    const bs = p.buildingStocks;
+    if (!bs || typeof bs !== 'object') return [];
+    return Object.entries(bs).sort(([a], [b]) => Number(a) - Number(b));
+  };
+
+  const getTotalStock = (p) => {
+    const entries = getBuildingStocks(p);
+    if (entries.length === 0) return p.prodStock ?? 0;
+    return entries.reduce((s, [, v]) => s + Number(v ?? 0), 0);
+  };
+
+  return (
     <section className={styles.wrap}>
+      {/* 상단 */}
       <div className={styles.topRow}>
         <div className={styles.titleArea}>
-          <h2 className={styles.title}>룸서비스 상품</h2>
+          <h2 className={styles.title}>룸서비스 상품 관리</h2>
           <p className={styles.sub}>
             총 <strong>{filteredProducts.length}</strong>개
           </p>
-          <p className={styles.hint}>
-            데이터 소스: <code>/products</code> (현재 판매중 상품만 조회)
-          </p>
         </div>
-
         <div className={styles.actions}>
           <select
             className={styles.select}
@@ -166,170 +662,245 @@ export default function AdminProductList() {
               setPage(1);
             }}
           >
-            {[10, 20, 30, 50].map((optionSize) => (
-              <option key={optionSize} value={optionSize}>
-                {optionSize}개씩
+            {[10, 20, 30, 50].map((n) => (
+              <option key={n} value={n}>
+                {n}개씩
               </option>
             ))}
           </select>
-
+          <button
+            type="button"
+            className={styles.btn}
+            onClick={fetchProducts}
+            disabled={loading}
+          >
+            {loading ? '불러오는 중...' : '새로고침'}
+          </button>
           <button
             type="button"
             className={`${styles.btn} ${styles.btnPrimary}`}
-            onClick={refetch}
-            disabled={loading || Boolean(savingProdId)}
+            onClick={() => setFormModal('create')}
           >
-            {loading ? '불러오는 중...' : '새로고침'}
+            + 상품 등록
           </button>
         </div>
       </div>
 
+      {/* 필터 */}
       <div className={styles.filterRow}>
         <label className={styles.filterItem}>
           <span className={styles.filterLabel}>상태</span>
           <select
             className={styles.select}
             value={statusFilter}
-            onChange={(e) => onChangeFilter(setStatusFilter)(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="all">전체</option>
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            {STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
               </option>
             ))}
           </select>
         </label>
-
         <label className={styles.filterItem}>
-          <span className={styles.filterLabel}>코드</span>
+          <span className={styles.filterLabel}>카테고리</span>
           <select
             className={styles.select}
             value={codeFilter}
-            onChange={(e) => onChangeFilter(setCodeFilter)(e.target.value)}
+            onChange={(e) => {
+              setCodeFilter(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="all">전체</option>
-            {codeOptions.map((code) => (
-              <option key={code} value={code}>
-                {code}
+            {codeOptions.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.label}
               </option>
             ))}
           </select>
         </label>
-
         <label className={styles.filterItem}>
           <span className={styles.filterLabel}>검색</span>
           <input
             className={styles.input}
             value={keyword}
             placeholder="ID / 상품명 / 설명 / 제휴사"
-            onChange={(e) => onChangeFilter(setKeyword)(e.target.value)}
+            onChange={(e) => {
+              setKeyword(e.target.value);
+              setPage(1);
+            }}
           />
         </label>
-
-        <button
-          type="button"
-          className={styles.btn}
-          onClick={() => {
-            setStatusFilter('all');
-            setCodeFilter('all');
-            setKeyword('');
-            setPage(1);
-          }}
-        >
+        <button type="button" className={styles.btn} onClick={resetFilters}>
           필터 초기화
         </button>
       </div>
 
+      {/* 알림 */}
       <div className={styles.statusRow} aria-live="polite">
         {loading ? '상품 데이터를 불러오는 중...' : notice}
       </div>
+      {error && <div className={styles.errorBox}>{error}</div>}
 
-      {error ? <div className={styles.errorBox}>{error}</div> : null}
-      {actionError ? <div className={styles.errorBox}>{actionError}</div> : null}
-
+      {/* 테이블 */}
       {!loading && pagedProducts.length === 0 ? (
-        <div className={styles.empty}>현재 조건에 맞는 상품이 없습니다.</div>
+        <div className={styles.empty}>조건에 맞는 상품이 없습니다.</div>
       ) : (
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>상품</th>
-                <th>가격</th>
-                <th>상태</th>
-                <th>코드 / 제휴사</th>
+                <th style={{ width: 50 }}>#</th>
+                <th>상품명 / 설명</th>
+                <th style={{ width: 90 }}>가격</th>
+                <th style={{ width: 80 }}>기본재고</th>
+                <th style={{ width: 90 }}>카테고리</th>
+                <th style={{ width: 70 }}>제휴사</th>
+                <th style={{ width: 220 }}>상태 변경</th>
                 <th>건물별 재고</th>
+                <th style={{ width: 100 }}>관리</th>
               </tr>
             </thead>
             <tbody>
-              {pagedProducts.map((product) => {
-                const stocks = toStockEntries(product.buildingStocks);
-                const totalStock = stocks.reduce((sum, item) => sum + item.stock, 0);
+              {pagedProducts.map((p) => {
+                const bsEntries = getBuildingStocks(p);
+                const totalStock = getTotalStock(p);
+                const isOpen = stockPanel === p.prodId;
                 return (
-                  <tr key={product.prodId}>
-                    <td>
-                      <strong>
-                        #{product.prodId} {product.prodNm || '-'}
-                      </strong>
-                      <div className={styles.subCell}>{product.prodDesc || '-'}</div>
-                    </td>
-                    <td>{formatMoney(product.prodPrice)}</td>
-                    <td>
-                      <div className={styles.statusCell}>
-                        <StatusBadge status={product.prodSt} />
-                        <div className={styles.statusActions}>
+                  <React.Fragment key={p.prodId}>
+                    <tr
+                      className={
+                        p.prodSt === 'sold_out' ? styles.rowSoldOut : ''
+                      }
+                    >
+                      {/* # */}
+                      <td className={styles.tdId}>{p.prodId}</td>
+                      {/* 상품명 */}
+                      <td>
+                        <div className={styles.prodNm}>{p.prodNm || '-'}</div>
+                        <div className={styles.prodDesc}>
+                          {p.prodDesc || '-'}
+                        </div>
+                      </td>
+                      {/* 가격 */}
+                      <td className={styles.tdPrice}>{fmt(p.prodPrice)}</td>
+                      {/* 기본재고 */}
+                      <td className={styles.tdCenter}>
+                        <span
+                          className={p.prodStock === 0 ? styles.stockZero : ''}
+                        >
+                          {p.prodStock ?? 0}
+                        </span>
+                      </td>
+                      {/* 카테고리 */}
+                      <td>
+                        <span className={styles.codeChip}>
+                          {codeLabel(p.code)}
+                        </span>
+                      </td>
+                      {/* 제휴사 */}
+                      <td className={styles.tdCenter}>
+                        {affiliateName(p.affiliateId)}
+                      </td>
+                      {/* 상태 변경 */}
+                      <td>
+                        <div className={styles.statusCell}>
+                          <StatusBadge status={p.prodSt} />
                           <select
                             className={styles.select}
-                            value={editableStatus[product.prodId] ?? product.prodSt ?? ''}
+                            value={statusEdit[p.prodId] ?? p.prodSt ?? ''}
                             onChange={(e) =>
-                              setEditableStatus((prev) => ({
+                              setStatusEdit((prev) => ({
                                 ...prev,
-                                [product.prodId]: e.target.value,
+                                [p.prodId]: e.target.value,
                               }))
                             }
                           >
-                            {STATUS_OPTIONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
+                            {STATUS_OPTIONS.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
                               </option>
                             ))}
                           </select>
                           <button
                             type="button"
                             className={styles.btn}
-                            onClick={() => onSaveStatus(product.prodId)}
-                            disabled={Boolean(savingProdId)}
+                            onClick={() => handleQuickStatus(p.prodId)}
+                            disabled={!!statusSaving}
                           >
-                            {savingProdId === product.prodId ? '저장 중...' : '저장'}
+                            {statusSaving === p.prodId ? '...' : '저장'}
                           </button>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div>{product.code || '-'}</div>
-                      <div className={styles.subCell}>
-                        제휴사 #{product.affiliateId ?? '-'}
-                      </div>
-                    </td>
-                    <td>
-                      <div className={styles.stockHead}>총 {totalStock}</div>
-                      <div className={styles.stockWrap}>
-                        {stocks.length === 0 ? (
-                          <span className={styles.stockEmpty}>재고 정보 없음</span>
-                        ) : (
-                          stocks.map((stock) => (
-                            <span
-                              key={`${product.prodId}_${stock.buildingId}`}
-                              className={styles.stockChip}
-                            >
-                              건물{stock.buildingId}: {stock.stock}
-                            </span>
-                          ))
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      {/* 건물별 재고 */}
+                      <td>
+                        <div className={styles.stockSummary}>
+                          <span className={styles.stockTotal}>
+                            합계 {totalStock}
+                          </span>
+                          <div className={styles.stockChipsWrap}>
+                            {bsEntries.slice(0, 3).map(([bid, stk]) => (
+                              <span
+                                key={bid}
+                                className={`${styles.stockChip} ${Number(stk) === 0 ? styles.stockChipZero : ''}`}
+                              >
+                                B{bid}: {stk}
+                              </span>
+                            ))}
+                            {bsEntries.length > 3 && (
+                              <span className={styles.stockChipMore}>
+                                +{bsEntries.length - 3}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className={`${styles.btnSm} ${isOpen ? styles.btnSmActive : ''}`}
+                            onClick={() =>
+                              setStockPanel(isOpen ? null : p.prodId)
+                            }
+                          >
+                            {isOpen ? '닫기' : '재고편집'}
+                          </button>
+                        </div>
+                      </td>
+                      {/* 관리 */}
+                      <td>
+                        <div className={styles.actionBtns}>
+                          <button
+                            type="button"
+                            className={`${styles.btnSm} ${styles.btnEdit}`}
+                            onClick={() => setFormModal(p)}
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            className={`${styles.btnSm} ${styles.btnDelete}`}
+                            onClick={() => setDeleteModal(p)}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {/* 건물별 재고 인라인 패널 */}
+                    {isOpen && (
+                      <tr>
+                        <td colSpan={9} style={{ padding: 0 }}>
+                          <BuildingStockPanel
+                            prodId={p.prodId}
+                            onClose={() => setStockPanel(null)}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </tbody>
@@ -337,6 +908,7 @@ export default function AdminProductList() {
         </div>
       )}
 
+      {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
@@ -347,18 +919,16 @@ export default function AdminProductList() {
           >
             {'<'}
           </button>
-
-          {pages.map((targetPage) => (
+          {pages.map((pg) => (
             <button
-              key={targetPage}
+              key={pg}
               type="button"
-              className={`${styles.pageBtn} ${targetPage === safePage ? styles.pageBtnActive : ''}`}
-              onClick={() => setPage(targetPage)}
+              className={`${styles.pageBtn} ${pg === safePage ? styles.pageBtnActive : ''}`}
+              onClick={() => setPage(pg)}
             >
-              {targetPage}
+              {pg}
             </button>
           ))}
-
           <button
             type="button"
             className={styles.pageBtn}
@@ -368,6 +938,38 @@ export default function AdminProductList() {
             {'>'}
           </button>
         </div>
+      )}
+
+      {/* 등록/수정 모달 */}
+      {formModal !== null && (
+        <ProductFormModal
+          product={formModal === 'create' ? null : formModal}
+          codeOptions={codeOptions}
+          affiliateOptions={affiliateOptions}
+          onClose={() => setFormModal(null)}
+          onSaved={() => {
+            setFormModal(null);
+            showNotice(
+              formModal === 'create'
+                ? '상품이 등록되었습니다.'
+                : '상품이 수정되었습니다.'
+            );
+            fetchProducts();
+          }}
+        />
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {deleteModal !== null && (
+        <DeleteConfirmModal
+          product={deleteModal}
+          onClose={() => setDeleteModal(null)}
+          onDeleted={() => {
+            setDeleteModal(null);
+            showNotice('상품이 삭제되었습니다.');
+            fetchProducts();
+          }}
+        />
       )}
     </section>
   );

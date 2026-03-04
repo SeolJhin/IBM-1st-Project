@@ -8,9 +8,4 @@ export const adminMenu = [
   { key: 'system', label: '시스템관리', path: '/admin/system' },
   { key: 'roomservice', label: '룸서비스 관리', path: '/admin/roomservice' },
   { key: 'pay', label: '결제/정산', path: '/admin/pay' },
-  {
-    key: 'spaces',
-    label: '공용공간예약 관리',
-    path: '/admin/reservations/spaces',
-  },
 ];

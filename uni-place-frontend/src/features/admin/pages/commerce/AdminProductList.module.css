@@ -1,14 +1,18 @@
+/* AdminProductList.module.css */
+
 .wrap {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
+/* ─── 상단 ─────────────────────────────────────────────── */
 .topRow {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .titleArea {
@@ -29,248 +33,679 @@
   color: #6b7280;
 }
 
-.hint {
-  margin: 0;
-  font-size: 12px;
-  color: #8b8f97;
-}
-
-.hint code {
-  font-size: 11px;
-}
-
 .actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
+/* ─── 필터 ─────────────────────────────────────────────── */
 .filterRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
   align-items: flex-end;
-  padding: 12px;
-  border: 1px solid rgba(31, 35, 40, 0.12);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.55);
+  gap: 10px;
+  background: #f8f6f1;
+  border: 1px solid #e8e2d4;
+  border-radius: 8px;
+  padding: 12px 14px;
 }
 
 .filterItem {
-  display: grid;
-  gap: 4px;
-  min-width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #374151;
 }
 
 .filterLabel {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   color: #6b7280;
+  white-space: nowrap;
 }
 
-.statusRow {
-  min-height: 20px;
-  color: #6b7280;
+/* ─── 공통 UI ─────────────────────────────────────────── */
+.select {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d1c9b8;
+  border-radius: 6px;
   font-size: 13px;
-}
-
-.select,
-.input {
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid rgba(31, 35, 40, 0.16);
   background: #fff;
   color: #1f2328;
-  padding: 0 10px;
-  font-size: 13px;
-}
-
-.btn {
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid rgba(31, 35, 40, 0.18);
-  background: rgba(255, 255, 255, 0.65);
-  color: #1f2328;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 0 12px;
   cursor: pointer;
 }
 
+.input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d1c9b8;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  color: #1f2328;
+  min-width: 200px;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: #b59a6b;
+}
+
+.btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid #d1c9b8;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  background: #f3ede0;
+}
 .btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .btnPrimary {
-  border-color: rgba(202, 162, 90, 0.5);
-  background: rgba(202, 162, 90, 0.22);
-  box-shadow: 0 8px 18px rgba(202, 162, 90, 0.2);
+  background: #2d2d2d;
+  color: #fff;
+  border-color: #2d2d2d;
+  font-weight: 600;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: #444;
+}
+
+.btnSm {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid #d1c9b8;
+  border-radius: 5px;
+  font-size: 12px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.btnSm:hover:not(:disabled) {
+  background: #f3ede0;
+}
+
+.btnSmActive {
+  background: #e8f0fe;
+  border-color: #8ab4f8;
+  color: #1a56db;
+}
+
+.btnEdit {
+  border-color: #b59a6b;
+  color: #7c5a1e;
+  background: #fdf8ee;
+}
+
+.btnEdit:hover:not(:disabled) {
+  background: #f5e9cc;
+}
+
+.btnDelete {
+  border-color: #f5c6c6;
+  color: #c0392b;
+  background: #fff5f5;
+}
+
+.btnDelete:hover:not(:disabled) {
+  background: #fde8e8;
+}
+
+/* ─── 알림 ─────────────────────────────────────────────── */
+.statusRow {
+  min-height: 20px;
+  font-size: 13px;
+  color: #6b7280;
 }
 
 .errorBox {
-  border: 1px solid rgba(190, 60, 60, 0.34);
-  border-radius: 12px;
-  background: rgba(190, 60, 60, 0.1);
-  color: #852e2e;
+  background: #fff5f5;
+  border: 1px solid #f5c6c6;
+  border-radius: 6px;
+  padding: 10px 14px;
   font-size: 13px;
-  padding: 10px 12px;
+  color: #c0392b;
 }
 
+.empty {
+  padding: 40px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  background: #faf9f7;
+  border-radius: 8px;
+}
+
+/* ─── 테이블 ─────────────────────────────────────────────── */
 .tableWrap {
-  border: 1px solid rgba(31, 35, 40, 0.12);
-  border-radius: 14px;
-  overflow: auto;
-  background: rgba(255, 255, 255, 0.68);
+  overflow-x: auto;
+  border: 1px solid #e8e2d4;
+  border-radius: 8px;
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 960px;
-}
-
-.table thead th {
-  text-align: left;
-  font-size: 12px;
-  font-weight: 800;
-  color: #6b7280;
-  padding: 12px 10px;
-  background: rgba(202, 162, 90, 0.12);
-  border-bottom: 1px solid rgba(31, 35, 40, 0.12);
-}
-
-.table tbody td {
-  padding: 11px 10px;
   font-size: 13px;
-  color: #1f2328;
-  border-bottom: 1px solid rgba(31, 35, 40, 0.08);
-  vertical-align: top;
+  min-width: 900px;
+}
+
+.table thead tr {
+  background: #f5f0e8;
+}
+
+.table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 700;
+  color: #374151;
+  border-bottom: 1px solid #e8e2d4;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0ece3;
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: #faf8f3;
 }
 
-.subCell {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #6b7280;
+.rowSoldOut {
+  background: #fafafa;
 }
-
-.statusCell {
-  display: grid;
-  gap: 8px;
-}
-
-.statusActions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 78px;
-  height: 24px;
-  border-radius: 999px;
-  padding: 0 10px;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.badgeOnSale {
-  color: #2c6a3d;
-  background: rgba(87, 170, 108, 0.2);
-}
-
-.badgeSoldOut {
-  color: #8a2f2f;
-  background: rgba(200, 70, 70, 0.18);
-}
-
-.stockHead {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.stockWrap {
-  margin-top: 6px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.stockChip {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  border: 1px solid rgba(31, 35, 40, 0.14);
-  background: rgba(255, 255, 255, 0.8);
-  padding: 3px 8px;
-  font-size: 11px;
-  color: #1f2328;
-}
-
-.stockEmpty {
-  font-size: 12px;
+.rowSoldOut td {
   color: #9ca3af;
 }
 
-.empty {
-  border: 1px dashed rgba(31, 35, 40, 0.18);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.45);
-  color: #6b7280;
-  font-size: 13px;
-  padding: 18px 14px;
+/* 셀 스타일 */
+.tdId {
+  color: #9ca3af;
+  font-size: 12px;
+  text-align: center;
+}
+.tdPrice {
+  font-weight: 600;
+  color: #1f2328;
+  white-space: nowrap;
+}
+.tdCenter {
   text-align: center;
 }
 
-.pagination {
+.prodNm {
+  font-weight: 600;
+  color: #1f2328;
+}
+.prodDesc {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stockZero {
+  color: #c0392b;
+  font-weight: 700;
+}
+
+/* 배지 */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badgeOnSale {
+  background: #d1fae5;
+  color: #065f46;
+}
+.badgeSoldOut {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* 코드 칩 */
+.codeChip {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f0ece3;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #6b5e3e;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 상태 셀 */
+.statusCell {
   display: flex;
-  justify-content: center;
   align-items: center;
+  gap: 6px;
   flex-wrap: wrap;
+}
+
+/* 건물 재고 */
+.stockSummary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.stockChipsWrap {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.stockTotal {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.stockChip {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #e8f4fd;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #1a56db;
+  white-space: nowrap;
+}
+
+.stockChipZero {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.stockChipMore {
+  display: inline-block;
+  padding: 2px 6px;
+  background: #f0ece3;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+/* 관리 버튼 */
+.actionBtns {
+  display: flex;
   gap: 6px;
 }
 
-.pageBtn {
-  min-width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  border: 1px solid rgba(31, 35, 40, 0.18);
-  background: rgba(255, 255, 255, 0.78);
-  color: #1f2328;
+/* ─── 건물 재고 패널 ─────────────────────────────────────── */
+.stockPanel {
+  background: #f5f0e8;
+  border-top: 1px solid #e8e2d4;
+  padding: 16px 20px;
+}
+
+.stockPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.stockPanelTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.stockMsg {
+  font-size: 13px;
+  color: #065f46;
+  background: #d1fae5;
+  padding: 6px 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.stockLoading,
+.stockEmpty {
+  font-size: 13px;
+  color: #9ca3af;
+  padding: 8px 0;
+}
+
+.stockList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stockRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #e8e2d4;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.stockBuildingLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  min-width: 70px;
+}
+
+.stockCurrent {
   font-size: 12px;
-  font-weight: 800;
+  color: #9ca3af;
+  min-width: 60px;
+}
+
+.stockInput {
+  width: 90px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #d1c9b8;
+  border-radius: 5px;
+  font-size: 13px;
+  text-align: right;
+}
+
+.stockSaveBtn {
+  height: 30px;
+  padding: 0 12px;
+  background: #2d2d2d;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
   cursor: pointer;
 }
 
-.pageBtn:disabled {
+.stockSaveBtn:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
+}
+.stockSaveBtn:hover:not(:disabled) {
+  background: #444;
+}
+
+/* ─── 페이지네이션 ─────────────────────────────────────── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.pageBtn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #d1c9b8;
+  border-radius: 5px;
+  font-size: 13px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: #f3ede0;
+}
+.pageBtn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .pageBtnActive {
-  border-color: rgba(202, 162, 90, 0.58);
-  background: rgba(202, 162, 90, 0.24);
+  background: #2d2d2d !important;
+  color: #fff !important;
+  border-color: #2d2d2d !important;
+  font-weight: 700;
 }
 
-@media (max-width: 900px) {
-  .topRow {
-    flex-direction: column;
-    align-items: stretch;
-  }
+/* ─── 모달 ─────────────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 20px;
+}
 
-  .actions {
-    flex-wrap: wrap;
-  }
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
 
-  .filterItem {
-    min-width: 140px;
-    flex: 1 1 150px;
-  }
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid #f0ece3;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #1f2328;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #9ca3af;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.closeBtn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.modalBody {
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formErr {
+  background: #fff5f5;
+  border: 1px solid #f5c6c6;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #c0392b;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.formLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.formLabelFull {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.req {
+  color: #e53e3e;
+  font-weight: 700;
+}
+
+.formInput {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #d1c9b8;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1f2328;
+  background: #fff;
+}
+
+.formInput:focus {
+  outline: none;
+  border-color: #b59a6b;
+  box-shadow: 0 0 0 2px rgba(181, 154, 107, 0.2);
+}
+
+.formSelect {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #d1c9b8;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1f2328;
+  background: #fff;
+  cursor: pointer;
+}
+
+.formSelect:focus {
+  outline: none;
+  border-color: #b59a6b;
+}
+
+.formTextarea {
+  padding: 8px 10px;
+  border: 1px solid #d1c9b8;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1f2328;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.formTextarea:focus {
+  outline: none;
+  border-color: #b59a6b;
+  box-shadow: 0 0 0 2px rgba(181, 154, 107, 0.2);
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 22px 18px;
+  border-top: 1px solid #f0ece3;
+}
+
+.btnCancel {
+  height: 36px;
+  padding: 0 18px;
+  border: 1px solid #d1c9b8;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.btnCancel:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+.btnCancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnDanger {
+  height: 36px;
+  padding: 0 18px;
+  border: 1px solid #e53e3e;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  background: #e53e3e;
+  color: #fff;
+  cursor: pointer;
+}
+
+.btnDanger:hover:not(:disabled) {
+  background: #c0392b;
+}
+.btnDanger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 삭제 모달 */
+.deleteMsg {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.deleteWarn {
+  font-size: 12px;
+  color: #9ca3af;
+  display: block;
+  margin-top: 6px;
 }

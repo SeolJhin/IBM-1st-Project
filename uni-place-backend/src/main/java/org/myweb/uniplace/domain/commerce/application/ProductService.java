@@ -16,9 +16,14 @@ public interface ProductService {
     List<Product> getAllOnSaleProducts();
 
     /**
-     * 빌딩별 재고 포함 전체 상품 목록
+     * 빌딩별 재고 포함 전체 상품 목록 (on_sale 만)
      */
     List<ProductWithBuildingStockResponse> getAllOnSaleProductsWithBuildingStocks();
+
+    /**
+     * 빌딩별 재고 포함 전체 상품 목록 (관리자용 - sold_out 포함)
+     */
+    List<ProductWithBuildingStockResponse> getAllProductsWithBuildingStocks();
 
     Product createProduct(ProductCreateRequest request);
 
