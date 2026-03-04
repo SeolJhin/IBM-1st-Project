@@ -268,6 +268,8 @@ public class BoardServiceImpl implements BoardService {
         Page<Board> page;
         if ("userId".equalsIgnoreCase(searchType)) {
             page = boardRepository.searchByUserId(normalizedCode, keyword == null ? "" : keyword, pageReq);
+        } else if ("nickname".equalsIgnoreCase(searchType) || "userNickname".equalsIgnoreCase(searchType)) {
+            page = boardRepository.searchByNickname(normalizedCode, keyword == null ? "" : keyword, pageReq);
         } else {
             // default: title
             page = boardRepository.searchByTitle(normalizedCode, keyword == null ? "" : keyword, pageReq);
