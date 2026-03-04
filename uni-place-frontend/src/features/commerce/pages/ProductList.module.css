@@ -1,5 +1,9 @@
 /* src/features/commerce/pages/ProductList.module.css */
 
+.root {
+  width: min(920px, 100%);
+}
+
 /* ── 상단 탭 ── */
 .topTabs {
   display: flex;
