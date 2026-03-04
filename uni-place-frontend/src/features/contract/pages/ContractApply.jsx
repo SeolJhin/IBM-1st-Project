@@ -13,6 +13,7 @@ const formatKRW = (v) =>
   v != null ? Number(v).toLocaleString('ko-KR') + '원' : '-';
 
 const toDateStr = (d) => d.toISOString().slice(0, 10);
+const todayStr = () => toDateStr(new Date());
 
 const addMonths = (base, m) => {
   const d = new Date(base);
@@ -141,11 +142,12 @@ export default function ContractApply() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const pd = Number(form.paymentDay);
-    if (
-      !form.contractStart ||
-      !form.contractEnd ||
-      form.contractEnd < minContractEnd
-    ) {
+    const today = todayStr();
+    if (!form.contractStart || form.contractStart < today) {
+      setSubmitError('계약 시작일은 오늘 이후 날짜여야 합니다.');
+      return;
+    }
+    if (!form.contractEnd || form.contractEnd < minContractEnd) {
       setSubmitError('계약 종료일은 시작일로부터 최소 7일 이후여야 합니다.');
       return;
     }
@@ -434,6 +436,7 @@ export default function ContractApply() {
                       value={form.contractStart}
                       onChange={handleChange}
                       className={styles.docInput}
+                      min={todayStr()}
                       required
                     />
                   </div>

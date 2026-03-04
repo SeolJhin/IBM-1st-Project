@@ -19,6 +19,7 @@ const INIT_QUERY = {
   rentType: undefined,
   roomSt: undefined,
   sunDirection: undefined,
+  petAllowedYn: undefined,
   minRentPrice: undefined,
   maxRentPrice: undefined,
   minDeposit: undefined,
@@ -394,6 +395,18 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
           <option value="n">북향</option>
           <option value="e">동향</option>
           <option value="w">서향</option>
+        </select>
+      </section>
+      <section className={styles.filterSection}>
+        <h3 className={styles.filterLabel}>반려동물</h3>
+        <select
+          className={styles.filterSelect}
+          value={query.petAllowedYn || ''}
+          onChange={sel('petAllowedYn')}
+        >
+          <option value="">전체</option>
+          <option value="Y">허용</option>
+          <option value="N">불가</option>
         </select>
       </section>
       <section className={styles.filterSection}>
