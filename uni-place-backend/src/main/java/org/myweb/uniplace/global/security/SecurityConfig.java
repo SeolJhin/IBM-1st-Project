@@ -2,7 +2,6 @@ package org.myweb.uniplace.global.security;
 
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
-import org.myweb.uniplace.global.security.oauth.CustomAuthorizationRequestResolver;
 import org.myweb.uniplace.global.security.oauth.CustomOAuth2UserService;
 import org.myweb.uniplace.global.security.oauth.OAuth2FailureHandler;
 import org.myweb.uniplace.global.security.oauth.OAuth2SuccessHandler;
@@ -14,7 +13,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -34,7 +32,6 @@ public class SecurityConfig {
     private final OAuth2FailureHandler oAuth2FailureHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
-    private final ClientRegistrationRepository clientRegistrationRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -103,22 +100,22 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/complains").authenticated()
                 .requestMatchers(HttpMethod.GET, "/complains/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/complains/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/complains").hasAnyRole("ADMIN", "TENANT", "USER")
-                .requestMatchers(HttpMethod.POST, "/api/complains").hasAnyRole("ADMIN", "TENANT", "USER")
-                .requestMatchers(HttpMethod.PUT, "/complains/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/complains/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/complains").hasAnyRole("ADMIN", "TENANT")
+                .requestMatchers(HttpMethod.POST, "/api/complains").hasAnyRole("ADMIN", "TENANT")
+                .requestMatchers(HttpMethod.PUT, "/complains/**").hasAnyRole("ADMIN", "TENANT")
+                .requestMatchers(HttpMethod.PUT, "/api/complains/**").hasAnyRole("ADMIN", "TENANT")
                 .requestMatchers(HttpMethod.PATCH, "/complains/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/complains/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/complains/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/complains/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/complains/**").hasAnyRole("ADMIN", "TENANT")
+                .requestMatchers(HttpMethod.DELETE, "/api/complains/**").hasAnyRole("ADMIN", "TENANT")
                 .requestMatchers(HttpMethod.GET, "/qna/all").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/qna").authenticated()
                 .requestMatchers(HttpMethod.GET, "/qna/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/qna").hasAnyRole("ADMIN", "TENANT")
-                .requestMatchers(HttpMethod.POST, "/qna/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/qna/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/qna/**").hasAnyRole("ADMIN", "TENANT")
+                .requestMatchers(HttpMethod.PUT, "/qna/**").hasAnyRole("ADMIN", "TENANT")
                 .requestMatchers(HttpMethod.PATCH, "/qna/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/qna/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/qna/**").hasAnyRole("ADMIN", "TENANT")
                 .requestMatchers(HttpMethod.GET, "/files/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/files").permitAll()            
                 .requestMatchers(HttpMethod.POST, "/files").permitAll()
@@ -134,11 +131,6 @@ public class SecurityConfig {
             )
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/login")
-                .authorizationEndpoint(authorization -> authorization
-                    .authorizationRequestResolver(
-                        new CustomAuthorizationRequestResolver(clientRegistrationRepository)
-                    )
-                )
                 .successHandler(oAuth2SuccessHandler)
                 .failureHandler(oAuth2FailureHandler)
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
