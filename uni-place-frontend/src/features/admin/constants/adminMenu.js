@@ -7,5 +7,5 @@ export const adminMenu = [
   { key: 'contracts', label: '계약 관리', path: '/admin/contracts' },
   { key: 'system', label: '시스템관리', path: '/admin/system' },
   { key: 'roomservice', label: '룸서비스 관리', path: '/admin/roomservice' },
-  { key: 'pay', label: '결제/정산', path: '/admin/pay' },
+  { key: 'pay', label: '결제관리', path: '/admin/pay' },
 ];

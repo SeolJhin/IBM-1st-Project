@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import { useAdminRoomServiceOrders } from '../../hooks/useAdminRoomServiceOrders';
@@ -42,6 +42,24 @@ function windowedPages(currentPage, totalPages, radius = 2) {
   return pages;
 }
 
+async function fetchAllPages(fetchPage) {
+  let page = 1;
+  let totalPages = 1;
+  const rows = [];
+
+  while (page <= totalPages) {
+    const res = await fetchPage(page);
+    const content = Array.isArray(res?.content) ? res.content : [];
+    rows.push(...content);
+
+    const nextTotal = Number(res?.totalPages ?? 1);
+    totalPages = Number.isFinite(nextTotal) && nextTotal > 0 ? nextTotal : 1;
+    page += 1;
+  }
+
+  return rows;
+}
+
 function StatusBadge({ status }) {
   const key = String(status ?? '').toLowerCase();
   const className =
@@ -71,6 +89,7 @@ export default function AdminRoomServiceOrderList() {
   const [savingOrderId, setSavingOrderId] = useState(null);
   const [actionError, setActionError] = useState('');
   const [notice, setNotice] = useState('');
+  const [roomLabelByRoomId, setRoomLabelByRoomId] = useState({});
 
   const { orders, pagination, loading, error, goToPage, refetch } =
     useAdminRoomServiceOrders({
@@ -114,6 +133,54 @@ export default function AdminRoomServiceOrderList() {
     };
   }, [orderIdFromQuery]);
 
+  const loadRoomLabels = useCallback(async () => {
+    try {
+      const [rooms, buildings] = await Promise.all([
+        fetchAllPages((page) =>
+          adminApi.getRooms({ page, size: 200, sort: 'roomId', direct: 'ASC' })
+        ),
+        fetchAllPages((page) =>
+          adminApi.getBuildings({
+            page,
+            size: 200,
+            sort: 'buildingId',
+            direct: 'ASC',
+          })
+        ),
+      ]);
+
+      const buildingNameById = new Map(
+        buildings.map((b) => [
+          Number(b?.buildingId),
+          String(
+            b?.buildingName ??
+              b?.buildingNm ??
+              b?.name ??
+              `건물 ${b?.buildingId ?? '-'}`
+          ),
+        ])
+      );
+
+      const mapped = {};
+      rooms.forEach((room) => {
+        const roomId = Number(room?.roomId);
+        if (!Number.isFinite(roomId)) return;
+        const buildingName =
+          buildingNameById.get(Number(room?.buildingId)) || '건물 미확인';
+        const roomNo = room?.roomNo ?? '-';
+        mapped[roomId] = `${buildingName} / ${roomNo} 호실`;
+      });
+
+      setRoomLabelByRoomId(mapped);
+    } catch {
+      setRoomLabelByRoomId({});
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRoomLabels();
+  }, [loadRoomLabels]);
+
   const sourceOrders = useMemo(
     () => (focusedOrder ? [focusedOrder] : orders),
     [focusedOrder, orders]
@@ -141,6 +208,7 @@ export default function AdminRoomServiceOrderList() {
         order.userId,
         order.roomNo,
         order.roomId,
+        roomLabelByRoomId[Number(order.roomId)],
         order.roomServiceDesc,
       ]
         .map((item) => String(item ?? '').toLowerCase())
@@ -148,7 +216,7 @@ export default function AdminRoomServiceOrderList() {
 
       return haystack.includes(query);
     });
-  }, [focusedOrder, keyword, sourceOrders, statusFilter]);
+  }, [focusedOrder, keyword, sourceOrders, statusFilter, roomLabelByRoomId]);
 
   const pages = useMemo(
     () => windowedPages(pagination.currentPage, pagination.totalPages),
@@ -283,6 +351,16 @@ export default function AdminRoomServiceOrderList() {
             <tbody>
               {filteredOrders.map((order) => (
                 <tr key={order.orderId}>
+                  {/*
+                    Prefer "건물명 / 호실" if room metadata is available.
+                    Fallback to order payload roomNo when room lookup is missing.
+                  */}
+                  {(() => {
+                    const roomLabel =
+                      roomLabelByRoomId[Number(order.roomId)] ||
+                      `건물 미확인 / ${order.roomNo ?? '-'} 호실`;
+                    return (
+                      <>
                   <td>
                     <strong>#{order.orderId}</strong>
                     <div className={styles.subCell}>
@@ -292,7 +370,7 @@ export default function AdminRoomServiceOrderList() {
                   <td>
                     <div>{order.userId || '-'}</div>
                     <div className={styles.subCell}>
-                      객실 {order.roomNo ?? '-'} (ID {order.roomId ?? '-'})
+                      {roomLabel}
                     </div>
                   </td>
                   <td>{formatMoney(order.totalPrice)}</td>
@@ -329,6 +407,9 @@ export default function AdminRoomServiceOrderList() {
                   </td>
                   <td>{formatDateTime(order.createdAt)}</td>
                   <td>{order.roomServiceDesc || '-'}</td>
+                      </>
+                    );
+                  })()}
                 </tr>
               ))}
             </tbody>

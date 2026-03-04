@@ -36,10 +36,11 @@ export default function QnaWrite() {
 
   const role = normalizeRole(user);
   const isAdmin = role === 'admin';
-  const canCreate = role === 'admin' || role === 'tenant';
+  const isTenant = role === 'tenant';
+  const canCreate = isAdmin || isTenant;
 
   useEffect(() => {
-    if (!isEdit || !isAdmin) {
+    if (!isEdit || (!isAdmin && !isTenant)) {
       setLoading(false);
       return;
     }
@@ -47,6 +48,12 @@ export default function QnaWrite() {
     supportApi
       .getQnaDetail(qnaId)
       .then((res) => {
+        // tenant는 본인 글만 수정 가능
+        if (isTenant && !isAdmin && res.userId !== user?.userId) {
+          alert('본인이 작성한 문의만 수정할 수 있습니다.');
+          navigate(`/support/qna/${qnaId}`);
+          return;
+        }
         setForm({
           qnaTitle: res.qnaTitle ?? '',
           qnaCtnt: res.qnaCtnt ?? '',
@@ -58,7 +65,7 @@ export default function QnaWrite() {
         navigate('/support/qna');
       })
       .finally(() => setLoading(false));
-  }, [isEdit, isAdmin, qnaId, navigate]);
+  }, [isEdit, isAdmin, isTenant, qnaId, user, navigate]);
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -76,12 +83,12 @@ export default function QnaWrite() {
     );
   }
 
-  if (isEdit && !isAdmin) {
+  if (isEdit && !isAdmin && !isTenant) {
     return (
       <div className={styles.container}>
         <div className={styles.card}>
           <h2 className={styles.sectionTitle}>접근 권한 없음</h2>
-          <p style={{ marginBottom: 16 }}>1:1 문의 수정은 관리자만 가능합니다.</p>
+          <p style={{ marginBottom: 16 }}>1:1 문의 수정은 관리자 또는 본인만 가능합니다.</p>
           <button className={styles.pageBtn} onClick={() => navigate(`/support/qna/${qnaId}`)}>
             상세로
           </button>

@@ -9,9 +9,7 @@ const CONTRACT_FILTERS = [
   { key: 'ended', label: '계약 만료' },
 ];
 
-const BILLING_FILTERS = [
-  { key: 'all', label: '전체' },
-  { key: 'unpaid', label: '미납내역' },
+const BILLING_FILTERS = [  { key: 'unpaid', label: '미납내역' },
   { key: 'paid', label: '결제 완료' },
   { key: 'overdue', label: '연체 내역' },
 ];
@@ -151,12 +149,6 @@ function summarizeContract(contract, charges, now) {
   };
 }
 
-function buildQrImageUrl(text) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=230x230&data=${encodeURIComponent(
-    text
-  )}`;
-}
-
 export default function MyMonthlyCharges({ focusContractId = null }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -231,9 +223,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
       if (contractFilter.size > 0 && !contractFilter.has(row.contractStatusKey)) {
         return false;
       }
-      if (billingFilter.size > 0) {
-        const hasAll = billingFilter.has('all');
-        if (!hasAll && !billingFilter.has(row.statusKey)) {
+      if (billingFilter.size > 0) {        if (!billingFilter.has(row.statusKey)) {
           return false;
         }
       }
@@ -337,14 +327,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
       if (!hasText(openUrl)) {
         throw new Error('카카오페이 결제 URL을 가져오지 못했습니다.');
       }
-      setQrItems([
-        {
-          title: titleParts.join(' / '),
-          url: openUrl,
-          qrImageUrl: buildQrImageUrl(openUrl),
-          totalPrice: totalAmount,
-        },
-      ]);
+      window.location.href = openUrl;
     } catch (e) {
       setPayError(e?.message || '카카오페이 QR 생성에 실패했습니다.');
     } finally {

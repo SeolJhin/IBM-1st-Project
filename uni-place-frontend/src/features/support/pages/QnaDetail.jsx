@@ -17,7 +17,9 @@ function normalizeRole(user) {
     user?.user_role ??
     user?.authority ??
     user?.authorities?.[0];
-  return String(raw ?? '').toLowerCase().replace('role_', '');
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace('role_', '');
 }
 
 export default function QnaDetail() {
@@ -46,7 +48,8 @@ export default function QnaDetail() {
       const replyList = Array.isArray(replyData) ? replyData : [];
       setQna(detail);
       setReplies(replyList);
-      const adminReply = replyList.find((r) => Number(r?.qnaLev) === 1) ?? replyList[0];
+      const adminReply =
+        replyList.find((r) => Number(r?.qnaLev) === 1) ?? replyList[0];
       if (adminReply) {
         setAnswerTitle(adminReply.qnaTitle ?? '');
         setAnswerCtnt(adminReply.qnaCtnt ?? '');
@@ -101,7 +104,9 @@ export default function QnaDetail() {
         await supportApi.createQnaAnswer(qnaId, payload);
       }
       await loadDetail();
-      alert(replies.length > 0 ? '답변이 수정되었습니다.' : '답변이 등록되었습니다.');
+      alert(
+        replies.length > 0 ? '답변이 수정되었습니다.' : '답변이 등록되었습니다.'
+      );
     } catch (e) {
       alert(e.message || '답변 처리에 실패했습니다.');
     } finally {
@@ -122,17 +127,27 @@ export default function QnaDetail() {
           <h2 className={styles.cardTitle}>{qna.qnaTitle}</h2>
           <span
             className={styles.statusBadge}
-            style={qna.qnaSt === 'complete' ? { background: 'var(--highlight)' } : {}}
+            style={
+              qna.qnaSt === 'complete' ? { background: 'var(--highlight)' } : {}
+            }
           >
             {STATUS_MAP[qna.qnaSt] ?? qna.qnaSt}
           </span>
         </div>
 
-        <div className={styles.cardMeta} style={{ marginBottom: 20 }}>
+        <div className={styles.cardMeta} style={{ marginBottom: 8 }}>
           {qna.createdAt ? qna.createdAt.slice(0, 10) : '-'}
         </div>
+        {isAdmin && (
+          <div className={styles.cardMeta} style={{ marginBottom: 20 }}>
+            작성자 ID: {qna.userId || '-'}
+          </div>
+        )}
+        {!isAdmin && <div style={{ marginBottom: 20 }} />}
 
-        <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{qna.qnaCtnt}</div>
+        <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+          {qna.qnaCtnt}
+        </div>
 
         {isAdmin && qna.qnaSt === 'waiting' && (
           <div style={{ marginTop: 24, display: 'flex', gap: 8 }}>
@@ -150,12 +165,27 @@ export default function QnaDetail() {
       </div>
 
       {replies.length > 0 && (
-        <div className={styles.card} style={{ background: 'var(--b-5)', marginTop: 12 }}>
-          <p style={{ fontWeight: 700, marginBottom: 12, color: 'var(--primary)' }}>관리자 답변</p>
+        <div
+          className={styles.card}
+          style={{ background: 'var(--b-5)', marginTop: 12 }}
+        >
+          <p
+            style={{
+              fontWeight: 700,
+              marginBottom: 12,
+              color: 'var(--primary)',
+            }}
+          >
+            관리자 답변
+          </p>
           {replies.map((r, idx) => (
             <div key={idx} style={{ marginBottom: 14 }}>
-              {r?.qnaTitle ? <p style={{ fontWeight: 700, marginBottom: 6 }}>{r.qnaTitle}</p> : null}
-              <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{r.qnaCtnt}</div>
+              {r?.qnaTitle ? (
+                <p style={{ fontWeight: 700, marginBottom: 6 }}>{r.qnaTitle}</p>
+              ) : null}
+              <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                {r.qnaCtnt}
+              </div>
             </div>
           ))}
         </div>
@@ -163,7 +193,13 @@ export default function QnaDetail() {
 
       {isAdmin && (
         <div className={styles.card} style={{ marginTop: 12 }}>
-          <p style={{ fontWeight: 700, marginBottom: 12, color: 'var(--primary)' }}>
+          <p
+            style={{
+              fontWeight: 700,
+              marginBottom: 12,
+              color: 'var(--primary)',
+            }}
+          >
             관리자 답변 {replies.length > 0 ? '수정' : '작성'}
           </p>
 
@@ -192,13 +228,21 @@ export default function QnaDetail() {
               onClick={handleSubmitAnswer}
               disabled={answerSubmitting}
             >
-              {answerSubmitting ? '처리 중...' : replies.length > 0 ? '답변 수정' : '답변 등록'}
+              {answerSubmitting
+                ? '처리 중...'
+                : replies.length > 0
+                  ? '답변 수정'
+                  : '답변 등록'}
             </button>
           </div>
         </div>
       )}
 
-      <button className={styles.pageBtn} onClick={() => navigate('/support/qna')} style={{ marginTop: 16 }}>
+      <button
+        className={styles.pageBtn}
+        onClick={() => navigate('/support/qna')}
+        style={{ marginTop: 16 }}
+      >
         목록으로
       </button>
     </div>
