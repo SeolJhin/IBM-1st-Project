@@ -2,6 +2,7 @@ package org.myweb.uniplace.global.security;
 
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
+import org.myweb.uniplace.global.security.oauth.CustomAuthorizationRequestResolver;
 import org.myweb.uniplace.global.security.oauth.CustomOAuth2UserService;
 import org.myweb.uniplace.global.security.oauth.OAuth2FailureHandler;
 import org.myweb.uniplace.global.security.oauth.OAuth2SuccessHandler;
@@ -13,6 +14,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -32,6 +34,7 @@ public class SecurityConfig {
     private final OAuth2FailureHandler oAuth2FailureHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -131,6 +134,11 @@ public class SecurityConfig {
             )
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/login")
+                .authorizationEndpoint(authorization -> authorization
+                    .authorizationRequestResolver(
+                        new CustomAuthorizationRequestResolver(clientRegistrationRepository)
+                    )
+                )
                 .successHandler(oAuth2SuccessHandler)
                 .failureHandler(oAuth2FailureHandler)
                 .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
