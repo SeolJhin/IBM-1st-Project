@@ -18,6 +18,7 @@ import org.myweb.uniplace.domain.contract.domain.entity.Contract;
 import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 import org.myweb.uniplace.domain.contract.repository.ContractRepository;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentApproveRequest;
+import org.myweb.uniplace.domain.payment.api.dto.request.PaymentPrepareMonthlyBatchRequest;
 import org.myweb.uniplace.domain.payment.api.dto.request.PaymentPrepareRequest;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentPrepareResponse;
 import org.myweb.uniplace.domain.payment.api.dto.response.PaymentResponse;
@@ -45,6 +46,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -154,7 +156,79 @@ class PaymentServiceImplTest {
         assertThat(intentCaptor.getValue().getPaymentId()).isEqualTo(100);
         assertThat(intentCaptor.getValue().getIntentSt()).isEqualTo(PaymentIntentStatus.READY_OK);
     }
+    @Test
+    @DisplayName("prepare(monthly_batch): 다중 계약 청구를 함께 결제 준비할 수 있다")
+    void prepareMonthlyBatchAcrossContractsSuccess() {
+        String userId = "user-1";
 
+        PaymentPrepareMonthlyBatchRequest request = new PaymentPrepareMonthlyBatchRequest();
+        request.setServiceGoodsId(2);
+        request.setProvider("KAKAO");
+        request.setChargeIds(List.of(201, 301));
+
+        MonthlyCharge chargeA = MonthlyCharge.builder()
+            .chargeId(201)
+            .contractId(300)
+            .chargeType("rent")
+            .billingDt("2026-03")
+            .price(new BigDecimal("500000"))
+            .chargeSt(MonthlyCharge.ST_UNPAID)
+            .build();
+        MonthlyCharge chargeB = MonthlyCharge.builder()
+            .chargeId(301)
+            .contractId(400)
+            .chargeType("rent")
+            .billingDt("2026-03")
+            .price(new BigDecimal("600000"))
+            .chargeSt(MonthlyCharge.ST_UNPAID)
+            .build();
+
+        ServiceGoods goods = ServiceGoods.builder()
+            .serviceGoodsId(2)
+            .serviceGoodsCd("monthly_charge")
+            .serviceGoodsNm("monthly-rent")
+            .isActive(1)
+            .build();
+
+        PaymentGatewayReadyResponse ready = PaymentGatewayReadyResponse.builder()
+            .providerRefId("pref-batch-1")
+            .redirectPcUrl("https://pc")
+            .redirectMobileUrl("https://mobile")
+            .redirectAppUrl("app://pay")
+            .pgReadyJson("{\"ok\":true}")
+            .build();
+
+        given(monthlyChargeRepository.findById(201)).willReturn(Optional.of(chargeA));
+        given(monthlyChargeRepository.findById(301)).willReturn(Optional.of(chargeB));
+        given(contractRepository.existsByContractIdAndUser_UserId(300, userId)).willReturn(true);
+        given(contractRepository.existsByContractIdAndUser_UserId(400, userId)).willReturn(true);
+        given(contractRepository.findById(300)).willReturn(Optional.of(contract(300, ContractStatus.active)));
+        given(contractRepository.findById(400)).willReturn(Optional.of(contract(400, ContractStatus.approved)));
+        given(serviceGoodsRepository.findById(2)).willReturn(Optional.of(goods));
+        given(paymentRepository.findTopByUserIdAndIdempotencyKeyOrderByPaymentIdDesc(userId, "MCB:201,301"))
+            .willReturn(Optional.empty());
+        given(paymentGatewayFactory.get("KAKAO")).willReturn(paymentGateway);
+        given(paymentGateway.ready(any(PaymentGatewayReadyRequest.class))).willReturn(ready);
+        given(paymentRepository.save(any(Payment.class))).willAnswer(invocation -> {
+            Payment p = invocation.getArgument(0);
+            ReflectionTestUtils.setField(p, "paymentId", 210);
+            return p;
+        });
+        given(paymentIntentRepository.save(any(PaymentIntent.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        PaymentPrepareResponse response = paymentService.prepareMonthlyChargeBatch(userId, request);
+
+        assertThat(response.getPaymentId()).isEqualTo(210);
+        assertThat(response.getPaymentSt()).isEqualTo("ready");
+
+        ArgumentCaptor<Payment> paymentCaptor = ArgumentCaptor.forClass(Payment.class);
+        verify(paymentRepository).save(paymentCaptor.capture());
+        Payment saved = paymentCaptor.getValue();
+        assertThat(saved.getTargetType()).isEqualTo("monthly_charge");
+        assertThat(saved.getTargetId()).isEqualTo(201);
+        assertThat(saved.getIdempotencyKey()).isEqualTo("MCB:201,301");
+        assertThat(saved.getTotalPrice()).isEqualByComparingTo(new BigDecimal("1100000"));
+    }
     @Test
     @DisplayName("approve(order): 상태/금액 일치 시 payment paid + order paid")
     void approveOrderSuccess() {
@@ -333,6 +407,51 @@ class PaymentServiceImplTest {
             .isInstanceOf(BusinessException.class)
             .extracting(e -> ((BusinessException) e).getErrorCode())
             .isEqualTo(ErrorCode.BILLING_CHARGE_ALREADY_PAID);
+
+        verify(paymentGatewayFactory, never()).get(any());
+    }
+
+    @Test
+    @DisplayName("approve(monthly_charge): requested 계약은 결제할 수 없다")
+    void approveMonthlyChargeFailsWhenContractRequested() {
+        String userId = "user-1";
+        BigDecimal total = new BigDecimal("800000");
+
+        Payment payment = Payment.builder()
+            .paymentId(23)
+            .userId(userId)
+            .serviceGoodsId(2)
+            .provider("TOSS")
+            .merchantUid("PAY_23")
+            .currency("KRW")
+            .totalPrice(total)
+            .capturedPrice(BigDecimal.ZERO)
+            .paymentSt("ready")
+            .targetType("monthly_charge")
+            .targetId(230)
+            .build();
+
+        MonthlyCharge charge = MonthlyCharge.builder()
+            .chargeId(230)
+            .contractId(331)
+            .chargeType("rent")
+            .billingDt("2026-02")
+            .price(total)
+            .chargeSt(MonthlyCharge.ST_UNPAID)
+            .build();
+
+        PaymentApproveRequest request = new PaymentApproveRequest();
+        request.setPaymentId(23);
+        request.setPgToken("pg-token");
+
+        given(paymentRepository.findById(23)).willReturn(Optional.of(payment));
+        given(monthlyChargeRepository.findById(230)).willReturn(Optional.of(charge));
+        given(contractRepository.findById(331)).willReturn(Optional.of(contract(331, ContractStatus.requested)));
+
+        assertThatThrownBy(() -> paymentService.approve(userId, request))
+            .isInstanceOf(BusinessException.class)
+            .extracting(e -> ((BusinessException) e).getErrorCode())
+            .isEqualTo(ErrorCode.PAYMENT_INVALID_TARGET);
 
         verify(paymentGatewayFactory, never()).get(any());
     }

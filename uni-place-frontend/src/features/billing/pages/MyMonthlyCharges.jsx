@@ -166,8 +166,10 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
     try {
       const contractsRaw = await contractApi.myContracts();
       const contracts = (Array.isArray(contractsRaw) ? contractsRaw : []).filter(
-        (contract) =>
-          String(contract?.contractStatus || '').toLowerCase() !== 'cancelled'
+        (contract) => {
+          const status = String(contract?.contractStatus || '').toLowerCase();
+          return status !== 'cancelled' && status !== 'requested';
+        }
       );
 
       const chargeResults = await Promise.all(
