@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
+import { toKoreanMessage } from '../../../app/http/errorMapper';
 import { authApi } from '../api/authApi';
 import styles from './OAuth2Success.module.css';
 
@@ -31,9 +32,17 @@ function setTokens({ accessToken, refreshToken, deviceId }) {
   if (deviceId) localStorage.setItem(STORAGE_KEYS.device, deviceId);
 }
 
+function getProviderMeta(provider) {
+  const key = String(provider || '').toLowerCase();
+  if (key === 'google') return { key, label: 'Google', chipClass: 'googleChip' };
+  if (key === 'kakao') return { key, label: 'Kakao', chipClass: 'kakaoChip' };
+  return { key, label: provider || 'Social', chipClass: 'defaultChip' };
+}
+
 export default function OAuth2Success() {
   const navigate = useNavigate();
   const payload = useMemo(() => parseHash(), []);
+  const providerMeta = useMemo(() => getProviderMeta(payload.provider), [payload.provider]);
 
   const [form, setForm] = useState({
     userNm: '',
@@ -52,14 +61,16 @@ export default function OAuth2Success() {
     return (
       <div className={styles.page}>
         <Header />
-        <main className={styles.wrap}>
+        <main className={styles.container}>
           <section className={styles.card}>
-            <h2>소셜 로그인 실패</h2>
-            <p>오류 코드: {payload.error}</p>
-            <button
-              type="button"
-              onClick={() => navigate('/login', { replace: true })}
-            >
+            <div className={styles.brand}>
+              <p className={styles.welcome}>WELCOME TO</p>
+              <h1 className={styles.brandName}>UNI-PLACE</h1>
+              <h2 className={styles.title}>소셜 로그인 실패</h2>
+            </div>
+
+            <p className={styles.desc}>오류 코드: {payload.error}</p>
+            <button className={styles.submit} type="button" onClick={() => navigate('/login', { replace: true })}>
               로그인으로 돌아가기
             </button>
           </section>
@@ -89,8 +100,10 @@ export default function OAuth2Success() {
   const checkNickname = async () => {
     const nickname = form.userNickname.trim();
     if (!nickname) return setError('닉네임을 입력해 주세요.');
-    if (nickname.length < 2 || nickname.length > 20)
-      return setError('닉네임은 2~20자로 입력해주세요.');
+    if (nickname.length < 2 || nickname.length > 20) {
+      return setError('닉네임은 2~20자로 입력해 주세요.');
+    }
+
     setNicknameStatus('checking');
     setError('');
     try {
@@ -118,10 +131,8 @@ export default function OAuth2Success() {
     if (!form.userBirth) return setError('생년월일을 입력해 주세요.');
     if (!form.userTel.trim()) return setError('전화번호를 입력해 주세요.');
     if (!form.userPwd) return setError('비밀번호를 입력해 주세요.');
-    if (form.userPwd.length < 8)
-      return setError('비밀번호는 8자 이상이어야 합니다.');
-    if (form.userPwd !== form.userPwd2)
-      return setError('비밀번호 확인 값이 일치하지 않습니다.');
+    if (form.userPwd.length < 8) return setError('비밀번호는 최소 8자 이상이어야 합니다.');
+    if (form.userPwd !== form.userPwd2) return setError('비밀번호 확인 값이 일치하지 않습니다.');
 
     try {
       setSubmitting(true);
@@ -135,7 +146,7 @@ export default function OAuth2Success() {
       };
 
       const tokens =
-        payload.provider.toLowerCase() === 'google'
+        providerMeta.key === 'google'
           ? await authApi.googleComplete(req)
           : await authApi.kakaoComplete(req);
 
@@ -143,7 +154,12 @@ export default function OAuth2Success() {
       window.location.hash = '';
       window.location.replace('/');
     } catch (err) {
-      setError(err?.message || '소셜 가입 완료 처리에 실패했습니다.');
+      setError(
+        toKoreanMessage(
+          err,
+          '소셜 회원가입 완료 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+        )
+      );
     } finally {
       setSubmitting(false);
     }
@@ -152,110 +168,141 @@ export default function OAuth2Success() {
   return (
     <div className={styles.page}>
       <Header />
-      <main className={styles.wrap}>
+      <main className={styles.container}>
         <section className={styles.card}>
           {needsSignup ? (
             <>
-              <h2>소셜 회원가입 추가 정보</h2>
-              <p>
-                {payload.provider.toUpperCase()} 계정 연동을 마무리해 주세요.
-              </p>
+              <div className={styles.brand}>
+                <p className={styles.welcome}>WELCOME TO</p>
+                <h1 className={styles.brandName}>UNI-PLACE</h1>
+                <h2 className={styles.title}>소셜 회원가입 추가 정보</h2>
+              </div>
 
-              <form onSubmit={onCompleteSignup} className={styles.form}>
-                <input
-                  name="userNm"
-                  value={form.userNm}
-                  onChange={onChange}
-                  placeholder="이름"
-                  disabled={submitting}
-                />
-                <div style={{ display: 'flex', gap: 8 }}>
+              <div className={styles.providerRow}>
+                <span className={`${styles.providerChip} ${styles[providerMeta.chipClass]}`}>
+                  {providerMeta.label}
+                </span>
+                <span className={styles.providerHint}>
+                  {providerMeta.label} 계정으로 가입을 마무리합니다.
+                </span>
+              </div>
+
+              <form className={styles.form} onSubmit={onCompleteSignup}>
+                <label className={styles.row}>
+                  <span className={styles.tag}>이름</span>
                   <input
-                    style={{ flex: 1 }}
-                    name="userNickname"
-                    value={form.userNickname}
+                    className={styles.input}
+                    name="userNm"
+                    value={form.userNm}
                     onChange={onChange}
-                    placeholder="닉네임 (2~20자)"
-                    maxLength={20}
                     disabled={submitting}
                   />
-                  <button
-                    type="button"
-                    onClick={checkNickname}
-                    disabled={submitting || nicknameStatus === 'checking'}
-                    style={{
-                      padding: '0 14px',
-                      borderRadius: 8,
-                      background: nicknameChecked ? '#22c55e' : '#111',
-                      color: '#fff',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {nicknameStatus === 'checking'
-                      ? '확인 중…'
-                      : nicknameChecked
-                        ? '✓ 사용가능'
-                        : '중복확인'}
-                  </button>
-                </div>
-                {nicknameStatus === 'dup' && (
-                  <div className={styles.error}>
-                    이미 사용 중인 닉네임입니다.
+                </label>
+
+                <label className={styles.row}>
+                  <span className={styles.tag}>닉네임</span>
+                  <div className={styles.nickWrap}>
+                    <input
+                      className={styles.input}
+                      name="userNickname"
+                      value={form.userNickname}
+                      onChange={onChange}
+                      disabled={submitting}
+                      placeholder="2~20자"
+                      maxLength={20}
+                    />
+                    <button
+                      className={styles.checkBtn}
+                      type="button"
+                      onClick={checkNickname}
+                      disabled={submitting || nicknameStatus === 'checking'}
+                    >
+                      {nicknameStatus === 'checking'
+                        ? '확인 중...'
+                        : nicknameChecked
+                          ? '사용 가능'
+                          : '중복확인'}
+                    </button>
                   </div>
+                </label>
+
+                {nicknameStatus === 'dup' && (
+                  <div className={styles.error}>이미 사용 중인 닉네임입니다.</div>
                 )}
                 {nicknameStatus === 'ok' && (
-                  <div style={{ color: '#22c55e', fontSize: 13 }}>
-                    사용 가능한 닉네임입니다.
-                  </div>
+                  <div className={styles.ok}>사용 가능한 닉네임입니다.</div>
                 )}
-                <input
-                  name="userBirth"
-                  type="date"
-                  value={form.userBirth}
-                  onChange={onChange}
-                  disabled={submitting}
-                />
-                <input
-                  name="userTel"
-                  value={form.userTel}
-                  onChange={onChange}
-                  placeholder="010-1234-5678"
-                  disabled={submitting}
-                />
-                <input
-                  name="userPwd"
-                  type="password"
-                  value={form.userPwd}
-                  onChange={onChange}
-                  placeholder="비밀번호 (8자 이상)"
-                  disabled={submitting}
-                />
-                <input
-                  name="userPwd2"
-                  type="password"
-                  value={form.userPwd2}
-                  onChange={onChange}
-                  placeholder="비밀번호 확인"
-                  disabled={submitting}
-                />
+
+                <label className={styles.row}>
+                  <span className={styles.tag}>생년월일</span>
+                  <input
+                    className={styles.input}
+                    name="userBirth"
+                    type="date"
+                    value={form.userBirth}
+                    onChange={onChange}
+                    disabled={submitting}
+                  />
+                </label>
+
+                <label className={styles.row}>
+                  <span className={styles.tag}>전화번호</span>
+                  <input
+                    className={styles.input}
+                    name="userTel"
+                    value={form.userTel}
+                    onChange={onChange}
+                    placeholder="010-1234-5678"
+                    disabled={submitting}
+                    autoComplete="tel"
+                  />
+                </label>
+
+                <label className={styles.row}>
+                  <span className={styles.tag}>비밀번호</span>
+                  <input
+                    className={styles.input}
+                    name="userPwd"
+                    type="password"
+                    value={form.userPwd}
+                    onChange={onChange}
+                    placeholder="8자 이상"
+                    disabled={submitting}
+                    autoComplete="new-password"
+                  />
+                </label>
+
+                <label className={styles.row}>
+                  <span className={styles.tag}>비밀번호 확인</span>
+                  <input
+                    className={styles.input}
+                    name="userPwd2"
+                    type="password"
+                    value={form.userPwd2}
+                    onChange={onChange}
+                    disabled={submitting}
+                    autoComplete="new-password"
+                  />
+                </label>
+
                 {error ? <div className={styles.error}>{error}</div> : null}
-                <button type="submit" disabled={submitting}>
+
+                <button className={styles.submit} type="submit" disabled={submitting}>
                   {submitting ? '처리 중...' : '가입 완료'}
                 </button>
               </form>
             </>
           ) : (
             <>
-              <h2>소셜 로그인 처리 중</h2>
-              <p>토큰 정보가 없습니다. 다시 로그인해 주세요.</p>
-              <button
-                type="button"
-                onClick={() => navigate('/login', { replace: true })}
-              >
+              <div className={styles.brand}>
+                <p className={styles.welcome}>WELCOME TO</p>
+                <h1 className={styles.brandName}>UNI-PLACE</h1>
+                <h2 className={styles.title}>소셜 로그인 처리 중</h2>
+              </div>
+
+              <p className={styles.desc}>토큰 정보가 없습니다. 다시 로그인해 주세요.</p>
+
+              <button className={styles.submit} type="button" onClick={() => navigate('/login', { replace: true })}>
                 로그인으로 이동
               </button>
             </>
