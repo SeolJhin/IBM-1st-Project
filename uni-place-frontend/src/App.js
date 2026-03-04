@@ -230,6 +230,14 @@ export default function App() {
                 <Route index element={<Navigate to="room_orders" replace />} />
               </Route>
 
+              <Route path="support">
+                <Route index element={<Navigate to="complain" replace />} />
+                <Route path="complain" element={<ComplainList />} />
+                <Route path="complain/:id" element={<ComplainDetail />} />
+                <Route path="qna" element={<QnaList />} />
+                <Route path="qna/:qnaId" element={<QnaDetail />} />
+              </Route>
+
               <Route path="pay" element={<AdminPayHub />}>
                 <Route path="billings" element={<AdminMonthlyChargeList />} />
                 <Route path="payments" element={<AdminPaymentList />} />

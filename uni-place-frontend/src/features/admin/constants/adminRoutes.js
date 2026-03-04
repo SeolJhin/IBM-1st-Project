@@ -7,4 +7,8 @@ export const ADMIN_ROUTES = {
   contracts: '/admin/contracts',
   banners: '/admin/system/banners',
   roomService: '/admin/roomservice/room_orders',
+  support: {
+    complain: '/admin/support/complain',
+    qna: '/admin/support/qna',
+  },
 };
