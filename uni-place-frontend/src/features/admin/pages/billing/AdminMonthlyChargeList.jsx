@@ -7,10 +7,29 @@ const CHARGE_STATUS_OPTIONS = [
   { value: 'paid', label: '납부완료' },
 ];
 
-function formatMoney(value) {
+const TARGET_LABELS = {
+  monthly_rent: '월세',
+  rent: '월세',
+  charge: '월세',
+  order: '주문',
+};
+
+function formatMoney(value, currency = 'KRW') {
   const safe = Number(value ?? 0);
   if (!Number.isFinite(safe)) return '-';
-  return `${safe.toLocaleString('ko-KR')} KRW`;
+  return `${safe.toLocaleString('ko-KR')} ${currency || ''}`.trim();
+}
+
+function formatDateTime(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mi = String(date.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
 function pageWindow(page, totalPages, radius = 2) {
@@ -28,8 +47,52 @@ function ChargeStatusBadge({ status }) {
   return <span className={`${styles.badge} ${className}`}>{label || '-'}</span>;
 }
 
+async function fetchAllUsers() {
+  const users = [];
+  let page = 1;
+  let totalPages = 1;
+
+  while (page <= totalPages) {
+    const res = await adminApi.users({ page, size: 200, sort: 'userId', direct: 'ASC' });
+    const content = Array.isArray(res?.content) ? res.content : [];
+    users.push(...content);
+
+    const nextTotal = Number(res?.totalPages ?? 1);
+    totalPages = Number.isFinite(nextTotal) && nextTotal > 0 ? nextTotal : 1;
+    page += 1;
+  }
+
+  return users;
+}
+
+async function fetchAllContracts() {
+  const contracts = [];
+  let page = 1;
+  let totalPages = 1;
+
+  while (page <= totalPages) {
+    const res = await adminApi.getContracts({ page, size: 200, sort: 'contractId', direct: 'DESC' });
+    const content = Array.isArray(res?.content) ? res.content : [];
+    contracts.push(...content);
+
+    const nextTotal = Number(res?.totalPages ?? 1);
+    totalPages = Number.isFinite(nextTotal) && nextTotal > 0 ? nextTotal : 1;
+    page += 1;
+  }
+
+  return contracts;
+}
+
+function normalizeTargetLabel(chargeType) {
+  const key = String(chargeType ?? '').toLowerCase();
+  return TARGET_LABELS[key] ?? (chargeType ? String(chargeType) : '월세');
+}
+
 export default function AdminMonthlyChargeList() {
   const [charges, setCharges] = useState([]);
+  const [paymentById, setPaymentById] = useState({});
+  const [tenantUserIdByContractId, setTenantUserIdByContractId] = useState({});
+  const [userNameById, setUserNameById] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -42,19 +105,52 @@ export default function AdminMonthlyChargeList() {
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
+
     try {
       const contractId = contractIdFilter.trim();
       const parsedContractId = Number(contractId);
-      const data = await adminApi.getMonthlyCharges(
-        contractId === '' || !Number.isFinite(parsedContractId)
-          ? undefined
-          : parsedContractId
-      );
-      const rows = Array.isArray(data) ? data : [];
-      rows.sort((a, b) => Number(b?.chargeId ?? 0) - Number(a?.chargeId ?? 0));
-      setCharges(rows);
+
+      const [chargeData, paymentData, contracts, users] = await Promise.all([
+        adminApi.getMonthlyCharges(
+          contractId === '' || !Number.isFinite(parsedContractId) ? undefined : parsedContractId
+        ),
+        adminApi.getPayments().catch(() => []),
+        fetchAllContracts().catch(() => []),
+        fetchAllUsers().catch(() => []),
+      ]);
+
+      const chargeRows = Array.isArray(chargeData) ? chargeData : [];
+      chargeRows.sort((a, b) => Number(b?.chargeId ?? 0) - Number(a?.chargeId ?? 0));
+      setCharges(chargeRows);
+
+      const paymentMap = (Array.isArray(paymentData) ? paymentData : []).reduce((acc, payment) => {
+        acc[payment.paymentId] = payment;
+        return acc;
+      }, {});
+      setPaymentById(paymentMap);
+
+      const contractMap = contracts.reduce((acc, contract) => {
+        const id = Number(contract?.contractId);
+        if (!Number.isFinite(id)) return acc;
+        acc[id] = String(contract?.tenantUserId ?? '').trim();
+        return acc;
+      }, {});
+      setTenantUserIdByContractId(contractMap);
+
+      const nameMap = users.reduce((acc, user) => {
+        const id = String(user?.userId ?? '').trim();
+        if (!id) return acc;
+        acc[id] = String(
+          user?.userNm ?? user?.userName ?? user?.name ?? user?.nickName ?? user?.nickname ?? user?.email ?? id
+        );
+        return acc;
+      }, {});
+      setUserNameById(nameMap);
     } catch (e) {
       setCharges([]);
+      setPaymentById({});
+      setTenantUserIdByContractId({});
+      setUserNameById({});
       setError(e?.message || '정산 데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -67,23 +163,31 @@ export default function AdminMonthlyChargeList() {
 
   const filtered = useMemo(() => {
     const q = keyword.trim().toLowerCase();
+
     return charges.filter((charge) => {
-      if (statusFilter !== 'all' && charge?.chargeSt !== statusFilter) {
-        return false;
-      }
+      if (statusFilter !== 'all' && charge?.chargeSt !== statusFilter) return false;
       if (!q) return true;
+
+      const payment = paymentById[charge?.paymentId] || {};
+      const tenantUserId = tenantUserIdByContractId[Number(charge?.contractId)] || '';
+      const userName = userNameById[tenantUserId] || '';
+
       const haystack = [
         charge?.chargeId,
         charge?.contractId,
-        charge?.billingDt,
         charge?.chargeType,
         charge?.paymentId,
+        payment?.provider,
+        payment?.merchantUid,
+        tenantUserId,
+        userName,
       ]
         .map((v) => String(v ?? '').toLowerCase())
         .join(' ');
+
       return haystack.includes(q);
     });
-  }, [charges, keyword, statusFilter]);
+  }, [charges, keyword, paymentById, statusFilter, tenantUserIdByContractId, userNameById]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / size));
   const safePage = Math.min(page, totalPages);
@@ -124,6 +228,7 @@ export default function AdminMonthlyChargeList() {
               </option>
             ))}
           </select>
+
           <button
             type="button"
             className={`${styles.btn} ${styles.btnPrimary}`}
@@ -173,7 +278,7 @@ export default function AdminMonthlyChargeList() {
           <input
             className={styles.input}
             value={keyword}
-            placeholder="chargeId, billingDt, chargeType..."
+            placeholder="정산ID, 결제ID, 유저이름"
             onChange={(e) => {
               setKeyword(e.target.value);
               setPage(1);
@@ -204,31 +309,49 @@ export default function AdminMonthlyChargeList() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>정산 ID</th>
-                <th>계약 ID</th>
-                <th>청구월</th>
-                <th>항목</th>
+                <th>결제대상</th>
+                <th>결제ID</th>
+                <th>유저이름</th>
                 <th>금액</th>
                 <th>상태</th>
-                <th>결제 ID</th>
+                <th>결제사 정보</th>
+                <th>식별키</th>
+                <th>결제시각</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((charge) => (
-                <tr key={charge.chargeId}>
-                  <td>
-                    <strong>#{charge.chargeId}</strong>
-                  </td>
-                  <td>{charge.contractId ?? '-'}</td>
-                  <td>{charge.billingDt || '-'}</td>
-                  <td>{charge.chargeType || '-'}</td>
-                  <td>{formatMoney(charge.price)}</td>
-                  <td>
-                    <ChargeStatusBadge status={charge.chargeSt} />
-                  </td>
-                  <td>{charge.paymentId ?? '-'}</td>
-                </tr>
-              ))}
+              {rows.map((charge) => {
+                const payment = paymentById[charge.paymentId] || {};
+                const tenantUserId = tenantUserIdByContractId[Number(charge.contractId)] || '';
+                const userName = userNameById[tenantUserId] || '-';
+
+                return (
+                  <tr key={charge.chargeId}>
+                    <td>{normalizeTargetLabel(charge.chargeType)}</td>
+                    <td>
+                      <div>#{charge.paymentId ?? '-'}</div>
+                      <div className={styles.subCell}>정산ID: #{charge.chargeId ?? '-'}</div>
+                    </td>
+                    <td>
+                      <div>{userName}</div>
+                      <div className={styles.subCell}>회원ID: {tenantUserId || '-'}</div>
+                    </td>
+                    <td>{formatMoney(charge.price, payment.currency || 'KRW')}</td>
+                    <td>
+                      <ChargeStatusBadge status={charge.chargeSt} />
+                    </td>
+                    <td>
+                      <div>{payment.provider || '-'}</div>
+                      <div className={styles.subCell}>결제사 ID: {payment.providerPaymentId || '-'}</div>
+                    </td>
+                    <td>
+                      <div className={styles.ellipsis}>{payment.merchantUid || '-'}</div>
+                      <div className={styles.subCell}>멱등키: {payment.idempotencyKey || '-'}</div>
+                    </td>
+                    <td>{formatDateTime(payment.paidAt || charge.billingDt)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

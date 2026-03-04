@@ -8,13 +8,22 @@ const PAYMENT_STATUS_OPTIONS = [
   { value: 'paid', label: '결제완료' },
   { value: 'cancelled', label: '취소' },
   { value: 'pending', label: '대기' },
-  { value: 'disputed', label: '분쟁' },
+  { value: 'disputed', label: '결제분쟁' },
 ];
 
 const PAYMENT_STATUS_LABELS = PAYMENT_STATUS_OPTIONS.reduce((acc, item) => {
   acc[item.value] = item.label;
   return acc;
 }, {});
+
+const TARGET_LABELS = {
+  order: '주문',
+  room_service: '주문',
+  roomservice: '주문',
+  monthly_charge: '월세',
+  rent: '월세',
+  charge: '월세',
+};
 
 function formatMoney(value, currency = 'KRW') {
   const safe = Number(value ?? 0);
@@ -62,9 +71,34 @@ function PaymentStatusBadge({ status }) {
   );
 }
 
+async function fetchAllUsers() {
+  const users = [];
+  let page = 1;
+  let totalPages = 1;
+
+  while (page <= totalPages) {
+    const res = await adminApi.users({ page, size: 200, sort: 'userId', direct: 'ASC' });
+    const content = Array.isArray(res?.content) ? res.content : [];
+    users.push(...content);
+
+    const nextTotal = Number(res?.totalPages ?? 1);
+    totalPages = Number.isFinite(nextTotal) && nextTotal > 0 ? nextTotal : 1;
+    page += 1;
+  }
+
+  return users;
+}
+
+function targetLabel(targetType, targetId) {
+  const key = String(targetType ?? '').toLowerCase();
+  const label = TARGET_LABELS[key] ?? (targetType ? String(targetType) : '미지정');
+  return targetId != null ? `${label} #${targetId}` : label;
+}
+
 export default function AdminPaymentList() {
   const [searchParams] = useSearchParams();
   const [payments, setPayments] = useState([]);
+  const [userNameById, setUserNameById] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -78,13 +112,29 @@ export default function AdminPaymentList() {
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
+
     try {
-      const data = await adminApi.getPayments();
-      const rows = Array.isArray(data) ? data : [];
+      const [paymentData, users] = await Promise.all([
+        adminApi.getPayments(),
+        fetchAllUsers().catch(() => []),
+      ]);
+
+      const rows = Array.isArray(paymentData) ? paymentData : [];
       rows.sort((a, b) => Number(b?.paymentId ?? 0) - Number(a?.paymentId ?? 0));
       setPayments(rows);
+
+      const nameMap = users.reduce((acc, user) => {
+        const id = String(user?.userId ?? '').trim();
+        if (!id) return acc;
+        acc[id] = String(
+          user?.userNm ?? user?.userName ?? user?.name ?? user?.nickName ?? user?.nickname ?? user?.email ?? id
+        );
+        return acc;
+      }, {});
+      setUserNameById(nameMap);
     } catch (e) {
       setPayments([]);
+      setUserNameById({});
       setError(e?.message || '결제 데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -117,29 +167,28 @@ export default function AdminPaymentList() {
   const filtered = useMemo(() => {
     const q = keyword.trim().toLowerCase();
     return payments.filter((payment) => {
-      if (statusFilter !== 'all' && payment?.paymentSt !== statusFilter) {
-        return false;
-      }
-      if (providerFilter !== 'all' && payment?.provider !== providerFilter) {
-        return false;
-      }
+      if (statusFilter !== 'all' && payment?.paymentSt !== statusFilter) return false;
+      if (providerFilter !== 'all' && payment?.provider !== providerFilter) return false;
       if (!q) return true;
 
+      const userId = String(payment?.userId ?? '').trim();
+      const userName = userNameById[userId] || '';
       const haystack = [
         payment?.paymentId,
-        payment?.userId,
         payment?.merchantUid,
         payment?.provider,
         payment?.providerPaymentId,
         payment?.targetType,
         payment?.targetId,
+        userId,
+        userName,
       ]
         .map((v) => String(v ?? '').toLowerCase())
         .join(' ');
 
       return haystack.includes(q);
     });
-  }, [keyword, payments, providerFilter, statusFilter]);
+  }, [keyword, payments, providerFilter, statusFilter, userNameById]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / size));
   const safePage = Math.min(page, totalPages);
@@ -235,7 +284,7 @@ export default function AdminPaymentList() {
           <input
             className={styles.input}
             value={keyword}
-            placeholder="paymentId, userId, merchantUid..."
+            placeholder="결제ID, 유저이름, 식별키"
             onChange={(e) => {
               setKeyword(e.target.value);
               setPage(1);
@@ -266,8 +315,9 @@ export default function AdminPaymentList() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>결제 ID</th>
-                <th>사용자 / 대상</th>
+                <th>결제대상</th>
+                <th>결제ID</th>
+                <th>유저이름</th>
                 <th>금액</th>
                 <th>상태</th>
                 <th>결제사 정보</th>
@@ -276,47 +326,43 @@ export default function AdminPaymentList() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((payment) => (
-                <tr key={payment.paymentId}>
-                  <td>
-                    <strong>#{payment.paymentId}</strong>
-                    <div className={styles.subCell}>
-                      serviceGoodsId: {payment.serviceGoodsId ?? '-'}
-                    </div>
-                  </td>
-                  <td>
-                    <div>{payment.userId || '-'}</div>
-                    <div className={styles.subCell}>
-                      {payment.targetType || '-'} #{payment.targetId ?? '-'}
-                    </div>
-                  </td>
-                  <td>
-                    <div>{formatMoney(payment.totalPrice, payment.currency)}</div>
-                    <div className={styles.subCell}>
-                      captured: {formatMoney(payment.capturedPrice, payment.currency)}
-                    </div>
-                  </td>
-                  <td>
-                    <PaymentStatusBadge status={payment.paymentSt} />
-                  </td>
-                  <td>
-                    <div>{payment.provider || '-'}</div>
-                    <div className={styles.subCell}>
-                      providerPaymentId: {payment.providerPaymentId || '-'}
-                    </div>
-                    <div className={styles.subCell}>
-                      paymentMethodId: {payment.paymentMethodId ?? '-'}
-                    </div>
-                  </td>
-                  <td>
-                    <div className={styles.ellipsis}>{payment.merchantUid || '-'}</div>
-                    <div className={styles.subCell}>
-                      idem: {payment.idempotencyKey || '-'}
-                    </div>
-                  </td>
-                  <td>{formatDateTime(payment.paidAt)}</td>
-                </tr>
-              ))}
+              {rows.map((payment) => {
+                const userId = String(payment?.userId ?? '').trim();
+                const userName = userNameById[userId] || '-';
+
+                return (
+                  <tr key={payment.paymentId}>
+                    <td>{targetLabel(payment.targetType, payment.targetId)}</td>
+                    <td>
+                      <div>#{payment.paymentId ?? '-'}</div>
+                      <div className={styles.subCell}>서비스ID: {payment.serviceGoodsId ?? '-'}</div>
+                    </td>
+                    <td>
+                      <div>{userName}</div>
+                      <div className={styles.subCell}>회원ID: {userId || '-'}</div>
+                    </td>
+                    <td>
+                      <div>{formatMoney(payment.totalPrice, payment.currency)}</div>
+                      <div className={styles.subCell}>
+                        실결제: {formatMoney(payment.capturedPrice, payment.currency)}
+                      </div>
+                    </td>
+                    <td>
+                      <PaymentStatusBadge status={payment.paymentSt} />
+                    </td>
+                    <td>
+                      <div>{payment.provider || '-'}</div>
+                      <div className={styles.subCell}>결제사 ID: {payment.providerPaymentId || '-'}</div>
+                      <div className={styles.subCell}>결제수단 ID: {payment.paymentMethodId ?? '-'}</div>
+                    </td>
+                    <td>
+                      <div className={styles.ellipsis}>{payment.merchantUid || '-'}</div>
+                      <div className={styles.subCell}>멱등키: {payment.idempotencyKey || '-'}</div>
+                    </td>
+                    <td>{formatDateTime(payment.paidAt || payment.createdAt)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

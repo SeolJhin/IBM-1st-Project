@@ -6,9 +6,7 @@ export default function AdminPayHub() {
   return (
     <div className={styles.wrap}>
       <div className={styles.topRow}>
-        <h1 className={styles.title}>결제 관리</h1>
-
-        {/* (원하면) 검색 아이콘/검색창 자리 */}
+        <h1 className={styles.title}>결제관리</h1>
         <div className={styles.right} />
       </div>
 

@@ -22,7 +22,9 @@ function normalizeRole(user) {
     user?.authority ??
     user?.authorities?.[0];
 
-  return String(raw ?? '').toLowerCase().replace('role_', '');
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace('role_', '');
 }
 
 export default function ComplainEdit() {
@@ -32,10 +34,13 @@ export default function ComplainEdit() {
   const [form, setForm] = useState({ compTitle: '', compCtnt: '', code: '' });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const isAdmin = normalizeRole(user) === 'admin';
+  const role = normalizeRole(user);
+  const isAdmin = role === 'admin';
+  const isTenant = role === 'tenant';
 
   useEffect(() => {
-    if (!isAdmin) {
+    const canLoad = isAdmin || isTenant;
+    if (!canLoad) {
       setLoading(false);
       return;
     }
@@ -43,6 +48,11 @@ export default function ComplainEdit() {
     supportApi
       .getComplainDetail(id)
       .then((res) => {
+        // tenant는 본인 글만 수정 가능
+        if (isTenant && !isAdmin && res.userId !== user?.userId) {
+          navigate(`/support/complain/${id}`);
+          return;
+        }
         setForm({
           compTitle: res.compTitle ?? '',
           compCtnt: res.compCtnt ?? '',
@@ -50,16 +60,21 @@ export default function ComplainEdit() {
         });
       })
       .finally(() => setLoading(false));
-  }, [id, isAdmin]);
+  }, [id, isAdmin, isTenant, user, navigate]);
 
   if (!user) return <Navigate to="/login" replace />;
-  if (!isAdmin) {
+  if (!isAdmin && !isTenant) {
     return (
       <div className={styles.container}>
         <div className={styles.card}>
           <h2 className={styles.sectionTitle}>접근 권한 없음</h2>
-          <p style={{ marginBottom: 16 }}>민원 수정은 관리자만 가능합니다.</p>
-          <button className={styles.pageBtn} onClick={() => navigate(`/support/complain/${id}`)}>
+          <p style={{ marginBottom: 16 }}>
+            민원 수정은 관리자 또는 본인만 가능합니다.
+          </p>
+          <button
+            className={styles.pageBtn}
+            onClick={() => navigate(`/support/complain/${id}`)}
+          >
             상세로
           </button>
         </div>
@@ -125,7 +140,11 @@ export default function ComplainEdit() {
         />
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button className={styles.buttonPrimary} onClick={handleSubmit} disabled={submitting}>
+          <button
+            className={styles.buttonPrimary}
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
             {submitting ? '수정 중...' : '수정'}
           </button>
           <button

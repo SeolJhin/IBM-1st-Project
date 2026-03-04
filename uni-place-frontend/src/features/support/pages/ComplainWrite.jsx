@@ -22,7 +22,9 @@ function normalizeRole(user) {
     user?.authority ??
     user?.authorities?.[0];
 
-  return String(raw ?? '').toLowerCase().replace('role_', '');
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace('role_', '');
 }
 
 export default function ComplainWrite() {
@@ -34,14 +36,19 @@ export default function ComplainWrite() {
   if (!user) return <Navigate to="/login" replace />;
 
   const role = normalizeRole(user);
-  const canCreate = role === 'admin' || role === 'tenant' || role === 'user';
+  const canCreate = role === 'admin' || role === 'tenant';
   if (!canCreate) {
     return (
       <div className={styles.container}>
         <div className={styles.card}>
           <h2 className={styles.sectionTitle}>접근 권한 없음</h2>
-          <p style={{ marginBottom: 16 }}>민원 작성은 관리자와 입주민만 가능합니다.</p>
-          <button className={styles.pageBtn} onClick={() => navigate('/support/complain')}>
+          <p style={{ marginBottom: 16 }}>
+            민원 작성은 관리자와 입주민만 가능합니다.
+          </p>
+          <button
+            className={styles.pageBtn}
+            onClick={() => navigate('/support/complain')}
+          >
             목록으로
           </button>
         </div>
@@ -117,7 +124,11 @@ export default function ComplainWrite() {
         />
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button className={styles.buttonPrimary} onClick={handleSubmit} disabled={submitting}>
+          <button
+            className={styles.buttonPrimary}
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
             {submitting ? '등록 중...' : '등록'}
           </button>
           <button
