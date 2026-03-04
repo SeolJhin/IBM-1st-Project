@@ -9,9 +9,7 @@ const CONTRACT_FILTERS = [
   { key: 'ended', label: '계약 만료' },
 ];
 
-const BILLING_FILTERS = [
-  { key: 'all', label: '전체' },
-  { key: 'unpaid', label: '미납내역' },
+const BILLING_FILTERS = [  { key: 'unpaid', label: '미납내역' },
   { key: 'paid', label: '결제 완료' },
   { key: 'overdue', label: '연체 내역' },
 ];
@@ -231,9 +229,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
       if (contractFilter.size > 0 && !contractFilter.has(row.contractStatusKey)) {
         return false;
       }
-      if (billingFilter.size > 0) {
-        const hasAll = billingFilter.has('all');
-        if (!hasAll && !billingFilter.has(row.statusKey)) {
+      if (billingFilter.size > 0) {        if (!billingFilter.has(row.statusKey)) {
           return false;
         }
       }
