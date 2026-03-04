@@ -23,6 +23,7 @@ import org.myweb.uniplace.domain.notification.application.NotificationService;
 import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
+import org.myweb.uniplace.domain.property.domain.enums.RoomStatus;
 import org.myweb.uniplace.domain.property.repository.RoomRepository;
 import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.domain.enums.UserRole;
@@ -231,6 +232,14 @@ public class ContractServiceImpl implements ContractService {
                 }
             }
 
+            // ✅ 방 상태 → contracted 자동 변경
+            if (c.getRoom() != null) {
+                Room room = c.getRoom();
+                room.setRoomSt(RoomStatus.contracted);
+                roomRepository.save(room);
+                log.info("[Room] status → contracted by contract approval contractId={} roomId={}", c.getContractId(), room.getRoomId());
+            }
+
             // 계약 승인 시 일반회원(user) -> 입주민(tenant)으로 자동 승격
             if (c.getUser() != null && c.getUser().getUserRole() == UserRole.user) {
                 c.getUser().changeRole(UserRole.tenant);
@@ -257,6 +266,15 @@ public class ContractServiceImpl implements ContractService {
                 safeNotify(userId, NotificationType.CONTRACT_CAN.name(),
                     "계약이 변경되었습니다. 상태: " + request.getContractStatus().name()
                     + ", 계약 번호: " + c.getContractId());
+            }
+
+            // ✅ 방 상태 → available 자동 복원 (ended / cancelled 모두)
+            if (c.getRoom() != null) {
+                Room room = c.getRoom();
+                room.setRoomSt(RoomStatus.available);
+                roomRepository.save(room);
+                log.info("[Room] status → available by contract deactivation contractId={} roomId={} newContractStatus={}",
+                        c.getContractId(), room.getRoomId(), request.getContractStatus());
             }
         }
 

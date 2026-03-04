@@ -583,6 +583,14 @@
   color: #374151;
 }
 
+/* 라벨 텍스트 줄 (글자 + * 가로 배치) */
+.formLabel > span:first-child,
+.formLabel > .labelText {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .formLabelFull {
   display: flex;
   flex-direction: column;
@@ -590,6 +598,13 @@
   font-size: 13px;
   font-weight: 600;
   color: #374151;
+}
+
+.formLabelFull > span:first-child,
+.formLabelFull > .labelText {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .req {
