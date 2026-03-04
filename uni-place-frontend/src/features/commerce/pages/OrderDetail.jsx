@@ -62,7 +62,7 @@ export default function OrderDetail({
     : null;
 
   const inner = (
-    <div>
+    <div className={styles.root}>
       <div className={styles.header}>
         <button
           className={styles.backBtn}
