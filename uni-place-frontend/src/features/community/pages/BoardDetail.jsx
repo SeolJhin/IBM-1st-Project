@@ -877,7 +877,7 @@ export default function BoardDetail() {
                         onChange={(e) => setEditBoardAnon(e.target.checked)}
                         disabled={boardSaving}
                       />
-                      익명으로 공개
+                      익명으로 글쓰기
                     </label>
                     <button
                       type="button"
