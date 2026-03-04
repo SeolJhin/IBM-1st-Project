@@ -43,6 +43,7 @@ import org.myweb.uniplace.domain.user.api.dto.request.PasswordResetConfirmReques
 import org.myweb.uniplace.domain.user.domain.entity.PasswordResetToken;
 import org.myweb.uniplace.domain.user.repository.PasswordResetTokenRepository;
 import org.myweb.uniplace.global.util.MailService;
+import java.util.Random;
 
 @Slf4j
 @Service
@@ -68,6 +69,7 @@ public class AuthServiceImpl implements AuthService {
     
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final MailService mailService;
+    private final EmailVerificationStore emailVerificationStore;
 
     @Value("${jwt.refresh-exp:86400000}")
     private long refreshExpMillis;
@@ -80,6 +82,11 @@ public class AuthServiceImpl implements AuthService {
         }
         String userEmail = normalizeEmail(req.getUserEmail());
         String userTel = req.getUserTel() == null ? null : req.getUserTel().trim();
+
+        // ✅ 이메일 인증 완료 여부 확인
+        if (!emailVerificationStore.isVerified(userEmail)) {
+            throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
 
         if (userRepository.existsByUserEmail(userEmail)) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
@@ -112,6 +119,9 @@ public class AuthServiceImpl implements AuthService {
             .build();
 
         userRepository.save(user);
+
+        // 가입 완료 후 인증 항목 제거
+        emailVerificationStore.remove(userEmail);
     }
 
     @Override
@@ -547,6 +557,48 @@ public class AuthServiceImpl implements AuthService {
         private LocalDateTime lockNotifiedUntil;
     }
     
+    // ----------------------------------------------------------------
+    // 이메일 인증코드 발송
+    // ----------------------------------------------------------------
+    @Override
+    public void sendEmailCode(String email) {
+        if (email == null || email.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        String normalized = normalizeEmail(email);
+
+        // 이미 가입된 이메일이면 거부
+        if (userRepository.existsByUserEmail(normalized)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        }
+
+        // 6자리 숫자 코드 생성 (쿨타임 체크 포함)
+        String code = String.format("%06d", new Random().nextInt(1_000_000));
+        try {
+            emailVerificationStore.save(normalized, code);
+        } catch (IllegalStateException e) {
+            // 60초 쿨타임 중
+            throw new BusinessException(ErrorCode.EMAIL_CODE_COOLDOWN);
+        }
+        mailService.sendEmailVerificationCode(normalized, code);
+        log.info("[EMAIL_VERIFY] 인증코드 발송: email={}", normalized);
+    }
+
+    // ----------------------------------------------------------------
+    // 이메일 인증코드 검증
+    // ----------------------------------------------------------------
+    @Override
+    public boolean verifyEmailCode(String email, String code) {
+        if (email == null || code == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        boolean result = emailVerificationStore.verify(normalizeEmail(email), code);
+        if (!result) {
+            throw new BusinessException(ErrorCode.EMAIL_CODE_INVALID);
+        }
+        return true;
+    }
+
     // ----------------------------------------------------------------
     // 아이디(이메일) 찾기
     // ----------------------------------------------------------------

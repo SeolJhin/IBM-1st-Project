@@ -123,6 +123,8 @@ public class SecurityConfig {
                 .requestMatchers("/auth/reset-password/request").permitAll()
                 .requestMatchers("/auth/reset-password/verify").permitAll()
                 .requestMatchers("/auth/reset-password/confirm").permitAll()
+                .requestMatchers("/auth/email/send-code").permitAll()
+                .requestMatchers("/auth/email/verify-code").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/files").permitAll()
                 .requestMatchers(HttpMethod.GET, "/admin/common-codes/PRODUCT_CATEGORY").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

@@ -26,6 +26,9 @@ public enum ErrorCode {
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "USER_400_1", "비밀번호가 올바르지 않습니다."),
     PASSWORD_RESET_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "USER_400_2", "유효하지 않은 재설정 링크입니다."),
     PASSWORD_RESET_TOKEN_EXPIRED(HttpStatus.BAD_REQUEST, "USER_400_3", "재설정 링크가 만료되었습니다. 다시 요청해주세요."),
+    EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "USER_400_4", "이메일 인증을 완료해주세요."),
+    EMAIL_CODE_INVALID(HttpStatus.BAD_REQUEST, "USER_400_5", "인증코드가 올바르지 않거나 만료되었습니다."),
+    EMAIL_CODE_COOLDOWN(HttpStatus.TOO_MANY_REQUESTS, "USER_429_1", "잠시 후 다시 시도해주세요. (60초 후 재발송 가능)"),
 
     // ===== Common =====
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "COMMON_400", "잘못된 요청입니다."),
