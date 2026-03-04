@@ -437,7 +437,7 @@ export default function ProductList({
   }, [cartItems]);
 
   const inner = (
-    <div>
+    <div className={styles.root}>
       <div className={styles.topTabs}>
         <button className={`${styles.topTab} ${styles.topTabActive}`}>
           주문
