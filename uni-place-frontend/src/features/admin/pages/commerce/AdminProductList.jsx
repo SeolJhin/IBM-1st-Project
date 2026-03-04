@@ -28,7 +28,6 @@ const CODE_FALLBACK = [
 const EMPTY_FORM = {
   prodNm: '',
   prodPrice: '',
-  prodStock: '',
   code: 'PROD_FOOD',
   prodDesc: '',
   affiliateId: '',
@@ -46,7 +45,39 @@ function windowedPages(cur, total, r = 2) {
   return pages;
 }
 
-// ─── StatusBadge ──────────────────────────────────────────────────────────
+// ─── 카테고리 칩 색상 (코드 기반, DB에서 동적으로 추가된 코드도 순환 색상 적용) ─
+const CODE_COLORS = [
+  { bg: '#fef3c7', color: '#92400e' }, // 노란 계열 - FOOD
+  { bg: '#dbeafe', color: '#1e40af' }, // 파란 계열 - CLEAN
+  { bg: '#d1fae5', color: '#065f46' }, // 초록 계열 - DAILY
+  { bg: '#ede9fe', color: '#5b21b6' }, // 보라 계열 - ELEC
+  { bg: '#fee2e2', color: '#991b1b' }, // 빨간 계열 - HEALTH
+  { bg: '#fce7f3', color: '#9d174d' },
+  { bg: '#e0f2fe', color: '#075985' },
+  { bg: '#f0fdf4', color: '#166534' },
+];
+// codeOptions 인덱스 기반으로 색상 매핑
+function CodeChip({ code, codeOptions }) {
+  const idx = codeOptions.findIndex((c) => c.code === code);
+  const label = idx >= 0 ? codeOptions[idx].label : (code ?? '-');
+  const color = CODE_COLORS[Math.max(idx, 0) % CODE_COLORS.length];
+  return (
+    <span
+      style={{
+        display: 'inline-block',
+        padding: '2px 10px',
+        borderRadius: '20px',
+        fontSize: '12px',
+        fontWeight: 700,
+        background: color.bg,
+        color: color.color,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </span>
+  );
+}
 function StatusBadge({ status }) {
   const key = String(status ?? '').toLowerCase();
   return (
@@ -59,7 +90,7 @@ function StatusBadge({ status }) {
 }
 
 // ─── BuildingStockPanel ────────────────────────────────────────────────────
-function BuildingStockPanel({ prodId, onClose }) {
+function BuildingStockPanel({ prodId, onClose, onSaved }) {
   const [rows, setRows] = useState([]); // { buildingId, buildingNm, stock }
   const [loading, setLoading] = useState(true);
   const [inputs, setInputs] = useState({});
@@ -124,6 +155,7 @@ function BuildingStockPanel({ prodId, onClose }) {
       await adminApi.upsertProductBuildingStock(prodId, buildingId, stock);
       setMsg(`저장 완료`);
       await load();
+      onSaved?.();
       setTimeout(() => setMsg(''), 2000);
     } catch (e) {
       setMsg(e?.message || '저장 실패');
@@ -193,7 +225,6 @@ function ProductFormModal({
       ? {
           prodNm: product.prodNm ?? '',
           prodPrice: String(product.prodPrice ?? ''),
-          prodStock: String(product.prodStock ?? ''),
           code: product.code ?? 'PROD_FOOD',
           prodDesc: product.prodDesc ?? '',
           affiliateId:
@@ -218,12 +249,6 @@ function ProductFormModal({
       Number(form.prodPrice) < 0
     )
       return '올바른 가격을 입력하세요.';
-    if (
-      !form.prodStock ||
-      isNaN(Number(form.prodStock)) ||
-      Number(form.prodStock) < 0
-    )
-      return '올바른 재고 수량을 입력하세요.';
     if (!form.code) return '카테고리를 선택하세요.';
     if (!form.prodDesc.trim()) return '상품 설명을 입력하세요.';
     return '';
@@ -240,7 +265,7 @@ function ProductFormModal({
     const body = {
       prodNm: form.prodNm.trim(),
       prodPrice: Number(form.prodPrice),
-      prodStock: Number(form.prodStock),
+      prodStock: 0,
       code: form.code,
       prodDesc: form.prodDesc.trim(),
       affiliateId: form.affiliateId ? Number(form.affiliateId) : null,
@@ -314,17 +339,6 @@ function ProductFormModal({
                 value={form.prodPrice}
                 onChange={set('prodPrice')}
                 placeholder="4500"
-              />
-            </label>
-            <label className={styles.formLabel}>
-              기본 재고 <span className={styles.req}>*</span>
-              <input
-                type="number"
-                min="0"
-                className={styles.formInput}
-                value={form.prodStock}
-                onChange={set('prodStock')}
-                placeholder="100"
               />
             </label>
             {isEdit && (
@@ -479,13 +493,9 @@ export default function AdminProductList() {
   const [size, setSize] = useState(20);
 
   // 모달
-  const [formModal, setFormModal] = useState(null); // null | 'create' | product obj
-  const [deleteModal, setDeleteModal] = useState(null); // null | product obj
-  const [stockPanel, setStockPanel] = useState(null); // null | prodId
-
-  // 빠른 상태 변경
-  const [statusEdit, setStatusEdit] = useState({});
-  const [statusSaving, setStatusSaving] = useState(null);
+  const [formModal, setFormModal] = useState(null);
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [stockPanel, setStockPanel] = useState(null);
 
   const noticeTid = useRef(null);
   const showNotice = (msg) => {
@@ -502,22 +512,12 @@ export default function AdminProductList() {
       const data = await adminApi.getAllProductsAdmin();
       const list = Array.isArray(data) ? data : [];
       setProducts(list);
-      const m = {};
-      list.forEach((p) => {
-        m[p.prodId] = p.prodSt ?? 'on_sale';
-      });
-      setStatusEdit(m);
     } catch {
       // 폴백: on_sale만 반환하는 공개 API
       try {
         const data = await adminApi.getProducts();
         const list = Array.isArray(data) ? data : [];
         setProducts(list);
-        const m = {};
-        list.forEach((p) => {
-          m[p.prodId] = p.prodSt ?? 'on_sale';
-        });
-        setStatusEdit(m);
       } catch (e2) {
         setError(e2?.message || '상품 목록을 불러오지 못했습니다.');
       }
@@ -602,22 +602,6 @@ export default function AdminProductList() {
     setCodeFilter('all');
     setKeyword('');
     setPage(1);
-  };
-
-  // 빠른 상태 저장
-  const handleQuickStatus = async (prodId) => {
-    const next = statusEdit[prodId];
-    if (!next || statusSaving) return;
-    setStatusSaving(prodId);
-    try {
-      await adminApi.changeProductStatus(prodId, next);
-      showNotice(`#${prodId} 상태 변경 완료`);
-      await fetchProducts();
-    } catch (e) {
-      setError(e?.message || '상태 변경 실패');
-    } finally {
-      setStatusSaving(null);
-    }
   };
 
   const codeLabel = (code) =>
@@ -758,10 +742,9 @@ export default function AdminProductList() {
                 <th style={{ width: 50 }}>#</th>
                 <th>상품명 / 설명</th>
                 <th style={{ width: 90 }}>가격</th>
-                <th style={{ width: 80 }}>기본재고</th>
                 <th style={{ width: 90 }}>카테고리</th>
-                <th style={{ width: 70 }}>제휴사</th>
-                <th style={{ width: 220 }}>상태 변경</th>
+                <th style={{ width: 90 }}>제휴사</th>
+                <th style={{ width: 80 }}>상태</th>
                 <th>건물별 재고</th>
                 <th style={{ width: 100 }}>관리</th>
               </tr>
@@ -789,53 +772,17 @@ export default function AdminProductList() {
                       </td>
                       {/* 가격 */}
                       <td className={styles.tdPrice}>{fmt(p.prodPrice)}</td>
-                      {/* 기본재고 */}
-                      <td className={styles.tdCenter}>
-                        <span
-                          className={p.prodStock === 0 ? styles.stockZero : ''}
-                        >
-                          {p.prodStock ?? 0}
-                        </span>
-                      </td>
                       {/* 카테고리 */}
                       <td>
-                        <span className={styles.codeChip}>
-                          {codeLabel(p.code)}
-                        </span>
+                        <CodeChip code={p.code} codeOptions={codeOptions} />
                       </td>
                       {/* 제휴사 */}
                       <td className={styles.tdCenter}>
                         {affiliateName(p.affiliateId)}
                       </td>
-                      {/* 상태 변경 */}
+                      {/* 상태 */}
                       <td>
-                        <div className={styles.statusCell}>
-                          <StatusBadge status={p.prodSt} />
-                          <select
-                            className={styles.select}
-                            value={statusEdit[p.prodId] ?? p.prodSt ?? ''}
-                            onChange={(e) =>
-                              setStatusEdit((prev) => ({
-                                ...prev,
-                                [p.prodId]: e.target.value,
-                              }))
-                            }
-                          >
-                            {STATUS_OPTIONS.map((o) => (
-                              <option key={o.value} value={o.value}>
-                                {o.label}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            type="button"
-                            className={styles.btn}
-                            onClick={() => handleQuickStatus(p.prodId)}
-                            disabled={!!statusSaving}
-                          >
-                            {statusSaving === p.prodId ? '...' : '저장'}
-                          </button>
-                        </div>
+                        <StatusBadge status={p.prodSt} />
                       </td>
                       {/* 건물별 재고 */}
                       <td>
@@ -896,6 +843,7 @@ export default function AdminProductList() {
                           <BuildingStockPanel
                             prodId={p.prodId}
                             onClose={() => setStockPanel(null)}
+                            onSaved={fetchProducts}
                           />
                         </td>
                       </tr>
