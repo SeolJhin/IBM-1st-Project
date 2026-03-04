@@ -674,7 +674,7 @@ function SupportPostsTab() {
           className={`${styles.subTab} ${supportSub === 'qna' ? styles.subTabActive : ''}`}
           onClick={() => setSupportSub('qna')}
         >
-          질문 / 답변
+          1:1 문의
         </button>
         <button
           type="button"
