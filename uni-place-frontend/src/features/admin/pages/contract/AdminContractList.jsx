@@ -356,7 +356,7 @@ export default function AdminContractList() {
             <thead>
               <tr>
                 <th>계약 ID</th>
-                <th>건물 ID</th>
+                <th>건물명</th>
                 <th>방</th>
                 <th>임차인</th>
                 <th>임대인</th>
@@ -374,7 +374,9 @@ export default function AdminContractList() {
                   <td className={styles.tdId}>#{c.contractId}</td>
 
                   <td>
-                    <div className={styles.tdName}>{c.buildingId ?? '-'}</div>
+                    <div className={styles.tdName}>
+                      {c.buildingNm ?? c.buildingName ?? '-'}
+                    </div>
                   </td>
 
                   <td>
@@ -492,7 +494,7 @@ export default function AdminContractList() {
                     {[
                       [
                         '건물',
-                        `${detail.buildingNm ?? '-'} (ID: ${detail.buildingId ?? '-'})`,
+                        detail.buildingNm ?? detail.buildingName ?? '-',
                       ],
                       ['주소', detail.buildingAddr ?? '-'],
                       [

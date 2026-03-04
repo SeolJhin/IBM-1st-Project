@@ -250,6 +250,29 @@ export const adminApi = {
 
     return request(`/admin/users?${q.toString()}`, { auth: true });
   },
+  userCountByRole: async (role) => {
+    const normalizedRole = String(role ?? '').trim().toLowerCase();
+    const query =
+      !normalizedRole || normalizedRole === 'all'
+        ? buildQuery({
+            page: 1,
+            size: 1,
+            sort: 'userId',
+            direct: 'DESC',
+          })
+        : buildQuery({
+            page: 1,
+            size: 1,
+            sort: 'userId',
+            direct: 'DESC',
+            role: normalizedRole,
+          });
+    const payload = await request(
+      `/admin/users${query}`,
+      { auth: true }
+    );
+    return extractTotalCount(payload);
+  },
   getUserDetail: (userId) => request(`/admin/users/${userId}`, { auth: true }),
   updateUserStatus: (userId, userStatus) =>
     request(`/admin/users/${userId}/status`, {
@@ -369,6 +392,36 @@ export const adminApi = {
       direct,
     });
     return request(`/admin/contracts${q}`, { auth: true });
+  },
+  getActiveContractUniqueTenantCount: async () => {
+    const size = 200;
+    let page = 1;
+    let totalPages = 1;
+    const tenantIds = new Set();
+
+    while (page <= totalPages) {
+      const res = await request(
+        `/admin/contracts${buildQuery({
+          contractStatus: 'active',
+          page,
+          size,
+          sort: 'contractId',
+          direct: 'DESC',
+        })}`,
+        { auth: true }
+      );
+
+      const items = Array.isArray(res?.content) ? res.content : [];
+      items.forEach((c) => {
+        const userId = String(c?.tenantUserId ?? '').trim();
+        if (userId) tenantIds.add(userId);
+      });
+
+      totalPages = Math.max(1, Number(res?.totalPages ?? 1));
+      page += 1;
+    }
+
+    return tenantIds.size;
   },
   getContractById: (contractId) => {
     return request(`/admin/contracts/${contractId}`, { auth: true });
@@ -656,6 +709,17 @@ export const adminApi = {
     request(`/admin/spaces/${spaceId}`, { method: 'DELETE', auth: true }),
 
   // support detail
+  getComplains: ({
+    page = 1,
+    size = 20,
+    sort = 'compId',
+    direct = 'DESC',
+    ...filters
+  } = {}) =>
+    request(
+      `/complains${buildQuery({ page, size, sort, direct, ...filters })}`,
+      { auth: true }
+    ),
   getComplainDetail: (compId) =>
     request(`/complains/${compId}`, { auth: true }),
   getFaqDetail: (faqId) => request(`/faqs/${faqId}`, { auth: true }),

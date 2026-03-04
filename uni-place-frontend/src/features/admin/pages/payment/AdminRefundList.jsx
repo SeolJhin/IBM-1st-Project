@@ -13,10 +13,19 @@ const REFUND_STATUS_LABELS = REFUND_STATUS_OPTIONS.reduce((acc, item) => {
   return acc;
 }, {});
 
-function formatMoney(value) {
+const TARGET_LABELS = {
+  order: '주문',
+  room_service: '주문',
+  roomservice: '주문',
+  monthly_charge: '월세',
+  rent: '월세',
+  charge: '월세',
+};
+
+function formatMoney(value, currency = 'KRW') {
   const safe = Number(value ?? 0);
   if (!Number.isFinite(safe)) return '-';
-  return `${safe.toLocaleString('ko-KR')} KRW`;
+  return `${safe.toLocaleString('ko-KR')} ${currency || ''}`.trim();
 }
 
 function formatDateTime(value) {
@@ -42,11 +51,7 @@ function pageWindow(page, totalPages, radius = 2) {
 function RefundStatusBadge({ status }) {
   const key = String(status ?? '').toLowerCase();
   const className =
-    key === 'done'
-      ? styles.badgeDone
-      : key === 'failed'
-        ? styles.badgeFailed
-        : styles.badgeRequested;
+    key === 'done' ? styles.badgeDone : key === 'failed' ? styles.badgeFailed : styles.badgeRequested;
 
   return (
     <span className={`${styles.badge} ${className}`}>
@@ -55,9 +60,34 @@ function RefundStatusBadge({ status }) {
   );
 }
 
+async function fetchAllUsers() {
+  const users = [];
+  let page = 1;
+  let totalPages = 1;
+
+  while (page <= totalPages) {
+    const res = await adminApi.users({ page, size: 200, sort: 'userId', direct: 'ASC' });
+    const content = Array.isArray(res?.content) ? res.content : [];
+    users.push(...content);
+
+    const nextTotal = Number(res?.totalPages ?? 1);
+    totalPages = Number.isFinite(nextTotal) && nextTotal > 0 ? nextTotal : 1;
+    page += 1;
+  }
+
+  return users;
+}
+
+function targetLabel(targetType, targetId) {
+  const key = String(targetType ?? '').toLowerCase();
+  const label = TARGET_LABELS[key] ?? (targetType ? String(targetType) : '미지정');
+  return targetId != null ? `${label} #${targetId}` : label;
+}
+
 export default function AdminRefundList() {
   const [refunds, setRefunds] = useState([]);
   const [paymentById, setPaymentById] = useState({});
+  const [userNameById, setUserNameById] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -69,10 +99,12 @@ export default function AdminRefundList() {
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
+
     try {
-      const [refundData, paymentData] = await Promise.all([
+      const [refundData, paymentData, users] = await Promise.all([
         adminApi.getRefunds(),
         adminApi.getPayments(),
+        fetchAllUsers().catch(() => []),
       ]);
 
       const refundRows = Array.isArray(refundData) ? refundData : [];
@@ -85,9 +117,20 @@ export default function AdminRefundList() {
         return acc;
       }, {});
       setPaymentById(map);
+
+      const nameMap = users.reduce((acc, user) => {
+        const id = String(user?.userId ?? '').trim();
+        if (!id) return acc;
+        acc[id] = String(
+          user?.userNm ?? user?.userName ?? user?.name ?? user?.nickName ?? user?.nickname ?? user?.email ?? id
+        );
+        return acc;
+      }, {});
+      setUserNameById(nameMap);
     } catch (e) {
       setRefunds([]);
       setPaymentById({});
+      setUserNameById({});
       setError(e?.message || '환불 데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -101,26 +144,28 @@ export default function AdminRefundList() {
   const filtered = useMemo(() => {
     const q = keyword.trim().toLowerCase();
     return refunds.filter((refund) => {
-      if (statusFilter !== 'all' && refund?.refundSt !== statusFilter) {
-        return false;
-      }
+      if (statusFilter !== 'all' && refund?.refundSt !== statusFilter) return false;
       if (!q) return true;
 
       const payment = paymentById[refund?.paymentId];
+      const userId = String(payment?.userId ?? '').trim();
+      const userName = userNameById[userId] || '';
       const haystack = [
         refund?.refundId,
         refund?.paymentId,
         refund?.refundReason,
-        payment?.userId,
         payment?.provider,
         payment?.merchantUid,
+        payment?.idempotencyKey,
+        userId,
+        userName,
       ]
         .map((v) => String(v ?? '').toLowerCase())
         .join(' ');
 
       return haystack.includes(q);
     });
-  }, [keyword, paymentById, refunds, statusFilter]);
+  }, [keyword, paymentById, refunds, statusFilter, userNameById]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / size));
   const safePage = Math.min(page, totalPages);
@@ -197,7 +242,7 @@ export default function AdminRefundList() {
           <input
             className={styles.input}
             value={keyword}
-            placeholder="refundId, paymentId, userId, reason..."
+            placeholder="환불ID, 결제ID, 유저이름"
             onChange={(e) => {
               setKeyword(e.target.value);
               setPage(1);
@@ -227,37 +272,46 @@ export default function AdminRefundList() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>환불 ID</th>
-                <th>결제 정보</th>
-                <th>환불금액</th>
+                <th>결제대상</th>
+                <th>결제ID</th>
+                <th>유저이름</th>
+                <th>금액</th>
                 <th>상태</th>
-                <th>환불사유</th>
-                <th>완료시각</th>
+                <th>결제사 정보</th>
+                <th>식별키</th>
+                <th>결제시각</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((refund) => {
-                const payment = paymentById[refund.paymentId];
+                const payment = paymentById[refund.paymentId] || {};
+                const userId = String(payment?.userId ?? '').trim();
+                const userName = userNameById[userId] || '-';
+
                 return (
                   <tr key={refund.refundId}>
+                    <td>{targetLabel(payment?.targetType, payment?.targetId)}</td>
                     <td>
-                      <strong>#{refund.refundId}</strong>
+                      <div>#{refund.paymentId ?? '-'}</div>
+                      <div className={styles.subCell}>환불ID: #{refund.refundId ?? '-'}</div>
                     </td>
                     <td>
-                      <div>payment #{refund.paymentId ?? '-'}</div>
-                      <div className={styles.subCell}>
-                        user: {payment?.userId || '-'}
-                      </div>
-                      <div className={styles.subCell}>
-                        provider: {payment?.provider || '-'}
-                      </div>
+                      <div>{userName}</div>
+                      <div className={styles.subCell}>회원ID: {userId || '-'}</div>
                     </td>
-                    <td>{formatMoney(refund.refundPrice)}</td>
+                    <td>{formatMoney(refund.refundPrice, payment?.currency || 'KRW')}</td>
                     <td>
                       <RefundStatusBadge status={refund.refundSt} />
                     </td>
-                    <td>{refund.refundReason || '-'}</td>
-                    <td>{formatDateTime(refund.completedAt)}</td>
+                    <td>
+                      <div>{payment?.provider || '-'}</div>
+                      <div className={styles.subCell}>결제사 ID: {payment?.providerPaymentId || '-'}</div>
+                    </td>
+                    <td>
+                      <div className={styles.ellipsis}>{payment?.merchantUid || '-'}</div>
+                      <div className={styles.subCell}>멱등키: {payment?.idempotencyKey || '-'}</div>
+                    </td>
+                    <td>{formatDateTime(refund.completedAt || payment?.paidAt)}</td>
                   </tr>
                 );
               })}
