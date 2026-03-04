@@ -71,6 +71,14 @@ function normalizeFromRawPath(rawPath, item) {
     return '/me?tab=me';
   }
 
+  if (path === '/mypage/contracts' || path === '/contracts/me') {
+    const contractId =
+      queryNumber(path, 'contractId') ??
+      targetId ??
+      messageNumber(msg, 'contractId');
+    return withQuery('/me?tab=myroom&sub=contracts', { contractId });
+  }
+
   if (
     path === '/payments/my' ||
     path.startsWith('/payments/') ||
@@ -125,6 +133,49 @@ function normalizeFromRawPath(rawPath, item) {
     return withQuery('/admin/users', { keyword: keyword || undefined });
   }
 
+  if (path.startsWith('/admin/qna') || path.startsWith('/admin/support/qna')) {
+    const qnaId =
+      trailingNumber(path) ??
+      queryNumber(path, 'qnaId') ??
+      targetId ??
+      messageNumber(msg, 'qnaId');
+    return qnaId ? `/admin/support/qna/${qnaId}` : '/admin/support/qna';
+  }
+
+  if (path.startsWith('/support/qna')) {
+    const qnaId =
+      trailingNumber(path) ??
+      queryNumber(path, 'qnaId') ??
+      targetId ??
+      messageNumber(msg, 'qnaId');
+    return qnaId ? `/support/qna/${qnaId}` : '/support/qna';
+  }
+
+  if (
+    path.startsWith('/admin/complain') ||
+    path.startsWith('/admin/support/complain')
+  ) {
+    const compId =
+      trailingNumber(path) ??
+      queryNumber(path, 'id') ??
+      queryNumber(path, 'compId') ??
+      targetId ??
+      messageNumber(msg, 'compId');
+    return compId
+      ? `/admin/support/complain/${compId}`
+      : '/admin/support/complain';
+  }
+
+  if (path.startsWith('/support/complain')) {
+    const compId =
+      trailingNumber(path) ??
+      queryNumber(path, 'id') ??
+      queryNumber(path, 'compId') ??
+      targetId ??
+      messageNumber(msg, 'compId');
+    return compId ? `/support/complain/${compId}` : '/support/complain';
+  }
+
   if (path.startsWith('/admin/contracts') || path.startsWith('/contracts/')) {
     const contractId =
       trailingNumber(path) ??
@@ -159,9 +210,34 @@ export function resolveNotificationPath(item) {
   const normalized = normalizeFromRawPath(raw, item);
   if (normalized && normalized !== '/') return normalized;
 
-  const contractId = messageNumber(msg, 'contractId');
-  if (contractId || code.includes('CONTRACT')) {
-    return withQuery('/admin/contracts', { contractId: contractId ?? targetId });
+  const qnaId = messageNumber(msg, 'qnaId') ?? targetId;
+  if (code.startsWith('QNA_')) {
+    if (code === 'QNA_NEW') {
+      return qnaId ? `/admin/support/qna/${qnaId}` : '/admin/support/qna';
+    }
+    return qnaId ? `/support/qna/${qnaId}` : '/support/qna';
+  }
+
+  const compId = messageNumber(msg, 'compId') ?? targetId;
+  if (code.startsWith('COMP_')) {
+    if (code === 'COMP_NEW') {
+      return compId
+        ? `/admin/support/complain/${compId}`
+        : '/admin/support/complain';
+    }
+    return compId ? `/support/complain/${compId}` : '/support/complain';
+  }
+
+  const contractId = messageNumber(msg, 'contractId') ?? targetId;
+  if (code.startsWith('CONTRACT_')) {
+    if (code === 'CONTRACT_REQ') {
+      return withQuery('/admin/contracts', { contractId });
+    }
+    return withQuery('/me?tab=myroom&sub=contracts', { contractId });
+  }
+
+  if (contractId) {
+    return withQuery('/admin/contracts', { contractId });
   }
 
   const orderId = messageNumber(msg, 'orderId');

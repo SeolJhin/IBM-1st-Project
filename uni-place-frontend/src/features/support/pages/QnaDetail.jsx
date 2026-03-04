@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
@@ -26,6 +26,10 @@ export default function QnaDetail() {
   const { user } = useAuth();
   const { qnaId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const qnaListPath = location.pathname.startsWith('/admin/')
+    ? '/admin/support/qna'
+    : '/support/qna';
 
   const [qna, setQna] = useState(null);
   const [replies, setReplies] = useState([]);
@@ -58,6 +62,10 @@ export default function QnaDetail() {
         setAnswerCtnt('');
       }
     } catch (err) {
+      if (Number(err?.status) === 404) {
+        navigate(qnaListPath, { replace: true });
+        return;
+      }
       setError(err.message || '문의 내용을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -83,7 +91,7 @@ export default function QnaDetail() {
     if (!window.confirm('문의를 삭제하시겠습니까?')) return;
     try {
       await supportApi.deleteQna(qnaId);
-      navigate('/support/qna');
+      navigate(qnaListPath);
     } catch (e) {
       alert(e.message || '삭제에 실패했습니다.');
     }
@@ -240,7 +248,7 @@ export default function QnaDetail() {
 
       <button
         className={styles.pageBtn}
-        onClick={() => navigate('/support/qna')}
+        onClick={() => navigate(qnaListPath)}
         style={{ marginTop: 16 }}
       >
         목록으로

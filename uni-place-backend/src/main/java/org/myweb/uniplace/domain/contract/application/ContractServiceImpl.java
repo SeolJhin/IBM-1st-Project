@@ -398,7 +398,7 @@ public class ContractServiceImpl implements ContractService {
     private void safeNotify(String userId, String code, String msg) {
         try {
             notificationService.notifyUser(userId, code, msg, null,
-                TargetType.notice, null, "/mypage/contracts");
+                TargetType.notice, null, "/me?tab=myroom&sub=contracts");
         } catch (Exception e) {
             log.warn("[CONTRACT][NOTIFY] failed userId={} code={} reason={}", userId, code, e.getMessage());
         }

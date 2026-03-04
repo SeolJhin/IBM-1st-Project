@@ -110,7 +110,7 @@ public class QnaServiceImpl implements QnaService {
             notificationService.notifyAdmins(
                 NotificationType.QNA_NEW.name(),
                 "새 QnA 질문이 접수되었습니다. qnaId=" + saved.getQnaId() + ", userId=" + userId,
-                userId, TargetType.notice, null, "/admin/qna"
+                userId, TargetType.notice, null, "/admin/support/qna/" + saved.getQnaId()
             );
         } catch (Exception e) {
             log.warn("[QNA][NOTIFY][ADMIN] qnaId={} reason={}", saved.getQnaId(), e.getMessage());
