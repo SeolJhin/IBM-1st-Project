@@ -33,7 +33,12 @@ export default function QnaDetail() {
   const [answerCtnt, setAnswerCtnt] = useState('');
   const [answerSubmitting, setAnswerSubmitting] = useState(false);
 
-  const isAdmin = normalizeRole(user) === 'admin';
+  const role = normalizeRole(user);
+  const isAdmin = role === 'admin';
+  const isTenant = role === 'tenant';
+  const isOwner = isTenant && qna?.userId === user?.userId;
+  const canEdit = isAdmin || isOwner;
+  const canDelete = isAdmin || isOwner;
 
   const loadDetail = async () => {
     setLoading(true);
@@ -134,7 +139,7 @@ export default function QnaDetail() {
 
         <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{qna.qnaCtnt}</div>
 
-        {isAdmin && qna.qnaSt === 'waiting' && (
+        {canEdit && qna.qnaSt === 'waiting' && (
           <div style={{ marginTop: 24, display: 'flex', gap: 8 }}>
             <button
               className={styles.buttonPrimary}
@@ -142,9 +147,11 @@ export default function QnaDetail() {
             >
               수정
             </button>
-            <button className={styles.pageBtn} onClick={handleDelete}>
-              삭제
-            </button>
+            {canDelete && (
+              <button className={styles.pageBtn} onClick={handleDelete}>
+                삭제
+              </button>
+            )}
           </div>
         )}
       </div>
