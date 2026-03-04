@@ -86,11 +86,12 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     """)
     Page<Board> searchByUserId(@Param("code") String code, @Param("keyword") String keyword, Pageable pageable);
 
-    // 닉네임 검색 (users 테이블 JOIN)
+    // 닉네임 검색 (users 테이블 JOIN, 익명 게시글 제외)
     @Query("""
         select b from Board b
           join User u on u.userId = b.userId
          where (:code is null or b.code = :code)
+           and b.anonymity = 'N'
            and lower(u.userNickname) like lower(concat('%', :keyword, '%'))
          order by b.boardId desc
     """)

@@ -37,6 +37,15 @@ public class AdminProductController {
 
     // ── 상품 CRUD ────────────────────────────────────────────────────────────
 
+    /**
+     * 관리자용 전체 상품 목록 (on_sale + sold_out 모두 포함, 빌딩별 재고 포함)
+     * GET /admin/products
+     */
+    @GetMapping
+    public ApiResponse<List<org.myweb.uniplace.domain.commerce.api.dto.response.ProductWithBuildingStockResponse>> listAll() {
+        return ApiResponse.ok(productService.getAllProductsWithBuildingStocks());
+    }
+
     @PostMapping
     public ApiResponse<Integer> create(@RequestBody @Valid ProductCreateRequest request) {
         return ApiResponse.ok(productService.createProduct(request).getProdId());

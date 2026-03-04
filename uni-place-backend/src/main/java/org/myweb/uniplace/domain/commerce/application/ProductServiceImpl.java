@@ -69,6 +69,35 @@ public class ProductServiceImpl implements ProductService {
                 .toList();
     }
 
+    /**
+     * 관리자용: 전체 상품(on_sale + sold_out) + 빌딩별 재고 포함
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductWithBuildingStockResponse> getAllProductsWithBuildingStocks() {
+        List<Product> products = productRepository.findAll();
+        if (products.isEmpty()) return List.of();
+
+        List<Integer> prodIds = products.stream()
+                .map(Product::getProdId)
+                .toList();
+
+        List<ProductBuildingStock> allStocks = buildingStockRepository.findAll()
+                .stream()
+                .filter(s -> prodIds.contains(s.getProdId()))
+                .toList();
+
+        Map<Integer, List<ProductBuildingStock>> stockMap = allStocks.stream()
+                .collect(Collectors.groupingBy(ProductBuildingStock::getProdId));
+
+        return products.stream()
+                .map(p -> new ProductWithBuildingStockResponse(
+                        p,
+                        stockMap.getOrDefault(p.getProdId(), List.of())
+                ))
+                .toList();
+    }
+
     // ── CRUD ─────────────────────────────────────────────────────────────────
 
     @Override
@@ -160,6 +189,7 @@ public class ProductServiceImpl implements ProductService {
                 .prodId(prodId)
                 .buildingId(buildingId)
                 .stock(stock)
+                .updatedAt(java.time.LocalDateTime.now())
                 .build();
 
         return new ProductBuildingStockResponse(buildingStockRepository.save(updated));

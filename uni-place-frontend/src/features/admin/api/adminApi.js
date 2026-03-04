@@ -21,7 +21,9 @@ function buildQuery(params = {}) {
 
 function pageableSort(sort, direct) {
   const safeSort = String(sort ?? '').trim();
-  const safeDirect = String(direct ?? 'DESC').trim().toUpperCase();
+  const safeDirect = String(direct ?? 'DESC')
+    .trim()
+    .toUpperCase();
   if (!safeSort) return undefined;
   return `${safeSort},${safeDirect === 'ASC' ? 'ASC' : 'DESC'}`;
 }
@@ -419,6 +421,8 @@ export const adminApi = {
   },
 
   // products
+  // 관리자용 전체 상품 목록 (on_sale + sold_out, 빌딩별 재고 포함) → GET /admin/products
+  getAllProductsAdmin: () => request('/admin/products', { auth: true }),
   getProducts: () => request('/products'),
   getProduct: (prodId) => request(`/products/${prodId}`),
   createProduct: (body) =>

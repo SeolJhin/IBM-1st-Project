@@ -37,6 +37,12 @@ public class ProductBuildingStock {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @jakarta.persistence.PrePersist
+    @jakarta.persistence.PreUpdate
+    void touch() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void decreaseStock(int qty) {
         if (this.stock < qty) {
             throw new BusinessException(ErrorCode.PRODUCT_OUT_OF_STOCK);
