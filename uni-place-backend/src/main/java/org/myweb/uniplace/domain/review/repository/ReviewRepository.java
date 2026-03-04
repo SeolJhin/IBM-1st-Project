@@ -32,7 +32,8 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     /** 중복 작성 체크 */
     boolean existsByUserIdAndRoomId(String userId, Integer roomId);
 
-    /** readCount 증가 (Review 테이블에 read_count 없으므로 불필요 — 게시판형 요청에 맞게 추가 가능)
-     *  현재 reviews 스키마엔 read_count 컬럼이 없어 생략
-     */
+    /** 조회수 1 증가 */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Review r set r.readCount = r.readCount + 1 where r.reviewId = :reviewId")
+    void incrementReadCount(@Param("reviewId") int reviewId);
 }

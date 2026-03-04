@@ -59,13 +59,14 @@ public class ReviewController {
         );
     }
 
-    // [GET] /reviews/{reviewId}
+ // [GET] /reviews/{reviewId}?increaseReadCount=true(default)
     @GetMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<ReviewResponse>> reviewDetail(
-            @PathVariable("reviewId") int reviewId
+            @PathVariable("reviewId") int reviewId,
+            @RequestParam(name = "increaseReadCount", defaultValue = "true") boolean increaseReadCount
     ) {
         return ResponseEntity.ok(
-                ApiResponse.ok(reviewService.getReviewDetail(reviewId))
+                ApiResponse.ok(reviewService.getReviewDetail(reviewId, increaseReadCount))
         );
     }
 

@@ -53,6 +53,12 @@ public class Review {
     /** 파일(썸네일/이미지) 존재 여부: 'Y'/'N' */
     @Column(name = "file_ck", nullable = false, columnDefinition = "CHAR(1)")
     private String fileCk;
+    
+    @Column(name = "read_count", nullable = false)
+    private int readCount;
+
+    @Column(name = "like_count", nullable = false)
+    private int likeCount;
 
     /** 답글 존재 여부: 'Y'/'N' */
     @Column(name = "reply_ck", nullable = false, columnDefinition = "CHAR(1)")
@@ -87,5 +93,9 @@ public class Review {
 
     public void markReply(boolean hasReply) {
         this.replyCk = hasReply ? "Y" : "N";
+    }
+    
+    public void incrementReadCount() {
+        this.readCount++;
     }
 }

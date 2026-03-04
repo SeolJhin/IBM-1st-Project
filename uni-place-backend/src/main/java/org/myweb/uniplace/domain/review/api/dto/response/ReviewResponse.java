@@ -32,6 +32,10 @@ public class ReviewResponse {
     private String fileCk;
     private String replyCk;
 
+    private int readCount;
+    private long likeCount;
+    private boolean likedByMe;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -54,7 +58,8 @@ public class ReviewResponse {
     private Integer roomNo;
 
     /** 방 정보까지 채우는 버전 */
-    public static ReviewResponse fromEntity(Review e, List<FileResponse> files, Room room, User author) {
+    public static ReviewResponse fromEntity(Review e, List<FileResponse> files, Room room, User author,
+                                                long likeCount, boolean likedByMe) {
         Integer buildingId = null;
         String buildingNm  = null;
         Integer roomNo     = null;
@@ -82,6 +87,9 @@ public class ReviewResponse {
                 .code(e.getCode())
                 .fileCk(e.getFileCk())
                 .replyCk(e.getReplyCk())
+                .readCount(e.getReadCount())
+                .likeCount(likeCount)
+                .likedByMe(likedByMe)
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .files(files)
@@ -92,23 +100,28 @@ public class ReviewResponse {
                 .build();
     }
 
+    /** 목록 조회용 (author 포함, likeCount/likedByMe=0/false) */
+    public static ReviewResponse fromEntity(Review e, List<FileResponse> files, Room room, User author) {
+        return fromEntity(e, files, room, author, 0L, false);
+    }
+
     /** 방 정보까지 채우는 버전 (author 없음, 하위 호환) */
     public static ReviewResponse fromEntity(Review e, List<FileResponse> files, Room room) {
-        return fromEntity(e, files, room, null);
+        return fromEntity(e, files, room, null, 0L, false);
     }
 
     /** 파일 없는 버전 */
     public static ReviewResponse fromEntity(Review e, List<FileResponse> files) {
-        return fromEntity(e, files, null, null);
+        return fromEntity(e, files, null, null, 0L, false);
     }
 
     /** 파일 없이 (엔티티만) */
     public static ReviewResponse fromEntity(Review e) {
-        return fromEntity(e, null, null, null);
+        return fromEntity(e, null, null, null, 0L, false);
     }
 
     /** 이미지 확장자인 첫 번째 파일의 viewUrl 반환 */
-    private static String resolveThumbnail(List<FileResponse> files) {
+    public static String resolveThumbnail(List<FileResponse> files) {
         if (files == null || files.isEmpty()) return null;
         List<String> imageExts = List.of(".png", ".jpg", ".jpeg", ".gif", ".webp");
         return files.stream()

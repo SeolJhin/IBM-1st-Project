@@ -509,6 +509,15 @@
   color: #f43f5e !important;
   background: #fff1f2 !important;
 }
+.likeBtnDisabled {
+  cursor: not-allowed !important;
+  opacity: 0.45;
+}
+.likeBtnDisabled:hover {
+  border-color: #e5e7eb !important;
+  color: #6b7280 !important;
+  background: none !important;
+}
 
 /* ── 상태 메시지 ──────────────────────────────────────────── */
 .state {

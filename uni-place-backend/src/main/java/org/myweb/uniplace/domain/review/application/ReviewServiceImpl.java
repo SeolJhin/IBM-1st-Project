@@ -17,6 +17,8 @@ import org.myweb.uniplace.domain.review.api.dto.request.ReviewUpdateRequest;
 import org.myweb.uniplace.domain.review.api.dto.response.ReviewResponse;
 import org.myweb.uniplace.domain.review.api.dto.response.ReviewRoomSummaryResponse;
 import org.myweb.uniplace.domain.review.domain.entity.Review;
+import org.myweb.uniplace.domain.review.domain.entity.ReviewLike;
+import org.myweb.uniplace.domain.review.repository.ReviewLikeRepository;
 import org.myweb.uniplace.domain.review.repository.ReviewRepository;
 import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
@@ -43,6 +45,7 @@ public class ReviewServiceImpl implements ReviewService {
     private static final String FILE_PARENT_TYPE = "REVIEW";
 
     private final ReviewRepository reviewRepository;
+    private final ReviewLikeRepository reviewLikeRepository;
     private final RoomRepository roomRepository;
     private final FileService fileService;
     private final NotificationService notificationService;
@@ -103,9 +106,22 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public ReviewResponse getReviewDetail(int reviewId) {
+    @Transactional
+    public ReviewResponse getReviewDetail(int reviewId, boolean increaseReadCount) {
         Review review = findReviewOrThrow(reviewId);
+
+        // 조회수 증가 + 응답에 즉시 반영 (DB flush 후 재조회 없이 +1 계산)
+        int currentReadCount = review.getReadCount();
+        if (increaseReadCount) {
+            reviewRepository.incrementReadCount(reviewId);
+            currentReadCount++;
+        }
+
+        // 좋아요 수 & 본인 좋아요 여부
+        long likeCount = reviewLikeRepository.countByIdReviewId(reviewId);
+        String currentUserId = currentUserIdOrNull();
+        boolean likedByMe = currentUserId != null
+                && reviewLikeRepository.existsByIdUserIdAndIdReviewId(currentUserId, reviewId);
 
         List<FileResponse> files = null;
         if ("Y".equalsIgnoreCase(review.getFileCk())) {
@@ -115,7 +131,45 @@ public class ReviewServiceImpl implements ReviewService {
         Room room = roomRepository.findById(review.getRoomId()).orElse(null);
         User author = userRepository.findById(review.getUserId()).orElse(null);
 
-        return ReviewResponse.fromEntity(review, files, room, author);
+        String displayName = (author != null
+                && author.getUserNickname() != null
+                && !author.getUserNickname().isBlank())
+                ? author.getUserNickname()
+                : review.getUserId();
+
+        Integer buildingId = null;
+        String buildingNm = null;
+        Integer roomNo = null;
+        if (room != null) {
+            roomNo = room.getRoomNo();
+            if (room.getBuilding() != null) {
+                buildingId = room.getBuilding().getBuildingId();
+                buildingNm = room.getBuilding().getBuildingNm();
+            }
+        }
+
+        return ReviewResponse.builder()
+                .reviewId(review.getReviewId())
+                .userId(displayName)
+                .realUserId(review.getUserId())
+                .roomId(review.getRoomId())
+                .rating(review.getRating())
+                .reviewTitle(review.getReviewTitle())
+                .reviewCtnt(review.getReviewCtnt())
+                .code(review.getCode())
+                .fileCk(review.getFileCk())
+                .replyCk(review.getReplyCk())
+                .readCount(currentReadCount)
+                .likeCount(likeCount)
+                .likedByMe(likedByMe)
+                .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
+                .files(files)
+                .thumbnailUrl(ReviewResponse.resolveThumbnail(files))
+                .buildingId(buildingId)
+                .buildingNm(buildingNm)
+                .roomNo(roomNo)
+                .build();
     }
 
     @Override
@@ -141,16 +195,13 @@ public class ReviewServiceImpl implements ReviewService {
         String userId = requireCurrentUserId();
         requireTenantRole();
 
-        // 방 존재 여부 + 삭제 여부 확인
         Room reviewRoom = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
-        // ✅ 삭제된 방에 리뷰 작성 불가
         if (reviewRoom.isDeleted()) {
             throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
         }
 
-        // 중복 작성 체크 → 409
         if (reviewRepository.existsByUserIdAndRoomId(userId, request.getRoomId())) {
             throw new BusinessException(ErrorCode.REVIEW_DUPLICATE);
         }
@@ -170,7 +221,6 @@ public class ReviewServiceImpl implements ReviewService {
         saved.markFile(hasFile);
         saved.markReply(false);
 
-        // ✅ 알림: 관리자에게 새 리뷰 등록 알림
         notificationService.notifyAdmins(
                 NotificationType.RVW_NEW.name(),
                 "새 리뷰가 등록되었습니다. (roomId=" + request.getRoomId() + ", 별점=" + request.getRating() + "★)",
@@ -242,7 +292,6 @@ public class ReviewServiceImpl implements ReviewService {
                 .filter(f -> {
                     if (f.getFileType() == null) return false;
                     String t = f.getFileType().toLowerCase();
-                    // 확장자 형식 (.jpg) 또는 mime 형식 (image/jpeg) 모두 허용
                     return imageExts.contains(t) || t.startsWith("image/");
                 })
                 .limit(1)
@@ -272,6 +321,17 @@ public class ReviewServiceImpl implements ReviewService {
 
     private boolean hasValidFiles(List<MultipartFile> files) {
         return files != null && files.stream().anyMatch(f -> f != null && !f.isEmpty());
+    }
+
+    /** 로그인 중이면 userId, 비로그인이면 null (좋아요 여부 판단용) */
+    private String currentUserIdOrNull() {
+        try {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated()) return null;
+            Object p = auth.getPrincipal();
+            if (p instanceof AuthUser au) return au.getUserId();
+        } catch (Exception ignored) {}
+        return null;
     }
 
     private Review findReviewOrThrow(int reviewId) {

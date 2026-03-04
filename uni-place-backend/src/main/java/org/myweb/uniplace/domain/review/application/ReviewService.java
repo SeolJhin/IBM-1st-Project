@@ -22,8 +22,8 @@ public interface ReviewService {
     /** 내 리뷰 목록 */
     PageResponse<ReviewResponse> getMyReviews(Pageable pageable);
 
-    /** 리뷰 상세 */
-    ReviewResponse getReviewDetail(int reviewId);
+    /** 리뷰 상세 (increaseReadCount=true 면 조회수 +1 후 반환) */
+    ReviewResponse getReviewDetail(int reviewId, boolean increaseReadCount);
 
     /** 리뷰 등록 (썸네일 포함 다중 이미지 업로드 가능) */
     void createReview(ReviewCreateRequest request, List<MultipartFile> files);
