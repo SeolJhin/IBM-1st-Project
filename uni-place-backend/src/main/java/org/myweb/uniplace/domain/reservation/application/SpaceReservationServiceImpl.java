@@ -39,7 +39,7 @@ import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.security.AuthUser;
-
+import org.myweb.uniplace.global.slack.SlackNotificationService;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +64,7 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
 
     // ✅ 알림
     private final NotificationService notificationService;
+    private final SlackNotificationService slackNotificationService;
 
     private static final List<SpaceReservationStatus> INACTIVE =
             List.of(SpaceReservationStatus.cancelled, SpaceReservationStatus.ended);
@@ -238,6 +239,13 @@ public class SpaceReservationServiceImpl implements SpaceReservationService {
                 TargetType.space,
                 saved.getReservationId(),
                 "/admin/space-reservations"
+        );
+        
+        slackNotificationService.sendSpaceReservationAlert(
+        	    saved.getReservationId(),
+        	    user.getUserId(),
+        	    space.getSpaceNm(),
+        	    timeMsg
         );
 
         return SpaceReservationResponse.fromEntity(saved);

@@ -22,6 +22,7 @@ import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
+import org.myweb.uniplace.global.slack.SlackNotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -45,6 +46,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
     private final UserRepository userRepository;
     private final ContractRepository contractRepository;
     private final NotificationService notificationService;
+    private final SlackNotificationService slackNotificationService;
 
     @Override
     public RoomServiceOrderResponse createOrder(String userId, RoomServiceOrderCreateRequest request) {
@@ -90,6 +92,19 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             );
         } catch (Exception e) {
             log.warn("[ORDER][NOTIFY][ADMIN] reason={}", e.getMessage());
+        }
+
+        // 주문 접수 → Slack 알림
+        try {
+            slackNotificationService.sendRoomServiceOrderAlert(
+                userId,
+                tenantRoom.getRoomNo(),
+                tenantRoom.getRoomId(),
+                trimToNull(request.getRoomServiceDesc()),
+                roomServiceOrder.getOrderId()
+            );
+        } catch (Exception e) {
+            log.warn("[ORDER][SLACK] reason={}", e.getMessage());
         }
 
         return RoomServiceOrderResponse.from(roomServiceOrder);

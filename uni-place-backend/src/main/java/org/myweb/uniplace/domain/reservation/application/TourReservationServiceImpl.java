@@ -30,7 +30,7 @@ import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
-
+import org.myweb.uniplace.global.slack.SlackNotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -51,6 +51,7 @@ public class TourReservationServiceImpl implements TourReservationService {
     private final TourReservationConflictPolicy reservationConflictPolicy;
 
     private final NotificationService notificationService;
+    private final SlackNotificationService slackNotificationService;
 
     private static final List<TourStatus> INACTIVE = List.of(TourStatus.cancelled, TourStatus.ended);
 
@@ -127,6 +128,13 @@ public class TourReservationServiceImpl implements TourReservationService {
                 saved.getTourId(),
                 "/admin/tour-reservations"
         );
+        
+        slackNotificationService.sendTourReservationAlert(
+        	    saved.getTourId(),
+        	    saved.getTourNm(),
+        	    saved.getTourTel(),
+        	    timeMsg
+        	);
 
         return TourReservationResponse.fromEntity(saved);
     }
