@@ -41,6 +41,7 @@ DROP TABLE IF EXISTS reply;
 DROP TABLE IF EXISTS qna;
 DROP TABLE IF EXISTS complain;
 DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS review_likes;
 DROP TABLE IF EXISTS faq;
 DROP TABLE IF EXISTS notice;
 DROP TABLE IF EXISTS board;
@@ -369,7 +370,7 @@ CREATE TABLE contract (
   rent_price           DECIMAL(12,0) NOT NULL,
   manage_fee           DECIMAL(12,0),
   payment_day          INT           NOT NULL,
-  contract_st          ENUM('requested','active','ended','cancelled') NOT NULL DEFAULT 'requested',
+  contract_st          ENUM('requested','approved','active','ended','cancelled') NOT NULL DEFAULT 'requested',
   sign_at              DATETIME,
   movein_at            DATETIME,
   created_at           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -596,12 +597,27 @@ CREATE TABLE reviews (
   code         VARCHAR(20),
   file_ck      VARCHAR(1)   NOT NULL DEFAULT 'N',
   reply_ck     VARCHAR(1)   NOT NULL DEFAULT 'N',
+  read_count   INT          NOT NULL DEFAULT 0,
+  like_count   INT          NOT NULL DEFAULT 0,
   UNIQUE KEY uq_reviews_user_room (user_id, room_id),
   CONSTRAINT chk_reviews_rating CHECK (rating BETWEEN 1 AND 5),
   KEY ix_reviews_room (room_id),
   CONSTRAINT fk_reviews_user FOREIGN KEY (user_id) REFERENCES users(user_id),
   CONSTRAINT fk_reviews_room FOREIGN KEY (room_id) REFERENCES rooms(room_id)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE review_likes (
+    user_id   VARCHAR(50) NOT NULL,
+    review_id INT         NOT NULL,
+    PRIMARY KEY (user_id, review_id),
+    CONSTRAINT fk_review_likes_user   FOREIGN KEY (user_id)   REFERENCES users(user_id)   ON DELETE CASCADE,
+    CONSTRAINT fk_review_likes_review FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
+
+
 
 
 -- ===============================
@@ -841,6 +857,5 @@ CREATE TABLE payment_intent (
 
 
 SET FOREIGN_KEY_CHECKS = 1;
-
 
 

@@ -653,6 +653,28 @@ INSERT INTO reviews (user_id, room_id, rating, review_title, review_ctnt, code, 
 ('user11', 2, 5, '재계약 결정했습니다',             '1년 거주하면서 불편한 점이 거의 없었어요.',           'REV_FACILITY', 'N', 'N'),
 ('user12', 3, 4, '가격 대비 만족스러운 선택',       '관리비에 인터넷이 포함되어 매우 경제적이에요.',       'REV_MGMT',     'N', 'N');
 
+
+INSERT IGNORE INTO group_common_code (group_code, group_code_name, description, is_active) VALUES
+('COMPLAIN_CATEGORY', 'Complain Category', 'Complain type category', 1),
+('QNA_CATEGORY',      'QnA Category',      'QnA type category',      1);
+
+INSERT IGNORE INTO common_code (group_code, code, code_value, description, display_order, is_active) VALUES
+('COMPLAIN_CATEGORY', 'COMP_PERSONAL',  '개인',      'Personal complain',  1, 1),
+('COMPLAIN_CATEGORY', 'COMP_FACILITY',  '시설',      'Facility complain',  2, 1),
+('COMPLAIN_CATEGORY', 'COMP_NOISE',     '소음',      'Noise complain',     3, 1),
+('COMPLAIN_CATEGORY', 'COMP_CONTRACT',  '입주/계약', 'Contract complain',  4, 1),
+('COMPLAIN_CATEGORY', 'COMP_SAFETY',    '안전',      'Safety complain',    5, 1),
+('COMPLAIN_CATEGORY', 'COMP_ETC',       '기타',      'Other complain',     6, 1);
+
+INSERT IGNORE INTO common_code (group_code, code, code_value, description, display_order, is_active) VALUES
+('QNA_CATEGORY', 'QNA_CONTRACT',    '계약 문의', 'Contract QnA',     1, 1),
+('QNA_CATEGORY', 'QNA_PAYMENT',     '결제/환불', 'Payment QnA',      2, 1),
+('QNA_CATEGORY', 'QNA_FACILITY',    '시설 이용', 'Facility QnA',     3, 1),
+('QNA_CATEGORY', 'QNA_ROOMSERVICE', '룸서비스',  'Room service QnA', 4, 1),
+('QNA_CATEGORY', 'QNA_MOVEINOUT',   '입주/퇴실', 'Move in/out QnA',  5, 1),
+('QNA_CATEGORY', 'QNA_ETC',         '기타',      'Other QnA',        6, 1);
+
+
 -- =========================================================
 -- done
 -- =========================================================

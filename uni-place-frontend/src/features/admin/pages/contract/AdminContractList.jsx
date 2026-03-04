@@ -22,10 +22,12 @@ const STATUS_LABELS = {
 const API_BASE = 'http://localhost:8080';
 
 function StatusBadge({ status }) {
-  const s = STATUS_LABELS[status] ?? {
-    label: status ?? '-',
-    cls: styles.badgePending,
-  };
+  const key = String(status ?? '').toLowerCase();
+  const s =
+    STATUS_LABELS[status] ??
+    (key === 'approved'
+      ? { label: '승인', cls: styles.badgePending }
+      : { label: status ?? '-', cls: styles.badgePending });
   return <span className={`${styles.badge} ${s.cls}`}>{s.label}</span>;
 }
 
@@ -549,7 +551,7 @@ export default function AdminContractList() {
                   <div className={styles.modalField}>
                     <label className={styles.modalLabel}>상태 변경</label>
                     <div className={styles.statusBtnGroup}>
-                      {['requested', 'active', 'ended', 'cancelled'].map(
+                      {['requested', 'approved', 'active', 'ended', 'cancelled'].map(
                         (v) => (
                           <button
                             key={v}

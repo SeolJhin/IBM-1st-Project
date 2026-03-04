@@ -104,7 +104,7 @@ export default function ContractApply() {
       .finally(() => setLoading(false));
   }, [roomId]);
 
-  /* 내 계약 목록 → 같은 방의 active/requested 기간 추출 */
+  /* 내 계약 목록 → 같은 방의 active/approved/requested 기간 추출 */
   useEffect(() => {
     if (!roomId) return;
     contractApi
@@ -114,7 +114,7 @@ export default function ContractApply() {
           .filter(
             (c) =>
               c.roomId === roomId &&
-              ['active', 'requested'].includes(
+              ['active', 'approved', 'requested'].includes(
                 String(c.contractStatus ?? '').toLowerCase()
               )
           )

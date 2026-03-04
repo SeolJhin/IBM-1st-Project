@@ -43,7 +43,7 @@ function fmtMoney(v) {
 
 function contractStatusKey(contractStatus) {
   const key = String(contractStatus || '').toLowerCase();
-  if (key === 'active' || key === 'requested') return 'active';
+  if (key === 'active' || key === 'approved' || key === 'requested') return 'active';
   return 'ended';
 }
 
@@ -231,4 +231,3 @@ export default function AdminRentManagement() {
     </section>
   );
 }
-
