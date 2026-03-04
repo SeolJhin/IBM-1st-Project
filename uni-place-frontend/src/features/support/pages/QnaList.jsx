@@ -36,12 +36,16 @@ function normalizeRole(user) {
 
 export default function QnaList() {
   const { user } = useAuth();
-  const { qnas, pagination, loading, error, goToPage } = useQnas({}, { enabled: Boolean(user) });
+  const { qnas, pagination, loading, error, goToPage } = useQnas(
+    {},
+    { enabled: Boolean(user) }
+  );
   const navigate = useNavigate();
 
   if (!user) return <Navigate to="/login" replace />;
 
   const role = normalizeRole(user);
+  const isAdmin = role === 'admin';
   const canCreate = role === 'admin' || role === 'tenant';
 
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
@@ -55,7 +59,10 @@ export default function QnaList() {
 
       {canCreate && (
         <div className={styles.listActions}>
-          <button className={styles.buttonPrimary} onClick={() => navigate('/support/qna/write')}>
+          <button
+            className={styles.buttonPrimary}
+            onClick={() => navigate('/support/qna/write')}
+          >
             + 문의 작성
           </button>
         </div>
@@ -67,6 +74,7 @@ export default function QnaList() {
             <th style={{ width: 60 }}>번호</th>
             <th style={{ width: 110 }}>유형</th>
             <th>제목</th>
+            {isAdmin && <th style={{ width: 150 }}>작성자 ID</th>}
             <th style={{ width: 110 }}>상태</th>
             <th style={{ width: 120 }}>날짜</th>
           </tr>
@@ -74,33 +82,65 @@ export default function QnaList() {
         <tbody>
           {qnas.length === 0 ? (
             <tr>
-              <td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--muted)' }}>
+              <td
+                colSpan={isAdmin ? 6 : 5}
+                style={{
+                  textAlign: 'center',
+                  padding: 32,
+                  color: 'var(--muted)',
+                }}
+              >
                 작성한 문의가 없습니다.
               </td>
             </tr>
           ) : (
             qnas.map((q) => {
-              const meta = CODE_META[q.code] ?? { label: q.code ?? '-', cls: 'type_etc' };
+              const meta = CODE_META[q.code] ?? {
+                label: q.code ?? '-',
+                cls: 'type_etc',
+              };
               return (
                 <tr key={q.qnaId}>
-                  <td style={{ textAlign: 'center', color: 'var(--muted)' }}>{q.qnaId}</td>
+                  <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                    {q.qnaId}
+                  </td>
                   <td style={{ textAlign: 'center' }}>
-                    <span className={`${styles.typeBadge} ${styles[meta.cls]}`}>{meta.label}</span>
+                    <span className={`${styles.typeBadge} ${styles[meta.cls]}`}>
+                      {meta.label}
+                    </span>
                   </td>
                   <td>
-                    <Link to={`/support/qna/${q.qnaId}`} className={styles.tableLink}>
+                    <Link
+                      to={`/support/qna/${q.qnaId}`}
+                      className={styles.tableLink}
+                    >
                       {q.qnaTitle}
                     </Link>
                   </td>
+                  {isAdmin && (
+                    <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                      {q.userId || '-'}
+                    </td>
+                  )}
                   <td style={{ textAlign: 'center' }}>
                     <span
                       className={styles.statusBadge}
-                      style={q.qnaSt === 'complete' ? { background: 'var(--highlight)' } : {}}
+                      style={
+                        q.qnaSt === 'complete'
+                          ? { background: 'var(--highlight)' }
+                          : {}
+                      }
                     >
                       {STATUS_MAP[q.qnaSt] ?? q.qnaSt}
                     </span>
                   </td>
-                  <td style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                  <td
+                    style={{
+                      textAlign: 'center',
+                      color: 'var(--muted)',
+                      fontSize: 13,
+                    }}
+                  >
                     {q.createdAt ? q.createdAt.slice(0, 10) : '-'}
                   </td>
                 </tr>
