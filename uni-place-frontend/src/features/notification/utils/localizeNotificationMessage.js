@@ -37,9 +37,9 @@ function normalizeByCode(item, code, message) {
     case 'CONTRACT_CAN':
       return hasKorean(message) ? message : '계약 상태가 변경되었습니다.';
     case 'QNA_NEW':
-      return 'QnA 질문이 접수되었습니다.';
+      return '1:1 문의가 접수되었습니다.';
     case 'QNA_ANSWERED':
-      return '문의하신 QnA에 답변이 등록되었습니다.';
+      return '1:1 문의에 답변이 등록되었습니다.';
     case 'COMP_NEW':
       return '민원이 접수되었습니다.';
     case 'COMP_REPLIED':

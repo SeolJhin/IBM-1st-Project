@@ -136,7 +136,10 @@ export default function OrderDetail({
                   <div key={rs.orderId} className={styles.rsBox}>
                     <div className={styles.sumRow}>
                       <span className={styles.sumLabel}>방 번호</span>
-                      <span className={styles.sumVal}>{rs.roomNo}호</span>
+                      <span className={styles.sumVal}>
+                        {rs.buildingNm ? `${rs.buildingNm} ` : ''}
+                        {rs.roomNo}호
+                      </span>
                     </div>
                     <div className={styles.sumRow}>
                       <span className={styles.sumLabel}>배달 상태</span>

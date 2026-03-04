@@ -17,6 +17,7 @@ public class RoomServiceOrderResponse {
     private String    userId;
     private Integer   roomId;
     private Integer   roomNo;
+    private String    buildingNm;
     private BigDecimal totalPrice;
     private RoomServiceOrderStatus orderSt;
     private String    roomServiceDesc;
@@ -30,6 +31,7 @@ public class RoomServiceOrderResponse {
                 .userId(order.getUser().getUserId())
                 .roomId(order.getRoom().getRoomId())
                 .roomNo(order.getRoom().getRoomNo())
+                .buildingNm(order.getRoom().getBuilding() != null ? order.getRoom().getBuilding().getBuildingNm() : null)
                 .totalPrice(order.getTotalPrice())
                 .orderSt(order.getOrderSt())
                 .roomServiceDesc(order.getRoomServiceDesc())
