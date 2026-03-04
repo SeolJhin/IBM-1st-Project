@@ -1,4 +1,4 @@
-// src/features/commerce/pages/ProductList.jsx
+﻿// src/features/commerce/pages/ProductList.jsx
 // inlineMode: MemberInfo 탭 내에서 사용 시 true (navigate 대신 onNav 콜백)
 
 import React, {
@@ -212,7 +212,7 @@ export default function ProductList({
     refetch: refetchCart,
   } = useCart();
   const {
-    contract: tenantContract,
+    contracts: tenantContracts,
     loading: tenantLoading,
     error: tenantError,
   } = useTenantContract();
@@ -253,20 +253,35 @@ export default function ProductList({
     setBuildingLoading(tenantLoading);
     if (tenantLoading) return;
 
-    if (!tenantContract || !tenantContract.buildingId) {
+    if (!tenantContracts.length) {
       setBuildings([]);
       setSelectedBuildingId(null);
       return;
     }
 
-    const nextBuilding = {
-      buildingId: tenantContract.buildingId,
-      buildingNm:
-        tenantContract.buildingNm ?? `빌딩 #${tenantContract.buildingId}`,
-    };
-    setBuildings([nextBuilding]);
-    setSelectedBuildingId(tenantContract.buildingId);
-  }, [tenantContract, tenantLoading]);
+    const uniqMap = new Map();
+    tenantContracts.forEach((c) => {
+      if (!c?.buildingId) return;
+      if (!uniqMap.has(c.buildingId)) {
+        uniqMap.set(c.buildingId, {
+          buildingId: c.buildingId,
+          buildingNm: c.buildingNm ?? `빌딩 #${c.buildingId}`,
+        });
+      }
+    });
+    const nextBuildings = Array.from(uniqMap.values());
+    setBuildings(nextBuildings);
+    setSelectedBuildingId((prev) => {
+      if (prev && nextBuildings.some((b) => b.buildingId === prev)) return prev;
+      if (
+        initialBuildingId &&
+        nextBuildings.some((b) => b.buildingId === initialBuildingId)
+      ) {
+        return initialBuildingId;
+      }
+      return nextBuildings[0]?.buildingId ?? null;
+    });
+  }, [tenantContracts, tenantLoading, initialBuildingId]);
 
   const handleSelectBuilding = async (id) => {
     if (id === selectedBuildingId) return;
@@ -302,7 +317,7 @@ export default function ProductList({
   }, []);
 
   const handleAddToCart = async () => {
-    if (!tenantContract) {
+    if (!tenantContracts.length) {
       alert(
         tenantError || '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.'
       );
@@ -441,7 +456,7 @@ export default function ProductList({
           onSelect={handleSelectBuilding}
           loading={buildingLoading}
         />
-        {!tenantLoading && !tenantContract && (
+        {!tenantLoading && !tenantContracts.length && (
           <p className={styles.errMsg}>
             {tenantError || '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.'}
           </p>
@@ -506,7 +521,10 @@ export default function ProductList({
               className={`${styles.addCartBtn} ${pendingTotal === 0 ? styles.addCartBtnDim : ''}`}
               onClick={handleAddToCart}
               disabled={
-                adding || actionLoading || pendingTotal === 0 || !tenantContract
+                adding ||
+                actionLoading ||
+                pendingTotal === 0 ||
+                !tenantContracts.length
               }
             >
               {adding
@@ -517,7 +535,7 @@ export default function ProductList({
               <button
                 className={styles.goCartBtn}
                 onClick={() => {
-                  if (!tenantContract) {
+                  if (!tenantContracts.length) {
                     alert(
                       tenantError ||
                         '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.'
