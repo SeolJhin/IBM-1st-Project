@@ -245,7 +245,27 @@
   color: #888;
 }
 
-/* ── Footer (읽은 알림 지우기 + 전체보기) ── */
+/* ─── 더 보기 버튼 ─── */
+.expandBtn {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(217, 173, 91, 0.06);
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: #d9ad5b;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.3px;
+  transition: background 0.15s;
+}
+.expandBtn:hover {
+  background: rgba(217, 173, 91, 0.13);
+}
+
+/* ─── Footer ─── */
 .dropFooter {
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;

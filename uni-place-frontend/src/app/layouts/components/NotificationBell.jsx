@@ -53,6 +53,9 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+
+  const PREVIEW_COUNT = 5;
   const dropRef = useRef(null);
   const pollBlockedRef = useRef(false);
 
@@ -84,7 +87,7 @@ export default function NotificationBell() {
     if (pollBlockedRef.current || !isLoggedIn) return;
     setLoading(true);
     try {
-      const res = await notificationApi.getUnread({ page: 0, size: 20 });
+      const res = await notificationApi.getUnread({ page: 0, size: 100 });
       setItems(res?.notifications?.content ?? []);
       setUnreadCount(res?.unreadCount ?? 0);
     } catch (error) {
@@ -99,7 +102,10 @@ export default function NotificationBell() {
   const handleOpen = useCallback(() => {
     const next = !open;
     setOpen(next);
-    if (next) loadDropdown();
+    if (next) {
+      loadDropdown();
+      setShowAll(false);
+    }
   }, [open, loadDropdown]);
 
   useEffect(() => {
@@ -189,43 +195,61 @@ export default function NotificationBell() {
             ) : items.length === 0 ? (
               <div className={styles.empty}>새로운 알림이 없어요</div>
             ) : (
-              <ul className={styles.dropList}>
-                {items.map((item) => (
-                  <li
-                    key={item.notificationId}
-                    className={`${styles.dropItem} ${styles.unread}`}
-                    onClick={() => handleItemClick(item)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) =>
-                      e.key === 'Enter' && handleItemClick(item)
-                    }
-                  >
-                    <div className={styles.dropItemLeft}>
-                      <span className={styles.typeBadge}>
-                        {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
-                      </span>
-                      <p className={styles.dropMsg}>
-                        {localizeNotificationMessage(item)}
-                      </p>
-                      <span className={styles.dropTime}>
-                        {timeAgo(item.createdAt)}
-                      </span>
-                    </div>
-                    <div className={styles.dropItemRight}>
-                      <span className={styles.dot} />
-                      <button
-                        className={styles.readBtn}
-                        type="button"
-                        aria-label="읽음 처리"
-                        onClick={(e) => handleMarkRead(item.notificationId, e)}
+              <>
+                <ul className={styles.dropList}>
+                  {(showAll ? items : items.slice(0, PREVIEW_COUNT)).map(
+                    (item) => (
+                      <li
+                        key={item.notificationId}
+                        className={`${styles.dropItem} ${styles.unread}`}
+                        onClick={() => handleItemClick(item)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) =>
+                          e.key === 'Enter' && handleItemClick(item)
+                        }
                       >
-                        읽음
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                        <div className={styles.dropItemLeft}>
+                          <span className={styles.typeBadge}>
+                            {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
+                          </span>
+                          <p className={styles.dropMsg}>
+                            {localizeNotificationMessage(item)}
+                          </p>
+                          <span className={styles.dropTime}>
+                            {timeAgo(item.createdAt)}
+                          </span>
+                        </div>
+                        <div className={styles.dropItemRight}>
+                          <span className={styles.dot} />
+                          <button
+                            className={styles.readBtn}
+                            type="button"
+                            aria-label="읽음 처리"
+                            onClick={(e) =>
+                              handleMarkRead(item.notificationId, e)
+                            }
+                          >
+                            읽음
+                          </button>
+                        </div>
+                      </li>
+                    )
+                  )}
+                </ul>
+                {!showAll && items.length > PREVIEW_COUNT && (
+                  <button
+                    className={styles.expandBtn}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAll(true);
+                    }}
+                  >
+                    +{items.length - PREVIEW_COUNT}개 더 보기
+                  </button>
+                )}
+              </>
             )}
 
             <div className={styles.dropFooter}>

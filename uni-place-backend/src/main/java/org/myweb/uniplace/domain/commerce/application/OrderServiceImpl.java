@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.commerce.application;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.myweb.uniplace.domain.commerce.api.dto.request.OrderCreateRequest;
 import org.myweb.uniplace.domain.commerce.api.dto.response.OrderResponse;
 import org.myweb.uniplace.domain.commerce.domain.entity.Order;
@@ -18,6 +19,7 @@ import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
+import org.myweb.uniplace.global.slack.SlackNotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -41,6 +44,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final ProductService productService;
     private final ContractRepository contractRepository;
+    private final SlackNotificationService slackNotificationService;
 
     @Override
     public OrderResponse createOrder(String userId, OrderCreateRequest request) {
@@ -106,7 +110,22 @@ public class OrderServiceImpl implements OrderService {
             .build();
         order.getRoomServiceOrders().add(roomServiceOrder);
 
-        return OrderResponse.from(orderRepository.save(order));
+        OrderResponse saved = OrderResponse.from(orderRepository.save(order));
+
+        // 주문 생성 → Slack 알림
+        try {
+            slackNotificationService.sendRoomServiceOrderAlert(
+                userId,
+                tenantContract.getRoom() != null ? tenantContract.getRoom().getRoomNo() : null,
+                tenantContract.getRoom() != null ? tenantContract.getRoom().getRoomId() : null,
+                trimToNull(request.getRoomServiceDesc()),
+                saved.getOrderId()
+            );
+        } catch (Exception e) {
+            log.warn("[ORDER][SLACK] reason={}", e.getMessage());
+        }
+
+        return saved;
     }
 
     @Override
