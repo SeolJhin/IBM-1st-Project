@@ -84,16 +84,30 @@ export const authApi = {
       auth: true,
     }),
 
-  kakaoComplete: ({ signupToken, userNm, userBirth, userTel, userNickname }) =>
+  kakaoComplete: ({
+    signupToken,
+    userNm,
+    userBirth,
+    userTel,
+    userNickname,
+    userPwd,
+  }) =>
     request('/auth/oauth2/kakao/complete', {
       method: 'POST',
-      body: { signupToken, userNm, userBirth, userTel, userNickname },
+      body: { signupToken, userNm, userBirth, userTel, userNickname, userPwd },
     }),
 
-  googleComplete: ({ signupToken, userNm, userBirth, userTel, userNickname }) =>
+  googleComplete: ({
+    signupToken,
+    userNm,
+    userBirth,
+    userTel,
+    userNickname,
+    userPwd,
+  }) =>
     request('/auth/oauth2/google/complete', {
       method: 'POST',
-      body: { signupToken, userNm, userBirth, userTel, userNickname },
+      body: { signupToken, userNm, userBirth, userTel, userNickname, userPwd },
     }),
 
   me: () => request('/users/me', { auth: true }),
