@@ -46,7 +46,8 @@ function timeAgo(dateStr) {
 
 export default function NotificationBell() {
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
   const [open, setOpen] = useState(false);
   const [notiModalOpen, setNotiModalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);

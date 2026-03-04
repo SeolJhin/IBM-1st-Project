@@ -1,6 +1,6 @@
 // features/property/pages/RoomList.jsx
 import { useState, useEffect, useCallback, useReducer } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
@@ -518,7 +518,33 @@ export default function RoomList() {
   const [buildingsTotalElements, setBuildingsTotalElements] = useState(0);
 
   /* ── 방 상태 ── */
-  const [query, dispatch] = useReducer(queryReducer, INIT_QUERY);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // URL searchParams → INIT_QUERY 변환
+  const queryFromUrl = () => {
+    const p = (key) => searchParams.get(key) || undefined;
+    const n = (key) =>
+      searchParams.get(key) ? Number(searchParams.get(key)) : undefined;
+    return {
+      ...INIT_QUERY,
+      page: n('page') ?? 1,
+      sort: p('sort') ?? 'roomId',
+      direct: p('direct') ?? 'DESC',
+      rentType: p('rentType'),
+      roomSt: p('roomSt'),
+      sunDirection: p('sunDirection'),
+      petAllowedYn: p('petAllowedYn'),
+      minRentPrice: n('minRentPrice'),
+      maxRentPrice: n('maxRentPrice'),
+      minDeposit: n('minDeposit'),
+      maxDeposit: n('maxDeposit'),
+      minRoomCapacity: n('minRoomCapacity'),
+      maxRoomCapacity: n('maxRoomCapacity'),
+      buildingNm: p('buildingNm'),
+    };
+  };
+
+  const [query, dispatch] = useReducer(queryReducer, undefined, queryFromUrl);
   const [rooms, setRooms] = useState([]);
   const [roomPag, setRP] = useState({
     page: 1,
@@ -582,6 +608,26 @@ export default function RoomList() {
   useEffect(() => {
     fetchRooms(query);
   }, [fetchRooms, query]);
+
+  // query 변경 시 URL searchParams 동기화 (방 탭일 때만)
+  useEffect(() => {
+    if (activeTab !== 'rooms') return;
+    const params = {};
+    Object.entries(query).forEach(([k, v]) => {
+      if (
+        v !== undefined &&
+        v !== null &&
+        v !== '' &&
+        !(k === 'page' && v === 1) &&
+        !(k === 'size') &&
+        !(k === 'sort' && v === 'roomId') &&
+        !(k === 'direct' && v === 'DESC')
+      ) {
+        params[k] = String(v);
+      }
+    });
+    setSearchParams(params, { replace: true });
+  }, [query, activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── 공용공간 fetch ── */
   const fetchSpaces = useCallback(async (q) => {
@@ -824,7 +870,9 @@ export default function RoomList() {
                     <RoomCard
                       key={r.roomId}
                       room={r}
-                      onClick={(id) => navigate(`/rooms/${id}`)}
+                      onClick={(id) =>
+                        navigate(`/rooms/${id}`, { state: { fromList: true } })
+                      }
                     />
                   ))}
                 </div>
