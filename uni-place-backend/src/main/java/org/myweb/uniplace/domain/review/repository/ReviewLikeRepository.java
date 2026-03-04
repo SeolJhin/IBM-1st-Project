@@ -23,6 +23,15 @@ public interface ReviewLikeRepository extends JpaRepository<ReviewLike, ReviewLi
     """)
     List<Object[]> countGroupByReviewIds(@Param("reviewIds") List<Integer> reviewIds);
 
+    @Query("""
+        select rl.id.reviewId
+          from ReviewLike rl
+         where rl.id.userId = :userId
+           and rl.id.reviewId in :reviewIds
+    """)
+    List<Integer> findLikedReviewIds(@Param("userId") String userId,
+                                     @Param("reviewIds") List<Integer> reviewIds);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from ReviewLike rl where rl.id.reviewId = :reviewId")
     int deleteByReviewId(@Param("reviewId") Integer reviewId);

@@ -52,6 +52,12 @@ public interface SpaceReservationRepository extends JpaRepository<SpaceReservati
             Pageable pageable
     );
 
+    // 전체 상태 조회 (취소/완료 포함)
+    Page<SpaceReservationEntity> findByUser_UserId(
+            String userId,
+            Pageable pageable
+    );
+
     /* =========================
        ✅ ADMIN SEARCH
        ========================= */

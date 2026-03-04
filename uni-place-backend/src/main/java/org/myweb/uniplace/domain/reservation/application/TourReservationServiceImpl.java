@@ -135,10 +135,9 @@ public class TourReservationServiceImpl implements TourReservationService {
     @Transactional(readOnly = true)
     public Page<TourReservationResponse> lookup(LookupTourReservationRequest request, Pageable pageable) {
 
-        Page<TourReservationEntity> page = tourReservationRepository.findByTourTelAndTourPwdAndTourStNotIn(
+        Page<TourReservationEntity> page = tourReservationRepository.findByTourTelAndTourPwd(
                 request.getTourTel(),
                 request.getTourPwd(),
-                INACTIVE,
                 pageable
         );
 
