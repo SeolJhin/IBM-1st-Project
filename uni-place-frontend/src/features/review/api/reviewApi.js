@@ -8,11 +8,13 @@
 //   POST   /reviews                          → 리뷰 작성 (auth, multipart)
 //   PUT    /reviews/{reviewId}               → 리뷰 수정 (auth, multipart)
 //   DELETE /reviews/{reviewId}              → 리뷰 삭제 (auth)
+//   POST   /reviews/{reviewId}/likes         → 좋아요 (auth)
+//   DELETE /reviews/{reviewId}/likes         → 좋아요 취소 (auth)
 //
 // [ReviewResponse 필드]
 //   reviewId, userId, roomId, rating(1~5),
 //   reviewTitle, reviewCtnt, code, fileCk, replyCk,
-//   createdAt, updatedAt, files[], thumbnailUrl,
+//   readCount, likeCount, likedByMe, createdAt, updatedAt, files[], thumbnailUrl,
 //   buildingId, buildingNm, roomNo
 
 import { api } from '../../../app/http/axiosInstance';
@@ -91,10 +93,18 @@ export const reviewApi = {
       .then(unwrap),
 
   /**
-   * GET /reviews/{reviewId}
+   * GET /reviews/{reviewId}?increaseReadCount=true|false
    * → ReviewResponse  (public)
+   * increaseReadCount=false 시 조회수 증가 없이 데이터만 반환
    */
-  getDetail: (reviewId) => api.get(`/reviews/${reviewId}`).then(unwrap),
+  getDetail: (reviewId, { increaseReadCount = true } = {}) => {
+    const qs = new URLSearchParams();
+    if (!increaseReadCount) qs.set('increaseReadCount', 'false');
+    const query = qs.toString();
+    return api
+      .get(`/reviews/${reviewId}${query ? `?${query}` : ''}`)
+      .then(unwrap);
+  },
 
   /**
    * GET /reviews/rooms/{roomId}/summary
@@ -142,4 +152,25 @@ export const reviewApi = {
    * → void  (auth)
    */
   remove: (reviewId) => api.delete(`/reviews/${reviewId}`).then(unwrap),
+
+  /**
+   * POST /reviews/{reviewId}/likes  → 좋아요 (auth)
+   */
+  likeReview: (reviewId) => api.post(`/reviews/${reviewId}/likes`).then(unwrap),
+
+  /**
+   * DELETE /reviews/{reviewId}/likes  → 좋아요 취소 (auth)
+   */
+  unlikeReview: (reviewId) =>
+    api.delete(`/reviews/${reviewId}/likes`).then(unwrap),
+
+  /**
+   * POST /reviews/{reviewId}/read-count
+   * → void  (public) – 상세 진입 시 조회수 1 증가
+   */
+  incrementReadCount: (reviewId) =>
+    api
+      .post(`/reviews/${reviewId}/read-count`)
+      .then(unwrap)
+      .catch(() => {}),
 };

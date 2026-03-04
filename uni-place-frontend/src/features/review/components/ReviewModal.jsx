@@ -6,6 +6,22 @@ import { toApiImageUrl } from '../../file/api/fileApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './ReviewModal.module.css';
 
+// ── 조회수 중복 방지 (StrictMode 2회 실행 대응, 5초 이내 재조회 무시) ──
+const READ_COUNT_DEDUPE_MS = 5000;
+function shouldIncreaseReviewReadCount(reviewId) {
+  if (!reviewId) return false;
+  const key = `review-read:${reviewId}`;
+  const now = Date.now();
+  try {
+    const prev = Number(sessionStorage.getItem(key) || 0);
+    if (now - prev < READ_COUNT_DEDUPE_MS) return false;
+    sessionStorage.setItem(key, String(now));
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 /* ── 별점 표시 ── */
 function StarRating({ value = 0, size = 'md' }) {
   const sz = size === 'lg' ? 22 : size === 'sm' ? 14 : 18;
@@ -145,6 +161,10 @@ export default function ReviewModal({
   const [loading, setLoading] = useState(false);
   const [lightbox, setLightbox] = useState(null);
 
+  // 좋아요
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+
   // 작성/수정 폼
   const [rating, setRating] = useState(0);
   const [reviewTitle, setReviewTitle] = useState('');
@@ -162,8 +182,13 @@ export default function ReviewModal({
       if (!id) return;
       setLoading(true);
       try {
-        const data = await reviewApi.getDetail(id);
+        // edit 모드는 조회수 증가 없이 로드, detail 모드는 중복 방지 후 증가
+        const increaseReadCount =
+          mode === 'edit' ? false : shouldIncreaseReviewReadCount(id);
+        const data = await reviewApi.getDetail(id, { increaseReadCount });
         setReview(data);
+        setLiked(data?.likedByMe ?? false);
+        setLikeCount(data?.likeCount ?? 0);
         if (mode === 'edit') {
           setRating(data.rating ?? 0);
           setReviewTitle(data.reviewTitle ?? '');
@@ -182,6 +207,23 @@ export default function ReviewModal({
     if ((mode === 'detail' || mode === 'edit') && reviewId)
       loadDetail(reviewId);
   }, [mode, reviewId, loadDetail]);
+
+  const handleLike = useCallback(async () => {
+    if (!user) return;
+    try {
+      if (liked) {
+        await reviewApi.unlikeReview(reviewId);
+        setLiked(false);
+        setLikeCount((c) => Math.max(0, c - 1));
+      } else {
+        await reviewApi.likeReview(reviewId);
+        setLiked(true);
+        setLikeCount((c) => c + 1);
+      }
+    } catch (e) {
+      console.warn('review like error:', e?.message);
+    }
+  }, [liked, reviewId, user]);
 
   // 파일 추가
   const handleAddFiles = (e) => {
@@ -324,6 +366,45 @@ export default function ReviewModal({
       {review.reviewCtnt && (
         <p className={styles.detailContent}>{review.reviewCtnt}</p>
       )}
+      {/* 좋아요 */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          margin: '12px 0 4px',
+        }}
+      >
+        <span style={{ fontSize: 12, color: '#9ca3af' }}>
+          👁 {review.readCount ?? 0}
+        </span>
+        {user && (
+          <button
+            type="button"
+            onClick={handleLike}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '5px 14px',
+              borderRadius: 20,
+              border: liked ? '1.5px solid #e57373' : '1.5px solid #d1d5db',
+              background: liked ? '#fff0f0' : '#fafafa',
+              color: liked ? '#e53935' : '#6b7280',
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+          >
+            {liked ? '❤️' : '🤍'} {likeCount}
+          </button>
+        )}
+        {!user && likeCount > 0 && (
+          <span style={{ fontSize: 13, color: '#9ca3af' }}>🤍 {likeCount}</span>
+        )}
+      </div>
+
       {/* 본인 또는 어드민 액션 */}
       <div className={styles.detailActions}>
         {isTenant && user?.userId === review.realUserId && (

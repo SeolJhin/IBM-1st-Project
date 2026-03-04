@@ -93,6 +93,23 @@ export function useMyReviews(size = 10) {
   return { reviews: items, pagination, loading, error, goToPage, refetch };
 }
 
+// ── 리뷰 상세 조회 시 중복 조회수 방지 ──
+// StrictMode에서 useEffect가 2번 실행되는 것을 막기 위해 5000ms로 설정
+const READ_COUNT_DEDUPE_MS = 5000;
+function shouldIncreaseReviewReadCount(reviewId) {
+  if (!reviewId) return false;
+  const key = `review-read:${reviewId}`;
+  const now = Date.now();
+  try {
+    const prev = Number(sessionStorage.getItem(key) || 0);
+    if (now - prev < READ_COUNT_DEDUPE_MS) return false;
+    sessionStorage.setItem(key, String(now));
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 /* ──────────────────────────────────────────
  * 3. 리뷰 상세 (public)
  * ────────────────────────────────────────── */
@@ -106,7 +123,8 @@ export function useReviewDetail(reviewId) {
     setLoading(true);
     setError(null);
     try {
-      const data = await reviewApi.getDetail(reviewId);
+      const increaseReadCount = shouldIncreaseReviewReadCount(reviewId);
+      const data = await reviewApi.getDetail(reviewId, { increaseReadCount });
       setReview(data);
     } catch (e) {
       setError(e.message || '불러오지 못했어요.');

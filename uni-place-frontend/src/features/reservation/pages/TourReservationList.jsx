@@ -9,14 +9,14 @@ import { toKoreanMessage } from '../../../app/http/errorMapper';
 import styles from './TourReservationList.module.css';
 
 function StatusBadge({ status }) {
+  // 백엔드 enum: requested / confirmed / ended / cancelled
   const map = {
-    PENDING: { label: '대기', cls: styles.statusPending },
-    CONFIRMED: { label: '확정', cls: styles.statusConfirmed },
-    CANCELLED: { label: '취소됨', cls: styles.statusCancelled },
-    COMPLETED: { label: '완료', cls: styles.statusCompleted },
+    requested: { label: '대기', cls: styles.statusPending },
+    confirmed: { label: '확정', cls: styles.statusConfirmed },
+    cancelled: { label: '취소됨', cls: styles.statusCancelled },
+    ended: { label: '완료', cls: styles.statusCompleted },
   };
-  const s = map[status];
-  if (!s) return null;
+  const s = map[status] ?? { label: status ?? '-', cls: styles.statusPending };
   return <span className={`${styles.statusBadge} ${s.cls}`}>{s.label}</span>;
 }
 
@@ -26,6 +26,8 @@ function TourCard({ item, onCancel }) {
   const endAt = item.tourEndAt ?? item.endAt ?? '-';
   const formatDt = (s) =>
     s && s !== '-' ? s.replace('T', ' ').slice(0, 16) : '-';
+  // 백엔드 필드: tourSt
+  const status = item.tourSt ?? item.status;
 
   return (
     <div className={styles.card}>
@@ -41,7 +43,7 @@ function TourCard({ item, onCancel }) {
             {formatDt(startAt)} ~ {formatDt(endAt).slice(11)}
           </p>
         </div>
-        <StatusBadge status={item.status} />
+        <StatusBadge status={status} />
       </div>
       <div className={styles.cardBody}>
         <span className={styles.metaItem}>👤 {item.tourNm ?? '-'}</span>
@@ -49,7 +51,7 @@ function TourCard({ item, onCancel }) {
       </div>
       <div className={styles.cardBottom}>
         <span className={styles.cardId}>예약 #{id}</span>
-        {item.status !== 'CANCELLED' && item.status !== 'COMPLETED' && (
+        {status !== 'cancelled' && status !== 'ended' && (
           <button
             className={styles.cancelBtn}
             type="button"

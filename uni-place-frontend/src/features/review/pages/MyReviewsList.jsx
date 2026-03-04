@@ -1,5 +1,5 @@
 // features/review/pages/MyReviewsList.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMyReviews, useReviewActions } from '../hooks/useReviews';
 import styles from './ReviewList.module.css';
@@ -59,6 +59,8 @@ function ReviewCard({ review, onView, onEdit, onDelete }) {
             ? new Date(review.createdAt).toLocaleDateString('ko-KR')
             : ''}
         </span>
+        <span className={styles.readCount}>👁 {review.readCount ?? 0}</span>
+        <span className={styles.readCount}>🤍 {review.likeCount ?? 0}</span>
         <div
           className={styles.actions}
           onClick={(e) => e.stopPropagation()}
@@ -117,6 +119,15 @@ export default function MyReviewsList() {
   const { reviews, pagination, loading, error, goToPage, refetch } =
     useMyReviews();
   const { remove, submitting } = useReviewActions();
+
+  // 다른 페이지(상세 등) 다녀온 뒤 탭이 다시 활성화되면 즉시 refetch → readCount 즉시 반영
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refetch();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [refetch]);
 
   const handleDelete = async (reviewId) => {
     if (!window.confirm('리뷰를 삭제할까요?')) return;

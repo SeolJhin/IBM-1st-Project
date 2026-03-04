@@ -474,20 +474,46 @@ export default function CommunityHome() {
     }
   };
 
-  const handleLike = async (e, boardId) => {
+  const handleLike = async (e, itemId) => {
     e.stopPropagation();
     if (!isLoggedIn) return;
-    const item = items.find((i) => (i.boardId ?? i.id) === boardId);
+
+    // 후기 탭: reviewId로 식별, 리뷰 좋아요 API 사용
+    if (activeTab === 'REVIEW') {
+      const item = items.find((i) => i.reviewId === itemId);
+      if (!item) return;
+      try {
+        if (item.likedByMe) await reviewApi.unlikeReview(itemId);
+        else await reviewApi.likeReview(itemId);
+        setItems((prev) =>
+          prev.map((i) =>
+            i.reviewId === itemId
+              ? {
+                  ...i,
+                  likedByMe: !i.likedByMe,
+                  likeCount: (i.likeCount ?? 0) + (i.likedByMe ? -1 : 1),
+                }
+              : i
+          )
+        );
+      } catch (err) {
+        console.warn('review like error:', err?.message);
+      }
+      return;
+    }
+
+    // 게시판 탭: boardId로 식별, 게시판 좋아요 API 사용
+    const item = items.find((i) => (i.boardId ?? i.id) === itemId);
     if (!item) return;
     const token = localStorage.getItem('access_token') || '';
     try {
-      await fetch(`/boards/${boardId}/likes`, {
+      await fetch(`/api/boards/${itemId}/likes`, {
         method: item.likedByMe ? 'DELETE' : 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
       setItems((prev) =>
         prev.map((i) =>
-          (i.boardId ?? i.id) === boardId
+          (i.boardId ?? i.id) === itemId
             ? {
                 ...i,
                 likedByMe: !i.likedByMe,
@@ -802,8 +828,19 @@ export default function CommunityHome() {
                       <td className={styles.numCell}>
                         <button
                           type="button"
-                          className={`${styles.likeBtn} ${item?.likedByMe ? styles.likeBtnActive : ''}`}
-                          onClick={(e) => handleLike(e, boardId)}
+                          disabled={!isLoggedIn}
+                          title={
+                            !isLoggedIn
+                              ? '로그인 후 좋아요를 누를 수 있습니다.'
+                              : ''
+                          }
+                          className={`${styles.likeBtn} ${item?.likedByMe ? styles.likeBtnActive : ''} ${!isLoggedIn ? styles.likeBtnDisabled : ''}`}
+                          onClick={(e) =>
+                            handleLike(
+                              e,
+                              activeTab === 'REVIEW' ? item.reviewId : boardId
+                            )
+                          }
                         >
                           {item?.likedByMe ? '❤️' : '🤍'} {item?.likeCount ?? 0}
                         </button>

@@ -1,7 +1,8 @@
 // features/review/pages/MyReviewsDetail.jsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useReviewDetail, useReviewActions } from '../hooks/useReviews';
+import { reviewApi } from '../api/reviewApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import { adminApi } from '../../admin/api/adminApi';
 import UserStatusModal from '../../user/components/UserStatusModal';
@@ -143,6 +144,33 @@ export default function MyReviewsDetail() {
   const { remove, submitting } = useReviewActions();
   const [lightbox, setLightbox] = useState(null);
   const [userStatusModalId, setUserStatusModalId] = useState(null);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+
+  // review 로드되면 좋아요 초기값 세팅
+  React.useEffect(() => {
+    if (review) {
+      setLiked(review.likedByMe ?? false);
+      setLikeCount(review.likeCount ?? 0);
+    }
+  }, [review]);
+
+  const handleLike = useCallback(async () => {
+    if (!user) return alert('로그인이 필요합니다.');
+    try {
+      if (liked) {
+        await reviewApi.unlikeReview(Number(reviewId));
+        setLiked(false);
+        setLikeCount((c) => Math.max(0, c - 1));
+      } else {
+        await reviewApi.likeReview(Number(reviewId));
+        setLiked(true);
+        setLikeCount((c) => c + 1);
+      }
+    } catch (e) {
+      console.warn('review like error:', e?.message);
+    }
+  }, [liked, reviewId, user]);
 
   const isAdmin = String(user?.userRole ?? '').toLowerCase() === 'admin';
 
@@ -310,6 +338,39 @@ export default function MyReviewsDetail() {
         {review.reviewCtnt && (
           <p className={styles.reviewCtnt}>{review.reviewCtnt}</p>
         )}
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            margin: '12px 0',
+          }}
+        >
+          <span style={{ fontSize: 13, color: '#9ca3af' }}>
+            👁 {review.readCount ?? 0}
+          </span>
+          <button
+            type="button"
+            onClick={handleLike}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 16px',
+              borderRadius: 20,
+              border: liked ? '1.5px solid #e57373' : '1.5px solid #d1d5db',
+              background: liked ? '#fff0f0' : '#fff',
+              color: liked ? '#e53935' : '#6b7280',
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+          >
+            {liked ? '❤️' : '🤍'} 좋아요 {likeCount}
+          </button>
+        </div>
 
         <p className={styles.date}>
           작성일:{' '}
