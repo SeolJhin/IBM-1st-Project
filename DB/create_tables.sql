@@ -208,7 +208,7 @@ CREATE TABLE contract (
   rent_price           DECIMAL(12,0) NOT NULL,
   manage_fee           DECIMAL(12,0),
   payment_day          INT           NOT NULL,
-  contract_st          ENUM('requested','active','ended','cancelled') NOT NULL DEFAULT 'requested',
+  contract_st          ENUM('requested','approved','active','ended','cancelled') NOT NULL DEFAULT 'requested',
   sign_at              DATETIME,
   movein_at            DATETIME,
   created_at           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,

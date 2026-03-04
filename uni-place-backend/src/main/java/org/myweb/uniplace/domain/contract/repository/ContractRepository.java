@@ -1,6 +1,8 @@
 package org.myweb.uniplace.domain.contract.repository;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Optional;
 
 import org.myweb.uniplace.domain.contract.domain.entity.Contract;
@@ -47,7 +49,7 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
         select count(c) > 0
           from Contract c
          where c.room.roomId = :roomId
-           and c.contractSt in (:st1, :st2)
+           and c.contractSt in :statuses
            and c.contractStart < :endDt
            and c.contractEnd   > :startDt
     """)
@@ -55,15 +57,24 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
             @Param("roomId") Integer roomId,
             @Param("startDt") LocalDate startDt,
             @Param("endDt") LocalDate endDt,
-            @Param("st1") ContractStatus st1,
-            @Param("st2") ContractStatus st2
+            @Param("statuses") Collection<ContractStatus> statuses
     );
+
+    default boolean existsOverlappedContract(
+            Integer roomId,
+            LocalDate startDt,
+            LocalDate endDt,
+            ContractStatus status1,
+            ContractStatus status2
+    ) {
+        return existsOverlappedContract(roomId, startDt, endDt, Arrays.asList(status1, status2));
+    }
 
     @Query("""
         select count(c) > 0
           from Contract c
          where c.user.userId = :userId
-           and c.contractSt in (:st1, :st2)
+           and c.contractSt in :statuses
            and c.contractStart < :endDt
            and c.contractEnd   > :startDt
     """)
@@ -71,11 +82,20 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
             @Param("userId") String userId,
             @Param("startDt") LocalDate startDt,
             @Param("endDt") LocalDate endDt,
-            @Param("st1") ContractStatus st1,
-            @Param("st2") ContractStatus st2
+            @Param("statuses") Collection<ContractStatus> statuses
     );
 
-    // ✅ 추가: room + building fetch join (계약서 이미지 생성 시 LAZY 로딩 문제 방지)
+    default boolean existsOverlappedContractByUser(
+            String userId,
+            LocalDate startDt,
+            LocalDate endDt,
+            ContractStatus status1,
+            ContractStatus status2
+    ) {
+        return existsOverlappedContractByUser(userId, startDt, endDt, Arrays.asList(status1, status2));
+    }
+
+    // 추가: room + building fetch join (계약서 이미지 생성 시 LAZY 로딩 문제 방지)
     @Query("""
         select c
           from Contract c
@@ -127,4 +147,35 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
             @Param("buildingId") Integer buildingId,
             @Param("status") ContractStatus status
     );
+
+    @Query("""
+        select c
+          from Contract c
+          join fetch c.user u
+          join fetch c.room r
+          join fetch r.building b
+         where c.contractSt = :status
+           and c.contractStart <= :today
+           and c.contractEnd >= :today
+    """)
+    java.util.List<Contract> findForAutoActivate(
+            @Param("status") ContractStatus status,
+            @Param("today") LocalDate today
+    );
+
+    @Query("""
+        select c
+          from Contract c
+          join fetch c.user u
+          join fetch c.room r
+          join fetch r.building b
+         where c.contractSt = :status
+           and c.contractEnd < :today
+    """)
+    java.util.List<Contract> findForAutoEnd(
+            @Param("status") ContractStatus status,
+            @Param("today") LocalDate today
+    );
+
+    boolean existsByUser_UserIdAndContractSt(String userId, ContractStatus status);
 }

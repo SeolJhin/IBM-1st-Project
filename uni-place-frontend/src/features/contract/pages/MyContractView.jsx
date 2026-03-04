@@ -104,14 +104,14 @@ function RoomInfoPanel({ room, contract }) {
           className={`${styles.contractStatusChip} ${
             contract.contractStatus === 'active'
               ? styles.chipActive
-              : contract.contractStatus === 'requested'
+              : (contract.contractStatus === 'requested' || contract.contractStatus === 'approved')
                 ? styles.chipPending
                 : styles.chipExpired
           }`}
         >
           {contract.contractStatus === 'active'
             ? '활성'
-            : contract.contractStatus === 'requested'
+            : (contract.contractStatus === 'requested' || contract.contractStatus === 'approved')
               ? '승인대기'
               : contract.contractStatus === 'ended'
                 ? '만료'
@@ -347,14 +347,14 @@ function ContractCard({ contract }) {
             className={`${styles.statusChip} ${
               contract.contractStatus === 'active'
                 ? styles.chipActive
-                : contract.contractStatus === 'requested'
+                : (contract.contractStatus === 'requested' || contract.contractStatus === 'approved')
                   ? styles.chipPending
                   : styles.chipExpired
             }`}
           >
             {contract.contractStatus === 'active'
               ? '활성'
-              : contract.contractStatus === 'requested'
+              : (contract.contractStatus === 'requested' || contract.contractStatus === 'approved')
                 ? '승인대기'
                 : contract.contractStatus === 'ended'
                   ? '만료'
@@ -395,7 +395,7 @@ function ContractCard({ contract }) {
               </button>
             ) : (
               <div className={styles.contractPending}>
-                {contract.contractStatus === 'requested'
+                {(contract.contractStatus === 'requested' || contract.contractStatus === 'approved')
                   ? '⏳ 관리자 승인 후 계약서가 발급됩니다.'
                   : '📄 계약서 준비 중입니다.'}
               </div>

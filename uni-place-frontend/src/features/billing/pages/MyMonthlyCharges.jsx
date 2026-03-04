@@ -67,7 +67,7 @@ function sortByBillingDtAsc(list) {
 
 function toStatusKey(contractStatus) {
   const key = String(contractStatus || '').toLowerCase();
-  if (key === 'active' || key === 'requested') return 'ongoing';
+  if (key === 'active' || key === 'approved' || key === 'requested') return 'ongoing';
   return 'ended';
 }
 
