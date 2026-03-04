@@ -30,6 +30,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private static final int THRESHOLD = 60;
     private static final int SUSPICIOUS_THRESHOLD = 8;
     private static final long WINDOW_MINUTES = 5L;
+    private static final long ALERT_COOLDOWN_MINUTES = 60L;
     private static final Map<String, Deque<LocalDateTime>> UNAUTH_WINDOWS = new HashMap<>();
     private static final Map<String, LocalDateTime> LAST_ALERT_AT = new HashMap<>();
 
@@ -110,7 +111,8 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
             }
 
             LocalDateTime lastAlert = lastAlertAtMap.get(key);
-            if (lastAlert != null && !lastAlert.isBefore(start)) {
+            LocalDateTime cooldownStart = now.minusMinutes(ALERT_COOLDOWN_MINUTES);
+            if (lastAlert != null && !lastAlert.isBefore(cooldownStart)) {
                 return false;
             }
 
@@ -123,4 +125,3 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         return value == null || value.isBlank() ? "-" : value;
     }
 }
-
