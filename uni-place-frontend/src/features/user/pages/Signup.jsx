@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './Signup.module.css';
 import { authApi } from '../api/authApi';
@@ -22,12 +22,80 @@ export default function Signup() {
   const [nicknameStatus, setNicknameStatus] = useState(''); // '' | 'checking' | 'ok' | 'dup' | 'error'
   const [nicknameChecked, setNicknameChecked] = useState(false);
 
+  // 이메일 인증 상태
+  const [emailCodeSent, setEmailCodeSent] = useState(false);
+  const [emailCodeInput, setEmailCodeInput] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [emailCodeStatus, setEmailCodeStatus] = useState(''); // '' | 'sending' | 'verifying' | 'ok' | 'fail'
+  const [cooldown, setCooldown] = useState(0); // 재발송 쿨타임(초)
+
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
     if (name === 'userNickname') {
       setNicknameStatus('');
       setNicknameChecked(false);
+    }
+    // 이메일 변경 시 인증 상태 초기화
+    if (name === 'userEmail') {
+      setEmailCodeSent(false);
+      setEmailVerified(false);
+      setEmailCodeStatus('');
+      setEmailCodeInput('');
+    }
+  };
+
+  // 쿨타임 카운트다운
+  const cooldownRef = useRef(null);
+  const startCooldown = (seconds) => {
+    setCooldown(seconds);
+    clearInterval(cooldownRef.current);
+    cooldownRef.current = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(cooldownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+  useEffect(() => () => clearInterval(cooldownRef.current), []);
+
+  const sendEmailCode = async () => {
+    const email = form.userEmail.trim();
+    if (!email) return setError('이메일을 입력해주세요.');
+    if (cooldown > 0) return;
+    setEmailCodeStatus('sending');
+    setError('');
+    try {
+      await authApi.sendEmailCode({ userEmail: email });
+      setEmailCodeSent(true);
+      setEmailVerified(false);
+      setEmailCodeStatus('');
+      startCooldown(60);
+    } catch (err) {
+      setEmailCodeStatus('');
+      setError(toKoreanMessage(err, '인증코드 발송에 실패했습니다.'));
+    }
+  };
+
+  const verifyEmailCode = async () => {
+    const email = form.userEmail.trim();
+    if (!emailCodeInput.trim()) return setError('인증코드를 입력해주세요.');
+    setEmailCodeStatus('verifying');
+    setError('');
+    try {
+      await authApi.verifyEmailCode({
+        userEmail: email,
+        code: emailCodeInput.trim(),
+      });
+      setEmailVerified(true);
+      setEmailCodeStatus('ok');
+    } catch (err) {
+      setEmailCodeStatus('fail');
+      setEmailVerified(false);
+      setError(toKoreanMessage(err, '인증코드가 올바르지 않습니다.'));
     }
   };
 
@@ -71,6 +139,7 @@ export default function Signup() {
     if (!userNickname.trim()) return setError('닉네임을 입력해주세요.');
     if (!nicknameChecked) return setError('닉네임 중복 확인을 해주세요.');
     if (!userEmail.trim()) return setError('이메일을 입력해주세요.');
+    if (!emailVerified) return setError('이메일 인증을 완료해주세요.');
     if (!userPwd) return setError('비밀번호를 입력해주세요.');
     if (userPwd.length < 8)
       return setError('비밀번호는 최소 8자 이상이어야 합니다.');
@@ -196,17 +265,90 @@ export default function Signup() {
 
                 <div className={styles.row}>
                   <div className={styles.tag}>이메일</div>
-                  <input
-                    className={styles.input}
-                    type="email"
-                    name="userEmail"
-                    value={form.userEmail}
-                    onChange={onChange}
-                    disabled={submitting}
-                    placeholder="example@domain.com"
-                    autoComplete="email"
-                  />
+                  <div style={{ display: 'flex', gap: 8, flex: 1 }}>
+                    <input
+                      className={styles.input}
+                      style={{ flex: 1 }}
+                      type="email"
+                      name="userEmail"
+                      value={form.userEmail}
+                      onChange={onChange}
+                      disabled={submitting || emailVerified}
+                      placeholder="example@domain.com"
+                      autoComplete="email"
+                    />
+                    <button
+                      type="button"
+                      onClick={sendEmailCode}
+                      disabled={
+                        submitting ||
+                        emailCodeStatus === 'sending' ||
+                        emailVerified ||
+                        cooldown > 0
+                      }
+                      style={{
+                        padding: '0 14px',
+                        borderRadius: 8,
+                        background: emailVerified ? '#22c55e' : '#111',
+                        color: '#fff',
+                        border: 'none',
+                        cursor: emailVerified ? 'default' : 'pointer',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {emailVerified
+                        ? '✓ 인증완료'
+                        : emailCodeStatus === 'sending'
+                          ? '발송 중…'
+                          : cooldown > 0
+                            ? `재발송 (${cooldown}초)`
+                            : emailCodeSent
+                              ? '재발송'
+                              : '인증코드 받기'}
+                    </button>
+                  </div>
                 </div>
+
+                {/* 인증코드 입력 필드 */}
+                {emailCodeSent && !emailVerified && (
+                  <div className={styles.row}>
+                    <div className={styles.tag}>인증코드</div>
+                    <div style={{ display: 'flex', gap: 8, flex: 1 }}>
+                      <input
+                        className={styles.input}
+                        style={{ flex: 1, letterSpacing: 4, fontWeight: 600 }}
+                        value={emailCodeInput}
+                        onChange={(e) => setEmailCodeInput(e.target.value)}
+                        placeholder="6자리 숫자"
+                        maxLength={6}
+                        disabled={submitting || emailCodeStatus === 'verifying'}
+                      />
+                      <button
+                        type="button"
+                        onClick={verifyEmailCode}
+                        disabled={submitting || emailCodeStatus === 'verifying'}
+                        style={{
+                          padding: '0 14px',
+                          borderRadius: 8,
+                          background:
+                            emailCodeStatus === 'fail' ? '#ef4444' : '#c8932a',
+                          color: '#fff',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {emailCodeStatus === 'verifying' ? '확인 중…' : '확인'}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className={styles.row}>
                   <div className={styles.tag}>비밀번호</div>

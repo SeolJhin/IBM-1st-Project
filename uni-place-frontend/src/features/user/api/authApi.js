@@ -50,6 +50,20 @@ async function request(
 }
 
 export const authApi = {
+  // ── 이메일 인증코드 발송
+  sendEmailCode: ({ userEmail }) =>
+    request('/auth/email/send-code', {
+      method: 'POST',
+      body: { userEmail },
+    }),
+
+  // ── 이메일 인증코드 검증
+  verifyEmailCode: ({ userEmail, code }) =>
+    request('/auth/email/verify-code', {
+      method: 'POST',
+      body: { userEmail, code },
+    }),
+
   signup: (data) =>
     request('/auth/signup', {
       method: 'POST',

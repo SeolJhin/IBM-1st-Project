@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.myweb.uniplace.domain.user.api.dto.request.FindEmailRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.PasswordResetRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.PasswordResetConfirmRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.EmailCodeRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.EmailCodeVerifyRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -31,6 +33,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class AuthController {
 
     private final AuthService authService;
+
+    // ─────────────────────────────────────────────
+    // 이메일 인증코드 발송
+    // ─────────────────────────────────────────────
+    @PostMapping("/email/send-code")
+    public ApiResponse<Void> sendEmailCode(@Valid @RequestBody EmailCodeRequest req) {
+        authService.sendEmailCode(req.getUserEmail());
+        return ApiResponse.ok();
+    }
+
+    // ─────────────────────────────────────────────
+    // 이메일 인증코드 검증
+    // ─────────────────────────────────────────────
+    @PostMapping("/email/verify-code")
+    public ApiResponse<Void> verifyEmailCode(@Valid @RequestBody EmailCodeVerifyRequest req) {
+        authService.verifyEmailCode(req.getUserEmail(), req.getCode());
+        return ApiResponse.ok();
+    }
 
     @PostMapping("/signup")
     public ApiResponse<Void> signup(@Valid @RequestBody UserSignupRequest req) {

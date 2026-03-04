@@ -13,6 +13,16 @@ public interface AuthService {
     UserTokenResponse kakaoComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
     UserTokenResponse googleComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
 
+    // ===== 이메일 인증 =====
+    /** 인증코드 6자리 생성 후 이메일 발송 */
+    void sendEmailCode(String email);
+
+    /**
+     * 입력한 코드가 맞으면 verified 상태로 전환.
+     * @return true = 인증 성공
+     */
+    boolean verifyEmailCode(String email, String code);
+
     // ===== 닉네임 중복 체크 =====
     /** 닉네임 사용 가능 여부 반환 (true = 사용 가능) */
     boolean checkNicknameAvailable(String nickname);
