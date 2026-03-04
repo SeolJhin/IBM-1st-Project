@@ -205,7 +205,6 @@ public class PaymentServiceImpl implements PaymentService {
 
         List<MonthlyCharge> charges = new ArrayList<>();
         List<Integer> payableChargeIds = new ArrayList<>();
-        Integer contractId = null;
         BigDecimal totalPrice = BigDecimal.ZERO;
 
         for (Integer chargeId : chargeIds) {
@@ -222,12 +221,6 @@ public class PaymentServiceImpl implements PaymentService {
             if (!payableStatus) {
                 // 이미 납부된 청구는 제외하고 남은 미납분만 결제 준비
                 continue;
-            }
-
-            if (contractId == null) {
-                contractId = charge.getContractId();
-            } else if (!Objects.equals(contractId, charge.getContractId())) {
-                throw new BusinessException(ErrorCode.BAD_REQUEST);
             }
 
             if (charge.getPrice() == null) {
@@ -695,7 +688,8 @@ public class PaymentServiceImpl implements PaymentService {
     private void validateMonthlyChargeContractStatus(Integer contractId) {
         Contract contract = contractRepository.findById(contractId)
             .orElseThrow(() -> new BusinessException(ErrorCode.CONTRACT_NOT_FOUND));
-        if (contract.getContractSt() == ContractStatus.cancelled) {
+        ContractStatus status = contract.getContractSt();
+        if (status == null || status == ContractStatus.requested || status == ContractStatus.cancelled) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
     }
