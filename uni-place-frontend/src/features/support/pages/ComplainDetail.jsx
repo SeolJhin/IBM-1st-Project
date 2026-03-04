@@ -32,7 +32,12 @@ export default function ComplainDetail() {
   const [statusValue, setStatusValue] = useState('received');
   const [statusSubmitting, setStatusSubmitting] = useState(false);
 
-  const isAdmin = normalizeRole(user) === 'admin';
+  const role = normalizeRole(user);
+  const isAdmin = role === 'admin';
+  const isTenant = role === 'tenant';
+  const isOwner = isTenant && data?.userId === user?.userId;
+  const canEdit = isAdmin || isOwner;
+  const canDelete = isAdmin || isOwner;
 
   useEffect(() => {
     setLoading(true);
@@ -112,36 +117,42 @@ export default function ComplainDetail() {
 
         <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{data.compCtnt}</div>
 
-        {isAdmin && (
+        {canEdit && (
           <>
             <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <select
-                className={styles.formSelect}
-                value={statusValue}
-                onChange={(e) => setStatusValue(e.target.value)}
-                disabled={statusSubmitting}
-                style={{ maxWidth: 180 }}
-              >
-                <option value="received">접수완료</option>
-                <option value="in_progress">처리중</option>
-                <option value="resolved">처리완료</option>
-              </select>
-              <button
-                className={styles.buttonPrimary}
-                onClick={handleUpdateStatus}
-                disabled={statusSubmitting}
-              >
-                {statusSubmitting ? '변경 중...' : '처리상태 변경'}
-              </button>
+              {isAdmin && (
+                <>
+                  <select
+                    className={styles.formSelect}
+                    value={statusValue}
+                    onChange={(e) => setStatusValue(e.target.value)}
+                    disabled={statusSubmitting}
+                    style={{ maxWidth: 180 }}
+                  >
+                    <option value="received">접수완료</option>
+                    <option value="in_progress">처리중</option>
+                    <option value="resolved">처리완료</option>
+                  </select>
+                  <button
+                    className={styles.buttonPrimary}
+                    onClick={handleUpdateStatus}
+                    disabled={statusSubmitting}
+                  >
+                    {statusSubmitting ? '변경 중...' : '처리상태 변경'}
+                  </button>
+                </>
+              )}
             </div>
 
             <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
               <button className={styles.buttonPrimary} onClick={() => navigate(`/support/complain/edit/${id}`)}>
                 수정
               </button>
-              <button className={styles.pageBtn} onClick={handleDelete}>
-                삭제
-              </button>
+              {canDelete && (
+                <button className={styles.pageBtn} onClick={handleDelete}>
+                  삭제
+                </button>
+              )}
             </div>
           </>
         )}
