@@ -186,6 +186,7 @@ function normalizeFromRawPath(rawPath, item) {
   }
 
   if (
+    path.startsWith('/admin/room-service-orders') ||
     path.startsWith('/admin/room-services') ||
     path.startsWith('/admin/roomservice/room_orders') ||
     path.startsWith('/room-services/')

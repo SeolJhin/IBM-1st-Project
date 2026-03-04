@@ -15,6 +15,9 @@ import org.myweb.uniplace.domain.commerce.repository.ProductRepository;
 import org.myweb.uniplace.domain.contract.domain.entity.Contract;
 import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 import org.myweb.uniplace.domain.contract.repository.ContractRepository;
+import org.myweb.uniplace.domain.notification.application.NotificationService;
+import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
+import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
@@ -44,6 +47,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final ProductService productService;
     private final ContractRepository contractRepository;
+    private final NotificationService notificationService;
     private final SlackNotificationService slackNotificationService;
 
     @Override
@@ -111,6 +115,25 @@ public class OrderServiceImpl implements OrderService {
         order.getRoomServiceOrders().add(roomServiceOrder);
 
         OrderResponse saved = OrderResponse.from(orderRepository.save(order));
+        Integer roomServiceOrderId = roomServiceOrder.getOrderId();
+        String adminUrlPath = roomServiceOrderId == null
+            ? "/admin/roomservice/room_orders"
+            : "/admin/roomservice/room_orders?orderId=" + roomServiceOrderId;
+
+        try {
+            notificationService.notifyAdmins(
+                NotificationType.ORDER_NEW.name(),
+                "Room service order created. userId=" + userId
+                    + ", roomId=" + tenantContract.getRoom().getRoomId()
+                    + ", orderId=" + roomServiceOrderId,
+                userId,
+                TargetType.notice,
+                roomServiceOrderId,
+                adminUrlPath
+            );
+        } catch (Exception e) {
+            log.warn("[ORDER][NOTIFY][ADMIN] reason={}", e.getMessage());
+        }
 
         // 주문 생성 → Slack 알림
         try {

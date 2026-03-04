@@ -82,13 +82,17 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             .build();
 
         roomServiceOrderRepository.save(roomServiceOrder);
+        Integer roomServiceOrderId = roomServiceOrder.getOrderId();
+        String adminUrlPath = roomServiceOrderId == null
+            ? "/admin/roomservice/room_orders"
+            : "/admin/roomservice/room_orders?orderId=" + roomServiceOrderId;
 
         // 주문 접수 → 어드민 알림
         try {
             notificationService.notifyAdmins(
                 NotificationType.ORDER_NEW.name(),
                 "룸서비스 주문이 접수되었습니다. userId=" + userId + ", roomId=" + tenantRoom.getRoomId(),
-                userId, TargetType.notice, null, "/admin/room-service-orders"
+                userId, TargetType.notice, roomServiceOrderId, adminUrlPath
             );
         } catch (Exception e) {
             log.warn("[ORDER][NOTIFY][ADMIN] reason={}", e.getMessage());
