@@ -34,6 +34,29 @@ function formatDateTime(value) {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
 
+function formatPaymentProvider(provider) {
+  const key = String(provider ?? '').trim().toLowerCase();
+  if (!key) return '-';
+  if (key.includes('kakao')) return '카카오페이';
+  if (key.includes('toss')) return '토스페이';
+  if (key.includes('naver')) return '네이버페이';
+  if (key.includes('card')) return '카드';
+  return provider;
+}
+
+function isPaymentCompleted(order) {
+  const paymentSt = String(order?.paymentSt ?? '').trim().toLowerCase();
+  const orderSt = String(order?.orderSt ?? '').trim().toLowerCase();
+  const parentOrderSt = String(order?.parentOrderSt ?? '').trim().toLowerCase();
+  return paymentSt === 'paid' || orderSt === 'paid' || parentOrderSt === 'paid';
+}
+
+function getDisplayStatus(order) {
+  const raw = String(order?.orderSt ?? '').trim().toLowerCase();
+  if (raw === 'delivered' || raw === 'cancelled') return raw;
+  return isPaymentCompleted(order) ? 'paid' : 'requested';
+}
+
 function windowedPages(currentPage, totalPages, radius = 2) {
   const pages = [];
   const from = Math.max(1, currentPage - radius);
@@ -373,10 +396,18 @@ export default function AdminRoomServiceOrderList() {
                       {roomLabel}
                     </div>
                   </td>
-                  <td>{formatMoney(order.totalPrice)}</td>
+                  <td>
+                    <div>{formatMoney(order.totalPrice)}</div>
+                    <div className={styles.subCell}>
+                      결제수단: {formatPaymentProvider(order.paymentProvider)}
+                    </div>
+                    <div className={styles.subCell}>
+                      {isPaymentCompleted(order) ? '결제완료' : '요청됨'}
+                    </div>
+                  </td>
                   <td>
                     <div className={styles.statusCell}>
-                      <StatusBadge status={order.orderSt} />
+                      <StatusBadge status={getDisplayStatus(order)} />
                       <div className={styles.statusActions}>
                         <select
                           className={styles.select}
