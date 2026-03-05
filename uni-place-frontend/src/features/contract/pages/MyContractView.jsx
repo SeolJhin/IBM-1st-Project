@@ -146,7 +146,7 @@ function RoomInfoPanel({ room, contract }) {
             '납부일',
             contract.paymentDay ? `매월 ${contract.paymentDay}일` : '-',
           ],
-          ...(contract.lessorNm ? [['임대인', contract.lessorNm]] : []),
+          ...(contract.lessorNm ? [['임차인', contract.lessorNm]] : []),
         ].map(([label, value]) => (
           <div key={label} className={styles.specItem}>
             <span className={styles.specLabel}>{label}</span>
