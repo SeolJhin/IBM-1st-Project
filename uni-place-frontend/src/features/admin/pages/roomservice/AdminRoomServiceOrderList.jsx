@@ -44,6 +44,16 @@ function formatPaymentProvider(provider) {
   return provider;
 }
 
+function resolvePaymentProvider(order) {
+  return (
+    order?.paymentProvider ??
+    order?.provider ??
+    order?.paymentMethodNm ??
+    order?.paymentMethodCd ??
+    null
+  );
+}
+
 function isPaymentCompleted(order) {
   const paymentSt = String(order?.paymentSt ?? '').trim().toLowerCase();
   const orderSt = String(order?.orderSt ?? '').trim().toLowerCase();
@@ -399,7 +409,7 @@ export default function AdminRoomServiceOrderList() {
                   <td>
                     <div>{formatMoney(order.totalPrice)}</div>
                     <div className={styles.subCell}>
-                      결제수단: {formatPaymentProvider(order.paymentProvider)}
+                      결제수단: {formatPaymentProvider(resolvePaymentProvider(order))}
                     </div>
                     <div className={styles.subCell}>
                       {isPaymentCompleted(order) ? '결제완료' : '요청됨'}

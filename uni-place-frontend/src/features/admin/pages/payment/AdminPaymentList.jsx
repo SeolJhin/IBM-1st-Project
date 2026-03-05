@@ -56,6 +56,8 @@ function PaymentStatusBadge({ status }) {
   const className =
     key === 'paid'
       ? styles.badgePaid
+      : key === 'fail'
+        ? styles.badgeCancelled
       : key === 'cancelled'
         ? styles.badgeCancelled
         : key === 'pending'
@@ -63,10 +65,11 @@ function PaymentStatusBadge({ status }) {
           : key === 'disputed'
             ? styles.badgeDisputed
             : styles.badgeReady;
+  const label = key === 'fail' ? '실패' : ((PAYMENT_STATUS_LABELS[key] ?? key) || '-');
 
   return (
     <span className={`${styles.badge} ${className}`}>
-      {(PAYMENT_STATUS_LABELS[key] ?? key) || '-'}
+      {label}
     </span>
   );
 }
