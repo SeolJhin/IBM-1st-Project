@@ -65,10 +65,14 @@ export default function Checkout({
   const total = cart?.totalAmount ?? 0;
   const cartBuildingId = items[0]?.buildingId ?? null;
   const selectedBuildingId =
-    fallbackBuildingId ?? cartBuildingId ?? tenantContracts[0]?.buildingId ?? null;
+    fallbackBuildingId ??
+    cartBuildingId ??
+    tenantContracts[0]?.buildingId ??
+    null;
   const selectedBuildingNm =
     fallbackBuildingNm ||
-    tenantContracts.find((c) => c?.buildingId === selectedBuildingId)?.buildingNm ||
+    tenantContracts.find((c) => c?.buildingId === selectedBuildingId)
+      ?.buildingNm ||
     '';
   const roomContracts = tenantContracts.filter(
     (c) => c?.buildingId === selectedBuildingId && c?.roomId != null
@@ -111,7 +115,10 @@ export default function Checkout({
 
   useEffect(() => {
     if (!selectedRoomContract?.roomNo) return;
-    setForm((prev) => ({ ...prev, roomNo: String(selectedRoomContract.roomNo) }));
+    setForm((prev) => ({
+      ...prev,
+      roomNo: String(selectedRoomContract.roomNo),
+    }));
   }, [selectedRoomContract?.roomNo]);
 
   const onChange = (e) => {
@@ -132,7 +139,9 @@ export default function Checkout({
   const validate = () => {
     if (tenantLoading) return '입주 계약 정보를 확인 중입니다.';
     if (!tenantContracts.length) {
-      return tenantError || '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.';
+      return (
+        tenantError || '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.'
+      );
     }
     if (!selectedBuildingId) {
       return '빌딩 정보를 확인하지 못했습니다.';
@@ -330,7 +339,10 @@ export default function Checkout({
               />
             </div>
 
-            <div className={styles.fieldRow} style={{ alignItems: 'flex-start' }}>
+            <div
+              className={styles.fieldRow}
+              style={{ alignItems: 'flex-start' }}
+            >
               <label className={styles.label} style={{ paddingTop: 10 }}>
                 기타 요청사항
               </label>
@@ -358,10 +370,10 @@ export default function Checkout({
               disabled={submitting}
               type="button"
             >
-              <span className={styles.payEmoji}>💵</span>
+              <span className={styles.payEmoji}>💳</span>
               <div className={styles.payText}>
-                <span className={styles.payName}>만나서 결제</span>
-                <span className={styles.paySubtitle}>배달 시 현장에서 결제</span>
+                <span className={styles.payName}>카드결제</span>
+                <span className={styles.paySubtitle}>카드 결제창으로 이동</span>
               </div>
               <div
                 className={`${styles.radio} ${payMethod === 'meet' ? styles.radioOn : ''}`}
@@ -377,7 +389,9 @@ export default function Checkout({
               <span className={styles.payEmoji}>🟡</span>
               <div className={styles.payText}>
                 <span className={styles.payName}>카카오페이</span>
-                <span className={styles.paySubtitle}>카카오페이 결제창으로 이동</span>
+                <span className={styles.paySubtitle}>
+                  카카오페이 결제창으로 이동
+                </span>
               </div>
               <div
                 className={`${styles.radio} ${styles.radioKakao} ${payMethod === 'kakao' ? styles.radioKakaoOn : ''}`}
@@ -416,12 +430,12 @@ export default function Checkout({
         <ConfirmModal
           title={
             payMethod === 'meet'
-              ? '만나서 결제로 주문할까요?'
+              ? '카드 결제로 주문할까요?'
               : '카카오페이 결제를 진행할까요?'
           }
           desc={
             payMethod === 'meet'
-              ? `${selectedBuildingNm} · ${form.roomNo}호 · ${form.name} · ${fmt(total)}원\n배달 시 현장에서 결제됩니다.`
+              ? `${selectedBuildingNm} · ${form.roomNo}호 · ${form.name} · ${fmt(total)}원\n카드로 결제됩니다.`
               : `${selectedBuildingNm} · ${form.roomNo}호 · ${form.name} · ${fmt(total)}원\n카카오페이 결제창으로 이동합니다.`
           }
           confirmLabel={payMethod === 'meet' ? '주문하기' : '결제하기'}
