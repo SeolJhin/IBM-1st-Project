@@ -121,7 +121,7 @@ public class ReplyServiceImpl implements ReplyService {
                 userId,
                 TargetType.reply,
                 saved.getReplyId(),
-                "/boards/" + boardId
+                "/community/boards/" + boardId
             );
         }
     }
@@ -161,7 +161,7 @@ public class ReplyServiceImpl implements ReplyService {
                 userId,
                 TargetType.reply,
                 saved.getReplyId(),
-                "/boards/" + boardId
+                "/community/boards/" + boardId
             );
         }
     }

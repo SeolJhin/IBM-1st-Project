@@ -398,7 +398,7 @@ public class ContractServiceImpl implements ContractService {
     private void safeNotify(String userId, String code, String msg) {
         try {
             notificationService.notifyUser(userId, code, msg, null,
-                TargetType.notice, null, "/me?tab=myroom&sub=contracts");
+            	TargetType.contract, null, "/me?tab=myroom&sub=contracts");
         } catch (Exception e) {
             log.warn("[CONTRACT][NOTIFY] failed userId={} code={} reason={}", userId, code, e.getMessage());
         }
@@ -407,7 +407,7 @@ public class ContractServiceImpl implements ContractService {
     private void safeNotifyAdmins(String code, String msg, Integer contractId) {
         try {
             notificationService.notifyAdmins(code, msg, null,
-                TargetType.notice, contractId, "/admin/contracts");
+            	TargetType.contract, contractId, "/admin/contracts");
         } catch (Exception e) {
             log.warn("[CONTRACT][NOTIFY][ADMIN] code={} reason={}", code, e.getMessage());
         }

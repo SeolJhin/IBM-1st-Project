@@ -140,7 +140,7 @@ export default function SpaceDetail() {
             <span className={styles.bcSep}>›</span>
             <button
               className={styles.bcBtn}
-              onClick={() => navigate('/spaces')}
+              onClick={() => navigate('/rooms', { state: { tab: 'spaces' } })}
             >
               공용공간
             </button>
@@ -149,11 +149,7 @@ export default function SpaceDetail() {
               <>
                 <button
                   className={styles.bcBtn}
-                  onClick={() =>
-                    navigate(
-                      `/spaces?buildingId=${space.buildingId}&buildingNm=${encodeURIComponent(space.buildingNm)}`
-                    )
-                  }
+                  onClick={() => navigate(`/buildings/${space.buildingId}`)}
                 >
                   {space.buildingNm}
                 </button>

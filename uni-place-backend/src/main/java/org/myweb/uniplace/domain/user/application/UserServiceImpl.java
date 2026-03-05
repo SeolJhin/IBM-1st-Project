@@ -238,7 +238,7 @@ public class UserServiceImpl implements UserService {
                 code,
                 message,
                 null,
-                TargetType.notice,
+                TargetType.security,
                 null,
                 "/mypage/security"
             );
@@ -253,7 +253,7 @@ public class UserServiceImpl implements UserService {
                 code,
                 message,
                 senderId,
-                TargetType.notice,
+                TargetType.security,
                 null,
                 urlPath
             );

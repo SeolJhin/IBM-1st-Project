@@ -110,7 +110,7 @@ public class QnaServiceImpl implements QnaService {
             notificationService.notifyAdmins(
                 NotificationType.QNA_NEW.name(),
                 "새 QnA 질문이 접수되었습니다. qnaId=" + saved.getQnaId() + ", userId=" + userId,
-                userId, TargetType.notice, null, "/admin/support/qna/" + saved.getQnaId()
+                userId, TargetType.support, null, "/admin/support/qna/" + saved.getQnaId()
             );
         } catch (Exception e) {
             log.warn("[QNA][NOTIFY][ADMIN] qnaId={} reason={}", saved.getQnaId(), e.getMessage());
@@ -164,7 +164,7 @@ public class QnaServiceImpl implements QnaService {
                 question.getUserId(),
                 NotificationType.QNA_ANSWERED.name(),
                 "문의하신 QnA에 답변이 등록되었습니다.",
-                adminUserId, TargetType.notice, null, "/support/qna/" + qnaId
+                adminUserId, TargetType.support, null, "/support/qna/" + qnaId
             );
         } catch (Exception e) {
             log.warn("[QNA][NOTIFY] answered qnaId={} reason={}", qnaId, e.getMessage());

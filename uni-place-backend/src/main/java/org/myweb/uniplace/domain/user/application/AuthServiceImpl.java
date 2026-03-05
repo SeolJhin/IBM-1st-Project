@@ -463,7 +463,7 @@ public class AuthServiceImpl implements AuthService {
                 code,
                 message,
                 null,
-                TargetType.notice,
+                TargetType.security,
                 null,
                 "/mypage/security"
             );
@@ -478,7 +478,7 @@ public class AuthServiceImpl implements AuthService {
                 code,
                 message,
                 senderId,
-                TargetType.notice,
+                TargetType.security,
                 null,
                 "/admin/users"
             );

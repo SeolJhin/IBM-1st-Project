@@ -26,7 +26,28 @@ const TARGET_LABEL = {
   space: '공간예약',
   review: '리뷰',
   payment: '결제',
+  order: '주문',
+  contract: '계약',
+  support: '고객지원',
+  security: '보안',
 };
+
+// code 기반으로 배지 레이블 결정 (target보다 정확함)
+function getNotificationLabel(item) {
+  const code = String(item?.code || '').toUpperCase();
+  if (code.startsWith('PAY_')) return '결제';
+  if (code.startsWith('ORDER_')) return '주문';
+  if (code.startsWith('CONTRACT_')) return '계약';
+  if (code.startsWith('QNA_') || code.startsWith('COMP_')) return '고객지원';
+  if (code.startsWith('SP_')) return '공간예약';
+  if (code.startsWith('TOUR_')) return '투어';
+  if (code.startsWith('BRD_') || code.startsWith('RPL_')) return '커뮤니티';
+  if (code.startsWith('RVW_') || code.startsWith('ADM_RVW_')) return '리뷰';
+  if (code.startsWith('SEC_') || code.startsWith('ADM_')) return '보안';
+  if (code === 'BILL_NEW') return '청구서';
+  if (code === 'ADMIN_NOTICE') return '공지사항';
+  return TARGET_LABEL[item?.target] ?? '알림';
+}
 
 function isAuthError(error) {
   const status = Number(error?.response?.status || error?.status || 0);
@@ -211,7 +232,7 @@ export default function NotificationBell() {
                       >
                         <div className={styles.dropItemLeft}>
                           <span className={styles.typeBadge}>
-                            {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
+                            {getNotificationLabel(item)}
                           </span>
                           <p className={styles.dropMsg}>
                             {localizeNotificationMessage(item)}
