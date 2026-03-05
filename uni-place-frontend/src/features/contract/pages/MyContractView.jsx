@@ -2,6 +2,7 @@
 // 마이페이지 > 마이룸 탭
 // 내 계약서 목록 → 각 계약서마다 방 상세 정보 + 사진 표시 + 계약서 이미지 보기
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { contractApi } from '../api/contractApi';
 import { propertyApi } from '../../property/api/propertyApi';
 import { authApi } from '../../user/api/authApi';
@@ -104,14 +105,16 @@ function RoomInfoPanel({ room, contract }) {
           className={`${styles.contractStatusChip} ${
             contract.contractStatus === 'active'
               ? styles.chipActive
-              : (contract.contractStatus === 'requested' || contract.contractStatus === 'approved')
+              : contract.contractStatus === 'requested' ||
+                  contract.contractStatus === 'approved'
                 ? styles.chipPending
                 : styles.chipExpired
           }`}
         >
           {contract.contractStatus === 'active'
             ? '활성'
-            : (contract.contractStatus === 'requested' || contract.contractStatus === 'approved')
+            : contract.contractStatus === 'requested' ||
+                contract.contractStatus === 'approved'
               ? '승인대기'
               : contract.contractStatus === 'ended'
                 ? '만료'
@@ -296,6 +299,7 @@ function PasswordModal({ onConfirm, onClose }) {
 
 /* ─── 계약 카드 ──────────────────────────────────────────────── */
 function ContractCard({ contract }) {
+  const navigate = useNavigate();
   const [room, setRoom] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [roomError, setRoomError] = useState('');
@@ -322,6 +326,8 @@ function ContractCard({ contract }) {
 
   const hasContractImage = !!contract.contractPdfFileId;
   const isActive = contract.contractStatus === 'active';
+  const isEnded = contract.contractStatus === 'ended';
+  const canWriteReview = isActive || isEnded;
 
   const handleViewContract = () => {
     if (!hasContractImage) return;
@@ -347,14 +353,16 @@ function ContractCard({ contract }) {
             className={`${styles.statusChip} ${
               contract.contractStatus === 'active'
                 ? styles.chipActive
-                : (contract.contractStatus === 'requested' || contract.contractStatus === 'approved')
+                : contract.contractStatus === 'requested' ||
+                    contract.contractStatus === 'approved'
                   ? styles.chipPending
                   : styles.chipExpired
             }`}
           >
             {contract.contractStatus === 'active'
               ? '활성'
-              : (contract.contractStatus === 'requested' || contract.contractStatus === 'approved')
+              : contract.contractStatus === 'requested' ||
+                  contract.contractStatus === 'approved'
                 ? '승인대기'
                 : contract.contractStatus === 'ended'
                   ? '만료'
@@ -395,7 +403,8 @@ function ContractCard({ contract }) {
               </button>
             ) : (
               <div className={styles.contractPending}>
-                {(contract.contractStatus === 'requested' || contract.contractStatus === 'approved')
+                {contract.contractStatus === 'requested' ||
+                contract.contractStatus === 'approved'
                   ? '⏳ 관리자 승인 후 계약서가 발급됩니다.'
                   : '📄 계약서 준비 중입니다.'}
               </div>
@@ -424,6 +433,17 @@ function ContractCard({ contract }) {
                 }}
               >
                 🧾 결제 조회
+              </button>
+            )}
+
+            {/* 리뷰쓰기 버튼 (active 또는 ended 계약만 표시) */}
+            {canWriteReview && contract.roomId && (
+              <button
+                type="button"
+                className={styles.reviewBtn}
+                onClick={() => navigate(`/rooms/${contract.roomId}#reviews`)}
+              >
+                ✍️ 리뷰쓰기
               </button>
             )}
           </div>

@@ -151,10 +151,11 @@ export default function ReviewModal({
 }) {
   const { user } = useAuth();
   const isAdmin = String(user?.userRole ?? '').toLowerCase() === 'admin';
-  const isTenant = String(user?.userRole ?? '').toLowerCase() === 'tenant';
+  // 계약 종료 후 ROLE_USER로 롤백된 사람도 본인 리뷰 수정/삭제 가능하도록 isTenant 체크 제거
+  const isLoggedIn = !!user;
 
   const [mode, setMode] = useState(initialMode);
-  const [reviewId, setReviewId] = useState(initReviewId);
+  const reviewId = initReviewId;
 
   // 상세 데이터
   const [review, setReview] = useState(null);
@@ -208,8 +209,10 @@ export default function ReviewModal({
       loadDetail(reviewId);
   }, [mode, reviewId, loadDetail]);
 
+  const [likePending, setLikePending] = useState(false);
   const handleLike = useCallback(async () => {
-    if (!user) return;
+    if (!user || likePending) return;
+    setLikePending(true);
     try {
       if (liked) {
         await reviewApi.unlikeReview(reviewId);
@@ -222,8 +225,10 @@ export default function ReviewModal({
       }
     } catch (e) {
       console.warn('review like error:', e?.message);
+    } finally {
+      setLikePending(false);
     }
-  }, [liked, reviewId, user]);
+  }, [liked, likePending, reviewId, user]);
 
   // 파일 추가
   const handleAddFiles = (e) => {
@@ -281,6 +286,8 @@ export default function ReviewModal({
       const MAP = {
         REVIEW_409: '이미 이 방에 리뷰를 작성하셨습니다.',
         REVIEW_403_1: '입주자만 리뷰를 작성·수정할 수 있습니다.',
+        REVIEW_403_2:
+          '해당 방의 계약이 활성 중이거나 종료된 이력이 있는 경우에만 리뷰를 작성할 수 있습니다.',
       };
       setFormErr(MAP[code] || err?.message || '저장에 실패했습니다.');
     } finally {
@@ -407,7 +414,7 @@ export default function ReviewModal({
 
       {/* 본인 또는 어드민 액션 */}
       <div className={styles.detailActions}>
-        {isTenant && user?.userId === review.realUserId && (
+        {isLoggedIn && user?.userId === review.realUserId && (
           <>
             <button
               type="button"

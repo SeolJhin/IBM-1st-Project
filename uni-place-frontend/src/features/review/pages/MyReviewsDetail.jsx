@@ -6,6 +6,7 @@ import { reviewApi } from '../api/reviewApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import { adminApi } from '../../admin/api/adminApi';
 import UserStatusModal from '../../user/components/UserStatusModal';
+import ReviewModal from '../components/ReviewModal';
 import styles from './ReviewDetail.module.css';
 import { toApiImageUrl } from '../../file/api/fileApi';
 
@@ -144,6 +145,7 @@ export default function MyReviewsDetail() {
   const { remove, submitting } = useReviewActions();
   const [lightbox, setLightbox] = useState(null);
   const [userStatusModalId, setUserStatusModalId] = useState(null);
+  const [reviewModal, setReviewModal] = useState(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
 
@@ -155,8 +157,11 @@ export default function MyReviewsDetail() {
     }
   }, [review]);
 
+  const [likePending, setLikePending] = useState(false);
   const handleLike = useCallback(async () => {
-    if (!user) return alert('로그인이 필요합니다.');
+    if (!user || likePending)
+      return alert(!user ? '로그인이 필요합니다.' : undefined);
+    setLikePending(true);
     try {
       if (liked) {
         await reviewApi.unlikeReview(Number(reviewId));
@@ -169,10 +174,13 @@ export default function MyReviewsDetail() {
       }
     } catch (e) {
       console.warn('review like error:', e?.message);
+    } finally {
+      setLikePending(false);
     }
-  }, [liked, reviewId, user]);
+  }, [liked, likePending, reviewId, user]);
 
   const isAdmin = String(user?.userRole ?? '').toLowerCase() === 'admin';
+  const isOwner = !!user && !!review && user.userId === review.realUserId;
 
   const handleDelete = async () => {
     if (!window.confirm('리뷰를 삭제할까요?')) return;
@@ -232,21 +240,27 @@ export default function MyReviewsDetail() {
         </button>
         <h1 className={styles.title}>리뷰 상세</h1>
         <div className={styles.headerActions}>
-          <button
-            className={styles.editBtn}
-            type="button"
-            onClick={() => navigate(`/reviews/${reviewId}/edit`)}
-          >
-            수정
-          </button>
-          <button
-            className={styles.deleteBtn}
-            type="button"
-            onClick={handleDelete}
-            disabled={submitting}
-          >
-            삭제
-          </button>
+          {isOwner && (
+            <>
+              <button
+                className={styles.editBtn}
+                type="button"
+                onClick={() =>
+                  setReviewModal({ mode: 'edit', reviewId: Number(reviewId) })
+                }
+              >
+                수정
+              </button>
+              <button
+                className={styles.deleteBtn}
+                type="button"
+                onClick={handleDelete}
+                disabled={submitting}
+              >
+                삭제
+              </button>
+            </>
+          )}
           {isAdmin && (
             <button
               type="button"
@@ -391,6 +405,18 @@ export default function MyReviewsDetail() {
           userId={userStatusModalId}
           currentUserId={user?.userId}
           onClose={() => setUserStatusModalId(null)}
+        />
+      )}
+
+      {reviewModal && (
+        <ReviewModal
+          mode={reviewModal.mode}
+          reviewId={reviewModal.reviewId}
+          onClose={() => setReviewModal(null)}
+          onSaved={() => {
+            setReviewModal(null);
+            navigate('/reviews/my', { replace: true });
+          }}
         />
       )}
     </div>
