@@ -17,6 +17,8 @@ import org.myweb.uniplace.domain.contract.repository.ContractRepository;
 import org.myweb.uniplace.domain.notification.application.NotificationService;
 import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
+import org.myweb.uniplace.domain.payment.domain.entity.Payment;
+import org.myweb.uniplace.domain.payment.repository.PaymentRepository;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
@@ -29,10 +31,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,11 +46,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
+    private static final String PAYMENT_TARGET_TYPE_ORDER = "order";
+    private static final List<String> PAYMENT_STATES_PAID_FIRST = List.of(
+        "paid", "PAID"
+    );
+    private static final List<String> PAYMENT_STATES_FALLBACK = List.of(
+        "paid", "PAID", "pending", "PENDING", "ready", "READY", "cancelled", "CANCELLED", "disputed", "DISPUTED"
+    );
 
     private final RoomServiceOrderRepository roomServiceOrderRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ContractRepository contractRepository;
+    private final PaymentRepository paymentRepository;
     private final NotificationService notificationService;
     private final SlackNotificationService slackNotificationService;
 
@@ -111,22 +125,25 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             log.warn("[ORDER][SLACK] reason={}", e.getMessage());
         }
 
-        return RoomServiceOrderResponse.from(roomServiceOrder);
+        return toResponse(roomServiceOrder);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<RoomServiceOrderResponse> getMyOrders(String userId) {
-        return roomServiceOrderRepository.findAllByUserIdWithRoom(userId).stream()
-            .map(RoomServiceOrderResponse::from)
+        List<RoomServiceOrder> orders = roomServiceOrderRepository.findAllByUserIdWithRoom(userId);
+        Map<Integer, Payment> paymentById = loadPaymentById(orders);
+        return orders.stream()
+            .map(order -> toResponse(order, paymentById))
             .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<RoomServiceOrderResponse> getAllOrders(Pageable pageable) {
-        return roomServiceOrderRepository.findAllWithDetails(pageable)
-            .map(RoomServiceOrderResponse::from);
+        Page<RoomServiceOrder> page = roomServiceOrderRepository.findAllWithDetails(pageable);
+        Map<Integer, Payment> paymentById = loadPaymentById(page.getContent());
+        return page.map(order -> toResponse(order, paymentById));
     }
 
     @Override
@@ -152,7 +169,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             log.warn("[ORDER][NOTIFY] status orderId={} reason={}", orderId, e.getMessage());
         }
 
-        return RoomServiceOrderResponse.from(order);
+        return toResponse(order);
     }
 
     @Override
@@ -182,7 +199,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             }
         }
 
-        return RoomServiceOrderResponse.from(roomServiceOrder);
+        return toResponse(roomServiceOrder);
     }
 
     private Order resolveParentOrder(User user, RoomServiceOrderCreateRequest request) {
@@ -241,5 +258,60 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private RoomServiceOrderResponse toResponse(RoomServiceOrder order) {
+        return toResponse(order, Collections.emptyMap());
+    }
+
+    private RoomServiceOrderResponse toResponse(RoomServiceOrder order, Map<Integer, Payment> paymentById) {
+        Integer paymentId = order.getParentOrder() != null ? order.getParentOrder().getPaymentId() : null;
+        Payment payment = paymentId != null ? paymentById.get(paymentId) : null;
+        if (payment == null && paymentId != null) {
+            payment = paymentRepository.findById(paymentId).orElse(null);
+        }
+        if (payment == null && order.getParentOrder() != null) {
+            payment = paymentRepository
+                .findTopByUserIdAndTargetTypeAndTargetIdAndPaymentStInOrderByPaymentIdDesc(
+                    order.getUser().getUserId(),
+                    PAYMENT_TARGET_TYPE_ORDER,
+                    order.getParentOrder().getOrderId(),
+                    PAYMENT_STATES_PAID_FIRST
+                )
+                .orElse(null);
+        }
+        if (payment == null && order.getParentOrder() != null) {
+            payment = paymentRepository
+                .findTopByUserIdAndTargetTypeAndTargetIdAndPaymentStInOrderByPaymentIdDesc(
+                    order.getUser().getUserId(),
+                    PAYMENT_TARGET_TYPE_ORDER,
+                    order.getParentOrder().getOrderId(),
+                    PAYMENT_STATES_FALLBACK
+                )
+                .orElse(null);
+        }
+        return RoomServiceOrderResponse.from(order, payment);
+    }
+
+    private Map<Integer, Payment> loadPaymentById(List<RoomServiceOrder> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Set<Integer> paymentIds = orders.stream()
+            .map(RoomServiceOrder::getParentOrder)
+            .filter(Objects::nonNull)
+            .map(Order::getPaymentId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        if (paymentIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<Integer, Payment> paymentById = new HashMap<>();
+        paymentRepository.findAllById(paymentIds)
+            .forEach(payment -> paymentById.put(payment.getPaymentId(), payment));
+        return paymentById;
     }
 }
