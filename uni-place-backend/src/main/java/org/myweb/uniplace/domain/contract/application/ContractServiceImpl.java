@@ -38,6 +38,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.myweb.uniplace.global.slack.SlackNotificationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +58,7 @@ public class ContractServiceImpl implements ContractService {
     private final FileService fileService;
     private final ContractImageService contractImageService;
     private final NotificationService notificationService;
+    private final SlackNotificationService slackNotificationService;
 
     private String currentUserId() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -111,6 +113,21 @@ public class ContractServiceImpl implements ContractService {
             "계약 신청이 접수되었습니다. userId=" + userId + ", roomId=" + room.getRoomId(),
             null
         );
+        
+        slackNotificationService.send(String.format("""
+        	    📋 *새 계약 신청이 접수되었습니다!*
+        	    • 계약 ID : #%d
+        	    • 사용자  : %s
+        	    • 건물    : %s
+        	    • 객실    : %s호 (ID: %d)
+        	    • 관리자 페이지 : /admin/contracts
+        	    """,
+        	    saved.getContractId(),
+        	    userId,
+        	    room.getBuilding().getBuildingNm(),
+        	    room.getRoomNo(),
+        	    room.getRoomId()
+        	));
 
         if (request.getSignFile() != null && !request.getSignFile().isEmpty()) {
             FileUploadResponse uploadResp = fileService.uploadFiles(
