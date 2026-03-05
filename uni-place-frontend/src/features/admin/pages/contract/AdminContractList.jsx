@@ -5,31 +5,28 @@ import { adminApi } from '../../api/adminApi';
 import styles from '../reservation/AdminReservation.module.css';
 
 const CONTRACT_STATUS_OPTIONS = [
-  { value: '', label: '상태' },
-  { value: 'requested', label: '요청됨' },
-  { value: 'active', label: '활성' },
-  { value: 'ended', label: '종료' },
-  { value: 'cancelled', label: '취소' },
+  { value: '', label: '\uC0C1\uD0DC' },
+  { value: 'requested', label: '\uC694\uCCAD\uB428' },
+  { value: 'approved', label: '\uC2B9\uC778' },
+  { value: 'active', label: '\uD65C\uC131' },
+  { value: 'ended', label: '\uC885\uB8CC' },
+  { value: 'cancelled', label: '\uCDE8\uC18C' },
 ];
 
 const STATUS_LABELS = {
-  requested: { label: '요청됨', cls: styles.badgePending },
-  active: { label: '활성', cls: styles.badgeConfirmed },
-  ended: { label: '종료', cls: styles.badgeCompleted },
-  cancelled: { label: '취소', cls: styles.badgeCancelled },
+  requested: { label: '\uC694\uCCAD\uB428', cls: styles.badgePending },
+  approved: { label: '\uC2B9\uC778', cls: styles.badgePending },
+  active: { label: '\uD65C\uC131', cls: styles.badgeConfirmed },
+  ended: { label: '\uC885\uB8CC', cls: styles.badgeCompleted },
+  cancelled: { label: '\uCDE8\uC18C', cls: styles.badgeCancelled },
 };
 
-const API_BASE = 'http://localhost:8080';
-
 function StatusBadge({ status }) {
-  const key = String(status ?? '').toLowerCase();
-  const s =
-    STATUS_LABELS[status] ??
-    (key === 'approved'
-      ? { label: '승인', cls: styles.badgePending }
-      : { label: status ?? '-', cls: styles.badgePending });
+  const key = String(status ?? '').trim().toLowerCase();
+  const s = STATUS_LABELS[key] ?? { label: status ?? '-', cls: styles.badgePending };
   return <span className={`${styles.badge} ${s.cls}`}>{s.label}</span>;
 }
+const API_BASE = 'http://localhost:8080';
 
 function fmtDate(v) {
   if (!v) return '-';
