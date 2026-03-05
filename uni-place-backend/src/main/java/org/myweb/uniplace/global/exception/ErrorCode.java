@@ -95,6 +95,7 @@ public enum ErrorCode {
     REVIEW_DUPLICATE(HttpStatus.CONFLICT, "REVIEW_409", "이미 작성한 리뷰가 있습니다."),
     REVIEW_ACCESS_DENIED(HttpStatus.FORBIDDEN, "REVIEW_403", "해당 리뷰에 접근 권한이 없습니다."),
     REVIEW_TENANT_ONLY(HttpStatus.FORBIDDEN, "REVIEW_403_1", "입주자(tenant)만 리뷰를 작성·수정·삭제할 수 있습니다."),
+    REVIEW_NO_CONTRACT(HttpStatus.FORBIDDEN, "REVIEW_403_2", "해당 방의 계약이 활성 중이거나 종료된 이력이 있는 경우에만 리뷰를 작성할 수 있습니다."),
 
 
     // ===== Building / Space =====

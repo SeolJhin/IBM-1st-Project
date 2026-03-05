@@ -13,6 +13,8 @@ import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.property.repository.RoomRepository;
+import org.myweb.uniplace.domain.contract.repository.ContractRepository;
+import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 import org.myweb.uniplace.domain.review.api.dto.request.ReviewCreateRequest;
 import org.myweb.uniplace.domain.review.api.dto.request.ReviewUpdateRequest;
 import org.myweb.uniplace.domain.review.api.dto.response.ReviewResponse;
@@ -48,6 +50,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     private final ReviewLikeRepository reviewLikeRepository;
     private final RoomRepository roomRepository;
+    private final ContractRepository contractRepository;
     private final FileService fileService;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
@@ -228,13 +231,24 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public void createReview(ReviewCreateRequest request, List<MultipartFile> files) {
         String userId = requireCurrentUserId();
-        requireTenantRole();
+        // ROLE_TENANT 체크 제거: 계약 종료(ended) 후 ROLE_USER로 롤백된 사람도 리뷰 작성 가능
+        // 대신 아래에서 계약 이력(active/ended)으로 권한을 검증
 
         Room reviewRoom = roomRepository.findById(request.getRoomId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         if (reviewRoom.isDeleted()) {
             throw new BusinessException(ErrorCode.ROOM_NOT_FOUND);
+        }
+
+        // 해당 방에 active 또는 ended 계약 이력이 있는지 확인
+        boolean hasContractHistory = contractRepository.existsByUserIdAndRoomIdAndStatusIn(
+                userId,
+                request.getRoomId(),
+                java.util.List.of(ContractStatus.active, ContractStatus.ended)
+        );
+        if (!hasContractHistory) {
+            throw new BusinessException(ErrorCode.REVIEW_NO_CONTRACT);
         }
 
         if (reviewRepository.existsByUserIdAndRoomId(userId, request.getRoomId())) {
@@ -273,7 +287,6 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public void updateReview(int reviewId, ReviewUpdateRequest request, boolean deleteFiles, List<MultipartFile> files) {
         String me = requireCurrentUserId();
-        requireTenantRole();
         Review review = findReviewOrThrow(reviewId);
 
         if (!me.equals(review.getUserId())) {
@@ -301,7 +314,6 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public void deleteReview(int reviewId) {
         String me = requireCurrentUserId();
-        requireTenantRole();
         Review review = findReviewOrThrow(reviewId);
 
         if (!me.equals(review.getUserId())) {

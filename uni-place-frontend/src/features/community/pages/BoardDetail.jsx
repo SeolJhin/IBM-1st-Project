@@ -220,7 +220,10 @@ function ReplyItem({
     onRefresh?.();
   };
 
+  const [likePending, setLikePending] = useState(false);
   const handleLike = async () => {
+    if (likePending) return;
+    setLikePending(true);
     try {
       if (reply.likedByMe) await communityApi.unlikeReply(reply.replyId);
       else await communityApi.likeReply(reply.replyId);
@@ -231,6 +234,8 @@ function ReplyItem({
       }));
     } catch (e) {
       console.warn('reply like error:', e?.message);
+    } finally {
+      setLikePending(false);
     }
   };
 
@@ -702,8 +707,10 @@ export default function BoardDetail() {
     }
   };
 
+  const [likePending, setLikePending] = useState(false);
   const handleBoardLike = async () => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || likePending) return;
+    setLikePending(true);
     try {
       if (liked) await communityApi.unlikeBoard(boardId);
       else await communityApi.likeBoard(boardId);
@@ -711,6 +718,8 @@ export default function BoardDetail() {
       setLikeCount((c) => c + (liked ? -1 : 1));
     } catch (e) {
       console.warn('board like error:', e?.message);
+    } finally {
+      setLikePending(false);
     }
   };
 

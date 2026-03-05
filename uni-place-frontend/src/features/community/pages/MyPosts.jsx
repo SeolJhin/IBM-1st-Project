@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { communityApi } from '../api/communityApi';
 import { reviewApi } from '../../review/api/reviewApi';
+import ReviewModal from '../../review/components/ReviewModal';
 import styles from './MyPosts.module.css';
 
 const BOARD_CATEGORIES = [
@@ -35,6 +36,7 @@ export default function MyPosts() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [reviewModal, setReviewModal] = useState(null); // { mode, reviewId }
 
   const load = useCallback(async (t, cat, pg) => {
     setLoading(true);
@@ -163,7 +165,9 @@ export default function MyPosts() {
             <div
               key={r.reviewId}
               className={styles.reviewCard}
-              onClick={() => navigate(`/reviews/${r.reviewId}`)}
+              onClick={() =>
+                setReviewModal({ mode: 'detail', reviewId: r.reviewId })
+              }
             >
               {r.thumbnailUrl && (
                 <div className={styles.reviewThumb}>
@@ -297,6 +301,18 @@ export default function MyPosts() {
             다음
           </button>
         </div>
+      )}
+
+      {reviewModal && (
+        <ReviewModal
+          mode={reviewModal.mode}
+          reviewId={reviewModal.reviewId}
+          onClose={() => setReviewModal(null)}
+          onSaved={() => {
+            setReviewModal(null);
+            load(tab, category, page);
+          }}
+        />
       )}
     </div>
   );

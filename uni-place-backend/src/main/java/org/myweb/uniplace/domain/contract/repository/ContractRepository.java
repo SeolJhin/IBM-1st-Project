@@ -178,4 +178,18 @@ public interface ContractRepository extends JpaRepository<Contract, Integer> {
     );
 
     boolean existsByUser_UserIdAndContractSt(String userId, ContractStatus status);
+
+    /** 특정 방에 대해 active 또는 ended 계약 이력이 있는지 확인 (리뷰 작성 권한 체크용) */
+    @Query("""
+        select count(c) > 0
+          from Contract c
+         where c.user.userId = :userId
+           and c.room.roomId = :roomId
+           and c.contractSt in :statuses
+    """)
+    boolean existsByUserIdAndRoomIdAndStatusIn(
+            @Param("userId") String userId,
+            @Param("roomId") Integer roomId,
+            @Param("statuses") Collection<ContractStatus> statuses
+    );
 }

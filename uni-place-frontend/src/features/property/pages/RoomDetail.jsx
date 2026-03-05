@@ -15,6 +15,7 @@ import ReviewModal from '../../review/components/ReviewModal';
 import Modal from '../../../shared/components/Modal/Modal';
 import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
 import TourReservationList from '../../reservation/pages/TourReservationList';
+import { contractApi } from '../../contract/api/contractApi';
 
 function StarRating({ value = 0, size = 'md' }) {
   return (
@@ -173,6 +174,7 @@ export default function RoomDetail() {
 
   const [tourCreateOpen, setTourCreateOpen] = useState(false);
   const [tourListOpen, setTourListOpen] = useState(false);
+  const [canWriteReview, setCanWriteReview] = useState(false);
 
   const [spaces, setSpaces] = useState([]);
   const [spacesLoading, setSpacesLoading] = useState(false);
@@ -206,6 +208,26 @@ export default function RoomDetail() {
       .then((data) => setReviewSummary(data))
       .catch(() => {});
   }, [roomId]);
+
+  // 리뷰 작성 권한: 해당 방에 active 또는 ended 계약이 있는 경우만 가능
+  useEffect(() => {
+    if (!user || !roomId) {
+      setCanWriteReview(false);
+      return;
+    }
+    contractApi
+      .myContracts()
+      .then((data) => {
+        const contracts = Array.isArray(data) ? data : [];
+        const eligible = contracts.some(
+          (c) =>
+            String(c.roomId) === String(roomId) &&
+            (c.contractStatus === 'active' || c.contractStatus === 'ended')
+        );
+        setCanWriteReview(eligible);
+      })
+      .catch(() => setCanWriteReview(false));
+  }, [user, roomId]);
 
   const fetchReviews = useCallback(
     async (p) => {
@@ -248,6 +270,12 @@ export default function RoomDetail() {
   const handleWriteReview = () => {
     if (!user) {
       navigate('/login', { state: { from: `/rooms/${roomId}` } });
+      return;
+    }
+    if (!canWriteReview) {
+      window.alert(
+        '리뷰는 해당 방의 계약이 활성 중이거나 종료된 이력이 있는 분만 작성할 수 있습니다.'
+      );
       return;
     }
     setReviewModal({ mode: 'write' });
@@ -618,6 +646,15 @@ export default function RoomDetail() {
             <button
               className={styles.writeReviewBtn}
               onClick={handleWriteReview}
+              disabled={!canWriteReview}
+              title={
+                !canWriteReview
+                  ? '계약이 활성 중이거나 종료된 이력이 있는 경우에만 리뷰를 작성할 수 있습니다.'
+                  : ''
+              }
+              style={
+                !canWriteReview ? { opacity: 0.4, cursor: 'not-allowed' } : {}
+              }
             >
               ✏️ 리뷰 작성
             </button>
@@ -631,12 +668,14 @@ export default function RoomDetail() {
           {!reviewLoading && reviews.length === 0 && (
             <div className={styles.reviewEmpty}>
               <p>아직 작성된 리뷰가 없습니다.</p>
-              <button
-                className={styles.writeReviewBtnSm}
-                onClick={handleWriteReview}
-              >
-                첫 리뷰를 남겨보세요 →
-              </button>
+              {canWriteReview && (
+                <button
+                  className={styles.writeReviewBtnSm}
+                  onClick={handleWriteReview}
+                >
+                  첫 리뷰를 남겨보세요 →
+                </button>
+              )}
             </div>
           )}
           {!reviewLoading && reviews.length > 0 && (

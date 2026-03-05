@@ -1,7 +1,8 @@
 // features/review/pages/MyReviewsList.jsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMyReviews, useReviewActions } from '../hooks/useReviews';
+import ReviewModal from '../components/ReviewModal';
 import styles from './ReviewList.module.css';
 import { toApiImageUrl } from '../../file/api/fileApi';
 
@@ -119,6 +120,7 @@ export default function MyReviewsList() {
   const { reviews, pagination, loading, error, goToPage, refetch } =
     useMyReviews();
   const { remove, submitting } = useReviewActions();
+  const [reviewModal, setReviewModal] = useState(null); // { mode, reviewId }
 
   // 다른 페이지(상세 등) 다녀온 뒤 탭이 다시 활성화되면 즉시 refetch → readCount 즉시 반영
   useEffect(() => {
@@ -174,7 +176,7 @@ export default function MyReviewsList() {
                 key={r.reviewId}
                 review={r}
                 onView={(id) => navigate(`/reviews/${id}`)}
-                onEdit={(id) => navigate(`/reviews/${id}/edit`)}
+                onEdit={(id) => setReviewModal({ mode: 'edit', reviewId: id })}
                 onDelete={handleDelete}
               />
             ))}
@@ -184,6 +186,18 @@ export default function MyReviewsList() {
       )}
 
       {submitting && <div className={styles.overlay} />}
+
+      {reviewModal && (
+        <ReviewModal
+          mode={reviewModal.mode}
+          reviewId={reviewModal.reviewId}
+          onClose={() => setReviewModal(null)}
+          onSaved={() => {
+            setReviewModal(null);
+            refetch();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -18,107 +18,66 @@
 //   buildingId, buildingNm, roomNo
 
 import { api } from '../../../app/http/axiosInstance';
-import { tokenStore } from '../../../app/http/tokenStore';
-
-// FormData 전송용 fetch 헬퍼 (axios 기본 Content-Type 우회)
-function fetchMultipart(method, path, form, params) {
-  const token = tokenStore.getAccess();
-  const headers = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  const url = params
-    ? `/api${path}?${new URLSearchParams(params).toString()}`
-    : `/api${path}`;
-  return fetch(url, { method, headers, body: form })
-    .then((res) => res.json())
-    .then((d) => {
-      if (d && typeof d === 'object' && 'success' in d) {
-        if (d.success) return d.data;
-        throw new Error(d.message || 'API 오류');
-      }
-      return d;
-    });
-}
 
 const unwrap = (res) => {
   const d = res.data;
   if (d && typeof d === 'object' && 'success' in d) {
     if (d.success) return d.data;
-    throw new Error(d.message || 'API 오류');
+    // 백엔드가 success:false 로 응답한 경우 (2xx인데 실패 — 드문 케이스)
+    const err = new Error(d.message || 'API 오류');
+    err.errorCode = d.errorCode;
+    throw err;
   }
   return d;
 };
 
+// axios 4xx/5xx 에러에서 백엔드 ApiResponse { errorCode, message } 추출
+const extractApiError = (axiosError) => {
+  const data = axiosError?.response?.data;
+  if (data && typeof data === 'object' && 'errorCode' in data) {
+    const err = new Error(data.message || 'API 오류');
+    err.errorCode = data.errorCode;
+    return err;
+  }
+  return axiosError;
+};
+
+const call = (promise) =>
+  promise.then(unwrap).catch((e) => {
+    throw extractApiError(e);
+  });
+
 export const reviewApi = {
-  /**
-   * GET /reviews?roomId={roomId}&page=0&size=10
-   * → PageResponse<ReviewResponse>  (public)
-   */
-  /**
-   * GET /reviews  (roomId 없이 전체)
-   * → PageResponse<ReviewResponse>  (public)
-   */
   getAll: (params = {}) =>
-    api
-      .get('/reviews', {
-        params: {
-          page: params.page ?? 0,
-          size: params.size ?? 10,
-        },
+    call(
+      api.get('/reviews', {
+        params: { page: params.page ?? 0, size: params.size ?? 10 },
       })
-      .then(unwrap),
+    ),
 
   getListByRoom: (roomId, params = {}) =>
-    api
-      .get('/reviews', {
-        params: {
-          roomId,
-          page: params.page ?? 0,
-          size: params.size ?? 10,
-        },
+    call(
+      api.get('/reviews', {
+        params: { roomId, page: params.page ?? 0, size: params.size ?? 10 },
       })
-      .then(unwrap),
+    ),
 
-  /**
-   * GET /reviews/my?page=0&size=10
-   * → PageResponse<ReviewResponse>  (auth)
-   */
   getMyList: (params = {}) =>
-    api
-      .get('/reviews/my', {
-        params: {
-          page: params.page ?? 0,
-          size: params.size ?? 10,
-        },
+    call(
+      api.get('/reviews/my', {
+        params: { page: params.page ?? 0, size: params.size ?? 10 },
       })
-      .then(unwrap),
+    ),
 
-  /**
-   * GET /reviews/{reviewId}?increaseReadCount=true|false
-   * → ReviewResponse  (public)
-   * increaseReadCount=false 시 조회수 증가 없이 데이터만 반환
-   */
   getDetail: (reviewId, { increaseReadCount = true } = {}) => {
     const qs = new URLSearchParams();
     if (!increaseReadCount) qs.set('increaseReadCount', 'false');
     const query = qs.toString();
-    return api
-      .get(`/reviews/${reviewId}${query ? `?${query}` : ''}`)
-      .then(unwrap);
+    return call(api.get(`/reviews/${reviewId}${query ? `?${query}` : ''}`));
   },
 
-  /**
-   * GET /reviews/rooms/{roomId}/summary
-   * → { roomId, avgRating, reviewCount }  (public)
-   */
-  getRoomSummary: (roomId) =>
-    api.get(`/reviews/rooms/${roomId}/summary`).then(unwrap),
+  getRoomSummary: (roomId) => call(api.get(`/reviews/rooms/${roomId}/summary`)),
 
-  /**
-   * POST /reviews  multipart/form-data
-   * body: { roomId, rating, reviewTitle?, reviewCtnt?, code? }
-   * files: ofiles[]  (optional, max 5)
-   * → void  (auth)
-   */
   create: (body, files = []) => {
     const form = new FormData();
     form.append('roomId', body.roomId);
@@ -127,16 +86,11 @@ export const reviewApi = {
     if (body.reviewCtnt) form.append('reviewCtnt', body.reviewCtnt);
     if (body.code) form.append('code', body.code);
     files.forEach((f) => form.append('ofiles', f));
-    return fetchMultipart('POST', '/reviews', form);
+    return call(
+      api.post('/reviews', form, { headers: { 'Content-Type': undefined } })
+    );
   },
 
-  /**
-   * PUT /reviews/{reviewId}  multipart/form-data
-   * body: { rating?, reviewTitle?, reviewCtnt?, code? }
-   * deleteFiles: boolean (기존 파일 전체 삭제 여부)
-   * files: 새로 추가할 ofiles[]
-   * → void  (auth)
-   */
   update: (reviewId, body, deleteFiles = false, files = []) => {
     const form = new FormData();
     if (body.rating != null) form.append('rating', body.rating);
@@ -144,33 +98,21 @@ export const reviewApi = {
     if (body.reviewCtnt != null) form.append('reviewCtnt', body.reviewCtnt);
     if (body.code != null) form.append('code', body.code);
     files.forEach((f) => form.append('ofiles', f));
-    return fetchMultipart('PUT', `/reviews/${reviewId}`, form, { deleteFiles });
+    return call(
+      api.put(`/reviews/${reviewId}`, form, {
+        params: { deleteFiles },
+        headers: { 'Content-Type': undefined },
+      })
+    );
   },
 
-  /**
-   * DELETE /reviews/{reviewId}
-   * → void  (auth)
-   */
-  remove: (reviewId) => api.delete(`/reviews/${reviewId}`).then(unwrap),
+  remove: (reviewId) => call(api.delete(`/reviews/${reviewId}`)),
 
-  /**
-   * POST /reviews/{reviewId}/likes  → 좋아요 (auth)
-   */
-  likeReview: (reviewId) => api.post(`/reviews/${reviewId}/likes`).then(unwrap),
+  likeReview: (reviewId) => call(api.post(`/reviews/${reviewId}/likes`)),
 
-  /**
-   * DELETE /reviews/{reviewId}/likes  → 좋아요 취소 (auth)
-   */
-  unlikeReview: (reviewId) =>
-    api.delete(`/reviews/${reviewId}/likes`).then(unwrap),
+  unlikeReview: (reviewId) => call(api.delete(`/reviews/${reviewId}/likes`)),
 
-  /**
-   * POST /reviews/{reviewId}/read-count
-   * → void  (public) – 상세 진입 시 조회수 1 증가
-   */
+  // 조회수 증가는 실패해도 무시
   incrementReadCount: (reviewId) =>
-    api
-      .post(`/reviews/${reviewId}/read-count`)
-      .then(unwrap)
-      .catch(() => {}),
+    call(api.post(`/reviews/${reviewId}/read-count`)).catch(() => {}),
 };
