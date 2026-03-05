@@ -248,10 +248,11 @@ export default function CommunityHome() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
 
+  // ── URL에서 초기값 읽기 ──────────────────────────────────────
   const [activeTab, setActiveTab] = useState(() =>
     normalizeTab(searchParams.get('tab'))
   );
-  const [reviewModal, setReviewModal] = useState(null); // { mode, reviewId? }
+  const [reviewModal, setReviewModal] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -267,7 +268,6 @@ export default function CommunityHome() {
 
   const editorContainerRef = useRef(null);
 
-  // 로그인 여부 & 역할 확인
   const isLoggedIn = !!user;
   const userRole = String(user?.userRole ?? '').toLowerCase();
   const isAdmin = userRole === 'admin';
@@ -276,17 +276,41 @@ export default function CommunityHome() {
 
   const [userStatusModalId, setUserStatusModalId] = useState(null);
 
-  // 검색 상태
-  const [searchType, setSearchType] = useState('title'); // 'title' | 'userId'
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [activeSearch, setActiveSearch] = useState({ type: '', keyword: '' });
+  // ── 검색 상태: URL params 에서 초기값 읽기 ──────────────────
+  const [searchType, setSearchType] = useState(
+    () => searchParams.get('searchType') || 'title'
+  );
+  const [searchKeyword, setSearchKeyword] = useState(
+    () => searchParams.get('keyword') || ''
+  );
+  const [activeSearch, setActiveSearch] = useState(() => {
+    const kw = searchParams.get('keyword') || '';
+    const st = searchParams.get('searchType') || 'title';
+    return kw ? { type: st, keyword: kw } : { type: '', keyword: '' };
+  });
 
+  // ── 브라우저 뒤로가기/앞으로가기 시 URL → 상태 동기화 ───────
+  // 주의: setSearchParams 호출로 인한 searchParams 변경에는 반응하지 않도록
+  // "popstate" 이벤트만 감지
   useEffect(() => {
-    const nextTab = normalizeTab(searchParams.get('tab'));
-    setActiveTab((prev) => (prev === nextTab ? prev : nextTab));
-  }, [searchParams]);
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.search);
+      const nextTab = normalizeTab(params.get('tab'));
+      const kw = params.get('keyword') || '';
+      const st = params.get('searchType') || 'title';
+      setActiveTab(nextTab);
+      setSearchType(st);
+      setSearchKeyword(kw);
+      setActiveSearch(
+        kw ? { type: st, keyword: kw } : { type: '', keyword: '' }
+      );
+      setPage(1);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
-  // 글 작성시 실제 코드값 (ALL탭은 자유로 기본)
+  // ── 글 작성시 코드값 ─────────────────────────────────────────
   const effectiveCode = (() => {
     if (activeTab === 'FREE') return 'FREE';
     if (activeTab === 'QUESTION') return 'QUESTION';
@@ -294,17 +318,11 @@ export default function CommunityHome() {
     return 'FREE';
   })();
 
-  // 탭별 글쓰기 권한:
-  // - 자유(FREE) / ALL탭: 로그인한 모든 사용자 (user, tenant, admin)
-  // - 질문(QUESTION): tenant, admin만
-  // - 후기(REVIEW): 글쓰기 버튼 없음 (별도 리뷰 작성 페이지)
-  // - 공지(NOTICE): admin만
   const canOpenWriter = (() => {
     if (!isLoggedIn) return false;
     if (activeTab === 'REVIEW') return false;
     if (activeTab === 'NOTICE') return isAdmin;
     if (activeTab === 'QUESTION') return isAdmin || isTenant;
-    // FREE, ALL
     return true;
   })();
 
@@ -313,7 +331,6 @@ export default function CommunityHome() {
     setError('');
     try {
       let data;
-      // 후기탭: reviews 테이블 전체 조회
       if (activeTab === 'REVIEW') {
         data = await reviewApi.getAll({ page: page - 1, size: 10 });
         const content = Array.isArray(data?.content) ? data.content : [];
@@ -344,7 +361,6 @@ export default function CommunityHome() {
           ? data
           : [];
 
-      // 공지(importance=Y)는 상단 고정, 나머지는 최신순(boardId desc)
       const sorted = [...content].sort((a, b) => {
         const aNotice = a?.importance === 'Y' ? 0 : 1;
         const bNotice = b?.importance === 'Y' ? 0 : 1;
@@ -366,24 +382,45 @@ export default function CommunityHome() {
   useEffect(() => {
     load();
   }, [load]);
-  useEffect(() => {
-    setPage(1);
-    setSearchKeyword('');
-    setActiveSearch({ type: '', keyword: '' });
-  }, [activeTab]);
+
   useEffect(() => {
     if (!canOpenWriter) setShowWriter(false);
   }, [canOpenWriter]);
 
+  // ── 탭 클릭: 검색 초기화 + URL 업데이트 ─────────────────────
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    setShowWriter(false);
+    setPage(1);
+    setSearchKeyword('');
+    setSearchType('title');
+    setActiveSearch({ type: '', keyword: '' });
+    const next = new URLSearchParams();
+    if (tabKey !== 'ALL') next.set('tab', tabKey);
+    setSearchParams(next, { replace: true });
+  };
+
+  // ── 검색 실행 ────────────────────────────────────────────────
   const handleSearch = () => {
     setPage(1);
     setActiveSearch({ type: searchType, keyword: searchKeyword });
+    const next = new URLSearchParams();
+    if (activeTab !== 'ALL') next.set('tab', activeTab);
+    if (searchKeyword.trim()) {
+      next.set('searchType', searchType);
+      next.set('keyword', searchKeyword.trim());
+    }
+    setSearchParams(next, { replace: true });
   };
 
+  // ── 검색 초기화 ──────────────────────────────────────────────
   const handleSearchReset = () => {
     setSearchKeyword('');
     setActiveSearch({ type: '', keyword: '' });
     setPage(1);
+    const next = new URLSearchParams();
+    if (activeTab !== 'ALL') next.set('tab', activeTab);
+    setSearchParams(next, { replace: true });
   };
 
   const handleAdminDeleteBoard = async (boardId, e) => {
@@ -436,7 +473,6 @@ export default function CommunityHome() {
       setError('로그인이 필요합니다.');
       return;
     }
-
     if (isBanned) {
       setError('정지(banned) 상태의 계정은 커뮤니티 글을 작성할 수 없습니다.');
       return;
@@ -478,7 +514,6 @@ export default function CommunityHome() {
     e.stopPropagation();
     if (!isLoggedIn) return;
 
-    // 후기 탭: reviewId로 식별, 리뷰 좋아요 API 사용
     if (activeTab === 'REVIEW') {
       const item = items.find((i) => i.reviewId === itemId);
       if (!item) return;
@@ -502,7 +537,6 @@ export default function CommunityHome() {
       return;
     }
 
-    // 게시판 탭: boardId로 식별, 게시판 좋아요 API 사용
     const item = items.find((i) => (i.boardId ?? i.id) === itemId);
     if (!item) return;
     const token = localStorage.getItem('access_token') || '';
@@ -527,6 +561,12 @@ export default function CommunityHome() {
     }
   };
 
+  // ── 글 클릭: 현재 URL params(tab + 검색) 보존해서 이동 ──────
+  const handleBoardClick = (boardId) => {
+    const qs = searchParams.toString();
+    navigate(`/community/${boardId}${qs ? `?${qs}` : ''}`);
+  };
+
   return (
     <div className={styles.page}>
       <Header />
@@ -547,21 +587,13 @@ export default function CommunityHome() {
                 key={tab.key}
                 type="button"
                 className={`${styles.tabBtn} ${activeTab === tab.key ? styles.tabBtnActive : ''}`}
-                onClick={() => {
-                  setActiveTab(tab.key);
-                  setShowWriter(false);
-                  const next = new URLSearchParams(searchParams);
-                  if (tab.key === 'ALL') next.delete('tab');
-                  else next.set('tab', tab.key);
-                  setSearchParams(next, { replace: true });
-                }}
+                onClick={() => handleTabChange(tab.key)}
               >
                 {tab.label}
               </button>
             ))}
           </div>
 
-          {/* 자유/전체/질문 탭에서 로그인 유저에게만 글쓰기 버튼 표시 */}
           {canOpenWriter && (
             <button
               type="button"
@@ -595,7 +627,6 @@ export default function CommunityHome() {
             }}
           >
             <option value="title">제목</option>
-            {isAdmin && <option value="userId">아이디</option>}
             <option value="nickname">닉네임</option>
           </select>
           <input
@@ -770,11 +801,7 @@ export default function CommunityHome() {
                                 reviewId: item.reviewId,
                               });
                             } else {
-                              const tabQuery =
-                                activeTab && activeTab !== 'ALL'
-                                  ? `?tab=${encodeURIComponent(activeTab)}`
-                                  : '';
-                              navigate(`/community/${boardId}${tabQuery}`);
+                              handleBoardClick(boardId);
                             }
                           }}
                         >

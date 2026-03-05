@@ -61,7 +61,7 @@ public class AdminBoardServiceImpl implements AdminBoardService {
             null,
             TargetType.board,
             boardId,
-            "/boards"
+            "/community"
         );
 
         notificationService.notifyAdmins(
@@ -70,7 +70,7 @@ public class AdminBoardServiceImpl implements AdminBoardService {
             null,
             TargetType.board,
             boardId,
-            "/admin"
+            "/community/boards/" + boardId
         );
     }
 

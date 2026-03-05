@@ -46,7 +46,7 @@ public class LikeServiceImpl implements LikeService {
                 userId,
                 TargetType.board,
                 boardId,
-                "/boards/" + boardId
+                "/community/boards/" + boardId
             );
         }
     }
@@ -76,7 +76,7 @@ public class LikeServiceImpl implements LikeService {
                 userId,
                 TargetType.reply,
                 replyId,
-                "/boards/" + reply.getBoardId()
+                "/community/boards/" + reply.getBoardId()
             );
         }
     }

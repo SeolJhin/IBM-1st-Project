@@ -15,7 +15,27 @@ const TARGET_LABEL = {
   space: '공간예약',
   review: '리뷰',
   payment: '결제',
+  order: '주문',
+  contract: '계약',
+  support: '고객지원',
+  security: '보안',
 };
+
+function getNotificationLabel(item) {
+  const code = String(item?.code || '').toUpperCase();
+  if (code.startsWith('PAY_')) return '결제';
+  if (code.startsWith('ORDER_')) return '주문';
+  if (code.startsWith('CONTRACT_')) return '계약';
+  if (code.startsWith('QNA_') || code.startsWith('COMP_')) return '고객지원';
+  if (code.startsWith('SP_')) return '공간예약';
+  if (code.startsWith('TOUR_')) return '투어';
+  if (code.startsWith('BRD_') || code.startsWith('RPL_')) return '커뮤니티';
+  if (code.startsWith('RVW_') || code === 'ADM_RVW_DEL') return '리뷰';
+  if (code.startsWith('SEC_') || code.startsWith('ADM_')) return '보안';
+  if (code === 'BILL_NEW') return '청구서';
+  if (code === 'ADMIN_NOTICE') return '공지사항';
+  return TARGET_LABEL[item?.target] ?? '알림';
+}
 
 function timeAgo(dateStr) {
   if (!dateStr) return '';
@@ -50,9 +70,7 @@ function NotificationItem({ item, onRead, onNavigate }) {
       onKeyDown={(e) => e.key === 'Enter' && handleNavigate()}
     >
       <div className={styles.itemLeft}>
-        <span className={styles.typeBadge}>
-          {TARGET_LABEL[item.target] ?? item.target ?? '알림'}
-        </span>
+        <span className={styles.typeBadge}>{getNotificationLabel(item)}</span>
         <p className={styles.message}>{localizeNotificationMessage(item)}</p>
         <span className={styles.time}>{timeAgo(item.createdAt)}</span>
       </div>
@@ -117,7 +135,11 @@ export default function NotificationList({ inlineMode = false }) {
         </h1>
         <div className={styles.headerBtns}>
           {unreadCount > 0 && (
-            <button className={styles.readAllBtn} type="button" onClick={markAllRead}>
+            <button
+              className={styles.readAllBtn}
+              type="button"
+              onClick={markAllRead}
+            >
               모두 읽음
             </button>
           )}

@@ -78,7 +78,7 @@ public class ComplainServiceImpl implements ComplainService {
             notificationService.notifyAdmins(
                 NotificationType.COMP_NEW.name(),
                 "새 민원이 접수되었습니다. compId=" + saved.getCompId() + ", userId=" + userId,
-                userId, TargetType.notice, null, "/admin/support/complain/" + saved.getCompId()
+                userId, TargetType.support, null, "/admin/support/complain/" + saved.getCompId()
             );
         } catch (Exception e) {
             log.warn("[COMP][NOTIFY][ADMIN] compId={} reason={}", saved.getCompId(), e.getMessage());
@@ -115,7 +115,7 @@ public class ComplainServiceImpl implements ComplainService {
                 complain.getUserId(),
                 NotificationType.COMP_REPLIED.name(),
                 "접수하신 민원에 답변이 등록되었습니다.",
-                null, TargetType.notice, null, "/support/complain/" + compId
+                null, TargetType.support, null, "/support/complain/" + compId
             );
         } catch (Exception e) {
             log.warn("[COMP][NOTIFY] replied compId={} reason={}", compId, e.getMessage());

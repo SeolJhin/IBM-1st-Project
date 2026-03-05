@@ -92,7 +92,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             notificationService.notifyAdmins(
                 NotificationType.ORDER_NEW.name(),
                 "룸서비스 주문이 접수되었습니다. userId=" + userId + ", roomId=" + tenantRoom.getRoomId(),
-                userId, TargetType.notice, roomServiceOrderId, adminUrlPath
+                userId, TargetType.order, roomServiceOrderId, adminUrlPath
             );
         } catch (Exception e) {
             log.warn("[ORDER][NOTIFY][ADMIN] reason={}", e.getMessage());
@@ -146,7 +146,7 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
                 order.getUser().getUserId(),
                 NotificationType.ORDER_STATUS.name(),
                 "룸서비스 주문 상태가 변경되었습니다. 상태: " + request.getOrderSt().name(),
-                null, TargetType.notice, null, "/mypage/orders"
+                null, TargetType.order, null, "/mypage/orders"
             );
         } catch (Exception e) {
             log.warn("[ORDER][NOTIFY] status orderId={} reason={}", orderId, e.getMessage());

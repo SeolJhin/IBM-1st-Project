@@ -474,13 +474,18 @@ export default function BoardDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const tab = String(
-    new URLSearchParams(location.search).get('tab') ?? ''
-  ).toUpperCase();
-  const communityListUrl =
-    tab === 'FREE' || tab === 'QUESTION' || tab === 'REVIEW'
-      ? `/community?tab=${tab}`
-      : '/community';
+  // 글 상세에서 뒤로가기 시 검색 필터(tab, searchType, keyword) 전체 유지
+  const communityListUrl = (() => {
+    const params = new URLSearchParams(location.search);
+    // tab, searchType, keyword 만 추려서 복원
+    const back = new URLSearchParams();
+    if (params.get('tab')) back.set('tab', params.get('tab'));
+    if (params.get('searchType'))
+      back.set('searchType', params.get('searchType'));
+    if (params.get('keyword')) back.set('keyword', params.get('keyword'));
+    const qs = back.toString();
+    return qs ? `/community?${qs}` : '/community';
+  })();
 
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);

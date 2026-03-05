@@ -127,7 +127,7 @@ public class OrderServiceImpl implements OrderService {
                     + ", roomId=" + tenantContract.getRoom().getRoomId()
                     + ", orderId=" + roomServiceOrderId,
                 userId,
-                TargetType.notice,
+                TargetType.order,
                 roomServiceOrderId,
                 adminUrlPath
             );
