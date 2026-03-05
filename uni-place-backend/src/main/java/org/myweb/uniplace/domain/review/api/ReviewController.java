@@ -37,7 +37,6 @@ public class ReviewController {
             @PageableDefault(size = 10, sort = "reviewId", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
-        System.out.println("[DEBUG] GET /reviews roomId=" + roomId + " page=" + pageable.getPageNumber() + " size=" + pageable.getPageSize());
         if (roomId != null) {
             return ResponseEntity.ok(
                     ApiResponse.ok(reviewService.getReviewListByRoom(roomId, pageable))
