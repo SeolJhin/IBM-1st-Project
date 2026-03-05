@@ -35,34 +35,47 @@ function formatDateTime(value) {
 }
 
 function formatPaymentProvider(provider) {
-  const key = String(provider ?? '').trim().toLowerCase();
+  const key = String(provider ?? '')
+    .trim()
+    .toLowerCase();
   if (!key) return '-';
   if (key.includes('kakao')) return '카카오페이';
   if (key.includes('toss')) return '토스페이';
   if (key.includes('naver')) return '네이버페이';
-  if (key.includes('card')) return '카드';
+  if (key.includes('card') || key === 'iamport') return '카드';
   return provider;
 }
 
 function resolvePaymentProvider(order) {
-  return (
+  const provider =
     order?.paymentProvider ??
     order?.provider ??
     order?.paymentMethodNm ??
     order?.paymentMethodCd ??
-    null
-  );
+    null;
+  if (provider) return provider;
+  const st = String(order?.parentOrderSt ?? order?.orderSt ?? '').toLowerCase();
+  if (st === 'ordered' || st === 'requested') return 'card';
+  return null;
 }
 
 function isPaymentCompleted(order) {
-  const paymentSt = String(order?.paymentSt ?? '').trim().toLowerCase();
-  const orderSt = String(order?.orderSt ?? '').trim().toLowerCase();
-  const parentOrderSt = String(order?.parentOrderSt ?? '').trim().toLowerCase();
+  const paymentSt = String(order?.paymentSt ?? '')
+    .trim()
+    .toLowerCase();
+  const orderSt = String(order?.orderSt ?? '')
+    .trim()
+    .toLowerCase();
+  const parentOrderSt = String(order?.parentOrderSt ?? '')
+    .trim()
+    .toLowerCase();
   return paymentSt === 'paid' || orderSt === 'paid' || parentOrderSt === 'paid';
 }
 
 function getDisplayStatus(order) {
-  const raw = String(order?.orderSt ?? '').trim().toLowerCase();
+  const raw = String(order?.orderSt ?? '')
+    .trim()
+    .toLowerCase();
   if (raw === 'delivered' || raw === 'cancelled') return raw;
   return isPaymentCompleted(order) ? 'paid' : 'requested';
 }
@@ -232,7 +245,8 @@ export default function AdminRoomServiceOrderList() {
 
     const query = keyword.trim().toLowerCase();
     return sourceOrders.filter((order) => {
-      if (statusFilter !== 'all' && order.orderSt !== statusFilter) return false;
+      if (statusFilter !== 'all' && order.orderSt !== statusFilter)
+        return false;
       if (!query) return true;
 
       const haystack = [
@@ -364,7 +378,9 @@ export default function AdminRoomServiceOrderList() {
       </div>
 
       {error ? <div className={styles.errorBox}>{error}</div> : null}
-      {actionError ? <div className={styles.errorBox}>{actionError}</div> : null}
+      {actionError ? (
+        <div className={styles.errorBox}>{actionError}</div>
+      ) : null}
 
       {!loading && filteredOrders.length === 0 ? (
         <div className={styles.empty}>현재 조건에 맞는 주문이 없습니다.</div>
@@ -394,60 +410,70 @@ export default function AdminRoomServiceOrderList() {
                       `건물 미확인 / ${order.roomNo ?? '-'} 호실`;
                     return (
                       <>
-                  <td>
-                    <strong>#{order.orderId}</strong>
-                    <div className={styles.subCell}>
-                      연결 주문 #{order.parentOrderId ?? '-'}
-                    </div>
-                  </td>
-                  <td>
-                    <div>{order.userId || '-'}</div>
-                    <div className={styles.subCell}>
-                      {roomLabel}
-                    </div>
-                  </td>
-                  <td>
-                    <div>{formatMoney(order.totalPrice)}</div>
-                    <div className={styles.subCell}>
-                      결제수단: {formatPaymentProvider(resolvePaymentProvider(order))}
-                    </div>
-                    <div className={styles.subCell}>
-                      {isPaymentCompleted(order) ? '결제완료' : '요청됨'}
-                    </div>
-                  </td>
-                  <td>
-                    <div className={styles.statusCell}>
-                      <StatusBadge status={getDisplayStatus(order)} />
-                      <div className={styles.statusActions}>
-                        <select
-                          className={styles.select}
-                          value={editableStatus[order.orderId] ?? order.orderSt ?? ''}
-                          onChange={(e) =>
-                            setEditableStatus((prev) => ({
-                              ...prev,
-                              [order.orderId]: e.target.value,
-                            }))
-                          }
-                        >
-                          {STATUS_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          className={styles.btn}
-                          onClick={() => onSaveStatus(order.orderId)}
-                          disabled={Boolean(savingOrderId)}
-                        >
-                          {savingOrderId === order.orderId ? '저장 중...' : '저장'}
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{formatDateTime(order.createdAt)}</td>
-                  <td>{order.roomServiceDesc || '-'}</td>
+                        <td>
+                          <strong>#{order.orderId}</strong>
+                          <div className={styles.subCell}>
+                            연결 주문 #{order.parentOrderId ?? '-'}
+                          </div>
+                        </td>
+                        <td>
+                          <div>{order.userId || '-'}</div>
+                          <div className={styles.subCell}>{roomLabel}</div>
+                        </td>
+                        <td>
+                          <div>{formatMoney(order.totalPrice)}</div>
+                          <div className={styles.subCell}>
+                            결제수단:{' '}
+                            {formatPaymentProvider(
+                              resolvePaymentProvider(order)
+                            )}
+                          </div>
+                          <div className={styles.subCell}>
+                            {isPaymentCompleted(order) ? '결제완료' : '요청됨'}
+                          </div>
+                        </td>
+                        <td>
+                          <div className={styles.statusCell}>
+                            <StatusBadge status={getDisplayStatus(order)} />
+                            <div className={styles.statusActions}>
+                              <select
+                                className={styles.select}
+                                value={
+                                  editableStatus[order.orderId] ??
+                                  order.orderSt ??
+                                  ''
+                                }
+                                onChange={(e) =>
+                                  setEditableStatus((prev) => ({
+                                    ...prev,
+                                    [order.orderId]: e.target.value,
+                                  }))
+                                }
+                              >
+                                {STATUS_OPTIONS.map((option) => (
+                                  <option
+                                    key={option.value}
+                                    value={option.value}
+                                  >
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                className={styles.btn}
+                                onClick={() => onSaveStatus(order.orderId)}
+                                disabled={Boolean(savingOrderId)}
+                              >
+                                {savingOrderId === order.orderId
+                                  ? '저장 중...'
+                                  : '저장'}
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                        <td>{formatDateTime(order.createdAt)}</td>
+                        <td>{order.roomServiceDesc || '-'}</td>
                       </>
                     );
                   })()}
@@ -485,7 +511,9 @@ export default function AdminRoomServiceOrderList() {
             type="button"
             className={styles.pageBtn}
             onClick={() =>
-              goToPage(Math.min(pagination.totalPages, pagination.currentPage + 1))
+              goToPage(
+                Math.min(pagination.totalPages, pagination.currentPage + 1)
+              )
             }
             disabled={
               pagination.currentPage >= pagination.totalPages || loading

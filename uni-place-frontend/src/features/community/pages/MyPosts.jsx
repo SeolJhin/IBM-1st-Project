@@ -209,7 +209,7 @@ export default function MyPosts() {
                 {tab === 'replies' ? '댓글 내용' : '제목'}
               </th>
               <th className={styles.colDate}>날짜</th>
-              <th className={styles.colView}>조회</th>
+              {tab !== 'replies' && <th className={styles.colView}>조회</th>}
               <th className={styles.colLike}>❤️</th>
             </tr>
           </thead>
@@ -261,7 +261,9 @@ export default function MyPosts() {
                       : title}
                   </td>
                   <td className={styles.colDate}>{date}</td>
-                  <td className={styles.colView}>{views}</td>
+                  {tab !== 'replies' && (
+                    <td className={styles.colView}>{views}</td>
+                  )}
                   <td className={styles.colLike}>
                     <span className={styles.likeChip}>♥ {likes}</span>
                   </td>

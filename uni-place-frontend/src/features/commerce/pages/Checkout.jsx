@@ -184,7 +184,7 @@ export default function Checkout({
         orderQuantity: item.orderQuantity,
       }));
 
-      if (payMethod === 'meet') {
+      if (payMethod === 'card') {
         await createOrder({
           buildingId: selectedBuildingId,
           roomId: selectedRoomId,
@@ -365,8 +365,8 @@ export default function Checkout({
           </h2>
           <div className={styles.payMethods}>
             <button
-              className={`${styles.payCard} ${payMethod === 'meet' ? styles.payCardOn : ''}`}
-              onClick={() => setPayMethod('meet')}
+              className={`${styles.payCard} ${payMethod === 'card' ? styles.payCardOn : ''}`}
+              onClick={() => setPayMethod('card')}
               disabled={submitting}
               type="button"
             >
@@ -376,7 +376,7 @@ export default function Checkout({
                 <span className={styles.paySubtitle}>카드 결제창으로 이동</span>
               </div>
               <div
-                className={`${styles.radio} ${payMethod === 'meet' ? styles.radioOn : ''}`}
+                className={`${styles.radio} ${payMethod === 'card' ? styles.radioOn : ''}`}
               />
             </button>
 
@@ -414,7 +414,7 @@ export default function Checkout({
         >
           {submitting
             ? '처리 중...'
-            : payMethod === 'meet'
+            : payMethod === 'card'
               ? `💵 ${fmt(total)}원 만나서 결제로 주문하기`
               : payMethod === 'kakao'
                 ? `🟡 ${fmt(total)}원 카카오페이로 결제하기`
@@ -429,16 +429,16 @@ export default function Checkout({
       {confirmModal && (
         <ConfirmModal
           title={
-            payMethod === 'meet'
+            payMethod === 'card'
               ? '카드 결제로 주문할까요?'
               : '카카오페이 결제를 진행할까요?'
           }
           desc={
-            payMethod === 'meet'
+            payMethod === 'card'
               ? `${selectedBuildingNm} · ${form.roomNo}호 · ${form.name} · ${fmt(total)}원\n카드로 결제됩니다.`
               : `${selectedBuildingNm} · ${form.roomNo}호 · ${form.name} · ${fmt(total)}원\n카카오페이 결제창으로 이동합니다.`
           }
-          confirmLabel={payMethod === 'meet' ? '주문하기' : '결제하기'}
+          confirmLabel={payMethod === 'card' ? '주문하기' : '결제하기'}
           cancelLabel="다시 확인"
           danger={false}
           onConfirm={async () => {
