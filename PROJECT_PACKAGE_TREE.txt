@@ -1,0 +1,1209 @@
+﻿IBM-1st-Project Package Tree
+
+Generated: 2026-03-06
+
+====================
+1) Backend (Spring)
+====================
+
+org.myweb.uniplace
++---batch
+|   |   ContractExpireBatchService.java
+|   |   MonthlyChargeBatchService.java
+|   |   NotificationBatchService.java
+|   |   RefreshTokenCleanupBatchService.java
++---domain
+|   +---affiliate
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   |   AdminAffiliateController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   AffiliateCreateRequest.java
+|   |   |   |   |   |   AffiliateSearchRequest.java
+|   |   |   |   |   |   AffiliateUpdateRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   AffiliateResponse.java
+|   |   |   |       |   AffiliateSummaryResponse.java
+|   |   |   |   AffiliateController.java
+|   |   +---application
+|   |   |   |   AffiliateService.java
+|   |   |   |   AffiliateServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |   |   |   Affiliate.java
+|   |   |   +---enums
+|   |   |       |   AffiliateStatus.java
+|   |   +---repository
+|   |       |   AffiliateRepository.java
+|   +---ai
+|   |   +---api
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   AiChatRequest.java
+|   |   |   |   |   |   CommonSpaceRecommendRequest.java
+|   |   |   |   |   |   CommunityContentSearchRequest.java
+|   |   |   |   |   |   ComplainPriorityRequest.java
+|   |   |   |   |   |   ContractAnomalyRequest.java
+|   |   |   |   |   |   ContractRecommendRequest.java
+|   |   |   |   |   |   PaymentStatusSummaryRequest.java
+|   |   |   |   |   |   PaymentSummaryRequest.java
+|   |   |   |   |   |   RoomSearchRequest.java
+|   |   |   |   |   |   RoomServiceStockMonitorRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   AiChatResponse.java
+|   |   |   |       |   ComplainPriorityResponse.java
+|   |   |   |       |   ContractRecommendResponse.java
+|   |   |   |       |   PaymentSummaryResponse.java
+|   |   |   |       |   RoomSearchResponse.java
+|   |   |   |   AiController.java
+|   |   +---application
+|   |   |   +---gateway
+|   |   |   |   +---dto
+|   |   |   |   |   |   AiGatewayRequest.java
+|   |   |   |   |   |   AiGatewayResponse.java
+|   |   |   |   |   AiGateway.java
+|   |   |   |   |   AiGatewayImpl.java
+|   |   |   |   |   AiGatewayProperties.java
+|   |   |   +---usecase
+|   |   |   |   |   AbstractForwardUseCase.java
+|   |   |   |   |   AiUseCase.java
+|   |   |   |   |   CommonSpaceRecommendUseCase.java
+|   |   |   |   |   CommunityContentUseCase.java
+|   |   |   |   |   ComplainPriorityUseCase.java
+|   |   |   |   |   ContractAnomalyUseCase.java
+|   |   |   |   |   ContractRenewalRecommendUseCase.java
+|   |   |   |   |   GeneralQaUseCase.java
+|   |   |   |   |   PaymentStatusUseCase.java
+|   |   |   |   |   PaymentSummaryUseCase.java
+|   |   |   |   |   RoomAvailabilityUseCase.java
+|   |   |   |   |   RoomServiceStockUseCase.java
+|   |   |   |   AiIntentRouter.java
+|   |   |   |   AiOrchestratorService.java
+|   |   |   |   AiOrchestratorServiceImpl.java
+|   |   +---domain
+|   |   |   |   AiContext.java
+|   |   |   |   AiIntent.java
+|   |   |   |   AiTaskType.java
+|   |   +---exception
+|   |   |   |   AiServiceException.java
+|   |   +---support
+|   |       |   AiPromptTemplateRegistry.java
+|   +---billing
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   |   AdminMonthlyChargeController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   MonthlyChargeCreateRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   MonthlyChargeDetailResponse.java
+|   |   |   |       |   MonthlyChargeResponse.java
+|   |   |   |   MonthlyChargeController.java
+|   |   +---application
+|   |   |   |   MonthlyChargeService.java
+|   |   |   |   MonthlyChargeServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |       |   ChargeStatusCode.java
+|   |   |       |   MonthlyCharge.java
+|   |   +---repository
+|   |       |   ChargeStatusCodeRepository.java
+|   |       |   MonthlyChargeRepository.java
+|   +---commerce
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   |   AdminOrderController.java
+|   |   |   |   |   AdminProductController.java
+|   |   |   |   |   AdminRoomServiceOrderController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   CartAddRequest.java
+|   |   |   |   |   |   CartQuantityUpdateRequest.java
+|   |   |   |   |   |   OrderCreateRequest.java
+|   |   |   |   |   |   OrderPayRequest.java
+|   |   |   |   |   |   ProductCreateRequest.java
+|   |   |   |   |   |   ProductUpdateRequest.java
+|   |   |   |   |   |   RoomServiceOrderCreateRequest.java
+|   |   |   |   |   |   RoomServiceOrderStatusRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   CartItemResponse.java
+|   |   |   |       |   CartResponse.java
+|   |   |   |       |   OrderItemResponse.java
+|   |   |   |       |   OrderResponse.java
+|   |   |   |       |   ProductBuildingStockResponse.java
+|   |   |   |       |   ProductResponse.java
+|   |   |   |       |   ProductWithBuildingStockResponse.java
+|   |   |   |       |   RoomServiceOrderResponse.java
+|   |   |   |   CartController.java
+|   |   |   |   OrderController.java
+|   |   |   |   ProductController.java
+|   |   |   |   RoomServiceOrderController.java
+|   |   +---application
+|   |   |   |   CartService.java
+|   |   |   |   CartServiceImpl.java
+|   |   |   |   OrderService.java
+|   |   |   |   OrderServiceImpl.java
+|   |   |   |   ProductService.java
+|   |   |   |   ProductServiceImpl.java
+|   |   |   |   RoomServiceOrderService.java
+|   |   |   |   RoomServiceOrderServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |   |   |   Cart.java
+|   |   |   |   |   CartItem.java
+|   |   |   |   |   Order.java
+|   |   |   |   |   OrderItem.java
+|   |   |   |   |   Product.java
+|   |   |   |   |   ProductBuildingStock.java
+|   |   |   |   |   RoomServiceOrder.java
+|   |   |   +---enums
+|   |   |       |   OrderStatus.java
+|   |   |       |   ProductStatus.java
+|   |   |       |   RoomServiceOrderStatus.java
+|   |   +---repository
+|   |       |   CartFileQueryRepository.java
+|   |       |   CartItemRepository.java
+|   |       |   CartRepository.java
+|   |       |   OrderItemRepository.java
+|   |       |   OrderRepository.java
+|   |       |   ProductBuildingStockRepository.java
+|   |       |   ProductRepository.java
+|   |       |   RoomServiceOrderRepository.java
+|   +---commoncode
+|   |   +---api
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   CommonCodeCreateRequest.java
+|   |   |   |   |   |   GroupCommonCodeCreateRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   CommonCodeResponse.java
+|   |   |   |       |   GroupCommonCodeResponse.java
+|   |   |   |   CommonCodeController.java
+|   |   +---application
+|   |   |   |   CommonCodeService.java
+|   |   |   |   CommonCodeServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |       |   CommonCode.java
+|   |   |       |   GroupCommonCode.java
+|   |   +---repository
+|   |       |   CommonCodeRepository.java
+|   |       |   GroupCommonCodeRepository.java
+|   +---community
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   +---dto
+|   |   |   |   |   +---request
+|   |   |   |   |       |   BoardImportanceUpdateRequest.java
+|   |   |   |   |   AdminBoardController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   BoardCreateRequest.java
+|   |   |   |   |   |   BoardUpdateRequest.java
+|   |   |   |   |   |   ReplyCreateRequest.java
+|   |   |   |   |   |   ReplyUpdateRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   BoardResponse.java
+|   |   |   |       |   ReplyResponse.java
+|   |   |   |   BoardController.java
+|   |   |   |   ReplyController.java
+|   |   +---application
+|   |   |   |   AdminBoardService.java
+|   |   |   |   AdminBoardServiceImpl.java
+|   |   |   |   BoardService.java
+|   |   |   |   BoardServiceImpl.java
+|   |   |   |   LikeService.java
+|   |   |   |   LikeServiceImpl.java
+|   |   |   |   ReplyService.java
+|   |   |   |   ReplyServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |       |   Board.java
+|   |   |       |   BoardLike.java
+|   |   |       |   Reply.java
+|   |   |       |   ReplyLike.java
+|   |   +---repository
+|   |       |   BoardLikeRepository.java
+|   |       |   BoardRepository.java
+|   |       |   ReplyLikeRepository.java
+|   |       |   ReplyRepository.java
+|   +---contract
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   |   AdminContractController.java
+|   |   |   |   |   AdminResidentController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   ContractAdminSearchRequest.java
+|   |   |   |   |   |   ContractCreateRequest.java
+|   |   |   |   |   |   ContractUpdateRequest.java
+|   |   |   |   |   |   ResidentCreateRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   AdminContractSummaryResponse.java
+|   |   |   |       |   ContractResponse.java
+|   |   |   |       |   ResidentResponse.java
+|   |   |   |   ContractController.java
+|   |   +---application
+|   |   |   |   ContractImageService.java
+|   |   |   |   ContractImageServiceImpl.java
+|   |   |   |   ContractService.java
+|   |   |   |   ContractServiceImpl.java
+|   |   |   |   ResidentService.java
+|   |   |   |   ResidentServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |   |   |   Contract.java
+|   |   |   |   |   Resident.java
+|   |   |   +---enums
+|   |   |       |   ContractStatus.java
+|   |   +---repository
+|   |       |   ContractRepository.java
+|   |       |   ResidentRepository.java
+|   +---file
+|   |   +---api
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   FileUploadRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   FileResponse.java
+|   |   |   |       |   FileUploadResponse.java
+|   |   |   |   FileController.java
+|   |   +---application
+|   |   |   |   FileService.java
+|   |   |   |   FileServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |   |   |   UploadFile.java
+|   |   |   +---enums
+|   |   |       |   FileRefType.java
+|   |   +---repository
+|   |       |   UploadFileRepository.java
+|   +---notification
+|   |   +---api
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   MarkNotificationReadRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   NotificationListResponse.java
+|   |   |   |       |   NotificationResponse.java
+|   |   |   |   NotificationController.java
+|   |   +---application
+|   |   |   |   NotificationFactory.java
+|   |   |   |   NotificationService.java
+|   |   |   |   NotificationServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |   |   |   Notification.java
+|   |   |   +---enums
+|   |   |       |   NotificationType.java
+|   |   |       |   TargetType.java
+|   |   +---repository
+|   |       |   NotificationRepository.java
+|   +---payment
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   |   AdminPaymentController.java
+|   |   |   |   |   AdminRefundController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   PaymentApproveRequest.java
+|   |   |   |   |   |   PaymentPrepareMonthlyBatchRequest.java
+|   |   |   |   |   |   PaymentPrepareRequest.java
+|   |   |   |   |   |   PaymentRefundRequest.java
+|   |   |   |   |   |   RetryPaymentRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   PaymentPrepareResponse.java
+|   |   |   |       |   PaymentRefundResponse.java
+|   |   |   |       |   PaymentResponse.java
+|   |   |   +---webhook
+|   |   |   |   |   PaymentWebhookController.java
+|   |   |   |   PaymentCallbackController.java
+|   |   |   |   PaymentController.java
+|   |   |   |   RefundController.java
+|   |   +---application
+|   |   |   +---gateway
+|   |   |   |   +---dto
+|   |   |   |   |   |   PaymentGatewayApproveRequest.java
+|   |   |   |   |   |   PaymentGatewayApproveResponse.java
+|   |   |   |   |   |   PaymentGatewayReadyRequest.java
+|   |   |   |   |   |   PaymentGatewayReadyResponse.java
+|   |   |   |   |   |   PaymentGatewayRefundRequest.java
+|   |   |   |   |   |   PaymentGatewayRefundResponse.java
+|   |   |   |   +---exception
+|   |   |   |   |   |   PaymentGatewayException.java
+|   |   |   |   +---kakao
+|   |   |   |   |   +---dto
+|   |   |   |   |   |   |   KakaoApproveRequest.java
+|   |   |   |   |   |   |   KakaoApproveResponse.java
+|   |   |   |   |   |   |   KakaoCancelRequest.java
+|   |   |   |   |   |   |   KakaoCancelResponse.java
+|   |   |   |   |   |   |   KakaoReadyRequest.java
+|   |   |   |   |   |   |   KakaoReadyResponse.java
+|   |   |   |   |   |   KakaoPayClient.java
+|   |   |   |   |   |   KakaoPayConfig.java
+|   |   |   |   |   |   KakaoPayGateway.java
+|   |   |   |   |   |   KakaoPayProperties.java
+|   |   |   |   +---naver
+|   |   |   |   |   +---dto
+|   |   |   |   |   |   |   NaverApproveRequest.java
+|   |   |   |   |   |   |   NaverApproveResponse.java
+|   |   |   |   |   |   |   NaverCancelRequest.java
+|   |   |   |   |   |   |   NaverCancelResponse.java
+|   |   |   |   |   |   |   NaverReadyRequest.java
+|   |   |   |   |   |   |   NaverReadyResponse.java
+|   |   |   |   |   |   NaverPayClient.java
+|   |   |   |   |   |   NaverPayConfig.java
+|   |   |   |   |   |   NaverPayGateway.java
+|   |   |   |   |   |   NaverPayProperties.java
+|   |   |   |   +---toss
+|   |   |   |   |   +---dto
+|   |   |   |   |   |   |   TossApproveRequest.java
+|   |   |   |   |   |   |   TossApproveResponse.java
+|   |   |   |   |   |   |   TossCancelRequest.java
+|   |   |   |   |   |   |   TossCancelResponse.java
+|   |   |   |   |   |   |   TossReadyRequest.java
+|   |   |   |   |   |   |   TossReadyResponse.java
+|   |   |   |   |   |   TossClient.java
+|   |   |   |   |   |   TossConfig.java
+|   |   |   |   |   |   TossGateway.java
+|   |   |   |   |   |   TossProperties.java
+|   |   |   |   |   PaymentGateway.java
+|   |   |   |   |   PaymentGatewayFactory.java
+|   |   |   +---query
+|   |   |   |   |   PaymentQueryService.java
+|   |   |   |   |   PaymentQueryServiceImpl.java
+|   |   |   |   PaymentAttemptService.java
+|   |   |   |   PaymentAttemptServiceImpl.java
+|   |   |   |   PaymentReconcileService.java
+|   |   |   |   PaymentService.java
+|   |   |   |   PaymentServiceImpl.java
+|   |   |   |   PaymentWebhookService.java
+|   |   |   |   PaymentWebhookServiceImpl.java
+|   |   |   |   RefundService.java
+|   |   |   |   RefundServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |       |   Payment.java
+|   |   |       |   PaymentAttempt.java
+|   |   |       |   PaymentIntent.java
+|   |   |       |   PaymentIntentStatus.java
+|   |   |       |   PaymentMethod.java
+|   |   |       |   PaymentRefund.java
+|   |   |       |   PaymentStatusCode.java
+|   |   |       |   ServiceGoods.java
+|   |   +---repository
+|   |       |   PaymentAttemptRepository.java
+|   |       |   PaymentIntentRepository.java
+|   |       |   PaymentMethodRepository.java
+|   |       |   PaymentRefundRepository.java
+|   |       |   PaymentRepository.java
+|   |       |   ServiceGoodsRepository.java
+|   +---property
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   |   AdminBuildingController.java
+|   |   |   |   |   AdminRoomController.java
+|   |   |   |   |   AdminSpaceController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   BuildingCreateRequest.java
+|   |   |   |   |   |   BuildingUpdateRequest.java
+|   |   |   |   |   |   RoomCreateRequest.java
+|   |   |   |   |   |   RoomSearchRequest.java
+|   |   |   |   |   |   RoomStatusUpdateRequest.java
+|   |   |   |   |   |   RoomUpdateRequest.java
+|   |   |   |   |   |   SpaceCreateRequest.java
+|   |   |   |   |   |   SpaceSearchRequest.java
+|   |   |   |   |   |   SpaceUpdateRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   BuildingDetailResponse.java
+|   |   |   |       |   BuildingSummaryResponse.java
+|   |   |   |       |   RoomDetailResponse.java
+|   |   |   |       |   RoomSummaryResponse.java
+|   |   |   |       |   SpaceDetailResponse.java
+|   |   |   |       |   SpaceResponse.java
+|   |   |   |   BuildingController.java
+|   |   |   |   RoomController.java
+|   |   |   |   SpaceController.java
+|   |   +---application
+|   |   |   |   BuildingService.java
+|   |   |   |   BuildingServiceImpl.java
+|   |   |   |   RoomService.java
+|   |   |   |   RoomServiceImpl.java
+|   |   |   |   SpaceService.java
+|   |   |   |   SpaceServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |   |   |   Building.java
+|   |   |   |   |   CommonSpace.java
+|   |   |   |   |   Room.java
+|   |   |   +---enums
+|   |   |       |   PetAllowedYn.java
+|   |   |       |   RentType.java
+|   |   |       |   RoomStatus.java
+|   |   |       |   RoomType.java
+|   |   |       |   SunDirection.java
+|   |   +---repository
+|   |       |   BuildingRepository.java
+|   |       |   RoomRepository.java
+|   |       |   SpaceRepository.java
+|   +---reservation
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   |   AdminSpaceReservationController.java
+|   |   |   |   |   AdminTourReservationController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   CancelSpaceReservationRequest.java
+|   |   |   |   |   |   CancelTourReservationRequest.java
+|   |   |   |   |   |   CreateSpaceReservationRequest.java
+|   |   |   |   |   |   CreateTourReservationRequest.java
+|   |   |   |   |   |   LookupTourReservationRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   SpaceReservableResponse.java
+|   |   |   |       |   SpaceReservationResponse.java
+|   |   |   |       |   TourReservableResponse.java
+|   |   |   |       |   TourReservationResponse.java
+|   |   |   |   SpaceReservationController.java
+|   |   |   |   TourReservationController.java
+|   |   +---application
+|   |   |   |   SpaceReservationService.java
+|   |   |   |   SpaceReservationServiceImpl.java
+|   |   |   |   TourReservationService.java
+|   |   |   |   TourReservationServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |   |   |   SpaceReservationEntity.java
+|   |   |   |   |   TourReservationEntity.java
+|   |   |   +---enums
+|   |   |   |   |   SpaceFixedSlot.java
+|   |   |   |   |   SpaceReservationStatus.java
+|   |   |   |   |   TourFixedSlot.java
+|   |   |   |   |   TourStatus.java
+|   |   |   +---policy
+|   |   |       |   ReservationValidator.java
+|   |   |       |   SpaceReservationConflictPolicy.java
+|   |   |       |   SpaceReservationConflictPolicyImpl.java
+|   |   |       |   TourReservationConflictPolicy.java
+|   |   |       |   TourReservationConflictPolicyImpl.java
+|   |   +---repository
+|   |       |   SpaceReservationRepository.java
+|   |       |   TourReservationRepository.java
+|   +---review
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   |   AdminReviewController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   ReviewCreateRequest.java
+|   |   |   |   |   |   ReviewUpdateRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   ReviewResponse.java
+|   |   |   |       |   ReviewRoomSummaryResponse.java
+|   |   |   |   ReviewController.java
+|   |   |   |   ReviewLikeController.java
+|   |   +---application
+|   |   |   |   AdminReviewService.java
+|   |   |   |   AdminReviewServiceImpl.java
+|   |   |   |   ReviewLikeService.java
+|   |   |   |   ReviewLikeServiceImpl.java
+|   |   |   |   ReviewService.java
+|   |   |   |   ReviewServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |       |   Review.java
+|   |   |       |   ReviewLike.java
+|   |   +---repository
+|   |       |   ReviewLikeRepository.java
+|   |       |   ReviewRepository.java
+|   +---support
+|   |   +---api
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   ComplainCreateRequest.java
+|   |   |   |   |   |   ComplainReplyRequest.java
+|   |   |   |   |   |   ComplainSearchRequest.java
+|   |   |   |   |   |   ComplainUpdateRequest.java
+|   |   |   |   |   |   FaqCreateRequest.java
+|   |   |   |   |   |   FaqSearchRequest.java
+|   |   |   |   |   |   FaqUpdateRequest.java
+|   |   |   |   |   |   NoticeCreateRequest.java
+|   |   |   |   |   |   NoticeSearchRequest.java
+|   |   |   |   |   |   NoticeUpdateRequest.java
+|   |   |   |   |   |   QnaAnswerRequest.java
+|   |   |   |   |   |   QnaCreateRequest.java
+|   |   |   |   |   |   QnaSearchRequest.java
+|   |   |   |   |   |   QnaStatusUpdateRequest.java
+|   |   |   |   |   |   QnaUpdateRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   ComplainResponse.java
+|   |   |   |       |   FaqResponse.java
+|   |   |   |       |   NoticeResponse.java
+|   |   |   |       |   QnaResponse.java
+|   |   |   |   ComplainController.java
+|   |   |   |   FaqController.java
+|   |   |   |   NoticeController.java
+|   |   |   |   QnaController.java
+|   |   +---application
+|   |   |   |   ComplainService.java
+|   |   |   |   ComplainServiceImpl.java
+|   |   |   |   FaqService.java
+|   |   |   |   FaqServiceImpl.java
+|   |   |   |   NoticeService.java
+|   |   |   |   NoticeServiceImpl.java
+|   |   |   |   QnaService.java
+|   |   |   |   QnaServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |   |   |   Complain.java
+|   |   |   |   |   Faq.java
+|   |   |   |   |   Notice.java
+|   |   |   |   |   Qna.java
+|   |   |   +---enums
+|   |   |       |   ComplainStatus.java
+|   |   |       |   NoticeStatus.java
+|   |   |       |   QnaStatus.java
+|   |   +---repository
+|   |       |   ComplainRepository.java
+|   |       |   FaqRepository.java
+|   |       |   NoticeRepository.java
+|   |       |   QnaRepository.java
+|   +---system
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   |   AdminBannerController.java
+|   |   |   |   |   AdminCompanyInfoController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   BannerCreateRequest.java
+|   |   |   |   |   |   BannerOrderRequest.java
+|   |   |   |   |   |   BannerUpdateRequest.java
+|   |   |   |   |   |   CompanyInfoUpdateRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   BannerResponse.java
+|   |   |   |       |   CompanyInfoResponse.java
+|   |   |   |   BannerController.java
+|   |   |   |   CompanyInfoController.java
+|   |   +---application
+|   |   |   |   BannerService.java
+|   |   |   |   BannerServiceImpl.java
+|   |   |   |   CompanyInfoService.java
+|   |   |   |   CompanyInfoServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |   |   |   Banner.java
+|   |   |   |   |   CompanyInfo.java
+|   |   |   +---enums
+|   |   |       |   BannerStatus.java
+|   |   +---repository
+|   |       |   BannerRepository.java
+|   |       |   CompanyInfoRepository.java
+|   +---user
+|   |   +---api
+|   |   |   +---admin
+|   |   |   |   +---dto
+|   |   |   |   |   +---request
+|   |   |   |   |       |   AdminUserRoleUpdateRequest.java
+|   |   |   |   |       |   AdminUserStatusUpdateRequest.java
+|   |   |   |   |   AdminUserController.java
+|   |   |   +---dto
+|   |   |   |   +---request
+|   |   |   |   |   |   EmailCodeRequest.java
+|   |   |   |   |   |   EmailCodeVerifyRequest.java
+|   |   |   |   |   |   FindEmailRequest.java
+|   |   |   |   |   |   KakaoSignupCompleteRequest.java
+|   |   |   |   |   |   LogoutRequest.java
+|   |   |   |   |   |   PasswordResetConfirmRequest.java
+|   |   |   |   |   |   PasswordResetRequest.java
+|   |   |   |   |   |   RefreshTokenRequest.java
+|   |   |   |   |   |   UserLoginRequest.java
+|   |   |   |   |   |   UserSignupRequest.java
+|   |   |   |   |   |   UserUpdateRequest.java
+|   |   |   |   +---response
+|   |   |   |       |   UserResponse.java
+|   |   |   |       |   UserTokenResponse.java
+|   |   |   |   AuthController.java
+|   |   |   |   UserController.java
+|   |   +---application
+|   |   |   |   AuthService.java
+|   |   |   |   AuthServiceImpl.java
+|   |   |   |   EmailVerificationStore.java
+|   |   |   |   OAuthCompleteService.java
+|   |   |   |   OAuthCompleteServiceImpl.java
+|   |   |   |   UserService.java
+|   |   |   |   UserServiceImpl.java
+|   |   +---domain
+|   |   |   +---entity
+|   |   |   |   |   PasswordResetToken.java
+|   |   |   |   |   RefreshToken.java
+|   |   |   |   |   SocialAccount.java
+|   |   |   |   |   User.java
+|   |   |   +---enums
+|   |   |       |   UserRole.java
+|   |   |       |   UserStatus.java
+|   |   +---repository
+|   |       |   PasswordResetTokenRepository.java
+|   |       |   RefreshTokenRepository.java
+|   |       |   SocialAccountRepository.java
+|   |       |   UserRepository.java
+|   |   example.java
+|   |   payment.zip
+|   |   property.7z
+|   |   property-빌딩 수정.zip
++---global
+|   +---common
+|   |   |   ActivateEntity.java
+|   |   |   BaseTimeEntity.java
+|   |   |   SoftDeleteEntity.java
+|   +---config
+|   |   |   AiClientConfig.java
+|   |   |   JacksonConfig.java
+|   |   |   JpaAuditingConfig.java
+|   |   |   SlackProperties.java
+|   |   |   SwaggerConfig.java
+|   |   |   UploadProperties.java
+|   |   |   WebMvcConfig.java
+|   +---exception
+|   |   |   BusinessException.java
+|   |   |   ErrorCode.java
+|   |   |   GlobalExceptionHandler.java
+|   +---response
+|   |   |   ApiResponse.java
+|   |   |   PageResponse.java
+|   +---security
+|   |   +---oauth
+|   |   |   |   CustomAuthorizationRequestResolver.java
+|   |   |   |   CustomOAuth2UserService.java
+|   |   |   |   OAuth2FailureHandler.java
+|   |   |   |   OAuth2SuccessHandler.java
+|   |   |   |   OAuthTypeMatchNotFoundException.java
+|   |   |   |   UserContext.java
+|   |   |   AuthUser.java
+|   |   |   JwtAuthFilter.java
+|   |   |   JwtExceptionFilter.java
+|   |   |   JwtProvider.java
+|   |   |   RestAccessDeniedHandler.java
+|   |   |   RestAuthenticationEntryPoint.java
+|   |   |   SecurityConfig.java
+|   +---slack
+|   |   |   SlackNotificationService.java
+|   +---util
+|       |   DateTimeUtils.java
+|       |   FileNameChange.java
+|       |   IdGenerator.java
+|       |   MailService.java
+|       |   Paging.java
+|       |   SearchCondition.java
+|       |   StringNormalizer.java
+|   Application.java
+|   ServletInitializer.java
+
+Backend Resources
+src/main/resources
++---META-INF
+|   |   additional-spring-configuration-metadata.json
+|   application.properties
+|   application-ai.properties
+
+======================
+2) Frontend (React)
+======================
+
+uni-place-frontend/src
++---app
+|   +---config
+|   |   |   env.js
+|   +---http
+|   |   |   apiBase.js
+|   |   |   apiBase.test.js
+|   |   |   authApi.js
+|   |   |   authEvents.js
+|   |   |   axiosInstance.js
+|   |   |   BACKEND_MAPPING.md
+|   |   |   bannerApi.js
+|   |   |   buildingApi.js
+|   |   |   errorMapper.js
+|   |   |   interceptors.js
+|   |   |   noticeApi.js
+|   |   |   request.js
+|   |   |   roomApi.js
+|   |   |   tokenStore.js
+|   |   |   tourReservationApi.js
+|   +---layouts
+|   |   +---components
+|   |   |   |   Footer.jsx
+|   |   |   |   Footer.module.css
+|   |   |   |   Header.jsx
+|   |   |   |   Header.module.css
+|   |   |   |   NotificationBell.jsx
+|   |   |   |   NotificationBell.module.css
+|   |   |   |   SideMenu.jsx
+|   |   |   |   SideMenu.module.css
+|   |   |   AuthLayout.jsx
+|   |   |   MainLayout.jsx
+|   +---providers
+|   |   |   AuthProvider.jsx
+|   |   |   QueryProvider.jsx
+|   +---router
+|   |   +---guards
+|   |   |   |   RequireAuth.jsx
+|   |   |   |   RequireRole.jsx
+|   |   |   index.jsx
+|   |   |   routes.jsx
+|   +---scripts
+|   |   |   contract_template.png
+|   |   |   generate_contract.py
+|   +---styles
+|       |   globals.css
++---features
+|   +---admin
+|   |   +---api
+|   |   |   |   adminApi.js
+|   |   +---components
+|   |   |   |   AdminEndpointProbe.jsx
+|   |   |   |   AdminFilters.jsx
+|   |   |   |   AdminShell.jsx
+|   |   |   |   AdminShell.module.css
+|   |   |   |   AdminSidebar.jsx
+|   |   |   |   AdminSidebar.module.css
+|   |   +---constants
+|   |   |   |   adminMenu.js
+|   |   |   |   adminRoutes.js
+|   |   +---hooks
+|   |   |   |   useAdminOrders.js
+|   |   |   |   useAdminProducts.js
+|   |   |   |   useAdminRoomServiceOrders.js
+|   |   |   |   useBuildingOptions.js
+|   |   +---pages
+|   |       +---billing
+|   |       |   |   AdminMonthlyChargeDetail.jsx
+|   |       |   |   AdminMonthlyChargeList.jsx
+|   |       +---commerce
+|   |       |   |   AdminOrderDetail.jsx
+|   |       |   |   AdminOrderList.jsx
+|   |       |   |   AdminProductDetail.jsx
+|   |       |   |   AdminProductList.jsx
+|   |       |   |   AdminProductList.module.css
+|   |       +---contract
+|   |       |   |   AdminContractDetail.jsx
+|   |       |   |   AdminContractHub.jsx
+|   |       |   |   AdminContractHub.module.css
+|   |       |   |   AdminContractList.jsx
+|   |       |   |   AdminRentManagement.jsx
+|   |       |   |   AdminRentManagement.module.css
+|   |       |   |   AdminResidentDetail.jsx
+|   |       |   |   AdminResidentList.jsx
+|   |       +---payment
+|   |       |   |   AdminPayHub.jsx
+|   |       |   |   AdminPayHub.module.css
+|   |       |   |   AdminPaymentDetail.jsx
+|   |       |   |   AdminPaymentList.jsx
+|   |       |   |   AdminPaymentTable.module.css
+|   |       |   |   AdminRefundDetail.jsx
+|   |       |   |   AdminRefundList.jsx
+|   |       +---property
+|   |       |   |   AdminBuildingCreateModal.jsx
+|   |       |   |   AdminBuildingDetail.jsx
+|   |       |   |   AdminBuildingList.jsx
+|   |       |   |   AdminBuildingModal.jsx
+|   |       |   |   AdminCreateModal.module.css
+|   |       |   |   AdminPropertyHub.jsx
+|   |       |   |   AdminPropertyHub.module.css
+|   |       |   |   AdminPropertyListTable.jsx
+|   |       |   |   AdminPropertyListTable.module.css
+|   |       |   |   AdminRoomCreateModal.jsx
+|   |       |   |   AdminRoomDetail.jsx
+|   |       |   |   AdminRoomList.jsx
+|   |       |   |   AdminRoomModal.jsx
+|   |       |   |   AdminSpaceCreateModal.jsx
+|   |       |   |   AdminSpaceDetail.jsx
+|   |       |   |   AdminSpaceList.jsx
+|   |       |   |   AdminSpaceModal.jsx
+|   |       +---reservation
+|   |       |   |   AdminReservation.module.css
+|   |       |   |   AdminReservationHub.jsx
+|   |       |   |   AdminReservationHub.module.css
+|   |       |   |   AdminSpaceReservationDetail.jsx
+|   |       |   |   AdminSpaceReservationList.jsx
+|   |       |   |   AdminTourReservationDetail.jsx
+|   |       |   |   AdminTourReservationList.jsx
+|   |       +---roomservice
+|   |       |   |   AdminRoomServiceHub.jsx
+|   |       |   |   AdminRoomServiceHub.module.css
+|   |       |   |   AdminRoomServiceOrderDetail.jsx
+|   |       |   |   AdminRoomServiceOrderList.jsx
+|   |       |   |   AdminRoomServiceOrderList.module.css
+|   |       +---support
+|   |       |   |   AdminComplainDetail.jsx
+|   |       |   |   AdminFaqDetail.jsx
+|   |       |   |   AdminNoticeDetail.jsx
+|   |       +---system
+|   |       |   |   AdminAffiliateDetail.jsx
+|   |       |   |   AdminAffiliateList.jsx
+|   |       |   |   AdminBannerDetail.jsx
+|   |       |   |   AdminBannerList.jsx
+|   |       |   |   AdminCompanyInfoDetail.jsx
+|   |       |   |   AdminCompanyInfoDetail.module.css
+|   |       |   |   AdminSystemHub.jsx
+|   |       |   |   AdminSystemHub.module.css
+|   |       +---user
+|   |       |   |   AdminUserDetail.jsx
+|   |       |   |   AdminUserHub.jsx
+|   |       |   |   AdminUserHub.module.css
+|   |       |   |   AdminUserList.jsx
+|   |       |   |   AdminUserList.module.css
+|   |       |   AdminCommerceTest.jsx
+|   |       |   AdminInfo.jsx
+|   |       |   AdminInfo.module.css
+|   +---billing
+|   |   +---api
+|   |   |   |   billingApi.js
+|   |   +---hooks
+|   |   |   |   useMonthlyCharges.js
+|   |   +---pages
+|   |       |   MonthlyChargeDetail.jsx
+|   |       |   MyMonthlyCharges.jsx
+|   |       |   MyMonthlyCharges.module.css
+|   +---commerce
+|   |   +---api
+|   |   |   |   commerceApi.js
+|   |   |   |   roomServiceApi.js
+|   |   +---hooks
+|   |   |   |   useCart.js
+|   |   |   |   useOrders.js
+|   |   |   |   useProducts.js
+|   |   |   |   useRoomServiceOrders.js
+|   |   |   |   useTenantContract.js
+|   |   +---pages
+|   |   |   +---components
+|   |   |   |   |   ConfirmModal.jsx
+|   |   |   |   |   ConfirmModal.module.css
+|   |   |   |   Cart.jsx
+|   |   |   |   Cart.module.css
+|   |   |   |   Checkout.jsx
+|   |   |   |   Checkout.module.css
+|   |   |   |   OrderDetail.jsx
+|   |   |   |   OrderDetail.module.css
+|   |   |   |   OrderList.jsx
+|   |   |   |   OrderList.module.css
+|   |   |   |   ProductList.jsx
+|   |   |   |   ProductList.module.css
+|   |   +---utils
+|   |       |   tenantContract.js
+|   +---community
+|   |   +---api
+|   |   |   |   communityApi.js
+|   |   +---hooks
+|   |   |   |   useBoards.js
+|   |   |   |   useReplies.js
+|   |   +---pages
+|   |       |   BoardDetail.jsx
+|   |       |   BoardDetail.module.css
+|   |       |   BoardList.jsx
+|   |       |   BoardList.module.css
+|   |       |   BoardUpdate.jsx
+|   |       |   BoardUpdate.module.css
+|   |       |   BoardWrite.jsx
+|   |       |   BoardWrite.module.css
+|   |       |   CommunityHome.jsx
+|   |       |   CommunityHome.module.css
+|   |       |   MyPosts.jsx
+|   |       |   MyPosts.module.css
+|   |       |   ReplyUpdate.jsx
+|   |       |   ReplyUpdate.module.css
+|   |       |   ReplyWrite.jsx
+|   |       |   ReplyWrite.module.css
+|   +---contract
+|   |   +---api
+|   |   |   |   contractApi.js
+|   |   +---hooks
+|   |   |   |   useContracts.js
+|   |   |   |   useResidents.js
+|   |   +---pages
+|   |       |   ContractApply.jsx
+|   |       |   ContractApply.module.css
+|   |       |   ContractsList.jsx
+|   |       |   MyContractView.jsx
+|   |       |   MyContractView.module.css
+|   +---file
+|   |   +---api
+|   |   |   |   fileApi.js
+|   |   +---components
+|   |   |   |   FileUploader.jsx
+|   |   |   |   FileUploader.module.css
+|   |   |   |   ImageGallery.jsx
+|   |   |   |   ImageGallery.module.css
+|   |   +---hooks
+|   |       |   useFileUpload.js
+|   +---notification
+|   |   +---api
+|   |   |   |   notificationApi.js
+|   |   +---hooks
+|   |   |   |   useNotifications.js
+|   |   +---pages
+|   |   |   |   NotificationList.jsx
+|   |   |   |   NotificationList.module.css
+|   |   +---utils
+|   |       |   localizeNotificationMessage.js
+|   |       |   resolveNotificationPath.js
+|   +---payment
+|   |   +---api
+|   |   |   |   paymentApi.js
+|   |   +---hooks
+|   |   |   |   usePayments.js
+|   |   +---pages
+|   |       |   PaymentList.jsx
+|   |       |   PaymentPrepare.jsx
+|   |       |   PaymentResult.jsx
+|   |       |   RefundRequest.jsx
+|   +---property
+|   |   +---api
+|   |   |   |   propertyApi.js
+|   |   +---components
+|   |   |   |   BuildingForm.jsx
+|   |   |   |   RoomForm.jsx
+|   |   |   |   SpaceForm.jsx
+|   |   +---hooks
+|   |   |   |   useBuilding.js
+|   |   |   |   useBuildings.js
+|   |   |   |   useRoom.js
+|   |   |   |   useRooms.js
+|   |   |   |   useSpaces.js
+|   |   +---pages
+|   |       |   BuildingDetail.jsx
+|   |       |   BuildingDetail.module.css
+|   |       |   BuildingList.jsx
+|   |       |   RoomDetail.jsx
+|   |       |   RoomDetail.module.css
+|   |       |   RoomList.jsx
+|   |       |   RoomList.module.css
+|   |       |   SpaceDetail.jsx
+|   |       |   SpaceDetail.module.css
+|   |       |   SpaceList.jsx
+|   |       |   SpaceList.module.css
+|   +---reservation
+|   |   +---api
+|   |   |   |   reservationApi.js
+|   |   +---components
+|   |   |   |   BuildingSlotButtons.jsx
+|   |   |   |   TimeSlotButtons.jsx
+|   |   +---hooks
+|   |   |   |   useSpaceReservations.js
+|   |   |   |   useTourReservations.js
+|   |   +---pages
+|   |       |   reservationErrors.js
+|   |       |   SpaceReservationCreate.jsx
+|   |       |   SpaceReservationCreate.module.css
+|   |       |   SpaceReservationList.jsx
+|   |       |   SpaceReservationList.module.css
+|   |       |   TourReservationCreate.jsx
+|   |       |   TourReservationCreate.module.css
+|   |       |   TourReservationList.jsx
+|   |       |   TourReservationList.module.css
+|   +---review
+|   |   +---api
+|   |   |   |   reviewApi.js
+|   |   +---components
+|   |   |   |   ReviewModal.jsx
+|   |   |   |   ReviewModal.module.css
+|   |   +---hooks
+|   |   |   |   useReviews.js
+|   |   +---pages
+|   |       |   MyReviewsDetail.jsx
+|   |       |   MyReviewsList.jsx
+|   |       |   ReviewDetail.module.css
+|   |       |   ReviewList.module.css
+|   |       |   ReviewWrite.jsx
+|   |       |   ReviewWrite.module.css
+|   +---support
+|   |   +---api
+|   |   |   |   supportApi.js
+|   |   +---hooks
+|   |   |   |   useComplains.js
+|   |   |   |   useFaqs.js
+|   |   |   |   useNotices.js
+|   |   |   |   useQnas.js
+|   |   +---pages
+|   |       |   ComplainDetail.jsx
+|   |       |   ComplainEdit.jsx
+|   |       |   ComplainList.jsx
+|   |       |   ComplainWrite.jsx
+|   |       |   FaqList.jsx
+|   |       |   NoticeDetail.jsx
+|   |       |   NoticeList.jsx
+|   |       |   QnaDetail.jsx
+|   |       |   QnaList.jsx
+|   |       |   QnaWrite.jsx
+|   |       |   Support.jsx
+|   |       |   Support.module.css
+|   +---system
+|   |   +---api
+|   |   |   |   systemApi.js
+|   |   +---pages
+|   |       |   CompanyInfo.jsx
+|   +---user
+|       +---api
+|       |   |   authApi.js
+|       +---components
+|       |   |   UserStatusModal.jsx
+|       +---hooks
+|       |   |   useAuth.js
+|       +---pages
+|           |   FindAccount.jsx
+|           |   FindAccount.module.css
+|           |   Login.jsx
+|           |   Login.module.css
+|           |   MemberInfo.jsx
+|           |   MemberInfo.module.css
+|           |   OAuth2Success.jsx
+|           |   OAuth2Success.module.css
+|           |   ResetPassword.jsx
+|           |   ResetPassword.module.css
+|           |   Signup.jsx
+|           |   Signup.module.css
++---shared
+|   +---components
+|   |   +---Modal
+|   |   |   |   Modal.jsx
+|   |   |   |   Modal.module.css
+|   |   +---PageHeader
+|   |   |   |   PageHeader.jsx
+|   |   |   |   PageHeader.module.css
+|   |   +---PagingView
+|   |   |   |   PagingView.jsx
+|   |   |   |   PagingView.module.css
+|   |   |   ScrollToTop.jsx
+|   +---constants
+|   |   |   roles.js
+|   |   |   routes.js
+|   +---hooks
+|   |   |   useAuth.js
+|   |   |   useDebounce.js
+|   |   |   useRealtimeAnimations.js
+|   +---mocks
+|   |   |   eventProgramMock.js
+|   +---pages
+|   |   |   About.jsx
+|   |   |   About.module.css
+|   |   |   CompanyInfo.jsx
+|   |   |   CompanyInfo.module.css
+|   |   |   Home.jsx
+|   |   |   Home.module.css
+|   +---utils
+|       |   buildFormData.js
+|       |   formatDate.js
+|       |   imageUrl.js
+|       |   validators.js
+|   App.css
+|   App.js
+|   App.test.js
+|   home_logo.png
+|   index.css
+|   index.js
+|   logo.svg
+|   reportWebVitals.js
+|   setupProxy.js
+|   setupTests.js
+
+Frontend Public
+uni-place-frontend/public
++---videos
+|   |   building.mp4
+|   |   city.mp4
+|   |   room.mp4
+|   index.html
+
+================
+3) AI (FastAPI)
+================
+
+AI/app
++---api
+|   +---v1
+|   |   |   __init__.py
+|   |   |   routes_ai.py
+|   |   __init__.py
++---config
+|   |   __init__.py
+|   |   settings.py
++---integrations
+|   |   __init__.py
+|   |   llm_client_openai.py
+|   |   llm_client_watsonx.py
+|   |   milvus_client.py
++---schemas
+|   |   __init__.py
+|   |   ai_request.py
+|   |   ai_response.py
++---services
+|   +---anomaly
+|   |   |   __init__.py
+|   |   |   contract_anomaly.py
+|   +---document
+|   |   |   __init__.py
+|   |   |   payment_summary_doc.py
+|   +---orchestrator
+|   |   |   __init__.py
+|   |   |   intent_router.py
+|   |   |   workflow_graph.py
+|   +---rag
+|   |   |   __init__.py
+|   |   |   generator.py
+|   |   |   reranker.py
+|   |   |   retriever.py
+|   +---recommendation
+|   |   |   __init__.py
+|   |   |   common_space_recommend.py
+|   |   |   contract_recommend.py
+|   |   |   room_recommend.py
+|   |   __init__.py
+|   __init__.py
+|   main.py
+
+AI Root Files
+AI
++---app
+|   +---api
+|   |   +---v1
+|   |   |   |   __init__.py
+|   |   |   |   routes_ai.py
+|   |   |   __init__.py
+|   +---config
+|   |   |   __init__.py
+|   |   |   settings.py
+|   +---integrations
+|   |   |   __init__.py
+|   |   |   llm_client_openai.py
+|   |   |   llm_client_watsonx.py
+|   |   |   milvus_client.py
+|   +---schemas
+|   |   |   __init__.py
+|   |   |   ai_request.py
+|   |   |   ai_response.py
+|   +---services
+|   |   +---anomaly
+|   |   |   |   __init__.py
+|   |   |   |   contract_anomaly.py
+|   |   +---document
+|   |   |   |   __init__.py
+|   |   |   |   payment_summary_doc.py
+|   |   +---orchestrator
+|   |   |   |   __init__.py
+|   |   |   |   intent_router.py
+|   |   |   |   workflow_graph.py
+|   |   +---rag
+|   |   |   |   __init__.py
+|   |   |   |   generator.py
+|   |   |   |   reranker.py
+|   |   |   |   retriever.py
+|   |   +---recommendation
+|   |   |   |   __init__.py
+|   |   |   |   common_space_recommend.py
+|   |   |   |   contract_recommend.py
+|   |   |   |   room_recommend.py
+|   |   |   __init__.py
+|   |   __init__.py
+|   |   main.py
+|   .env.example
+|   requirements.txt
