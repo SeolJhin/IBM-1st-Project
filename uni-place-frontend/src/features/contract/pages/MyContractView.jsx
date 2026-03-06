@@ -9,6 +9,7 @@ import { authApi } from '../../user/api/authApi';
 import { getOrCreateDeviceId } from '../../../app/http/tokenStore';
 import { withApiPrefix } from '../../../app/http/apiBase';
 import styles from './MyContractView.module.css';
+import { withApiPrefix } from '../../../app/http/apiBase';
 
 /* ─── 이미지 갤러리 ───────────────────────────────────────────── */
 function ImageGallery({ files }) {
@@ -31,7 +32,9 @@ function ImageGallery({ files }) {
     <div className={styles.gallery}>
       <div className={styles.galleryMain}>
         <img
-          src={images[active]?.viewUrl ?? images[active]?.fileUrl}
+          src={withApiPrefix(
+            images[active]?.viewUrl ?? images[active]?.fileUrl
+          )}
           alt={`방 사진 ${active + 1}`}
         />
       </div>
@@ -44,7 +47,10 @@ function ImageGallery({ files }) {
               className={`${styles.galleryThumb} ${i === active ? styles.galleryThumbActive : ''}`}
               onClick={() => setActive(i)}
             >
-              <img src={img.viewUrl ?? img.fileUrl} alt={`썸네일 ${i + 1}`} />
+              <img
+                src={withApiPrefix(img.viewUrl ?? img.fileUrl)}
+                alt={`썸네일 ${i + 1}`}
+              />
             </button>
           ))}
         </div>

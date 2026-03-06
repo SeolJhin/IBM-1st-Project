@@ -4,5 +4,6 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "eslint.validate": ["javascript", "javascriptreact"]
+  "eslint.validate": ["javascript", "javascriptreact"],
+  "plantuml.server": "https://www.plantuml.com/plantuml"
 }
