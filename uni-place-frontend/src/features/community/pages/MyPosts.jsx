@@ -5,6 +5,7 @@ import { communityApi } from '../api/communityApi';
 import { reviewApi } from '../../review/api/reviewApi';
 import ReviewModal from '../../review/components/ReviewModal';
 import styles from './MyPosts.module.css';
+import { toApiImageUrl } from '../../file/api/fileApi';
 
 const BOARD_CATEGORIES = [
   { value: 'ALL', label: '전체' },
@@ -172,7 +173,7 @@ export default function MyPosts() {
               {r.thumbnailUrl && (
                 <div className={styles.reviewThumb}>
                   <img
-                    src={r.thumbnailUrl}
+                    src={toApiImageUrl(r.thumbnailUrl)}
                     alt="후기 이미지"
                     onError={(e) => {
                       e.target.style.display = 'none';
