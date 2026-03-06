@@ -9,7 +9,6 @@ import { authApi } from '../../user/api/authApi';
 import { getOrCreateDeviceId } from '../../../app/http/tokenStore';
 import { withApiPrefix } from '../../../app/http/apiBase';
 import styles from './MyContractView.module.css';
-import { withApiPrefix } from '../../../app/http/apiBase';
 
 /* ─── 이미지 갤러리 ───────────────────────────────────────────── */
 function ImageGallery({ files }) {
