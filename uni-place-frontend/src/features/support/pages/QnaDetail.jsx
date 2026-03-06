@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Navigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
@@ -26,10 +26,6 @@ export default function QnaDetail() {
   const { user } = useAuth();
   const { qnaId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const qnaListPath = location.pathname.startsWith('/admin/')
-    ? '/admin/support/qna'
-    : '/support/qna';
 
   const [qna, setQna] = useState(null);
   const [replies, setReplies] = useState([]);
@@ -39,7 +35,12 @@ export default function QnaDetail() {
   const [answerCtnt, setAnswerCtnt] = useState('');
   const [answerSubmitting, setAnswerSubmitting] = useState(false);
 
-  const isAdmin = normalizeRole(user) === 'admin';
+  const role = normalizeRole(user);
+  const isAdmin = role === 'admin';
+  const isTenant = role === 'tenant';
+  const isOwner = isTenant && qna?.userId === user?.userId;
+  const canEdit = isAdmin || isOwner;
+  const canDelete = isAdmin || isOwner;
 
   const loadDetail = async () => {
     setLoading(true);
@@ -62,10 +63,6 @@ export default function QnaDetail() {
         setAnswerCtnt('');
       }
     } catch (err) {
-      if (Number(err?.status) === 404) {
-        navigate(qnaListPath, { replace: true });
-        return;
-      }
       setError(err.message || '문의 내용을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -91,7 +88,7 @@ export default function QnaDetail() {
     if (!window.confirm('문의를 삭제하시겠습니까?')) return;
     try {
       await supportApi.deleteQna(qnaId);
-      navigate(qnaListPath);
+      navigate('/support/qna');
     } catch (e) {
       alert(e.message || '삭제에 실패했습니다.');
     }
@@ -157,7 +154,7 @@ export default function QnaDetail() {
           {qna.qnaCtnt}
         </div>
 
-        {isAdmin && qna.qnaSt === 'waiting' && (
+        {canEdit && qna.qnaSt === 'waiting' && (
           <div style={{ marginTop: 24, display: 'flex', gap: 8 }}>
             <button
               className={styles.buttonPrimary}
@@ -165,9 +162,11 @@ export default function QnaDetail() {
             >
               수정
             </button>
-            <button className={styles.pageBtn} onClick={handleDelete}>
-              삭제
-            </button>
+            {canDelete && (
+              <button className={styles.pageBtn} onClick={handleDelete}>
+                삭제
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -248,7 +247,7 @@ export default function QnaDetail() {
 
       <button
         className={styles.pageBtn}
-        onClick={() => navigate(qnaListPath)}
+        onClick={() => navigate('/support/qna')}
         style={{ marginTop: 16 }}
       >
         목록으로
