@@ -7,7 +7,7 @@ on:
       - "uni-place-backend/build.gradle"
       - "uni-place-backend/Dockerfile"
     branches:
-      - main
+      - dev
 jobs:
   makeTagAndRelease:
     runs-on: ubuntu-latest
