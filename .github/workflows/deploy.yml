@@ -2,8 +2,8 @@ name: uni-place-backend-deploy
 on:
   push:
     paths:
-      - ".github/workflows/"
-      - "uni-place-backend/src"
+      - ".github/workflows/**"
+      - "uni-place-backend/src/**"
       - "uni-place-backend/build.gradle"
       - "uni-place-backend/Dockerfile"
     branches:
