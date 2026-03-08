@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+from app.api.v1.contract import CONTRACT_VERSION, INTENT_CONTRACT
 from app.api.v1.dto_ai_rest import (
     CommonSpaceRecommendRequest,
     CommunityContentSearchRequest,
@@ -17,6 +18,14 @@ from app.api.v1.executor import ERROR_RESPONSES, execute_ai_request
 from app.schemas.ai_response import AiResponse
 
 router = APIRouter(prefix="/api/v1/ai", tags=["ai-rest"])
+
+
+@router.get("/contract")
+def get_contract() -> dict[str, object]:
+    return {
+        "contractVersion": CONTRACT_VERSION,
+        "intents": INTENT_CONTRACT,
+    }
 
 
 @router.post("/chat/general-qa", response_model=AiResponse, responses=ERROR_RESPONSES)

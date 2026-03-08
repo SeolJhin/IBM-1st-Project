@@ -29,6 +29,7 @@ public class AiGatewayImpl implements AiGateway {
             return webClient.post()
                 .uri(path)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header("X-AI-Contract-Version", properties.getContractVersion())
                 .bodyValue(request)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, response ->

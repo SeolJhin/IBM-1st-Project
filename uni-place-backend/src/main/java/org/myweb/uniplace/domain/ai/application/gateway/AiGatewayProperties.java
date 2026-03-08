@@ -21,6 +21,7 @@ public class AiGatewayProperties {
     private String paymentStatusSummaryPath = "/api/v1/ai/payments/status-summaries";
     private String roomserviceStockMonitorPath = "/api/v1/ai/operations/roomservice-stock-monitoring";
     private String complainPriorityClassifyPath = "/api/v1/ai/operations/complaint-priority-classification";
+    private String contractVersion = "2026-03-08.1";
     private int connectTimeoutMillis = 3000;
     private int readTimeoutSeconds = 30;
 }
