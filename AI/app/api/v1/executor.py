@@ -1,0 +1,54 @@
+from typing import Any, Dict
+
+from fastapi import status
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
+
+from app.schemas.ai_request import AiRequest
+from app.schemas.ai_response import AiErrorDetail, AiErrorResponse, AiResponse
+from app.services.orchestrator.workflow_graph import WorkflowGraph
+
+ERROR_RESPONSES: Dict[int, Dict[str, Any]] = {
+    400: {"model": AiErrorResponse, "description": "Bad request"},
+    422: {"model": AiErrorResponse, "description": "Validation error"},
+    500: {"model": AiErrorResponse, "description": "Internal server error"},
+}
+
+workflow = WorkflowGraph()
+
+
+def parse_ai_request(payload: Dict[str, Any]) -> AiRequest | JSONResponse:
+    try:
+        return AiRequest.model_validate(payload)
+    except ValidationError as exc:
+        return error_response(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code="AI_VALIDATION_ERROR",
+            message="Invalid AI request payload.",
+            details={"errors": exc.errors()},
+        )
+
+
+def execute_ai_request(req: AiRequest) -> AiResponse | JSONResponse:
+    try:
+        response = workflow.run(req)
+        if response.answer == "Unsupported intent.":
+            return error_response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                code="AI_UNSUPPORTED_INTENT",
+                message="Unsupported AI intent.",
+                details={"intent": req.intent},
+            )
+        return response
+    except Exception as exc:
+        return error_response(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="AI_INTERNAL_ERROR",
+            message="AI service failed to process the request.",
+            details={"type": exc.__class__.__name__},
+        )
+
+
+def error_response(status_code: int, code: str, message: str, details: Dict[str, Any]) -> JSONResponse:
+    body = AiErrorResponse(error=AiErrorDetail(code=code, message=message, details=details))
+    return JSONResponse(status_code=status_code, content=body.model_dump())
