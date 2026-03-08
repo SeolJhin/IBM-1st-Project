@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
@@ -21,7 +21,9 @@ function normalizeRole(user) {
     user?.user_role ??
     user?.authority ??
     user?.authorities?.[0];
-  return String(raw ?? '').toLowerCase().replace('role_', '');
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace('role_', '');
 }
 
 export default function QnaWrite() {
@@ -29,8 +31,10 @@ export default function QnaWrite() {
   const navigate = useNavigate();
   const { qnaId } = useParams();
   const isEdit = Boolean(qnaId);
+  const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({ qnaTitle: '', qnaCtnt: '', code: '' });
+  const [imageFiles, setImageFiles] = useState([]);
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
 
@@ -44,11 +48,9 @@ export default function QnaWrite() {
       setLoading(false);
       return;
     }
-
     supportApi
       .getQnaDetail(qnaId)
       .then((res) => {
-        // tenant는 본인 글만 수정 가능
         if (isTenant && !isAdmin && res.userId !== user?.userId) {
           alert('본인이 작성한 문의만 수정할 수 있습니다.');
           navigate(`/support/qna/${qnaId}`);
@@ -65,49 +67,74 @@ export default function QnaWrite() {
         navigate('/support/qna');
       })
       .finally(() => setLoading(false));
-  }, [isEdit, isAdmin, isTenant, qnaId, user, navigate]);
+  }, [isEdit, isAdmin, isTenant, qnaId, user, navigate]); // eslint-disable-line
 
   if (!user) return <Navigate to="/login" replace />;
-
   if (!isEdit && !canCreate) {
     return (
       <div className={styles.container}>
         <div className={styles.card}>
           <h2 className={styles.sectionTitle}>접근 권한 없음</h2>
-          <p style={{ marginBottom: 16 }}>1:1 문의 작성은 관리자와 입주자만 가능합니다.</p>
-          <button className={styles.pageBtn} onClick={() => navigate('/support/qna')}>
+          <p style={{ marginBottom: 16 }}>
+            1:1 문의 작성은 관리자와 입주자만 가능합니다.
+          </p>
+          <button
+            className={styles.pageBtn}
+            onClick={() => navigate('/support/qna')}
+          >
             목록으로
           </button>
         </div>
       </div>
     );
   }
-
   if (isEdit && !isAdmin && !isTenant) {
     return (
       <div className={styles.container}>
         <div className={styles.card}>
           <h2 className={styles.sectionTitle}>접근 권한 없음</h2>
-          <p style={{ marginBottom: 16 }}>1:1 문의 수정은 관리자 또는 본인만 가능합니다.</p>
-          <button className={styles.pageBtn} onClick={() => navigate(`/support/qna/${qnaId}`)}>
+          <p style={{ marginBottom: 16 }}>
+            1:1 문의 수정은 관리자 또는 본인만 가능합니다.
+          </p>
+          <button
+            className={styles.pageBtn}
+            onClick={() => navigate(`/support/qna/${qnaId}`)}
+          >
             상세로
           </button>
         </div>
       </div>
     );
   }
-
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
 
-  const handleChange = (field, value) => {
+  const handleChange = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleImageAdd = (e) => {
+    const files = Array.from(e.target.files || []);
+    const allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    const valid = files.filter((f) => allowed.includes(f.type));
+    if (valid.length !== files.length)
+      alert('이미지 파일(PNG, JPG, GIF, WEBP)만 업로드 가능합니다.');
+    setImageFiles((prev) => [
+      ...prev,
+      ...valid.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
+    ]);
+    e.target.value = '';
+  };
+
+  const handleRemoveImage = (idx) => {
+    setImageFiles((prev) => {
+      URL.revokeObjectURL(prev[idx].previewUrl);
+      return prev.filter((_, i) => i !== idx);
+    });
   };
 
   const handleSubmit = async () => {
     if (!isEdit && !form.code) return alert('문의 유형을 선택해주세요.');
     if (!form.qnaTitle.trim()) return alert('제목을 입력해주세요.');
     if (!form.qnaCtnt.trim()) return alert('내용을 입력해주세요.');
-
     setSubmitting(true);
     try {
       if (isEdit) {
@@ -115,15 +142,36 @@ export default function QnaWrite() {
           qnaTitle: form.qnaTitle,
           qnaCtnt: form.qnaCtnt,
         });
+        if (imageFiles.length > 0) {
+          await supportApi
+            .uploadFiles(
+              'QNA',
+              Number(qnaId),
+              imageFiles.map((i) => i.file)
+            )
+            .catch((e) => console.warn('이미지 업로드 실패:', e.message));
+        }
         alert('문의가 수정되었습니다.');
         navigate(`/support/qna/${qnaId}`);
       } else {
-        await supportApi.createQna(form);
+        const created = await supportApi.createQna(form);
+        if (imageFiles.length > 0 && created?.qnaId) {
+          await supportApi
+            .uploadFiles(
+              'QNA',
+              created.qnaId,
+              imageFiles.map((i) => i.file)
+            )
+            .catch((e) => console.warn('이미지 업로드 실패:', e.message));
+        }
         alert('문의가 등록되었습니다.');
         navigate('/support/qna');
       }
     } catch (err) {
-      alert(err.message || (isEdit ? '수정에 실패했습니다.' : '등록에 실패했습니다.'));
+      alert(
+        err.message ||
+          (isEdit ? '수정에 실패했습니다.' : '등록에 실패했습니다.')
+      );
     } finally {
       setSubmitting(false);
     }
@@ -132,7 +180,9 @@ export default function QnaWrite() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h2 className={styles.sectionTitle}>{isEdit ? '1:1 문의 수정' : '1:1 문의 작성'}</h2>
+        <h2 className={styles.sectionTitle}>
+          {isEdit ? '1:1 문의 수정' : '1:1 문의 작성'}
+        </h2>
 
         <label className={styles.formLabel}>문의 유형</label>
         <select
@@ -168,13 +218,95 @@ export default function QnaWrite() {
           disabled={submitting}
         />
 
+        {/* 사진 첨부 */}
+        <label className={styles.formLabel}>사진 첨부 (선택)</label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          style={{ display: 'none' }}
+          onChange={handleImageAdd}
+        />
+        <button
+          type="button"
+          className={styles.pageBtn}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={submitting}
+          style={{ marginBottom: 10 }}
+        >
+          + 사진 선택
+        </button>
+        {imageFiles.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 10,
+              marginBottom: 12,
+            }}
+          >
+            {imageFiles.map((item, idx) => (
+              <div key={idx} style={{ position: 'relative' }}>
+                <img
+                  src={item.previewUrl}
+                  alt=""
+                  style={{
+                    width: 100,
+                    height: 80,
+                    objectFit: 'cover',
+                    borderRadius: 8,
+                    border: '1.5px solid var(--primary)',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(idx)}
+                  style={{
+                    position: 'absolute',
+                    top: -6,
+                    right: -6,
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: '#e55',
+                    color: '#fff',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    lineHeight: '20px',
+                    textAlign: 'center',
+                    padding: 0,
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button className={styles.buttonPrimary} onClick={handleSubmit} disabled={submitting}>
-            {submitting ? (isEdit ? '수정 중...' : '등록 중...') : isEdit ? '수정' : '등록'}
+          <button
+            className={styles.buttonPrimary}
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
+            {submitting
+              ? isEdit
+                ? '수정 중...'
+                : '등록 중...'
+              : isEdit
+                ? '수정'
+                : '등록'}
           </button>
           <button
             className={styles.pageBtn}
-            onClick={() => (isEdit ? navigate(`/support/qna/${qnaId}`) : navigate('/support/qna'))}
+            onClick={() =>
+              isEdit
+                ? navigate(`/support/qna/${qnaId}`)
+                : navigate('/support/qna')
+            }
             disabled={submitting}
           >
             취소

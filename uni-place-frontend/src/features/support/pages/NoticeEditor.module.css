@@ -1,0 +1,169 @@
+/* ── 에디터 전체 ── */
+.editorWrap {
+  width: 100%;
+}
+
+/* ── 툴바 ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border: 1.5px solid #c8bfb0;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: #f7f4ef;
+  flex-wrap: wrap;
+}
+
+.toolBtn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  padding: 0;
+}
+.toolBtn:hover {
+  background: #ece8e0;
+  border-color: #c8bfb0;
+}
+.toolBtnActive {
+  background: #e0d8cc !important;
+  border-color: #a89e8e !important;
+}
+
+.toolDivider {
+  width: 1px;
+  height: 20px;
+  background: #c8bfb0;
+  margin: 0 4px;
+}
+
+.fontSizeSelect {
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid #c8bfb0;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #fff;
+  cursor: pointer;
+}
+
+.colorBtn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #c8bfb0;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  background: #fff;
+}
+.colorBtn span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+/* ── 본문 편집 영역 ── */
+.editorBody {
+  min-height: 240px;
+  padding: 16px;
+  border: 1.5px solid #c8bfb0;
+  border-radius: 0 0 10px 10px;
+  background: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  line-height: 1.8;
+  color: var(--text);
+  outline: none;
+  overflow-y: auto;
+  word-break: break-word;
+}
+.editorBody:focus {
+  border-color: var(--primary, #d9ad5b);
+  box-shadow: 0 0 0 3px rgba(217, 173, 91, 0.15);
+}
+.editorBody [data-notice-img] {
+  display: block;
+  max-width: 100%;
+  margin: 12px auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+.editorBody [data-notice-img]:hover {
+  outline: 2px solid var(--primary, #d9ad5b);
+}
+.editorBody p {
+  margin: 0 0 4px;
+}
+
+/* ── 하단 액션 바 ── */
+.editorFooter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.imgInsertBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1.5px solid #c8bfb0;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.imgInsertBtn:hover {
+  border-color: var(--primary, #d9ad5b);
+  color: var(--primary, #d9ad5b);
+  background: rgba(217, 173, 91, 0.06);
+}
+.imgInsertBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.imgCount {
+  font-size: 12px;
+  color: #888;
+}
+
+/* ── 읽기 모드 ── */
+.viewer {
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--text);
+  word-break: break-word;
+}
+.viewer img {
+  display: block;
+  max-width: 100%;
+  margin: 20px auto;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
