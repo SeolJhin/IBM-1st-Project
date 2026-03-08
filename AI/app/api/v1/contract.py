@@ -1,4 +1,4 @@
-CONTRACT_VERSION = "2026-03-08.1"
+CONTRACT_VERSION = "2026-03-08.2"
 
 # Intent contract is intentionally explicit to reduce drift between Spring and FastAPI.
 INTENT_CONTRACT: dict[str, dict[str, object]] = {
@@ -20,7 +20,7 @@ INTENT_CONTRACT: dict[str, dict[str, object]] = {
     "CONTRACT_ANOMALY_DETECTION": {
         "endpoint": "/api/v1/ai/contracts/anomaly-detections",
         "required": [],
-        "optional": ["userId", "contractCount", "contractSt", "createdAt", "patternScore", "slots.*"],
+        "optional": ["userId", "contractCount", "contractSt", "createdAt", "patternScore", "items", "slots.*"],
     },
     "ROOM_AVAILABILITY_SEARCH": {
         "endpoint": "/api/v1/ai/rooms/availability-searches",
@@ -61,6 +61,6 @@ INTENT_CONTRACT: dict[str, dict[str, object]] = {
     "COMPLAIN_PRIORITY_CLASSIFY": {
         "endpoint": "/api/v1/ai/operations/complaint-priority-classification",
         "required": [],
-        "optional": ["compTitle", "compCtnt", "compSt", "keyword", "priorityScore", "slots.*"],
+        "optional": ["userId", "compId", "compTitle", "compCtnt", "compSt", "keyword", "priorityScore", "items", "slots.*"],
     },
 }

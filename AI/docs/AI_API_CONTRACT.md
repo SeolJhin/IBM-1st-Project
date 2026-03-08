@@ -1,6 +1,6 @@
 # AI API Contract (Spring -> FastAPI)
 
-Contract version: `2026-03-08.1`
+Contract version: `2026-03-08.2`
 
 This document is the single source of truth for intent-to-endpoint mapping.
 
