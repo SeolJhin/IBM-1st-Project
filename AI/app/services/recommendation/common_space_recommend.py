@@ -1,74 +1,54 @@
 from app.schemas.ai_request import AiRequest
 
-COMMON_SPACE_SLOTS = [
-    {
-        "space_id": 101,
-        "space_name": "Meeting Room A",
-        "building_id": 1,
-        "start_at": "2026-03-11T19:00:00",
-        "end_at": "2026-03-11T20:00:00",
-        "score": 95,
-    },
-    {
-        "space_id": 102,
-        "space_name": "Study Room B",
-        "building_id": 1,
-        "start_at": "2026-03-12T18:00:00",
-        "end_at": "2026-03-12T19:00:00",
-        "score": 90,
-    },
-    {
-        "space_id": 201,
-        "space_name": "Fitness Room",
-        "building_id": 2,
-        "start_at": "2026-03-11T20:00:00",
-        "end_at": "2026-03-11T21:00:00",
-        "score": 84,
-    },
-    {
-        "space_id": 301,
-        "space_name": "Meeting Room C",
-        "building_id": 3,
-        "start_at": "2026-03-13T19:00:00",
-        "end_at": "2026-03-13T20:00:00",
-        "score": 88,
-    },
-]
-
 
 def recommend_common_space(req: AiRequest) -> str:
     preferred_space_id = _to_int(req.get_slot("space_id"))
     building_id = _to_int(req.get_slot("building_id"))
     usage_pattern = str(req.get_slot("usage_pattern") or "").lower()
     preferred_start = _extract_hour(req.get_slot("sr_start_at"))
+    source_items = _load_items(req)
+
+    if not source_items:
+        return "No common-space availability data was provided."
 
     filtered = []
-    for slot in COMMON_SPACE_SLOTS:
-        if preferred_space_id is not None and slot["space_id"] != preferred_space_id:
+    for slot in source_items:
+        space_id = _to_int(_item_value(slot, "space_id", "spaceId"))
+        item_building_id = _to_int(_item_value(slot, "building_id", "buildingId"))
+        start_at = str(_item_value(slot, "start_at", "startAt") or "")
+        if preferred_space_id is not None and space_id != preferred_space_id:
             continue
-        if building_id is not None and slot["building_id"] != building_id:
+        if building_id is not None and item_building_id != building_id:
             continue
-        if _is_time_mismatch(slot["start_at"], preferred_start, usage_pattern):
+        if _is_time_mismatch(start_at, preferred_start, usage_pattern):
             continue
-        filtered.append(slot)
+
+        enriched = dict(slot)
+        enriched["_space_id"] = space_id if space_id is not None else 0
+        enriched["_building_id"] = item_building_id if item_building_id is not None else 0
+        enriched["_space_name"] = str(_item_value(slot, "space_name", "spaceNm", "space_name") or "Unknown Space")
+        enriched["_start_at"] = start_at
+        enriched["_end_at"] = str(_item_value(slot, "end_at", "endAt") or "")
+        enriched["_score"] = _to_int(_item_value(slot, "score")) or 0
+        filtered.append(enriched)
 
     if not filtered:
         return "No suitable common-space slot was found. Please try a wider time range."
 
-    filtered.sort(key=lambda item: -item["score"])
+    filtered.sort(key=lambda item: -item["_score"])
     top = filtered[:2]
     primary = top[0]
 
     detail = (
-        f"{primary['space_name']} ({primary['start_at']} to {primary['end_at']})"
-        f" in building {primary['building_id']} is available."
+        f"{primary['_space_name']} ({primary['_start_at']} to {primary['_end_at']})"
+        f" in building {primary['_building_id']} is available."
     )
 
     if len(top) > 1:
         secondary = top[1]
         detail += (
-            f" Alternative: {secondary['space_name']} "
-            f"({secondary['start_at']} to {secondary['end_at']})."
+            f" Alternative: {secondary['_space_name']} "
+            f"({secondary['_start_at']} to {secondary['_end_at']})."
         )
 
     return f"Recommended common-space reservation: {detail} Would you like to book now?"
@@ -106,3 +86,17 @@ def _is_time_mismatch(start_at: str, preferred_start: int | None, usage_pattern:
     if "morning" in usage_pattern and hour is not None and hour > 12:
         return True
     return False
+
+
+def _load_items(req: AiRequest) -> list[dict]:
+    items = req.get_slot("items")
+    if not isinstance(items, list):
+        return []
+    return [item for item in items if isinstance(item, dict)]
+
+
+def _item_value(item: dict, *keys: str) -> object:
+    for key in keys:
+        if key in item:
+            return item[key]
+    return None
