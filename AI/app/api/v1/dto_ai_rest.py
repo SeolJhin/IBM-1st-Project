@@ -108,6 +108,7 @@ class RoomserviceStockMonitorRequest(RestAiBaseRequest):
 
 
 class ComplainPriorityClassifyRequest(RestAiBaseRequest):
+    comp_id: Optional[int] = Field(default=None, alias="compId")
     comp_title: Optional[str] = Field(default=None, alias="compTitle")
     comp_ctnt: Optional[str] = Field(default=None, alias="compCtnt")
     comp_st: Optional[str] = Field(default=None, alias="compSt")
