@@ -53,6 +53,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/check-nickname").permitAll()
                 .requestMatchers("/auth/oauth2/kakao/complete").permitAll()
                 .requestMatchers("/auth/oauth2/google/complete").permitAll()
+                .requestMatchers("/ai/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/member/login").permitAll()
                 .requestMatchers("/login/**").permitAll()

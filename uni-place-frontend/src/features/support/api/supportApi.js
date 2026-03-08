@@ -1,5 +1,5 @@
 // src/features/support/api/supportApi.js
-import { fetchWithAuthRetry } from '../../../app/http/apiBase';
+import { fetchWithAuthRetry, withApiPrefix } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
@@ -79,7 +79,57 @@ function buildQuery(params = {}) {
   return '?' + new URLSearchParams(entries).toString();
 }
 
+// ===== 파일 업로드 유틸 =====
+async function uploadFiles(fileParentType, fileParentId, files) {
+  const formData = new FormData();
+  formData.append('fileParentType', fileParentType);
+  formData.append('fileParentId', String(fileParentId));
+  files.forEach((f) => formData.append('files', f));
+
+  const token = localStorage.getItem('access_token') || '';
+  const res = await fetchWithAuthRetry(
+    withApiPrefix('/files'),
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+      credentials: 'same-origin',
+    },
+    { auth: true }
+  );
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(payload?.message || '파일 업로드에 실패했습니다.');
+  }
+  return payload?.data ?? payload;
+}
+
+async function getFilesByParent(fileParentType, fileParentId) {
+  const token = localStorage.getItem('access_token') || '';
+  const res = await fetchWithAuthRetry(
+    withApiPrefix(
+      `/files?fileParentType=${fileParentType}&fileParentId=${fileParentId}`
+    ),
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: 'same-origin',
+    },
+    { auth: true }
+  );
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) return [];
+  return payload?.data ?? payload ?? [];
+}
+
 export const supportApi = {
+  // ===== 파일 =====
+  uploadFiles,
+  getFilesByParent,
+  getFileViewUrl: (fileId) => withApiPrefix(`/files/${fileId}/view`),
   // ===== FAQ =====
   getFaqs: (params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'faqId', direct: 'DESC' };
@@ -204,7 +254,7 @@ export const supportApi = {
         direct: merged.direct,
       })}`,
       {
-      auth: true,
+        auth: true,
       }
     );
   },
