@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
@@ -21,7 +21,6 @@ function normalizeRole(user) {
     user?.user_role ??
     user?.authority ??
     user?.authorities?.[0];
-
   return String(raw ?? '')
     .toLowerCase()
     .replace('role_', '');
@@ -30,7 +29,9 @@ function normalizeRole(user) {
 export default function ComplainWrite() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [form, setForm] = useState({ compTitle: '', compCtnt: '', code: '' });
+  const [imageFiles, setImageFiles] = useState([]); // { file, previewUrl }[]
   const [submitting, setSubmitting] = useState(false);
 
   if (!user) return <Navigate to="/login" replace />;
@@ -56,26 +57,53 @@ export default function ComplainWrite() {
     );
   }
 
-  const handleChange = (field, value) => {
+  const handleChange = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleImageAdd = (e) => {
+    const files = Array.from(e.target.files || []);
+    const allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    const valid = files.filter((f) => allowed.includes(f.type));
+    if (valid.length !== files.length)
+      alert('이미지 파일(PNG, JPG, GIF, WEBP)만 업로드 가능합니다.');
+    setImageFiles((prev) => [
+      ...prev,
+      ...valid.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
+    ]);
+    e.target.value = '';
+  };
+
+  const handleRemoveImage = (idx) => {
+    setImageFiles((prev) => {
+      URL.revokeObjectURL(prev[idx].previewUrl);
+      return prev.filter((_, i) => i !== idx);
+    });
   };
 
   const handleSubmit = async () => {
     if (!form.code) return alert('민원 유형을 선택해주세요.');
     if (!form.compTitle.trim()) return alert('제목을 입력해주세요.');
     if (!form.compCtnt.trim()) return alert('내용을 입력해주세요.');
-
     setSubmitting(true);
     try {
-      await supportApi.createComplain(form);
+      const created = await supportApi.createComplain(form);
+      if (imageFiles.length > 0 && created?.compId) {
+        await supportApi
+          .uploadFiles(
+            'COMPLAIN',
+            created.compId,
+            imageFiles.map((i) => i.file)
+          )
+          .catch((e) => {
+            console.warn('이미지 업로드 실패:', e.message);
+          });
+      }
       alert('민원이 접수되었습니다.');
       navigate('/support/complain');
     } catch (err) {
       if (Number(err?.status) === 401) {
         alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
-        navigate('/login', {
-          state: { from: '/support/complain/write' },
-        });
+        navigate('/login', { state: { from: '/support/complain/write' } });
         return;
       }
       alert(err.message || '등록에 실패했습니다.');
@@ -122,6 +150,74 @@ export default function ComplainWrite() {
           onChange={(e) => handleChange('compCtnt', e.target.value)}
           disabled={submitting}
         />
+
+        {/* 사진 첨부 */}
+        <label className={styles.formLabel}>사진 첨부 (선택)</label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          style={{ display: 'none' }}
+          onChange={handleImageAdd}
+        />
+        <button
+          type="button"
+          className={styles.pageBtn}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={submitting}
+          style={{ marginBottom: 10 }}
+        >
+          + 사진 선택
+        </button>
+        {imageFiles.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 10,
+              marginBottom: 12,
+            }}
+          >
+            {imageFiles.map((item, idx) => (
+              <div key={idx} style={{ position: 'relative' }}>
+                <img
+                  src={item.previewUrl}
+                  alt=""
+                  style={{
+                    width: 100,
+                    height: 80,
+                    objectFit: 'cover',
+                    borderRadius: 8,
+                    border: '1px solid #ddd',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(idx)}
+                  style={{
+                    position: 'absolute',
+                    top: -6,
+                    right: -6,
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: '#e55',
+                    color: '#fff',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    lineHeight: '20px',
+                    textAlign: 'center',
+                    padding: 0,
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           <button

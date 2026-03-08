@@ -44,7 +44,10 @@ async function parseApiResponse(res) {
 
 async function request(path, { method = 'GET', body, auth = true } = {}) {
   const headers = { 'Content-Type': 'application/json' };
-  if (auth) headers.Authorization = `Bearer ${getAccessToken()}`;
+  // auth=true면 토큰 필수, auth=false여도 토큰이 있으면 포함
+  // (permitAll 엔드포인트도 토큰 있으면 백엔드가 likedByMe 등 개인화 정보를 반환)
+  const token = getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetchWithAuthRetry(
     path,
@@ -65,7 +68,8 @@ async function requestForm(
   { method = 'POST', formData, auth = true } = {}
 ) {
   const headers = {};
-  if (auth) headers.Authorization = `Bearer ${getAccessToken()}`;
+  const token = getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetchWithAuthRetry(
     path,
@@ -130,10 +134,7 @@ export const communityApi = {
     return request(`/replies/me?${qs}`);
   },
 
-  getBoard: (
-    boardId,
-    { auth = false, increaseReadCount = true } = {}
-  ) => {
+  getBoard: (boardId, { auth = false, increaseReadCount = true } = {}) => {
     const qs = new URLSearchParams();
     if (increaseReadCount === false) qs.set('increaseReadCount', 'false');
     const q = qs.toString();

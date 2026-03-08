@@ -345,14 +345,12 @@ export default function CommunityHome() {
           boardType: activeTab,
           searchType: activeSearch.type || 'title',
           keyword: activeSearch.keyword.trim(),
-          auth: isAdmin,
         });
       } else {
         data = await communityApi.getBoards({
           page,
           size: 10,
           boardType: activeTab,
-          auth: isAdmin,
         });
       }
       const content = Array.isArray(data?.content)
@@ -510,61 +508,123 @@ export default function CommunityHome() {
     }
   };
 
+  const [likePendingIds, setLikePendingIds] = useState(new Set());
+
   const handleLike = async (e, itemId) => {
     e.stopPropagation();
     if (!isLoggedIn) return;
+    if (likePendingIds.has(itemId)) return;
+
+    setLikePendingIds((prev) => new Set([...prev, itemId]));
 
     if (activeTab === 'REVIEW') {
       const item = items.find((i) => i.reviewId === itemId);
-      if (!item) return;
+      if (!item) {
+        setLikePendingIds((prev) => {
+          const s = new Set(prev);
+          s.delete(itemId);
+          return s;
+        });
+        return;
+      }
+      const wasLiked = item.likedByMe;
+      // 낙관적 업데이트
+      setItems((prev) =>
+        prev.map((i) =>
+          i.reviewId === itemId
+            ? {
+                ...i,
+                likedByMe: !wasLiked,
+                likeCount: (i.likeCount ?? 0) + (wasLiked ? -1 : 1),
+              }
+            : i
+        )
+      );
       try {
-        if (item.likedByMe) await reviewApi.unlikeReview(itemId);
+        if (wasLiked) await reviewApi.unlikeReview(itemId);
         else await reviewApi.likeReview(itemId);
+      } catch (err) {
+        console.warn('review like error:', err?.message);
+        // 실패 시 롤백
         setItems((prev) =>
           prev.map((i) =>
             i.reviewId === itemId
               ? {
                   ...i,
-                  likedByMe: !i.likedByMe,
-                  likeCount: (i.likeCount ?? 0) + (i.likedByMe ? -1 : 1),
+                  likedByMe: wasLiked,
+                  likeCount: (i.likeCount ?? 0) + (wasLiked ? 1 : -1),
                 }
               : i
           )
         );
-      } catch (err) {
-        console.warn('review like error:', err?.message);
+      } finally {
+        setLikePendingIds((prev) => {
+          const s = new Set(prev);
+          s.delete(itemId);
+          return s;
+        });
       }
       return;
     }
 
     const item = items.find((i) => (i.boardId ?? i.id) === itemId);
-    if (!item) return;
-    const token = localStorage.getItem('access_token') || '';
-    try {
-      await fetch(`/api/boards/${itemId}/likes`, {
-        method: item.likedByMe ? 'DELETE' : 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+    if (!item) {
+      setLikePendingIds((prev) => {
+        const s = new Set(prev);
+        s.delete(itemId);
+        return s;
       });
+      return;
+    }
+    const wasLiked = item.likedByMe;
+    // 낙관적 업데이트
+    setItems((prev) =>
+      prev.map((i) =>
+        (i.boardId ?? i.id) === itemId
+          ? {
+              ...i,
+              likedByMe: !wasLiked,
+              likeCount: (i.likeCount ?? 0) + (wasLiked ? -1 : 1),
+            }
+          : i
+      )
+    );
+    try {
+      if (wasLiked) await communityApi.unlikeBoard(itemId);
+      else await communityApi.likeBoard(itemId);
+    } catch (err) {
+      console.warn('board like error:', err?.message);
+      // 실패 시 롤백
       setItems((prev) =>
         prev.map((i) =>
           (i.boardId ?? i.id) === itemId
             ? {
                 ...i,
-                likedByMe: !i.likedByMe,
-                likeCount: (i.likeCount ?? 0) + (i.likedByMe ? -1 : 1),
+                likedByMe: wasLiked,
+                likeCount: (i.likeCount ?? 0) + (wasLiked ? 1 : -1),
               }
             : i
         )
       );
-    } catch {
-      /* silent */
+    } finally {
+      setLikePendingIds((prev) => {
+        const s = new Set(prev);
+        s.delete(itemId);
+        return s;
+      });
     }
   };
 
   // ── 글 클릭: 현재 URL params(tab + 검색) 보존해서 이동 ──────
   const handleBoardClick = (boardId) => {
     const qs = searchParams.toString();
-    navigate(`/community/${boardId}${qs ? `?${qs}` : ''}`);
+    const item = items.find((i) => (i.boardId ?? i.id) === boardId);
+    navigate(`/community/${boardId}${qs ? `?${qs}` : ''}`, {
+      state: {
+        likedByMe: item?.likedByMe ?? false,
+        likeCount: item?.likeCount ?? 0,
+      },
+    });
   };
 
   return (
@@ -856,7 +916,12 @@ export default function CommunityHome() {
                       <td className={styles.numCell}>
                         <button
                           type="button"
-                          disabled={!isLoggedIn}
+                          disabled={
+                            !isLoggedIn ||
+                            likePendingIds.has(
+                              activeTab === 'REVIEW' ? item.reviewId : boardId
+                            )
+                          }
                           title={
                             !isLoggedIn
                               ? '로그인 후 좋아요를 누를 수 있습니다.'
