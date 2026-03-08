@@ -1,11 +1,6 @@
 from app.schemas.ai_request import AiRequest
 
 LOW_STOCK_THRESHOLD = 5
-DEFAULT_ITEMS = [
-    {"building_id": 1, "prod_id": 1001, "prod_nm": "Laundry Detergent", "prod_stock": 3, "affiliate_id": 501},
-    {"building_id": 1, "prod_id": 1002, "prod_nm": "Toilet Paper", "prod_stock": 12, "affiliate_id": 502},
-    {"building_id": 2, "prod_id": 1003, "prod_nm": "Shampoo", "prod_stock": 4, "affiliate_id": 503},
-]
 
 
 def monitor_roomservice_stock(req: AiRequest) -> tuple[float, str, dict]:
@@ -48,11 +43,7 @@ def _collect_items(req: AiRequest) -> list[dict]:
     )
     if single_item is not None:
         return [single_item]
-
-    building_id = _to_int(req.get_slot("building_id"))
-    if building_id is None:
-        return DEFAULT_ITEMS
-    return [item for item in DEFAULT_ITEMS if item["building_id"] == building_id]
+    return []
 
 
 def _normalize_item(item: dict) -> dict | None:

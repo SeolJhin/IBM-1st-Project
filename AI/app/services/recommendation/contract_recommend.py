@@ -2,23 +2,16 @@ from datetime import date, datetime
 
 from app.schemas.ai_request import AiRequest
 
-RENEWAL_CANDIDATES = [
-    {"name": "Gangnam River View", "building_id": 1, "rent_price": 1000000, "popularity": 93},
-    {"name": "Gangnam Sky House", "building_id": 1, "rent_price": 950000, "popularity": 96},
-    {"name": "Gangnam Central Stay", "building_id": 1, "rent_price": 890000, "popularity": 89},
-    {"name": "Songpa Smart Living", "building_id": 2, "rent_price": 830000, "popularity": 85},
-    {"name": "Seocho Green House", "building_id": 3, "rent_price": 780000, "popularity": 80},
-]
-
 
 def recommend_contract_rooms(req: AiRequest) -> str:
     contract_end_raw = req.get_slot("contract_end")
     building_id = _to_int(req.get_slot("building_id"))
     current_rent = _to_int(req.get_slot("rent_price"))
+    raw_items = req.get_slot("items")
 
-    candidates = _filter_candidates(building_id, current_rent)
+    candidates = _filter_candidates(raw_items, building_id, current_rent)
     if not candidates:
-        return "No renewal candidates were found. Please check building and price conditions."
+        return "No renewal candidates were provided from backend data."
 
     candidates.sort(key=lambda item: (_rent_distance(item["rent_price"], current_rent), -item["popularity"]))
     top = candidates[:3]
@@ -31,15 +24,56 @@ def recommend_contract_rooms(req: AiRequest) -> str:
     return f"{day_text} Recommended top rooms: {recommendation}. Would you like to open room details?"
 
 
-def _filter_candidates(building_id: int | None, current_rent: int | None) -> list[dict[str, int | str]]:
+def _filter_candidates(
+    raw_items: object,
+    building_id: int | None,
+    current_rent: int | None,
+) -> list[dict[str, int | str]]:
+    if not isinstance(raw_items, list):
+        return []
+
     filtered: list[dict[str, int | str]] = []
-    for item in RENEWAL_CANDIDATES:
-        if building_id is not None and item["building_id"] != building_id:
+    for item in raw_items:
+        if not isinstance(item, dict):
             continue
-        if current_rent is not None and _rent_distance(item["rent_price"], current_rent) > 150000:
+        normalized = _normalize_item(item)
+        if normalized is None:
             continue
-        filtered.append(item)
+        if building_id is not None and normalized["building_id"] != building_id:
+            continue
+        if current_rent is not None and _rent_distance(normalized["rent_price"], current_rent) > 200000:
+            continue
+        filtered.append(normalized)
     return filtered
+
+
+def _normalize_item(item: dict) -> dict[str, int | str] | None:
+    room_name = _to_text(_item_value(item, "name", "room_name", "roomName")) or "Unknown Room"
+    item_building_id = _to_int(_item_value(item, "building_id", "buildingId"))
+    item_rent_price = _to_int(_item_value(item, "rent_price", "rentPrice"))
+    item_popularity = _to_int(_item_value(item, "popularity")) or 0
+
+    if item_rent_price is None:
+        return None
+
+    return {
+        "name": room_name,
+        "building_id": item_building_id if item_building_id is not None else 0,
+        "rent_price": item_rent_price,
+        "popularity": item_popularity,
+    }
+
+
+def _item_value(item: dict, *keys: str) -> object:
+    for key in keys:
+        if key in item:
+            return item[key]
+    return None
+
+
+def _to_text(value: object) -> str:
+    text = str(value or "").strip()
+    return text
 
 
 def _contract_day_text(contract_end_raw: object) -> str:
