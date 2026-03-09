@@ -19,12 +19,18 @@ class IntentRouter:
         intent = req.intent
 
         if intent in {"GENERAL_QA", "COMMUNITY_CONTENT_SEARCH"}:
+            blocked = _moderation_block_response(req)
+            if blocked is not None:
+                return blocked
             docs = retrieve_context(req)
             answer = generate_answer(req, docs)
             confidence = _confidence_from_docs(docs)
             return AiResponse(answer=answer, confidence=confidence, metadata={"docs": len(docs)})
 
         if intent in {"AI_AGENT_CHATBOT", "AI_AGENT_RAG_SEARCH"}:
+            blocked = _moderation_block_response(req)
+            if blocked is not None:
+                return blocked
             docs = retrieve_context(req)
             answer = generate_answer(req, docs)
             confidence = _confidence_from_docs(docs)
@@ -52,8 +58,8 @@ class IntentRouter:
             return AiResponse(answer=msg, confidence=score)
 
         if intent in {"PAYMENT_SUMMARY_DOCUMENT", "PAYMENT_STATUS_SUMMARY"}:
-            answer = make_payment_summary(req)
-            return AiResponse(answer=answer, confidence=_confidence_from_result(answer, base=0.85))
+            answer, metadata = make_payment_summary(req)
+            return AiResponse(answer=answer, confidence=_confidence_from_result(answer, base=0.85), metadata=metadata)
 
         if intent == "PAYMENT_ORDER_SUGGESTION":
             answer, metadata = suggest_order_from_payment(req)
@@ -86,3 +92,14 @@ def _confidence_from_result(answer: str, base: float) -> float:
     if "unknown" in lowered:
         return max(0.55, base - 0.2)
     return base
+
+
+def _moderation_block_response(req: AiRequest) -> AiResponse | None:
+    text = str(req.prompt or req.get_slot("content") or req.get_slot("keyword") or "").strip()
+    if not text:
+        return None
+    moderation_req = AiRequest(intent="COMMUNITY_CONTENT_MODERATION", user_id=req.user_id, prompt=text, slots={"content": text})
+    message, confidence, metadata = moderate_community_content(moderation_req)
+    if metadata.get("action") == "BLOCK":
+        return AiResponse(answer=message, confidence=confidence, metadata={"moderation": metadata, "docs": 0})
+    return None

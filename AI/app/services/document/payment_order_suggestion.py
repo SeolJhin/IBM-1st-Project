@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.schemas.ai_request import AiRequest
+from app.services.document.draft_writer import write_document_draft
 
 
 def suggest_order_from_payment(req: AiRequest) -> tuple[str, dict[str, Any]]:
@@ -51,7 +52,13 @@ def suggest_order_from_payment(req: AiRequest) -> tuple[str, dict[str, Any]]:
         for item in top
     )
     message = f"Order suggestion document draft generated for {month}: {summary}"
-    return message, {"suggestions": top, "month": month}
+    draft_payload = {
+        "month": month,
+        "building_id": building_id,
+        "suggestions": top,
+    }
+    draft_path = write_document_draft("payment_order_suggestion", payload=draft_payload, user_id=req.user_id)
+    return message, {"suggestions": top, "month": month, "draft_path": draft_path}
 
 
 def _priority_score(stock: int, paid_amount: int) -> int:

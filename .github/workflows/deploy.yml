@@ -31,7 +31,7 @@ jobs:
         working-directory: ./AI
         run: |
           python -m pip install --upgrade pip
-          pip install fastapi==0.116.1 uvicorn[standard]==0.35.0 pydantic==2.11.7 pydantic-settings==2.10.1
+          pip install fastapi==0.116.1 uvicorn[standard]==0.35.0 pydantic==2.11.7 pydantic-settings==2.10.1 httpx==0.28.1
 
       - name: Run AI smoke tests
         working-directory: ./AI

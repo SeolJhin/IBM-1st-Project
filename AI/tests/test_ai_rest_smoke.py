@@ -24,8 +24,12 @@ class AiRestSmokeTest(unittest.TestCase):
             ("post", "/api/v1/ai/common-spaces/recommendations", {"userId": "u1"}),
             ("post", "/api/v1/ai/payments/summary-documents", {"userId": "u1"}),
             ("post", "/api/v1/ai/payments/status-summaries", {"userId": "u1"}),
-            ("post", "/api/v1/ai/payments/order-suggestions", {"userId": "u1"}),
-            ("post", "/api/v1/ai/operations/roomservice-stock-monitoring", {"userId": "u1"}),
+            (
+                "post",
+                "/api/v1/ai/payments/order-suggestions",
+                {"userId": "u1", "items": [{"buildingId": 1, "prodNm": "Detergent", "prodStock": 2, "paidAmount": 120000}]},
+            ),
+            ("post", "/api/v1/ai/operations/roomservice-stock-monitoring", {"userId": "u1", "prodStock": 3, "prodNm": "Detergent"}),
             ("post", "/api/v1/ai/operations/complaint-priority-classification", {"userId": "u1"}),
         ]
 
@@ -33,6 +37,15 @@ class AiRestSmokeTest(unittest.TestCase):
             with self.subTest(path=path):
                 response = self._request(method, path, payload)
                 self.assertEqual(200, response.status_code, msg=f"{path} -> {response.status_code} {response.text}")
+                if path in {
+                    "/api/v1/ai/payments/summary-documents",
+                    "/api/v1/ai/payments/status-summaries",
+                    "/api/v1/ai/payments/order-suggestions",
+                    "/api/v1/ai/operations/roomservice-stock-monitoring",
+                }:
+                    body = response.json()
+                    self.assertIn("metadata", body, msg=f"{path} metadata missing")
+                    self.assertIn("draft_path", body["metadata"], msg=f"{path} draft_path missing")
 
     def test_rag_admin_endpoints(self) -> None:
         status = self.client.get("/api/v1/ai/admin/rag/status")
