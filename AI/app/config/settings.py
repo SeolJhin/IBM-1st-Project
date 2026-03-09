@@ -1,4 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
+
+
+BASE_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -24,6 +28,13 @@ class Settings(BaseSettings):
     top_k: int = 5
     similarity_threshold: float = 0.2
     default_model: str = "gpt-4.1-mini"
+    voice_input_dir: str = str(BASE_DIR / "runtime" / "voice" / "in")
+    voice_output_dir: str = str(BASE_DIR / "runtime" / "voice" / "out")
+    rag_source_dir: str = str(BASE_DIR / "data" / "rag")
+    rag_manifest_path: str = str(BASE_DIR / "runtime" / "rag" / "index_manifest.json")
+    rag_auto_reindex_enabled: bool = True
+    rag_reindex_interval_seconds: int = 300
+    rag_chunk_size: int = 1200
 
 
 settings = Settings()

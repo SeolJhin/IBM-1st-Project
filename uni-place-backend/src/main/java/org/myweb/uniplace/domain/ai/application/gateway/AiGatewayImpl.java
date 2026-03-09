@@ -62,8 +62,16 @@ public class AiGatewayImpl implements AiGateway {
         switch (intent) {
             case GENERAL_QA:
                 return properties.getGeneralQaPath();
+            case AI_AGENT_CHATBOT:
+                return properties.getAiAgentChatbotPath();
+            case VOICE_CHATBOT:
+                return properties.getVoiceChatbotPath();
+            case AI_AGENT_RAG_SEARCH:
+                return properties.getAiAgentRagSearchPath();
             case COMMUNITY_CONTENT_SEARCH:
                 return properties.getCommunityContentSearchPath();
+            case COMMUNITY_CONTENT_MODERATION:
+                return properties.getCommunityContentModerationPath();
             case CONTRACT_RENEWAL_RECOMMEND:
                 return properties.getContractRenewalRecommendPath();
             case CONTRACT_ANOMALY_DETECTION:
@@ -76,6 +84,8 @@ public class AiGatewayImpl implements AiGateway {
                 return properties.getPaymentSummaryDocumentPath();
             case PAYMENT_STATUS_SUMMARY:
                 return properties.getPaymentStatusSummaryPath();
+            case PAYMENT_ORDER_SUGGESTION:
+                return properties.getPaymentOrderSuggestionPath();
             case ROOMSERVICE_STOCK_MONITOR:
                 return properties.getRoomserviceStockMonitorPath();
             case COMPLAIN_PRIORITY_CLASSIFY:
