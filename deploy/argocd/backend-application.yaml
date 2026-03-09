@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: uniplace-backend
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/replace-owner/IBM-1st-Project.git
+    targetRevision: dev
+    path: deploy/k8s/backend
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: uniplace
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
