@@ -7,6 +7,11 @@ app = FastAPI(title="Uniplace AI Service", version="0.1.0")
 app.include_router(api_v1_router)
 
 
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @app.on_event("startup")
 def _startup_rag_pipeline() -> None:
     ensure_rag_runtime()
