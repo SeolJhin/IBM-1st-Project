@@ -1,5 +1,5 @@
 # Runtime
-   Python==3.10.11
+   ## Python==3.10.11
    pip==26.0.1
 
    # AI service dependencies (AI/requirements.txt)
