@@ -9,6 +9,9 @@ from app.services.anomaly.contract_anomaly import detect_contract_anomaly
 from app.services.classify.complain_priority import classify_complain_priority
 from app.services.monitor.roomservice_stock import monitor_roomservice_stock
 from app.services.document.payment_summary_doc import make_payment_summary
+from app.services.document.payment_order_suggestion import suggest_order_from_payment
+from app.services.moderation.community_moderation import moderate_community_content
+from app.services.voice.voice_chatbot import run_voice_chatbot
 
 
 class IntentRouter:
@@ -20,6 +23,17 @@ class IntentRouter:
             answer = generate_answer(req, docs)
             confidence = _confidence_from_docs(docs)
             return AiResponse(answer=answer, confidence=confidence, metadata={"docs": len(docs)})
+
+        if intent in {"AI_AGENT_CHATBOT", "AI_AGENT_RAG_SEARCH"}:
+            docs = retrieve_context(req)
+            answer = generate_answer(req, docs)
+            confidence = _confidence_from_docs(docs)
+            return AiResponse(answer=answer, confidence=confidence, metadata={"docs": len(docs), "agent": "chatbot"})
+
+        if intent == "VOICE_CHATBOT":
+            answer, metadata = run_voice_chatbot(req)
+            confidence = _confidence_from_result(answer, base=0.82)
+            return AiResponse(answer=answer, confidence=confidence, metadata=metadata)
 
         if intent == "CONTRACT_RENEWAL_RECOMMEND":
             answer = recommend_contract_rooms(req)
@@ -41,6 +55,10 @@ class IntentRouter:
             answer = make_payment_summary(req)
             return AiResponse(answer=answer, confidence=_confidence_from_result(answer, base=0.85))
 
+        if intent == "PAYMENT_ORDER_SUGGESTION":
+            answer, metadata = suggest_order_from_payment(req)
+            return AiResponse(answer=answer, confidence=_confidence_from_result(answer, base=0.83), metadata=metadata)
+
         if intent == "COMPLAIN_PRIORITY_CLASSIFY":
             priority, msg = classify_complain_priority(req)
             confidence = min(0.95, 0.45 + priority * 0.15)
@@ -48,6 +66,10 @@ class IntentRouter:
 
         if intent == "ROOMSERVICE_STOCK_MONITOR":
             score, msg, metadata = monitor_roomservice_stock(req)
+            return AiResponse(answer=msg, confidence=score, metadata=metadata)
+
+        if intent == "COMMUNITY_CONTENT_MODERATION":
+            msg, score, metadata = moderate_community_content(req)
             return AiResponse(answer=msg, confidence=score, metadata=metadata)
 
         return AiResponse(answer="Unsupported intent.", confidence=0.0)

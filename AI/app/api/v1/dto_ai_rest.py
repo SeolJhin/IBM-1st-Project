@@ -114,3 +114,70 @@ class ComplainPriorityClassifyRequest(RestAiBaseRequest):
     comp_st: Optional[str] = Field(default=None, alias="compSt")
     keyword: Optional[str] = None
     priority_score: Optional[float] = Field(default=None, alias="priorityScore")
+
+
+class AiAgentChatbotRequest(RestAiBaseRequest):
+    prompt: Optional[str] = None
+    topic: Optional[str] = None
+    keyword: Optional[str] = None
+
+    def to_ai_request(self, intent: str) -> AiRequest:
+        ai_request = super().to_ai_request(intent)
+        if not ai_request.prompt:
+            ai_request.prompt = str(ai_request.get_slot("prompt") or ai_request.get_slot("query") or "").strip()
+        return ai_request
+
+
+class AiAgentRagSearchRequest(RestAiBaseRequest):
+    query: Optional[str] = None
+    topic: Optional[str] = None
+    keyword: Optional[str] = None
+
+    def to_ai_request(self, intent: str) -> AiRequest:
+        ai_request = super().to_ai_request(intent)
+        if not ai_request.prompt:
+            ai_request.prompt = str(self.query or ai_request.get_slot("query") or ai_request.get_slot("prompt") or "").strip()
+        return ai_request
+
+
+class VoiceChatbotRequest(RestAiBaseRequest):
+    audio_base64: Optional[str] = Field(default=None, alias="audioBase64")
+    audio_path: Optional[str] = Field(default=None, alias="audioPath")
+    tts_enabled: Optional[bool] = Field(default=True, alias="ttsEnabled")
+    voice_locale: Optional[str] = Field(default="ko", alias="voiceLocale")
+    prompt: Optional[str] = None
+
+
+class CommunityContentModerationRequest(RestAiBaseRequest):
+    content: Optional[str] = None
+    board_id: Optional[int] = Field(default=None, alias="boardId")
+    author_id: Optional[str] = Field(default=None, alias="authorId")
+
+    def to_ai_request(self, intent: str) -> AiRequest:
+        ai_request = super().to_ai_request(intent)
+        if not ai_request.prompt:
+            ai_request.prompt = str(ai_request.get_slot("content") or "").strip()
+        return ai_request
+
+
+class PaymentOrderSuggestionItemRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    building_id: Optional[int] = Field(default=None, alias="buildingId")
+    prod_id: Optional[int] = Field(default=None, alias="prodId")
+    prod_nm: Optional[str] = Field(default=None, alias="prodNm")
+    prod_stock: Optional[int] = Field(default=None, alias="prodStock")
+    paid_amount: Optional[int] = Field(default=None, alias="paidAmount")
+    affiliate_id: Optional[int] = Field(default=None, alias="affiliateId")
+
+
+class PaymentOrderSuggestionRequest(RestAiBaseRequest):
+    building_id: Optional[int] = Field(default=None, alias="buildingId")
+    month: Optional[str] = None
+    items: Optional[List[PaymentOrderSuggestionItemRequest]] = None
+
+    def to_ai_request(self, intent: str) -> AiRequest:
+        ai_request = super().to_ai_request(intent)
+        if self.items:
+            ai_request.slots["items"] = [item.model_dump(by_alias=False, exclude_none=True) for item in self.items]
+        return ai_request
