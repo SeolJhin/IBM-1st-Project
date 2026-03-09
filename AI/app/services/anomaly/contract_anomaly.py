@@ -1,8 +1,9 @@
 from app.schemas.ai_request import AiRequest
 from datetime import datetime
+from app.services.actions.event_sink import publish_action_event
 
 
-def detect_contract_anomaly(req: AiRequest) -> tuple[float, str]:
+def detect_contract_anomaly(req: AiRequest) -> tuple[float, str, dict]:
     items = _load_items(req.get_slot("items"))
     score = _to_float(req.get_slot("pattern_score")) or 0.35
     contract_count = _to_int(req.get_slot("contract_count"))
@@ -27,10 +28,21 @@ def detect_contract_anomaly(req: AiRequest) -> tuple[float, str]:
 
     score = min(max(score, 0.0), 1.0)
     if score >= 0.8:
-        return score, "Anomalous contract request pattern detected. Admin review required."
+        message = "Anomalous contract request pattern detected. Admin review required."
+        event = publish_action_event(
+            "contract_anomaly_detected",
+            {
+                "user_id": req.user_id,
+                "score": score,
+                "contract_count": contract_count,
+                "contract_st": contract_st,
+                "created_at": str(created_at or ""),
+            },
+        )
+        return score, message, {"action": "ALERT", "event_status": event}
     if score >= 0.6:
-        return score, "Suspicious contract activity detected. Additional monitoring is recommended."
-    return score, "No strong anomaly detected."
+        return score, "Suspicious contract activity detected. Additional monitoring is recommended.", {"action": "MONITOR"}
+    return score, "No strong anomaly detected.", {"action": "ALLOW"}
 
 
 def _count_boost(contract_count: int) -> float:

@@ -1,6 +1,7 @@
 from datetime import date, datetime
 
 from app.schemas.ai_request import AiRequest
+from app.services.actions.event_sink import publish_action_event
 from app.services.document.draft_writer import write_document_draft
 
 
@@ -8,10 +9,18 @@ def make_payment_summary(req: AiRequest) -> tuple[str, dict]:
     if req.intent == "PAYMENT_STATUS_SUMMARY":
         answer, payload = _build_payment_status_summary(req)
         draft_path = write_document_draft("payment_status_summary", payload=payload, user_id=req.user_id)
-        return answer, {"draft_path": draft_path, "draft_type": "payment_status_summary"}
+        event = publish_action_event(
+            "payment_status_summary_created",
+            {"user_id": req.user_id, "draft_path": draft_path, "summary": payload},
+        )
+        return answer, {"draft_path": draft_path, "draft_type": "payment_status_summary", "event_status": event}
     answer, payload = _build_payment_document_summary(req)
     draft_path = write_document_draft("payment_summary_document", payload=payload, user_id=req.user_id)
-    return answer, {"draft_path": draft_path, "draft_type": "payment_summary_document"}
+    event = publish_action_event(
+        "payment_summary_document_created",
+        {"user_id": req.user_id, "draft_path": draft_path, "summary": payload},
+    )
+    return answer, {"draft_path": draft_path, "draft_type": "payment_summary_document", "event_status": event}
 
 
 def _build_payment_document_summary(req: AiRequest) -> tuple[str, dict]:

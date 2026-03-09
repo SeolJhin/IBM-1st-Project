@@ -35,7 +35,13 @@ class Settings(BaseSettings):
     rag_auto_reindex_enabled: bool = True
     rag_reindex_interval_seconds: int = 300
     rag_chunk_size: int = 1200
+    rag_reindex_strategy: str = "incremental"
     document_output_dir: str = str(BASE_DIR / "runtime" / "documents")
+    moderation_terms_path: str = str(BASE_DIR / "data" / "policy" / "moderation_terms.json")
+    action_webhook_url: str = ""
+    action_webhook_timeout_seconds: int = 3
+    ai_admin_api_key: str = ""
+    legacy_execute_enabled: bool = False
 
 
 settings = Settings()

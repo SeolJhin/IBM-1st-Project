@@ -1,4 +1,5 @@
 from app.schemas.ai_request import AiRequest
+from app.services.actions.event_sink import publish_action_event
 from app.services.document.draft_writer import write_document_draft
 
 LOW_STOCK_THRESHOLD = 5
@@ -23,7 +24,11 @@ def monitor_roomservice_stock(req: AiRequest) -> tuple[float, str, dict]:
     )
     draft_payload = {"required_orders": len(shortage), "items": shortage}
     draft_path = write_document_draft("roomservice_order_suggestion", payload=draft_payload, user_id=req.user_id)
-    metadata = {"required_orders": len(shortage), "items": shortage, "draft_path": draft_path}
+    event = publish_action_event(
+        "roomservice_stock_shortage_detected",
+        {"user_id": req.user_id, "draft_path": draft_path, "required_orders": len(shortage), "items": shortage},
+    )
+    metadata = {"required_orders": len(shortage), "items": shortage, "draft_path": draft_path, "event_status": event}
     return 0.9, message, metadata
 
 

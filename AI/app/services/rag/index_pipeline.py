@@ -125,19 +125,6 @@ def _rebuild_collection(records: list[dict[str, Any]]) -> None:
         db_name=settings.milvus_db_name or "default",
     )
 
-    try:
-        if client.has_collection(collection_name=collection_name):
-            client.drop_collection(collection_name=collection_name)
-    except Exception:
-        pass
-
-    client.create_collection(
-        collection_name=collection_name,
-        dimension=vector_dim,
-        metric_type="COSINE",
-        consistency_level="Strong",
-    )
-
     payload = [
         {
             "id": row["id"],
@@ -150,6 +137,31 @@ def _rebuild_collection(records: list[dict[str, Any]]) -> None:
         }
         for row in records
     ]
+
+    has_collection = client.has_collection(collection_name=collection_name)
+    strategy = (settings.rag_reindex_strategy or "incremental").strip().lower()
+    if has_collection and strategy != "rebuild":
+        try:
+            if hasattr(client, "upsert"):
+                client.upsert(collection_name=collection_name, data=payload)
+            else:
+                client.insert(collection_name=collection_name, data=payload)
+            return
+        except Exception as exc:
+            logger.warning("Incremental reindex failed, fallback rebuild: %s", exc.__class__.__name__)
+
+    try:
+        if has_collection:
+            client.drop_collection(collection_name=collection_name)
+    except Exception:
+        pass
+
+    client.create_collection(
+        collection_name=collection_name,
+        dimension=vector_dim,
+        metric_type="COSINE",
+        consistency_level="Strong",
+    )
     client.insert(collection_name=collection_name, data=payload)
 
 

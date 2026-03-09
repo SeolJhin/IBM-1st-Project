@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+import secrets
+
+from fastapi import APIRouter, Header, HTTPException, status
 from fastapi.responses import JSONResponse
 
 from app.api.v1.contract import CONTRACT_VERSION, INTENT_CONTRACT
@@ -20,6 +22,7 @@ from app.api.v1.dto_ai_rest import (
     VoiceChatbotRequest,
 )
 from app.api.v1.executor import ERROR_RESPONSES, execute_ai_request
+from app.config.settings import settings
 from app.schemas.ai_response import AiResponse
 from app.services.rag.index_pipeline import get_rag_status
 from app.services.rag.reindex_daemon import trigger_reindex
@@ -111,15 +114,35 @@ def complaint_priority_classification(req: ComplainPriorityClassifyRequest) -> A
 
 
 @router.get("/admin/rag/status")
-def rag_index_status() -> dict[str, object]:
+def rag_index_status(x_ai_admin_key: str | None = Header(default=None, alias="X-AI-Admin-Key")) -> dict[str, object]:
+    _admin_guard(x_ai_admin_key)
     return get_rag_status()
 
 
 @router.post("/admin/rag/reindex")
-def rag_reindex() -> dict[str, object]:
+def rag_reindex(x_ai_admin_key: str | None = Header(default=None, alias="X-AI-Admin-Key")) -> dict[str, object]:
+    _admin_guard(x_ai_admin_key)
     return trigger_reindex(force=True)
 
 
 @router.post("/admin/rag/reindex-if-changed")
-def rag_reindex_if_changed() -> dict[str, object]:
+def rag_reindex_if_changed(
+    x_ai_admin_key: str | None = Header(default=None, alias="X-AI-Admin-Key"),
+) -> dict[str, object]:
+    _admin_guard(x_ai_admin_key)
     return trigger_reindex(force=False)
+
+
+def _admin_guard(header_value: str | None) -> None:
+    expected = (settings.ai_admin_api_key or "").strip()
+    provided = (header_value or "").strip()
+    if not expected:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "AI_ADMIN_DISABLED", "message": "Admin API key is not configured."},
+        )
+    if not provided or not secrets.compare_digest(provided, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "AI_ADMIN_UNAUTHORIZED", "message": "Invalid admin key."},
+        )
