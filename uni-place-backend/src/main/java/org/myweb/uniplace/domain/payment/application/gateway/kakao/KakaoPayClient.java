@@ -36,7 +36,7 @@ public class KakaoPayClient {
         try {
             KakaoReadyResponse response = restClient.post() // web 방식에서 rest 방식으로 바꿈.
                 .uri("/online/v1/payment/ready")
-//                .body(request)
+                .body(request)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, res) -> {
                     String body = "";
