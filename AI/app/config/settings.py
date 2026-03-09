@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     rag_auto_reindex_enabled: bool = True
     rag_reindex_interval_seconds: int = 300
     rag_chunk_size: int = 1200
+    document_output_dir: str = str(BASE_DIR / "runtime" / "documents")
 
 
 settings = Settings()

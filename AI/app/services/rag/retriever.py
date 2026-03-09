@@ -1,5 +1,6 @@
 from app.integrations.milvus_client import search_vectors
 from app.schemas.ai_request import AiRequest
+from app.services.moderation.policy import detect_policy_matches, item_policy_text
 from app.services.rag.reranker import rerank
 
 FAQ_CONTEXT: dict[str, str] = {
@@ -45,6 +46,9 @@ def _extract_slot_context(req: AiRequest) -> list[str]:
     docs: list[str] = []
     for item in raw_items:
         if not isinstance(item, dict):
+            continue
+        policy_text = item_policy_text(item)
+        if policy_text and detect_policy_matches(policy_text):
             continue
 
         text = _item_text(item)
