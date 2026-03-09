@@ -5,7 +5,7 @@ on:
     branches:
       - dev
     paths:
-      - ".github/workflows/**"
+      - ".github/workflows/deploy.yml"
       - "uni-place-backend/src/**"
       - "uni-place-backend/build.gradle"
       - "uni-place-backend/settings.gradle"
