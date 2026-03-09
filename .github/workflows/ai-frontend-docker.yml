@@ -1,0 +1,58 @@
+name: ai-frontend-docker-build
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - ".github/workflows/ai-frontend-docker.yml"
+      - "AI/**"
+      - "uni-place-frontend/**"
+  workflow_dispatch:
+
+jobs:
+  buildAndPush:
+    name: Build and Push (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: ai
+            context: ./AI
+            dockerfile: ./AI/Dockerfile
+            image: uniplace-ai
+          - service: frontend
+            context: ./uni-place-frontend
+            dockerfile: ./uni-place-frontend/Dockerfile
+            image: uniplace-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lower case owner name
+        run: echo "OWNER_LC=${OWNER,,}" >> "$GITHUB_ENV"
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/${{ matrix.image }}:${{ github.sha }}
+            ghcr.io/${{ env.OWNER_LC }}/${{ matrix.image }}:latest
