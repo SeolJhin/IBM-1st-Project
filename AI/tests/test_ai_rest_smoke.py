@@ -1,6 +1,9 @@
+import os
 import unittest
 
 from fastapi.testclient import TestClient
+
+os.environ.setdefault("AI_ADMIN_API_KEY", "test-admin-key")
 
 from app.main import app
 
@@ -48,12 +51,13 @@ class AiRestSmokeTest(unittest.TestCase):
                     self.assertIn("draft_path", body["metadata"], msg=f"{path} draft_path missing")
 
     def test_rag_admin_endpoints(self) -> None:
-        status = self.client.get("/api/v1/ai/admin/rag/status")
+        headers = {"X-AI-Admin-Key": "test-admin-key"}
+        status = self.client.get("/api/v1/ai/admin/rag/status", headers=headers)
         self.assertEqual(200, status.status_code, msg=status.text)
         payload = status.json()
         self.assertIn("milvus_collection", payload)
 
-        reindex = self.client.post("/api/v1/ai/admin/rag/reindex-if-changed")
+        reindex = self.client.post("/api/v1/ai/admin/rag/reindex-if-changed", headers=headers)
         self.assertEqual(200, reindex.status_code, msg=reindex.text)
         result = reindex.json()
         self.assertIn("status", result)

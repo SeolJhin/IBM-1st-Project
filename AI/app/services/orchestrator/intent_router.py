@@ -54,8 +54,8 @@ class IntentRouter:
             return AiResponse(answer=answer, confidence=_confidence_from_result(answer, base=0.78))
 
         if intent == "CONTRACT_ANOMALY_DETECTION":
-            score, msg = detect_contract_anomaly(req)
-            return AiResponse(answer=msg, confidence=score)
+            score, msg, metadata = detect_contract_anomaly(req)
+            return AiResponse(answer=msg, confidence=score, metadata=metadata)
 
         if intent in {"PAYMENT_SUMMARY_DOCUMENT", "PAYMENT_STATUS_SUMMARY"}:
             answer, metadata = make_payment_summary(req)

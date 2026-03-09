@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.schemas.ai_request import AiRequest
+from app.services.actions.event_sink import publish_action_event
 from app.services.document.draft_writer import write_document_draft
 
 
@@ -58,7 +59,11 @@ def suggest_order_from_payment(req: AiRequest) -> tuple[str, dict[str, Any]]:
         "suggestions": top,
     }
     draft_path = write_document_draft("payment_order_suggestion", payload=draft_payload, user_id=req.user_id)
-    return message, {"suggestions": top, "month": month, "draft_path": draft_path}
+    event = publish_action_event(
+        "payment_order_suggestion_created",
+        {"user_id": req.user_id, "draft_path": draft_path, "month": month, "suggestions": top},
+    )
+    return message, {"suggestions": top, "month": month, "draft_path": draft_path, "event_status": event}
 
 
 def _priority_score(stock: int, paid_amount: int) -> int:
