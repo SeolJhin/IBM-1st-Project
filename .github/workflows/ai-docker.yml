@@ -1,0 +1,71 @@
+name: ai-docker
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - ".github/workflows/ai-docker.yml"
+      - "AI/**"
+  workflow_dispatch:
+
+jobs:
+  aiSmokeGate:
+    name: AI REST Smoke Gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install smoke dependencies
+        working-directory: ./AI
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi==0.116.1 uvicorn[standard]==0.35.0 pydantic==2.11.7 pydantic-settings==2.10.1 httpx==0.28.1
+
+      - name: Run AI smoke tests
+        working-directory: ./AI
+        env:
+          PYTHONUTF8: "1"
+        run: python -m unittest discover -s tests -p "test_ai_rest_smoke.py" -v
+
+  buildAndPush:
+    name: Build and Push AI Docker Image
+    needs: aiSmokeGate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lower case owner name
+        run: echo "OWNER_LC=${OWNER,,}" >> "$GITHUB_ENV"
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./AI
+          file: ./AI/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER_LC }}/uniplace-ai:${{ github.sha }}
+            ghcr.io/${{ env.OWNER_LC }}/uniplace-ai:latest

@@ -66,7 +66,6 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'com.sun.mail:jakarta.mail:2.0.1'
@@ -78,6 +77,28 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.register('cleanIdeBin') {
+	doLast {
+		File ideBin = file('bin')
+		if (!ideBin.exists()) {
+			return
+		}
+		try {
+			project.delete(ideBin)
+		} catch (Exception ex) {
+			logger.warn("Skipping bin cleanup because files are locked by IDE: ${ex.message}")
+		}
+	}
+}
+
+tasks.named('compileJava') {
+	dependsOn tasks.named('cleanIdeBin')
+}
+
+tasks.named('bootRun') {
+	dependsOn tasks.named('cleanIdeBin')
 }
 
 springBoot {

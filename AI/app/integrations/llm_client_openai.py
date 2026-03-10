@@ -1,7 +1,5 @@
 import logging
 
-from openai import OpenAI
-
 from app.config.settings import settings
 from app.schemas.ai_request import AiRequest
 
@@ -29,6 +27,8 @@ def chat_with_openai(req: AiRequest, docs: list[str]) -> str:
     )
 
     try:
+        from openai import OpenAI  # type: ignore
+
         client = OpenAI(api_key=settings.openai_api_key, timeout=20.0)
         response = client.chat.completions.create(
             model=settings.openai_model or settings.default_model,
