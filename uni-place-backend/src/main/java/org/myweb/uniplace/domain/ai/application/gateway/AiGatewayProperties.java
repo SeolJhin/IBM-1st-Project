@@ -26,6 +26,17 @@ public class AiGatewayProperties {
     private String paymentOrderSuggestionPath = "/api/v1/ai/payments/order-suggestions";
     private String roomserviceStockMonitorPath = "/api/v1/ai/operations/roomservice-stock-monitoring";
     private String complainPriorityClassifyPath = "/api/v1/ai/operations/complaint-priority-classification";
+    // ✅ 추가
+    private String reviewInfoPath = "/api/v1/ai/reviews/info";
+    private String tourInfoPath = "/api/v1/ai/tours/info";
+    private String companyInfoPath = "/api/v1/ai/company/info";
+    private String buildingListPath = "/api/v1/ai/rooms/list";
+    // ✅ 로그인 유저 전용
+    private String myContractPath = "/api/v1/ai/my/contract";
+    private String myReservationPath = "/api/v1/ai/my/reservation";
+    private String myTourPath = "/api/v1/ai/my/tour";
+    private String myComplainPath = "/api/v1/ai/my/complain";
+
     private String contractVersion = "2026-03-08.3";
     private int connectTimeoutMillis = 3000;
     private int readTimeoutSeconds = 30;

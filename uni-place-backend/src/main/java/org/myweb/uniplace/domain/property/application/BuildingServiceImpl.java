@@ -84,6 +84,31 @@ public class BuildingServiceImpl implements BuildingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<BuildingSummaryResponse> searchPageWithFilters(
+            String existElv,
+            Integer minParking,
+            String keyword,
+            Pageable pageable
+    ) {
+        Page<Building> page = buildingRepository.searchWithFilters(existElv, minParking, keyword, pageable);
+        List<Integer> buildingIds = page.getContent().stream()
+                .map(Building::getBuildingId).toList();
+        Map<Integer, List<FileResponse>> filesMap =
+                fileService.getActiveFilesMap(FileRefType.BUILDING.dbValue(), buildingIds);
+
+        return page.map(b -> {
+            List<FileResponse> files = filesMap.getOrDefault(b.getBuildingId(), List.of());
+            FileResponse firstImage = files.stream()
+                    .filter(f -> f != null && isImageExt(f.getFileType()))
+                    .findFirst().orElse(null);
+            Integer thumbId  = (firstImage != null ? firstImage.getFileId()  : null);
+            String  thumbUrl = (firstImage != null ? firstImage.getViewUrl() : null);
+            return BuildingSummaryResponse.fromEntity(b, thumbId, thumbUrl);
+        });
+    }
+
+    @Override
     public BuildingDetailResponse createBuilding(BuildingCreateRequest request) {
         List<Building> existing = buildingRepository.findByBuildingNmAndDeleteYn(request.getBuildingNm(), "N");
         if (existing != null && !existing.isEmpty()) {
