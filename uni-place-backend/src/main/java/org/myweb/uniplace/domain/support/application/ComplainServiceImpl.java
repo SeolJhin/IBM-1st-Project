@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.myweb.uniplace.domain.ai.application.moderation.BannedWordService;
 
 @Slf4j
 @Service
@@ -32,6 +33,7 @@ public class ComplainServiceImpl implements ComplainService {
     private final ComplainRepository complainRepository;
     private final CommonCodeRepository commonCodeRepository;
     private final NotificationService notificationService;
+    private final BannedWordService bannedWordService;
 
     @Override
     @Transactional(readOnly = true)
@@ -66,9 +68,9 @@ public class ComplainServiceImpl implements ComplainService {
     @Override
     public ComplainResponse create(String userId, ComplainCreateRequest request) {
         Complain complain = Complain.builder()
-                .compTitle(request.getCompTitle())
+        		.compTitle(bannedWordService.filter(request.getCompTitle()))
                 .userId(userId)
-                .compCtnt(request.getCompCtnt())
+                .compCtnt(bannedWordService.filter(request.getCompCtnt()))
                 .code(normalizeSupportCodeForWrite(request.getCode()))
                 .build();
         Complain saved = complainRepository.save(complain);
@@ -91,7 +93,10 @@ public class ComplainServiceImpl implements ComplainService {
     public ComplainResponse update(Integer compId, ComplainUpdateRequest request) {
         Complain complain = complainRepository.findById(compId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPLAIN_NOT_FOUND));
-        complain.update(request.getCompTitle(), request.getCompCtnt());
+        String filteredTitle = bannedWordService.filter(request.getCompTitle());
+        String filteredContent = bannedWordService.filter(request.getCompCtnt());
+
+        complain.update(filteredTitle, filteredContent);
         return ComplainResponse.from(complain);
     }
 

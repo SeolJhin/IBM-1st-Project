@@ -35,7 +35,7 @@ def retrieve_context(req: AiRequest) -> list[str]:
         if normalized and normalized not in unique_docs:
             unique_docs.append(normalized)
 
-    return rerank(unique_docs, query=query, limit=3)
+    return rerank(unique_docs, query=query, limit=5)
 
 
 def _extract_slot_context(req: AiRequest) -> list[str]:

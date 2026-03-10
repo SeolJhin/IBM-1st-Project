@@ -1,8 +1,16 @@
 package org.myweb.uniplace.domain.community.application;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
+import org.myweb.uniplace.domain.ai.application.moderation.BannedWordService;
 import org.myweb.uniplace.domain.community.api.dto.request.BoardCreateRequest;
 import org.myweb.uniplace.domain.community.api.dto.request.BoardUpdateRequest;
 import org.myweb.uniplace.domain.community.api.dto.response.BoardResponse;
@@ -19,8 +27,10 @@ import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
-
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +50,8 @@ public class BoardServiceImpl implements BoardService {
     private final FileService fileService;
     private final BoardLikeRepository boardLikeRepository;
     private final UserRepository userRepository;
+    
+    private final BannedWordService bannedWordService;
 
     @Override
     @Transactional(readOnly = true)
@@ -174,10 +186,13 @@ public class BoardServiceImpl implements BoardService {
                 throw new BusinessException(ErrorCode.FORBIDDEN);
             }
         });
+        
+        String filteredTitle = bannedWordService.filter(request.getBoardTitle());
+        String filteredContent = bannedWordService.filter(request.getBoardCtnt());
 
         Board board = Board.builder()
-                .boardTitle(request.getBoardTitle())
-                .boardCtnt(request.getBoardCtnt())
+                .boardTitle(filteredTitle)
+                .boardCtnt(filteredContent)
                 .userId(userId)
                 .code(boardCode)
                 .anonymity(nvlYn(request.getAnonymity(), "N"))
@@ -210,8 +225,13 @@ public class BoardServiceImpl implements BoardService {
         AuthUser authUser = requireCurrentAuthUser();
         if (!canModifyBoard(board, authUser)) throw new BusinessException(ErrorCode.FORBIDDEN);
 
-        if (request.getBoardTitle() != null) board.setBoardTitle(request.getBoardTitle());
-        if (request.getBoardCtnt() != null) board.setBoardCtnt(request.getBoardCtnt());
+        if (request.getBoardTitle() != null) {
+            board.setBoardTitle(bannedWordService.filter(request.getBoardTitle()));
+        }
+
+        if (request.getBoardCtnt() != null) {
+            board.setBoardCtnt(bannedWordService.filter(request.getBoardCtnt()));
+        }
         if (request.getCode() != null) board.setCode(normalizeBoardCodeForWrite(request.getCode()));
 
         if (request.getAnonymity() != null) board.setAnonymity(nvlYn(request.getAnonymity(), board.getAnonymity()));
