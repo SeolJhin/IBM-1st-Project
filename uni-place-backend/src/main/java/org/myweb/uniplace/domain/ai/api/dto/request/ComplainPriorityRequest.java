@@ -6,6 +6,8 @@ import org.myweb.uniplace.domain.ai.domain.AiIntent;
 @Getter
 public class ComplainPriorityRequest {
 
+    private String userId;
+    private Integer compId;
     private String compTitle;
     private String compCtnt;
     private String compSt;

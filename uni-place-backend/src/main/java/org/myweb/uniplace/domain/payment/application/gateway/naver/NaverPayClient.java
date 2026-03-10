@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.payment.application.gateway.naver;
 
-import java.time.Duration;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import org.myweb.uniplace.domain.payment.application.gateway.exception.PaymentGatewayException;
@@ -11,32 +12,32 @@ import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverCanc
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverReadyRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverReadyResponse;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import reactor.core.publisher.Mono;
-import reactor.netty.http.client.HttpClient;
+import org.springframework.web.client.RestClient;
 
 @Component
 @Lazy
 public class NaverPayClient {
 
     private final NaverPayProperties props;
-    private final WebClient webClient;
-    private final WebClient cancelClient;
+    private final RestClient restClient;
+    private final RestClient cancelRestClient;
 
     @SuppressWarnings("null")
     public NaverPayClient(NaverPayProperties props) {
         this.props = props;
-        HttpClient httpClient = HttpClient.create()
-            .responseTimeout(Duration.ofSeconds(60));
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(30000);
+        requestFactory.setReadTimeout(60000);
 
-        WebClient.Builder builder = WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(httpClient))
+        RestClient.Builder builder = RestClient.builder()
+            .requestFactory(requestFactory)
             .baseUrl(buildBaseUrl(props))
             .defaultHeader("X-Naver-Client-Id", nvl(props.getClient_id()))
             .defaultHeader("X-Naver-Client-Secret", nvl(props.getClient_secret()));
@@ -45,10 +46,10 @@ public class NaverPayClient {
             .filter(v -> !v.isBlank())
             .ifPresent(v -> builder.defaultHeader("X-NaverPay-Chain-Id", v));
 
-        this.webClient = builder.build();
+        this.restClient = builder.build();
 
-        WebClient.Builder cancelBuilder = WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(httpClient))
+        RestClient.Builder cancelBuilder = RestClient.builder()
+            .requestFactory(requestFactory)
             .baseUrl(buildCancelBaseUrl(props))
             .defaultHeader("X-Naver-Client-Id", nvl(props.getClient_id()))
             .defaultHeader("X-Naver-Client-Secret", nvl(props.getClient_secret()));
@@ -57,27 +58,35 @@ public class NaverPayClient {
             .filter(v -> !v.isBlank())
             .ifPresent(v -> cancelBuilder.defaultHeader("X-NaverPay-Chain-Id", v));
 
-        this.cancelClient = cancelBuilder.build();
+        this.cancelRestClient = cancelBuilder.build();
     }
 
     public NaverReadyResponse reserve(@NonNull NaverReadyRequest request) {
         try {
-            return webClient.post()
+            NaverReadyResponse response = restClient.post()
                 .uri("/reserve")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
+                .body(request)
                 .retrieve()
-                .onStatus(
-                    status -> status.isError(),
-                    res -> res.bodyToMono(String.class)
-                        .defaultIfEmpty("")
-                        .flatMap(body -> Mono.error(
-                            new PaymentGatewayException("NAVER", String.valueOf(res.statusCode().value()),
-                                "naver reserve http error", body)
-                        ))
-                )
-                .bodyToMono(NaverReadyResponse.class)
-                .block();
+                .onStatus(HttpStatusCode::isError, (req, res) -> {
+                    String body = "";
+                    try {
+                        body = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                    } catch (IOException ignored) {
+                        body = "";
+                    }
+                    throw new PaymentGatewayException(
+                        "NAVER",
+                        String.valueOf(res.getStatusCode().value()),
+                        "naver reserve http error",
+                        body
+                    );
+                })
+                .body(NaverReadyResponse.class);
+            if (response == null) {
+                throw new PaymentGatewayException("NAVER", "naver reserve empty response", null);
+            }
+            return response;
         } catch (PaymentGatewayException e) {
             throw e;
         } catch (Exception e) {
@@ -90,27 +99,35 @@ public class NaverPayClient {
             MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
             form.add("paymentId", request.getPaymentId());
 
-            WebClient.RequestHeadersSpec<?> req = webClient.post()
+            RestClient.RequestBodySpec req = restClient.post()
                 .uri("/apply/payment")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .bodyValue(form);
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED);
 
             Optional.ofNullable(request.getIdempotencyKey())
                 .filter(v -> !v.isBlank())
                 .ifPresent(v -> req.header("X-NaverPay-Idempotency-Key", v));
 
-            return req.retrieve()
-                .onStatus(
-                    status -> status.isError(),
-                    res -> res.bodyToMono(String.class)
-                        .defaultIfEmpty("")
-                        .flatMap(body -> Mono.error(
-                            new PaymentGatewayException("NAVER", String.valueOf(res.statusCode().value()),
-                                "naver approve http error", body)
-                        ))
-                )
-                .bodyToMono(NaverApproveResponse.class)
-                .block();
+            NaverApproveResponse response = req.body(form)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, (requestHeader, res) -> {
+                    String body = "";
+                    try {
+                        body = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                    } catch (IOException ignored) {
+                        body = "";
+                    }
+                    throw new PaymentGatewayException(
+                        "NAVER",
+                        String.valueOf(res.getStatusCode().value()),
+                        "naver approve http error",
+                        body
+                    );
+                })
+                .body(NaverApproveResponse.class);
+            if (response == null) {
+                throw new PaymentGatewayException("NAVER", "naver approve empty response", null);
+            }
+            return response;
         } catch (PaymentGatewayException e) {
             throw e;
         } catch (Exception e) {
@@ -141,27 +158,35 @@ public class NaverPayClient {
                 form.add("expectedRestAmount", String.valueOf(request.getExpectedRestAmount()));
             }
 
-            WebClient.RequestHeadersSpec<?> req = cancelClient.post()
+            RestClient.RequestBodySpec req = cancelRestClient.post()
                 .uri("/cancel")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .bodyValue(form);
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED);
 
             Optional.ofNullable(request.getIdempotencyKey())
                 .filter(v -> !v.isBlank())
                 .ifPresent(v -> req.header("X-NaverPay-Idempotency-Key", v));
 
-            return req.retrieve()
-                .onStatus(
-                    status -> status.isError(),
-                    res -> res.bodyToMono(String.class)
-                        .defaultIfEmpty("")
-                        .flatMap(body -> Mono.error(
-                            new PaymentGatewayException("NAVER", String.valueOf(res.statusCode().value()),
-                                "naver cancel http error", body)
-                        ))
-                )
-                .bodyToMono(NaverCancelResponse.class)
-                .block();
+            NaverCancelResponse response = req.body(form)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, (requestHeader, res) -> {
+                    String body = "";
+                    try {
+                        body = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                    } catch (IOException ignored) {
+                        body = "";
+                    }
+                    throw new PaymentGatewayException(
+                        "NAVER",
+                        String.valueOf(res.getStatusCode().value()),
+                        "naver cancel http error",
+                        body
+                    );
+                })
+                .body(NaverCancelResponse.class);
+            if (response == null) {
+                throw new PaymentGatewayException("NAVER", "naver cancel empty response", null);
+            }
+            return response;
         } catch (PaymentGatewayException e) {
             throw e;
         } catch (Exception e) {
