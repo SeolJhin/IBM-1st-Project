@@ -1,11 +1,11 @@
-name: uni-place-backend-deploy
+name: backend-docker
 
 on:
   push:
     branches:
       - dev
     paths:
-      - ".github/workflows/**"
+      - ".github/workflows/backend-deploy.yml"
       - "uni-place-backend/src/**"
       - "uni-place-backend/build.gradle"
       - "uni-place-backend/settings.gradle"
@@ -42,7 +42,7 @@ jobs:
           prerelease: false
 
   buildImageAndPush:
-    name: Build and Push Docker Image
+    name: Build and Push Backend Docker Image
     needs: makeTagAndRelease
     runs-on: ubuntu-latest
     permissions:
