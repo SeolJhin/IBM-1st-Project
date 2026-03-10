@@ -2,6 +2,7 @@ package org.myweb.uniplace.domain.support.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.myweb.uniplace.domain.support.domain.enums.ComplainImportance;
 import org.myweb.uniplace.domain.support.domain.enums.ComplainStatus;
 import org.myweb.uniplace.global.common.BaseTimeEntity;
 
@@ -43,6 +44,15 @@ public class Complain extends BaseTimeEntity {
     @Column(name = "reply_ck", columnDefinition = "CHAR(1) DEFAULT 'N'")
     private String replyCk;
 
+    /** AI 분류 중요도: high / medium / low */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "importance")
+    private ComplainImportance importance;
+
+    /** AI 분류 근거 */
+    @Column(name = "ai_reason", length = 500)
+    private String aiReason;
+
     @PrePersist
     public void prePersist() {
         if (compSt == null) compSt = ComplainStatus.received;
@@ -65,5 +75,11 @@ public class Complain extends BaseTimeEntity {
         this.replyCk = "Y";
         if (compSt != null) this.compSt = compSt;
         else this.compSt = ComplainStatus.resolved;
+    }
+
+    /** AI 분류 결과 저장 */
+    public void updateAiResult(ComplainImportance importance, String aiReason) {
+        this.importance = importance;
+        this.aiReason = aiReason;
     }
 }

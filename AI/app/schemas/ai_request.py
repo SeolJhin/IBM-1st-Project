@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import re
 
 
@@ -38,3 +38,41 @@ class AiRequest(BaseModel):
         if not parts:
             return value
         return parts[0] + "".join(part.capitalize() for part in parts[1:])
+
+    # ── 편의 메서드: 자주 쓰는 슬롯 ──────────────────────────
+
+    def get_history(self) -> List[Dict[str, str]]:
+        """멀티턴 대화 기록. slots.history 또는 slots.conversationHistory"""
+        return (
+            self.get_slot("history")
+            or self.get_slot("conversationHistory")
+            or []
+        )
+
+    def get_language(self) -> str:
+        """언어 코드. 기본값 ko"""
+        return self.get_slot("language") or "ko"
+
+    def get_transcribed_text(self) -> Optional[str]:
+        """STT 변환 텍스트 (voice-assistant 전용)"""
+        return self.get_slot("transcribedText") or self.get_slot("transcribed_text")
+
+    def get_query(self) -> Optional[str]:
+        """RAG 검색 쿼리"""
+        return self.get_slot("query") or self.prompt
+
+    def get_collection(self) -> str:
+        """Milvus 컬렉션명. 기본값 uniplace_docs"""
+        return self.get_slot("collection") or "uniplace_docs"
+
+    def get_top_k(self) -> int:
+        """RAG 검색 결과 수. 기본값 5"""
+        return int(self.get_slot("topK") or self.get_slot("top_k") or 5)
+
+    def get_content(self) -> Optional[str]:
+        """모더레이션 대상 텍스트"""
+        return self.get_slot("content") or self.prompt
+
+    def get_content_type(self) -> str:
+        """콘텐츠 타입 (board/reply). 기본값 board"""
+        return self.get_slot("contentType") or self.get_slot("content_type") or "board"
