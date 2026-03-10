@@ -97,7 +97,7 @@ import AdminCompanyInfoDetail from './features/admin/pages/system/AdminCompanyIn
 import AdminUserHub from './features/admin/pages/user/AdminUserHub';
 import AdminUserList from './features/admin/pages/user/AdminUserList';
 
-// ── ✅ 챗봇 ───────────────────────────────────────────────────
+// ── 챗봇 ──────────────────────────────────────────────────────
 import ChatBot from './features/chat/components/ChatBot';
 import {
   GEMINI_API_KEY,
@@ -195,7 +195,7 @@ export default function App() {
           <Route path="complain/:id" element={<ComplainDetail />} />
         </Route>
 
-        {/* ── 어드민 (로그인 + ADMIN 역할 필요) ── */}
+        {/* ── 어드민 ── */}
         <Route element={<RequireAuth />}>
           <Route element={<RequireRole allow={['admin']} />}>
             <Route path="/admin" element={<AdminShell />}>
@@ -264,7 +264,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* ✅ 챗봇 - 모든 페이지에 플로팅 버튼으로 표시 */}
+      {/* 챗봇 — 모든 페이지에 플로팅 */}
       <ChatBot
         user={user}
         geminiApiKey={GEMINI_API_KEY}
