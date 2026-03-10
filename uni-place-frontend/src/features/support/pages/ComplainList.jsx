@@ -67,7 +67,7 @@ export default function ComplainList() {
             className={styles.buttonPrimary}
             onClick={() => navigate('/support/complain/write')}
           >
-            민원 작성
+            + 민원 작성
           </button>
         </div>
       )}
@@ -105,9 +105,26 @@ export default function ComplainList() {
                 cls: 'type_etc',
               };
               const imp = IMPORTANCE_MAP[item.importance];
+              const isHigh = item.importance === 'high';
               return (
-                <tr key={item.compId}>
-                  <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                <tr
+                  key={item.compId}
+                  style={
+                    isHigh
+                      ? {
+                          background: '#fff5f5',
+                          borderLeft: '3px solid #e55353',
+                        }
+                      : {}
+                  }
+                >
+                  <td
+                    style={{
+                      textAlign: 'center',
+                      color: isHigh ? '#e55353' : 'var(--muted)',
+                      fontWeight: isHigh ? 700 : 400,
+                    }}
+                  >
                     {item.compId}
                   </td>
                   <td style={{ textAlign: 'center' }}>
@@ -119,12 +136,21 @@ export default function ComplainList() {
                     <Link
                       to={`/support/complain/${item.compId}`}
                       className={styles.tableLink}
+                      style={
+                        isHigh ? { color: '#c0392b', fontWeight: 700 } : {}
+                      }
                     >
+                      {isHigh && '🚨 '}
                       {item.compTitle}
                     </Link>
                   </td>
                   {isAdmin && (
-                    <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                    <td
+                      style={{
+                        textAlign: 'center',
+                        color: isHigh ? '#e55353' : 'var(--muted)',
+                      }}
+                    >
                       {item.userId || '-'}
                     </td>
                   )}
@@ -132,12 +158,15 @@ export default function ComplainList() {
                     {imp ? (
                       <span
                         style={{
-                          padding: '2px 8px',
+                          padding: '4px 10px',
                           borderRadius: 12,
                           fontSize: 12,
-                          fontWeight: 600,
-                          color: imp.color,
-                          background: imp.bg,
+                          fontWeight: 700,
+                          color: isHigh ? '#fff' : imp.color,
+                          background: isHigh ? '#e55353' : imp.bg,
+                          boxShadow: isHigh
+                            ? '0 1px 4px rgba(229,83,83,0.4)'
+                            : 'none',
                         }}
                       >
                         {imp.label}
@@ -163,7 +192,7 @@ export default function ComplainList() {
                   <td
                     style={{
                       textAlign: 'center',
-                      color: 'var(--muted)',
+                      color: isHigh ? '#e55353' : 'var(--muted)',
                       fontSize: 13,
                     }}
                   >

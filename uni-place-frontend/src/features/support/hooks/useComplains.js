@@ -16,8 +16,7 @@ export function useComplains(initialParams = {}, options = {}) {
   const [params, setParams] = useState({
     page: 1,
     size: 10,
-    sort: 'compId',
-    direct: 'DESC',
+    // sort 파라미터 제거 → 백엔드 쿼리의 중요도순 정렬이 적용됨
     ...initialParams,
   });
 
