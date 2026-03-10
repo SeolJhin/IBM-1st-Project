@@ -496,8 +496,11 @@ export default function BoardDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [replies, setReplies] = useState([]);
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  // 목록에서 전달된 좋아요 상태로 초기값 설정 (API 응답 전 깜빡임 방지)
+  const [liked, setLiked] = useState(() => location.state?.likedByMe ?? false);
+  const [likeCount, setLikeCount] = useState(
+    () => location.state?.likeCount ?? 0
+  );
   const [replyText, setReplyText] = useState('');
   const [replyAnon, setReplyAnon] = useState(false);
   const [replySaving, setReplySaving] = useState(false);
@@ -537,11 +540,11 @@ export default function BoardDetail() {
     if (!boardId) return;
     try {
       const data = await communityApi.getBoard(boardId, {
-        auth: isAdmin,
         increaseReadCount: false,
       });
       setBoard(data);
       setLiked(data?.likedByMe ?? false);
+      likedRef.current = data?.likedByMe ?? false;
       setLikeCount(data?.likeCount ?? 0);
       setBoardMineViaMe(false);
       const nextRealAuthorId =
@@ -553,17 +556,17 @@ export default function BoardDetail() {
     } catch {
       // ignore
     }
-  }, [boardId, isAdmin]);
+  }, [boardId]);
 
   const loadReplies = useCallback(async () => {
     if (!boardId) return;
     try {
-      const data = await communityApi.getReplies(boardId, { auth: isAdmin });
+      const data = await communityApi.getReplies(boardId);
       setReplies(Array.isArray(data) ? data : []);
     } catch {
       setReplies([]);
     }
-  }, [boardId, isAdmin]);
+  }, [boardId]);
 
   useEffect(() => {
     if (!boardId) {
@@ -580,11 +583,12 @@ export default function BoardDetail() {
     const increaseReadCount = shouldIncreaseBoardReadCount(boardId);
 
     communityApi
-      .getBoard(boardId, { auth: isAdmin, increaseReadCount })
+      .getBoard(boardId, { increaseReadCount })
       .then((data) => {
         if (fetchCount.current !== thisCount) return;
         setBoard(data);
         setLiked(data?.likedByMe ?? false);
+        likedRef.current = data?.likedByMe ?? false;
         setLikeCount(data?.likeCount ?? 0);
         // ✅ admin이면 백엔드에서 realUserId(userId) 내려올 수 있음
         // ✅ 익명 게시글인데 realUserId를 못 받는 경우, /boards/me 목록으로 본인 여부 판별
@@ -606,7 +610,7 @@ export default function BoardDetail() {
         setLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId, isAdmin, loadReplies]);
+  }, [boardId, loadReplies]);
 
   // ✅ 익명 게시글인데 realUserId를 못 받은 경우: 내 작성글 목록(/boards/me)에서 boardId가 있는지로 본인 여부 추정
   useEffect(() => {
@@ -708,14 +712,17 @@ export default function BoardDetail() {
   };
 
   const [likePending, setLikePending] = useState(false);
+  const likedRef = useRef(location.state?.likedByMe ?? false);
   const handleBoardLike = async () => {
     if (!isLoggedIn || likePending) return;
     setLikePending(true);
+    const currentLiked = likedRef.current;
     try {
-      if (liked) await communityApi.unlikeBoard(boardId);
+      if (currentLiked) await communityApi.unlikeBoard(boardId);
       else await communityApi.likeBoard(boardId);
-      setLiked((v) => !v);
-      setLikeCount((c) => c + (liked ? -1 : 1));
+      setLiked(!currentLiked);
+      likedRef.current = !currentLiked;
+      setLikeCount((c) => c + (currentLiked ? -1 : 1));
     } catch (e) {
       console.warn('board like error:', e?.message);
     } finally {

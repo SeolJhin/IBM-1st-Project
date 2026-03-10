@@ -6,15 +6,20 @@ import jakarta.validation.Valid;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.ai.api.dto.request.AiChatRequest;
+import org.myweb.uniplace.domain.ai.api.dto.request.AiAgentChatbotRequest;
+import org.myweb.uniplace.domain.ai.api.dto.request.AiAgentRagSearchRequest;
 import org.myweb.uniplace.domain.ai.api.dto.request.CommonSpaceRecommendRequest;
+import org.myweb.uniplace.domain.ai.api.dto.request.CommunityContentModerationRequest;
 import org.myweb.uniplace.domain.ai.api.dto.request.CommunityContentSearchRequest;
 import org.myweb.uniplace.domain.ai.api.dto.request.ComplainPriorityRequest;
 import org.myweb.uniplace.domain.ai.api.dto.request.ContractAnomalyRequest;
 import org.myweb.uniplace.domain.ai.api.dto.request.ContractRecommendRequest;
+import org.myweb.uniplace.domain.ai.api.dto.request.PaymentOrderSuggestionRequest;
 import org.myweb.uniplace.domain.ai.api.dto.request.PaymentStatusSummaryRequest;
 import org.myweb.uniplace.domain.ai.api.dto.request.PaymentSummaryRequest;
 import org.myweb.uniplace.domain.ai.api.dto.request.RoomSearchRequest;
 import org.myweb.uniplace.domain.ai.api.dto.request.RoomServiceStockMonitorRequest;
+import org.myweb.uniplace.domain.ai.api.dto.request.VoiceChatbotRequest;
 import org.myweb.uniplace.domain.ai.api.dto.response.AiChatResponse;
 import org.myweb.uniplace.domain.ai.api.dto.response.ComplainPriorityResponse;
 import org.myweb.uniplace.domain.ai.api.dto.response.ContractRecommendResponse;
@@ -56,6 +61,24 @@ public class AiController {
     public ApiResponse<ContractRecommendResponse> recommendContract(@RequestBody ContractRecommendRequest request) {
         AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
         return ApiResponse.ok(ContractRecommendResponse.from(response));
+    }
+
+    @PostMapping("/chat/agent-chatbot")
+    public ApiResponse<AiChatResponse> agentChatbot(@RequestBody AiAgentChatbotRequest request) {
+        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+        return ApiResponse.ok(AiChatResponse.from(response));
+    }
+
+    @PostMapping("/chat/voice")
+    public ApiResponse<AiChatResponse> voiceChatbot(@RequestBody VoiceChatbotRequest request) {
+        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+        return ApiResponse.ok(AiChatResponse.from(response));
+    }
+
+    @PostMapping("/search/rag")
+    public ApiResponse<AiChatResponse> ragSearch(@RequestBody AiAgentRagSearchRequest request) {
+        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+        return ApiResponse.ok(AiChatResponse.from(response));
     }
 
     @PostMapping("/contract/anomaly")
@@ -100,10 +123,22 @@ public class AiController {
         return ApiResponse.ok(AiChatResponse.from(response));
     }
 
+    @PostMapping("/community/moderate")
+    public ApiResponse<AiChatResponse> communityModeration(@RequestBody CommunityContentModerationRequest request) {
+        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+        return ApiResponse.ok(AiChatResponse.from(response));
+    }
+
     @PostMapping("/complain/priority")
     public ApiResponse<ComplainPriorityResponse> complainPriority(@RequestBody ComplainPriorityRequest request) {
         AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
         return ApiResponse.ok(ComplainPriorityResponse.from(response));
+    }
+
+    @PostMapping("/payment/order-suggestion")
+    public ApiResponse<AiChatResponse> paymentOrderSuggestion(@RequestBody PaymentOrderSuggestionRequest request) {
+        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+        return ApiResponse.ok(AiChatResponse.from(response));
     }
 
     private AiGatewayRequest toGateway(org.myweb.uniplace.domain.ai.domain.AiIntent intent, Object request) {
