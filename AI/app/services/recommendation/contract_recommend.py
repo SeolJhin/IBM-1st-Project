@@ -1,116 +1,75 @@
 from datetime import date, datetime
-
 from app.schemas.ai_request import AiRequest
-
 
 def recommend_contract_rooms(req: AiRequest) -> str:
     contract_end_raw = req.get_slot("contract_end")
-    building_id = _to_int(req.get_slot("building_id"))
+    building_id  = _to_int(req.get_slot("building_id"))
     current_rent = _to_int(req.get_slot("rent_price"))
-    raw_items = req.get_slot("items")
+    raw_items    = req.get_slot("items")
 
     candidates = _filter_candidates(raw_items, building_id, current_rent)
     if not candidates:
-        return "No renewal candidates were provided from backend data."
+        return "죄송합니다. 현재 조건에 맞는 재계약 추천 방을 찾지 못했습니다."
 
-    candidates.sort(key=lambda item: (_rent_distance(item["rent_price"], current_rent), -item["popularity"]))
+    candidates.sort(key=lambda i: (_rent_distance(i["rent_price"], current_rent), -i["popularity"]))
     top = candidates[:3]
     day_text = _contract_day_text(contract_end_raw)
 
-    recommendation = " / ".join(
-        f"{item['name']} ({item['rent_price']} KRW, popularity {item['popularity']})"
-        for item in top
-    )
-    return f"{day_text} Recommended top rooms: {recommendation}. Would you like to open room details?"
+    parts = [f"{day_text}\n계약 갱신 추천 방 목록입니다:"]
+    for idx, item in enumerate(top, 1):
+        rent = item["rent_price"]
+        diff = rent - current_rent if current_rent else 0
+        diff_str = f" (현재 대비 {'+' if diff >= 0 else ''}{diff:,}원)" if current_rent else ""
+        parts.append(f"{idx}. {item['name']} | 월세 {rent:,}원{diff_str}")
+
+    return "\n".join(parts)
 
 
-def _filter_candidates(
-    raw_items: object,
-    building_id: int | None,
-    current_rent: int | None,
-) -> list[dict[str, int | str]]:
-    if not isinstance(raw_items, list):
-        return []
-
-    filtered: list[dict[str, int | str]] = []
+def _filter_candidates(raw_items, building_id, current_rent) -> list:
+    if not isinstance(raw_items, list): return []
+    filtered = []
     for item in raw_items:
-        if not isinstance(item, dict):
-            continue
+        if not isinstance(item, dict): continue
         normalized = _normalize_item(item)
-        if normalized is None:
-            continue
-        if building_id is not None and normalized["building_id"] != building_id:
-            continue
-        if current_rent is not None and _rent_distance(normalized["rent_price"], current_rent) > 200000:
-            continue
+        if normalized is None: continue
+        if building_id is not None and normalized["building_id"] != building_id: continue
+        if current_rent is not None and _rent_distance(normalized["rent_price"], current_rent) > 200000: continue
         filtered.append(normalized)
     return filtered
 
-
-def _normalize_item(item: dict) -> dict[str, int | str] | None:
-    room_name = _to_text(_item_value(item, "name", "room_name", "roomName")) or "Unknown Room"
-    item_building_id = _to_int(_item_value(item, "building_id", "buildingId"))
-    item_rent_price = _to_int(_item_value(item, "rent_price", "rentPrice"))
-    item_popularity = _to_int(_item_value(item, "popularity")) or 0
-
-    if item_rent_price is None:
-        return None
-
+def _normalize_item(item: dict) -> dict | None:
+    rent = _to_int(_item_value(item, "rent_price", "rentPrice"))
+    if rent is None: return None
+    name = str(_item_value(item, "name", "building_nm", "room_name", "roomName") or "알 수 없는 방")
     return {
-        "name": room_name,
-        "building_id": item_building_id if item_building_id is not None else 0,
-        "rent_price": item_rent_price,
-        "popularity": item_popularity,
+        "name":        name,
+        "building_id": _to_int(_item_value(item, "building_id", "buildingId")) or 0,
+        "rent_price":  rent,
+        "popularity":  _to_int(_item_value(item, "popularity")) or 0,
     }
 
+def _contract_day_text(contract_end_raw) -> str:
+    end = _to_date(contract_end_raw)
+    if end is None: return "계약 만료가 가까워지고 있습니다."
+    days = (end - date.today()).days
+    if days < 0:    return f"계약이 {-days}일 전에 만료되었습니다."
+    if days <= 7:   return f"계약 만료까지 {days}일 남았습니다. (D-{days})"
+    return f"계약 만료까지 {days}일 남았습니다."
 
-def _item_value(item: dict, *keys: str) -> object:
-    for key in keys:
-        if key in item:
-            return item[key]
+def _item_value(item, *keys):
+    for k in keys:
+        if k in item: return item[k]
     return None
 
+def _to_int(value) -> int | None:
+    try: return int(value) if value not in (None, "") else None
+    except: return None
 
-def _to_text(value: object) -> str:
-    text = str(value or "").strip()
-    return text
+def _to_date(value) -> date | None:
+    if not value: return None
+    try: return datetime.fromisoformat(str(value).strip()[:10]).date()
+    except: return None
 
-
-def _contract_day_text(contract_end_raw: object) -> str:
-    contract_end = _to_date(contract_end_raw)
-    if contract_end is None:
-        return "Contract period is close to ending."
-
-    days_left = (contract_end - date.today()).days
-    if days_left < 0:
-        return f"Contract has already expired by {-days_left} day(s)."
-    if days_left <= 7:
-        return f"Contract expires soon (D-{days_left})."
-    return f"Contract has {days_left} day(s) remaining."
-
-
-def _to_int(value: object) -> int | None:
-    if value is None or value == "":
-        return None
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def _to_date(value: object) -> date | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    if not text:
-        return None
-    try:
-        return datetime.fromisoformat(text[:10]).date()
-    except ValueError:
-        return None
-
-
-def _rent_distance(rent: int, current_rent: int | None) -> int:
-    if current_rent is None:
-        return 0
+def _rent_distance(rent, current_rent) -> int:
+    if current_rent is None: return 0
     return abs(current_rent - rent)

@@ -3,21 +3,15 @@
 import React, { useRef } from 'react';
 import styles from './ChatBot.module.css';
 import { useChat, speakText } from '../hooks/useChat';
-
-const QUICK_QUESTIONS = [
-  '계약 관련 문의',
-  '공용공간 예약 방법',
-  '결제 오류 신고',
-  '룸서비스 주문하기',
-  '이용 요금 안내',
-];
-
-const RETENTION_LABEL = {
-  guest: '비회원 · 1일',
-  user: '일반회원 · 90일',
-  tenant: '입주자 · 90일',
-  admin: '관리자 · 365일',
-};
+import {
+  SERVICE_NAME,
+  BOT_AVATAR,
+  WELCOME_TITLE,
+  WELCOME_TEXT,
+  FOOTER_NOTE,
+  QUICK_QUESTIONS,
+  RETENTION_LABEL,
+} from '../config/chatConfig';
 
 function formatTime(ts) {
   return new Date(ts).toLocaleTimeString('ko-KR', {
@@ -134,7 +128,10 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
     setHasUnread(false);
     setTimeout(function () {
       if (textareaRef.current) textareaRef.current.focus();
-    }, 120);
+      // 열릴 때 최하단으로 스크롤
+      if (bottomRef.current)
+        bottomRef.current.scrollIntoView({ behavior: 'auto' });
+    }, 80);
   }
 
   function onKeyDown(e) {
@@ -193,13 +190,13 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
         <div
           className={isBlind ? styles.panelBlind : styles.panel}
           role="dialog"
-          aria-label="UNI PLACE AI 챗봇"
+          aria-label={`${SERVICE_NAME} AI 챗봇`}
         >
           {/* 헤더 */}
           <div className={styles.header}>
-            <div className={styles.headerAvatar}>🏠</div>
+            <div className={styles.headerAvatar}>{BOT_AVATAR}</div>
             <div className={styles.headerInfo}>
-              <p className={styles.headerTitle}>UNI PLACE AI</p>
+              <p className={styles.headerTitle}>{SERVICE_NAME} AI</p>
               <p className={styles.headerSub}>
                 {user
                   ? (user.userName || user.name || '회원') + '님'
@@ -254,12 +251,14 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
             {messages.length === 0 ? (
               <div className={styles.welcome}>
                 <span className={styles.welcomeEmoji}>👋</span>
-                <p className={styles.welcomeTitle}>
-                  안녕하세요! UNI PLACE AI입니다.
-                </p>
+                <p className={styles.welcomeTitle}>{WELCOME_TITLE}</p>
                 <p className={styles.welcomeText}>
-                  계약, 예약, 결제, 커뮤니티 등<br />
-                  무엇이든 물어보세요!
+                  {WELCOME_TEXT.split('\n').map((line, i) => (
+                    <React.Fragment key={i}>
+                      {line}
+                      {i === 0 && <br />}
+                    </React.Fragment>
+                  ))}
                 </p>
               </div>
             ) : (
@@ -279,23 +278,29 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
           </div>
 
           {/* 빠른 질문 */}
-          {messages.length === 0 && !mode && (
-            <div className={styles.quickChips}>
-              {QUICK_QUESTIONS.map(function (q) {
-                return (
-                  <button
-                    key={q}
-                    className={styles.chip}
-                    onClick={function () {
-                      sendMessage(q);
-                    }}
-                  >
-                    {q}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {messages.length === 0 &&
+            !mode &&
+            (() => {
+              const roleQuestions =
+                QUICK_QUESTIONS[userRole] || QUICK_QUESTIONS.guest;
+              return (
+                <div className={styles.quickChips}>
+                  {roleQuestions.map(function (q) {
+                    return (
+                      <button
+                        key={q}
+                        className={styles.chip}
+                        onClick={function () {
+                          sendMessage(q);
+                        }}
+                      >
+                        {q}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
           {/* 입력 영역 */}
           <div className={styles.footer}>
@@ -396,9 +401,7 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
               </button>
             </div>
 
-            <p className={styles.footerNote}>
-              AI 답변은 참고용입니다. 정확한 내용은 고객센터에 문의하세요.
-            </p>
+            <p className={styles.footerNote}>{FOOTER_NOTE}</p>
           </div>
         </div>
       )}

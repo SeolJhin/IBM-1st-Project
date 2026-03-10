@@ -7,10 +7,9 @@ import {
   clearHistory,
   sendToGemini,
   sendToBackend,
+  SYSTEM_PROMPT,
 } from '../api/chatApi';
-
-var SYSTEM_PROMPT =
-  '당신은 UNI PLACE의 AI 어시스턴트입니다. 항상 친절하고 전문적으로 한국어로 응답하세요. UNI PLACE는 주거 플랫폼으로 계약, 공용 공간, 결제, 룸서비스 등을 지원합니다.';
+import { HISTORY_WINDOW } from '../config/chatConfig';
 
 export function speakText(text, rate, onEnd) {
   if (!text || !text.trim()) return;
@@ -208,7 +207,7 @@ export function useChat(params) {
 
     var promise;
     if (useBackend) {
-      promise = sendToBackend(text.trim(), userId, userRole);
+      promise = sendToBackend(text.trim(), userId, userRole, messages);
     } else {
       if (!geminiApiKey) {
         setError('API 키가 설정되지 않았습니다.');
@@ -221,7 +220,12 @@ export function useChat(params) {
         return;
       }
       // 현재 messages ref 없이 최신 히스토리 사용
-      promise = sendToGemini(geminiApiKey, SYSTEM_PROMPT, [], text.trim());
+      promise = sendToGemini(
+        geminiApiKey,
+        SYSTEM_PROMPT,
+        messages.slice(-HISTORY_WINDOW),
+        text.trim()
+      );
     }
 
     promise
