@@ -10,6 +10,12 @@ const STATUS_MAP = {
   resolved: '처리완료',
 };
 
+const IMPORTANCE_MAP = {
+  high: { label: '긴급', color: '#e55353', bg: '#fff0f0' },
+  medium: { label: '보통', color: '#f0952a', bg: '#fff7ee' },
+  low: { label: '낮음', color: '#8c8c8c', bg: '#f5f5f5' },
+};
+
 const CODE_META = {
   COMP_PERSONAL: { label: '개인', cls: 'type_personal' },
   COMP_FACILITY: { label: '시설', cls: 'type_facility' },
@@ -41,6 +47,7 @@ export default function ComplainList() {
   const role = normalizeRole(user);
   const isAdmin = role === 'admin';
   const canCreate = role === 'admin' || role === 'tenant';
+
   const { complains, pagination, loading, error, goToPage } = useComplains(
     {},
     { isAdmin }
@@ -61,7 +68,7 @@ export default function ComplainList() {
             className={styles.buttonPrimary}
             onClick={() => navigate('/support/complain/write')}
           >
-            민원 작성
+            + 민원 작성
           </button>
         </div>
       )}
@@ -73,15 +80,17 @@ export default function ComplainList() {
             <th style={{ width: 110 }}>유형</th>
             <th>제목</th>
             {isAdmin && <th style={{ width: 150 }}>작성자 ID</th>}
+            <th style={{ width: 80 }}>중요도</th>
             <th style={{ width: 110 }}>상태</th>
             <th style={{ width: 120 }}>날짜</th>
           </tr>
         </thead>
+
         <tbody>
           {complains.length === 0 ? (
             <tr>
               <td
-                colSpan={isAdmin ? 6 : 5}
+                colSpan={isAdmin ? 7 : 6}
                 style={{
                   textAlign: 'center',
                   padding: 32,
@@ -97,29 +106,86 @@ export default function ComplainList() {
                 label: item.code ?? '-',
                 cls: 'type_etc',
               };
+
+              const imp = IMPORTANCE_MAP[item.importance];
+              const isHigh = item.importance === 'high';
+
               return (
-                <tr key={item.compId}>
-                  <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                <tr
+                  key={item.compId}
+                  style={
+                    isHigh
+                      ? {
+                          background: '#fff5f5',
+                          borderLeft: '3px solid #e55353',
+                        }
+                      : {}
+                  }
+                >
+                  <td
+                    style={{
+                      textAlign: 'center',
+                      color: isHigh ? '#e55353' : 'var(--muted)',
+                      fontWeight: isHigh ? 700 : 400,
+                    }}
+                  >
                     {item.compId}
                   </td>
+
                   <td style={{ textAlign: 'center' }}>
                     <span className={`${styles.typeBadge} ${styles[meta.cls]}`}>
                       {meta.label}
                     </span>
                   </td>
+
                   <td>
                     <Link
                       to={`/support/complain/${item.compId}`}
                       className={styles.tableLink}
+                      style={
+                        isHigh ? { color: '#c0392b', fontWeight: 700 } : {}
+                      }
                     >
+                      {isHigh && '🚨 '}
                       {item.compTitle}
                     </Link>
                   </td>
+
                   {isAdmin && (
-                    <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                    <td
+                      style={{
+                        textAlign: 'center',
+                        color: isHigh ? '#e55353' : 'var(--muted)',
+                      }}
+                    >
                       {item.userId || '-'}
                     </td>
                   )}
+
+                  <td style={{ textAlign: 'center' }}>
+                    {imp ? (
+                      <span
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: 12,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: isHigh ? '#fff' : imp.color,
+                          background: isHigh ? '#e55353' : imp.bg,
+                          boxShadow: isHigh
+                            ? '0 1px 4px rgba(229,83,83,0.4)'
+                            : 'none',
+                        }}
+                      >
+                        {imp.label}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--muted)', fontSize: 12 }}>
+                        -
+                      </span>
+                    )}
+                  </td>
+
                   <td style={{ textAlign: 'center' }}>
                     <span
                       className={styles.statusBadge}
@@ -132,10 +198,11 @@ export default function ComplainList() {
                       {STATUS_MAP[item.compSt] ?? item.compSt}
                     </span>
                   </td>
+
                   <td
                     style={{
                       textAlign: 'center',
-                      color: 'var(--muted)',
+                      color: isHigh ? '#e55353' : 'var(--muted)',
                       fontSize: 13,
                     }}
                   >
@@ -157,9 +224,11 @@ export default function ComplainList() {
           >
             이전
           </button>
+
           <span className={styles.pageInfo}>
             {pagination.page} / {pagination.totalPages}
           </span>
+
           <button
             className={styles.pageBtn}
             disabled={pagination.isLast}

@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface ComplainRepository extends JpaRepository<Complain, Integer> {
 
-    /** 관리자 전체 목록 검색 */
+    /** 관리자 전체 목록 검색 — 중요도 높은 순(high→medium→low→null) 후 최신순 */
     @Query("""
             select c
             from Complain c
@@ -23,6 +23,14 @@ public interface ComplainRepository extends JpaRepository<Complain, Integer> {
                     or lower(c.compTitle) like lower(concat('%', :keyword, '%'))
                     or lower(coalesce(c.compCtnt, '')) like lower(concat('%', :keyword, '%'))
                   )
+            order by
+              case c.importance
+                when 'high'   then 1
+                when 'medium' then 2
+                when 'low'    then 3
+                else               4
+              end asc,
+              c.createdAt desc
             """)
     Page<Complain> search(
             @Param("userId") String userId,
@@ -35,4 +43,3 @@ public interface ComplainRepository extends JpaRepository<Complain, Integer> {
     /** 본인 민원 목록 */
     Page<Complain> findByUserId(String userId, Pageable pageable);
 }
-

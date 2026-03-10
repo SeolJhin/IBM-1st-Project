@@ -97,7 +97,17 @@ import AdminCompanyInfoDetail from './features/admin/pages/system/AdminCompanyIn
 import AdminUserHub from './features/admin/pages/user/AdminUserHub';
 import AdminUserList from './features/admin/pages/user/AdminUserList';
 
+// ── ✅ 챗봇 ───────────────────────────────────────────────────
+import ChatBot from './features/chat/components/ChatBot';
+import {
+  GEMINI_API_KEY,
+  USE_BACKEND_AI,
+} from './features/chat/config/chatConfig';
+import { useAuth } from './features/user/hooks/useAuth';
+
 export default function App() {
+  const { user } = useAuth();
+
   return (
     <>
       <ScrollToTop />
@@ -253,6 +263,13 @@ export default function App() {
         {/* ── 나머지 ── */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {/* ✅ 챗봇 - 모든 페이지에 플로팅 버튼으로 표시 */}
+      <ChatBot
+        user={user}
+        geminiApiKey={GEMINI_API_KEY}
+        useBackend={USE_BACKEND_AI}
+      />
     </>
   );
 }
