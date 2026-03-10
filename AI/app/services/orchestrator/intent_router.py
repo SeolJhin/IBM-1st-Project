@@ -7,6 +7,7 @@ from app.services.recommendation.room_recommend import recommend_rooms
 from app.services.recommendation.common_space_recommend import recommend_common_space
 from app.services.anomaly.contract_anomaly import detect_contract_anomaly
 from app.services.classify.complain_priority import classify_complain_priority
+from app.services.anomaly.complain_priority_classify import classify_complain
 from app.services.monitor.roomservice_stock import monitor_roomservice_stock
 from app.services.document.payment_summary_doc import make_payment_summary
 from app.services.document.payment_order_suggestion import suggest_order_from_payment
@@ -66,9 +67,21 @@ class IntentRouter:
             return AiResponse(answer=answer, confidence=_confidence_from_result(answer, base=0.83), metadata=metadata)
 
         if intent == "COMPLAIN_PRIORITY_CLASSIFY":
-            priority, msg = classify_complain_priority(req)
-            confidence = min(0.95, 0.45 + priority * 0.15)
-            return AiResponse(answer=msg, confidence=confidence, metadata={"priority": priority})
+            comp_title = str(req.get_slot("comp_title") or req.get_slot("compTitle") or "")
+            comp_ctnt  = str(req.get_slot("comp_ctnt")  or req.get_slot("compCtnt")  or "")
+            result = classify_complain(comp_title, comp_ctnt)
+            # result = {"importance": "high"|"medium"|"low", "ai_reason": "..."}
+            importance = result.get("importance", "medium")
+            ai_reason  = result.get("ai_reason", "")
+            confidence = {"high": 0.95, "medium": 0.80, "low": 0.65}.get(importance, 0.80)
+            return AiResponse(
+                answer=importance,
+                confidence=confidence,
+                metadata={
+                    "importance": importance,
+                    "ai_reason": ai_reason,
+                }
+            )
 
         if intent == "ROOMSERVICE_STOCK_MONITOR":
             score, msg, metadata = monitor_roomservice_stock(req)
