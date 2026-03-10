@@ -33,6 +33,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequiredArgsConstructor
@@ -119,7 +121,18 @@ public class AiController {
 
     @PostMapping("/community/search")
     public ApiResponse<AiChatResponse> communitySearch(@RequestBody CommunityContentSearchRequest request) {
-        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = authentication.getName();
+
+        AiGatewayResponse response = aiOrchestratorService.handle(
+            AiGatewayRequest.builder()
+                .intent(request.getIntent())
+                .userId(userId)
+                .slots(objectMapper.convertValue(request, Map.class))
+                .build()
+        );
+
         return ApiResponse.ok(AiChatResponse.from(response));
     }
 
