@@ -1,53 +1,48 @@
+# AI/app/services/rag/generator.py
 from app.config.settings import settings
+from app.integrations.llm_client_groq import chat_with_groq
 from app.integrations.llm_client_openai import chat_with_openai
 from app.integrations.llm_client_watsonx import chat_with_watsonx
 from app.schemas.ai_request import AiRequest
 
 
 def generate_answer(req: AiRequest, docs: list[str]) -> str:
+    """LLM으로 답변 생성 — provider에 따라 groq/openai/watsonx 선택"""
     llm_answer = _generate_with_llm(req, docs)
     if llm_answer:
         return llm_answer
 
+    # LLM 실패 시 폴백
     if req.intent == "COMMUNITY_CONTENT_SEARCH":
-        return _community_answer(req, docs)
-    return _general_qa_answer(req, docs)
+        return _community_fallback(req, docs)
+    return _general_fallback(req, docs)
 
 
-def _general_qa_answer(req: AiRequest, docs: list[str]) -> str:
-    question = (req.prompt or "").strip()
-    lowered = question.lower()
+def _generate_with_llm(req: AiRequest, docs: list[str]) -> str:
+    provider = (settings.llm_provider or "groq").strip().lower()
+    if provider == "groq":
+        return chat_with_groq(req, docs)
+    if provider == "watsonx":
+        return chat_with_watsonx(req, docs)
+    if provider == "openai":
+        return chat_with_openai(req, docs)
+    # 기본값 groq
+    return chat_with_groq(req, docs)
 
-    if "tour" in lowered and ("reserve" in lowered or "book" in lowered):
-        return "Tour reservation can be completed by selecting a room and entering your preferred visit date."
 
-    if "move-in" in lowered or "move in" in lowered:
-        return "Move-in steps are application review, contract confirmation, payment, and move-in scheduling."
-
+def _general_fallback(req: AiRequest, docs: list[str]) -> str:
     if docs:
-        return f"Based on available guidance: {docs[0]}"
-
+        return f"참고 정보: {docs[0]}"
+    question = (req.prompt or "").strip()
     if question:
-        return f"Guidance for question: {question}"
-    return "General guidance is available. Please provide more details."
+        return f"'{question}'에 대해 더 자세한 내용은 고객센터에 문의해주세요."
+    return "안내 가능한 정보를 찾지 못했습니다. 고객센터에 문의해주세요."
 
 
-def _community_answer(req: AiRequest, docs: list[str]) -> str:
+def _community_fallback(req: AiRequest, docs: list[str]) -> str:
     keyword = str(req.get_slot("keyword") or req.get_slot("topic") or "").strip()
     if docs:
         top = docs[:3]
         joined = " | ".join(top)
-        if keyword:
-            return f"Top community results for '{keyword}': {joined}"
-        return f"Top community results: {joined}"
-
-    if keyword:
-        return f"No recent community results were found for '{keyword}'."
-    return "No recent community results were found."
-
-
-def _generate_with_llm(req: AiRequest, docs: list[str]) -> str:
-    provider = (settings.llm_provider or "openai").strip().lower()
-    if provider == "watsonx":
-        return chat_with_watsonx(req, docs)
-    return chat_with_openai(req, docs)
+        return f"'{keyword}' 관련 커뮤니티 결과: {joined}" if keyword else f"커뮤니티 결과: {joined}"
+    return f"'{keyword}'에 대한 커뮤니티 게시물을 찾지 못했습니다." if keyword else "관련 게시물을 찾지 못했습니다."
