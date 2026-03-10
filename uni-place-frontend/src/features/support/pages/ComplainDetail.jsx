@@ -10,6 +10,12 @@ const STATUS_MAP = {
   resolved: '처리완료',
 };
 
+const IMPORTANCE_MAP = {
+  high: { label: '긴급', color: '#e55353', bg: '#fff0f0' },
+  medium: { label: '보통', color: '#f0952a', bg: '#fff7ee' },
+  low: { label: '낮음', color: '#8c8c8c', bg: '#f5f5f5' },
+};
+
 function normalizeRole(user) {
   const raw =
     user?.userRole ??
@@ -179,11 +185,42 @@ export default function ComplainDetail() {
           {data.createdAt ? data.createdAt.slice(0, 10) : '-'}
         </div>
         {isAdmin && (
-          <div className={styles.cardMeta} style={{ marginBottom: 24 }}>
+          <div className={styles.cardMeta} style={{ marginBottom: 8 }}>
             작성자 ID: {data.userId || '-'}
           </div>
         )}
-        {!isAdmin && <div style={{ marginBottom: 24 }} />}
+
+        {/* AI 중요도 표시 */}
+        {data.importance &&
+          (() => {
+            const imp = IMPORTANCE_MAP[data.importance];
+            return imp ? (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 16,
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  background: imp.bg,
+                  border: `1px solid ${imp.color}22`,
+                }}
+              >
+                <span
+                  style={{ fontWeight: 700, color: imp.color, fontSize: 13 }}
+                >
+                  AI 중요도: {imp.label}
+                </span>
+                {data.aiReason && (
+                  <span style={{ color: 'var(--muted)', fontSize: 12 }}>
+                    — {data.aiReason}
+                  </span>
+                )}
+              </div>
+            ) : null;
+          })()}
+        {!data.importance && <div style={{ marginBottom: 16 }} />}
 
         <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
           {data.compCtnt}
