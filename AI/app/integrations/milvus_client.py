@@ -1,11 +1,6 @@
 import logging
 from typing import Any
 
-from ibm_watsonx_ai.credentials import Credentials
-from ibm_watsonx_ai.foundation_models.embeddings import Embeddings
-from openai import OpenAI
-from pymilvus import MilvusClient
-
 from app.config.settings import settings
 from app.schemas.ai_request import AiRequest
 
@@ -25,6 +20,8 @@ def search_vectors(req: AiRequest) -> list[str]:
         return []
 
     try:
+        from pymilvus import MilvusClient  # type: ignore
+
         client = MilvusClient(
             uri=settings.milvus_uri,
             token=settings.milvus_token or None,
@@ -42,6 +39,13 @@ def search_vectors(req: AiRequest) -> list[str]:
         return []
 
     return _extract_texts(results, threshold=settings.similarity_threshold)
+
+
+def embed_text(text: str) -> list[float]:
+    normalized = (text or "").strip()
+    if not normalized:
+        return []
+    return _embed_query(normalized)
 
 
 def _build_query(req: AiRequest) -> str:
@@ -62,6 +66,8 @@ def _embed_with_openai(text: str) -> list[float]:
     if not settings.openai_api_key:
         return []
     try:
+        from openai import OpenAI  # type: ignore
+
         client = OpenAI(api_key=settings.openai_api_key, timeout=20.0)
         resp = client.embeddings.create(model=settings.openai_embedding_model, input=text)
         if resp.data and resp.data[0].embedding:
@@ -75,6 +81,9 @@ def _embed_with_watsonx(text: str) -> list[float]:
     if not settings.watsonx_api_key or not settings.watsonx_project_id or not settings.watsonx_embedding_model_id:
         return []
     try:
+        from ibm_watsonx_ai.credentials import Credentials  # type: ignore
+        from ibm_watsonx_ai.foundation_models.embeddings import Embeddings  # type: ignore
+
         credentials = Credentials(url=settings.watsonx_url, api_key=settings.watsonx_api_key)
         model = Embeddings(
             model_id=settings.watsonx_embedding_model_id,

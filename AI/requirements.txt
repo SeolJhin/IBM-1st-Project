@@ -1,23 +1,32 @@
-# Runtime
-   Python==3.10.11
-   pip==26.0.1
+## Runtime
+## Python==3.10.11
+## pip==26.0.1
 
-   # AI service dependencies (AI/requirements.txt)
-   fastapi==0.116.1
-   uvicorn[standard]==0.35.0
-   pydantic==2.11.7
-   pydantic-settings==2.10.1
 
-   # LLM / Orchestration
-   openai==1.101.0
-   langchain==0.3.27
-   langgraph==0.6.6
+# AI service dependencies (AI/requirements.txt)
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+pydantic==2.11.7
+pydantic-settings==2.10.1
 
-   # IBM watsonx
-   ibm-watsonx-ai==1.3.34
 
-   # Vector DB (Milvus / Zilliz Cloud)
-   pymilvus==2.5.6
+# LLM / Orchestration
+openai==1.101.0
+langchain==0.3.27
+langgraph==0.6.6
 
-   ## 설치 위치: E:\projects\git\IBM-1st-Project\AI\.venv
-   ## 실제 본인 경로에 바꿔야함.
+
+# IBM watsonx
+ibm-watsonx-ai==1.3.34
+
+
+# Vector DB (Milvus / Zilliz Cloud)
+pymilvus==2.5.6
+
+# Voice AI (STT/TTS)
+faster-whisper==1.2.0
+melotts @ git+https://github.com/myshell-ai/MeloTTS.git@209145371cff8fc3bd60d7be902ea69cbdb7965a
+python-mecab-ko==1.3.7
+python-mecab-ko-dic==2.1.1.post2
+unidic==1.1.0
+setuptools<81

@@ -1,8 +1,5 @@
 import logging
 
-from ibm_watsonx_ai.credentials import Credentials
-from ibm_watsonx_ai.foundation_models import ModelInference
-
 from app.config.settings import settings
 from app.schemas.ai_request import AiRequest
 
@@ -28,6 +25,9 @@ def chat_with_watsonx(req: AiRequest, docs: list[str]) -> str:
     )
 
     try:
+        from ibm_watsonx_ai.credentials import Credentials  # type: ignore
+        from ibm_watsonx_ai.foundation_models import ModelInference  # type: ignore
+
         credentials = Credentials(url=settings.watsonx_url, api_key=settings.watsonx_api_key)
         model = ModelInference(
             model_id=settings.watsonx_model_id,

@@ -1,0 +1,33 @@
+{
+  "profanity": [
+    "fuck",
+    "shit",
+    "bitch",
+    "idiot",
+    "ssibal",
+    "byungsin",
+    "gaesaekki",
+    "jot"
+  ],
+  "slander": [
+    "fraud",
+    "scam",
+    "criminal",
+    "thief",
+    "liar",
+    "sagikkun",
+    "doduk",
+    "beomjoeja",
+    "heowisasil"
+  ],
+  "political_agitation": [
+    "vote now",
+    "regime",
+    "overthrow",
+    "campaign rally",
+    "jeonggwon tado",
+    "tupyo dokryeo",
+    "seondong",
+    "jeongchi seondong"
+  ]
+}
