@@ -21,6 +21,8 @@ public class ComplainResponse {
     private String replyCk;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String importance;   // "high" | "medium" | "low" | null
+    private String aiReason;     // AI 판단 근거
 
     public static ComplainResponse from(Complain c) {
         return ComplainResponse.builder()
@@ -34,7 +36,8 @@ public class ComplainResponse {
                 .replyCk(c.getReplyCk())
                 .createdAt(c.getCreatedAt())
                 .updatedAt(c.getUpdatedAt())
+                .importance(c.getImportance() != null ? c.getImportance().name() : null)
+                .aiReason(c.getAiReason())
                 .build();
     }
 }
-
