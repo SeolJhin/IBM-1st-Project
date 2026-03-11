@@ -16,6 +16,7 @@ from fastapi.responses import Response
 from app.schemas.ai_request import AiRequest
 from app.schemas.ai_response import AiResponse
 from app.services.orchestrator.tool_orchestrator import run_tool_orchestrator
+from app.services.orchestrator.admin_tool_orchestrator import run_admin_tool_orchestrator
 from app.services.anomaly.contract_anomaly import detect_contract_anomaly
 from app.services.classify.complain_priority import classify_complain_priority
 from app.services.document.payment_summary_doc import make_payment_summary
@@ -52,6 +53,17 @@ def _req(payload: Dict[str, Any], intent: str = "AI_AGENT_CHATBOT") -> AiRequest
 @router.post("/chat/agent-chatbot", response_model=AiResponse, responses=ERROR_RESPONSES)
 def agent_chatbot(payload: Dict[str, Any] = Body(...)) -> AiResponse:
     return run_tool_orchestrator(_req(payload, "AI_AGENT_CHATBOT"))
+
+
+@router.post("/chat/admin-chatbot", response_model=AiResponse, responses=ERROR_RESPONSES)
+def admin_chatbot(payload: Dict[str, Any] = Body(...)) -> AiResponse:
+    """
+    어드민 전용 챗봇.
+    - Spring /ai/chat/admin-chatbot → @PreAuthorize("hasRole('ADMIN')") 보호
+    - Python 측은 Spring이 ADMIN 검증 완료 후 호출한다고 신뢰
+    - 모든 테이블 접근 가능, user_id 필터 불필요
+    """
+    return run_admin_tool_orchestrator(_req(payload, "AI_AGENT_CHATBOT"))
 
 
 @router.post("/chat/general-qa", response_model=AiResponse, responses=ERROR_RESPONSES)

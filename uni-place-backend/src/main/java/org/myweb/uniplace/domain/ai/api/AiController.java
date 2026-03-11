@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -62,6 +63,35 @@ public class AiController {
     @PostMapping("/chat/agent-chatbot")
     public ApiResponse<AiChatResponse> agentChatbot(@RequestBody AiAgentChatbotRequest request) {
         AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+        return ApiResponse.ok(AiChatResponse.from(response));
+    }
+
+    /**
+     * 어드민 전용 챗봇.
+     *
+     * [보안]
+     * - @PreAuthorize("hasRole('ADMIN')") → ROLE_ADMIN 없으면 403 자동 반환
+     * - userId를 Spring Security에서 직접 추출 → 클라이언트 위조 불가
+     * - Python admin_tool_orchestrator로 라우팅 → 모든 테이블 접근 허용
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/chat/admin-chatbot")
+    public ApiResponse<AiChatResponse> adminChatbot(@RequestBody AiAgentChatbotRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String adminId = auth.getName();   // JWT에서 추출 — 클라이언트 전달값 무시
+
+        Map<String, Object> slots = objectMapper.convertValue(request, new java.util.HashMap<String, Object>().getClass());
+        slots.put("userId", adminId);      // 서버 측 userId 강제 주입
+
+        AiGatewayRequest gatewayReq = AiGatewayRequest.builder()
+            .intent(AiIntent.ADMIN_CHATBOT)
+            .userId(adminId)
+            .prompt(request.getPrompt())
+            .slots(slots)
+            .build();
+
+        // Python /api/v1/ai/chat/admin-chatbot 으로 포워딩
+        AiGatewayResponse response = aiOrchestratorService.handle(gatewayReq);
         return ApiResponse.ok(AiChatResponse.from(response));
     }
 

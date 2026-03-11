@@ -26,5 +26,7 @@ public enum AiIntent {
     MY_CONTRACT,
     MY_RESERVATION,
     MY_TOUR,
-    MY_COMPLAIN
+    MY_COMPLAIN,
+    // ✅ 어드민 전용
+    ADMIN_CHATBOT
 }
