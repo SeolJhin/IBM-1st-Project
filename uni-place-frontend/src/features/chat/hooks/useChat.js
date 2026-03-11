@@ -53,12 +53,20 @@ export function useChat(params) {
   var recognitionRef = useRef(null);
   var activeMode = useRef(null);
   var isSendingRef = useRef(false); // 중복 전송 방지
+  var messagesRef = useRef([]); // 항상 최신 messages를 ref로 유지 (클로저 버그 방지)
 
   useEffect(
     function () {
       saveHistory(userId, userRole, messages);
     },
     [messages, userId, userRole]
+  );
+  // messagesRef를 항상 최신 messages로 동기화 (클로저 버그 방지)
+  useEffect(
+    function () {
+      messagesRef.current = messages;
+    },
+    [messages]
   );
   useEffect(
     function () {
@@ -207,7 +215,12 @@ export function useChat(params) {
 
     var promise;
     if (useBackend) {
-      promise = sendToBackend(text.trim(), userId, userRole, messages);
+      promise = sendToBackend(
+        text.trim(),
+        userId,
+        userRole,
+        messagesRef.current
+      );
     } else {
       if (!geminiApiKey) {
         setError('API 키가 설정되지 않았습니다.');
@@ -229,11 +242,26 @@ export function useChat(params) {
     }
 
     promise
-      .then(function (answer) {
+      .then(function (result) {
+        // sendToBackend는 {answer, buttons} 반환, sendToGemini는 문자열 반환
+        var answer =
+          typeof result === 'object' && result !== null
+            ? result.answer
+            : result;
+        var buttons =
+          typeof result === 'object' && result !== null
+            ? result.buttons || []
+            : [];
+
         // 단 한 번만 추가
         setMessages(function (prev) {
           return prev.concat([
-            { role: 'assistant', content: answer, ts: Date.now() },
+            {
+              role: 'assistant',
+              content: answer,
+              buttons: buttons,
+              ts: Date.now(),
+            },
           ]);
         });
         setLoading(false);

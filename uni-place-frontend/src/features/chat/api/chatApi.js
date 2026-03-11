@@ -201,8 +201,15 @@ export async function sendToBackend(prompt, userId, userSegment, history) {
       history: recentHistory,
     },
   });
-  var answer = res && res.data && res.data.data && res.data.data.answer;
-  return answer || '응답을 받지 못했습니다.';
+  var data = res && res.data && res.data.data;
+  var answer = data && data.answer;
+  var metadata = data && data.metadata;
+  // metadata.action_buttons: [{label, url, icon?}] 형태로 AI가 링크 버튼을 내려줌
+  var buttons =
+    metadata && Array.isArray(metadata.action_buttons)
+      ? metadata.action_buttons
+      : [];
+  return { answer: answer || '응답을 받지 못했습니다.', buttons };
 }
 
 // ── 대화 맥락에서 슬롯 자동 추출 ──────────────────────────────
