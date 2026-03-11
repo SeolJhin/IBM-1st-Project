@@ -38,6 +38,8 @@ public class AiGatewayProperties {
     private String myReservationPath = "/api/v1/ai/my/reservation";
     private String myTourPath = "/api/v1/ai/my/tour";
     private String myComplainPath = "/api/v1/ai/my/complain";
+    // ✅ 어드민 전용
+    private String adminChatbotPath = "/api/v1/ai/chat/admin-chatbot";
 
     private String contractVersion = "2026-03-08.3";
     private int connectTimeoutMillis = 3000;

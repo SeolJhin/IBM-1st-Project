@@ -43,6 +43,7 @@ public class AiToolExecutor {
         try {
             return switch (tool) {
                 case "query_database"              -> executePublicSql(args);
+                case "query_database_admin"        -> executeAdminSql(args);   // 어드민: requiresAuth 우회
                 case "query_my_data"               -> executePrivateSql(args, userId);
                 case "get_tour_available_slots"    -> getTourSlots(args);
                 case "classify_complain_priority"  -> AiToolResponse.fail("관리자 API를 통해 처리됩니다.");
@@ -59,6 +60,30 @@ public class AiToolExecutor {
             log.error("[AiToolExecutor] 실행 오류 tool={}: {}", tool, e.getMessage(), e);
             return AiToolResponse.fail("도구 실행 중 오류가 발생했습니다.");
         }
+    }
+
+    // ── 어드민 SQL 실행 (requiresAuth 우회 — ADMIN 엔드포인트 전용) ──────────
+
+    private AiToolResponse executeAdminSql(Map<String, Object> args) {
+        String sql  = getString(args, "sql");
+        String desc = getString(args, "description");
+
+        if (sql == null || sql.isBlank()) {
+            return AiToolResponse.fail("SQL이 전달되지 않았습니다.");
+        }
+
+        // SELECT 전용, 위험 키워드 차단 — 어드민도 DDL/DML 금지
+        SqlValidator.validate(sql);
+        // requiresAuth 체크 생략 — 어드민은 모든 테이블 접근 허용
+
+        log.info("[AiToolExecutor] SQL실행(어드민): {}", sql.substring(0, Math.min(150, sql.length())));
+        List<Map<String, Object>> rows = runNativeQuery(sql, null);
+
+        Map<String, Object> meta = new LinkedHashMap<>();
+        meta.put("total", rows.size());
+        if (desc != null) meta.put("description", desc);
+
+        return AiToolResponse.ok(rows, meta);
     }
 
     // ── 공개 SQL 실행 ────────────────────────────────────────────────────────
@@ -89,7 +114,7 @@ public class AiToolExecutor {
         return AiToolResponse.ok(rows, meta);
     }
 
-    // ── 개인 SQL 실행 (user_id 강제 검증) ────────────────────────────────────
+    // ── 개인 SQL 실행 (user_id 강제 치환) ────────────────────────────────────
 
     private AiToolResponse executePrivateSql(Map<String, Object> args, String userId) {
         if (userId == null || userId.isBlank()) {
@@ -103,19 +128,16 @@ public class AiToolExecutor {
             return AiToolResponse.fail("SQL이 전달되지 않았습니다.");
         }
 
-        // 보안 검증
+        // 1단계: 구조 검증 (SELECT 전용, 테이블 화이트리스트, 위험 키워드)
         SqlValidator.validate(sql);
 
-        // user_id가 SQL에 포함됐는지 확인 (Python에서 치환했어야 함)
-        // 혹시 미치환된 플레이스홀더가 있으면 실제 userId로 교체
-        if (sql.contains("{user_id}")) {
-            sql = sql.replace("{user_id}", userId.replace("'", "''"));
-        }
-
-        // 최종 안전장치: SQL에 실제 userId가 포함되어 있어야 함
-        if (!sql.contains(userId) && !sql.toLowerCase().contains("user_id")) {
-            log.warn("[AiToolExecutor] query_my_data SQL에 user_id 조건 없음, 차단");
-            return AiToolResponse.fail("개인 데이터 조회는 user_id 조건이 필수입니다.");
+        // 2단계: SQL 내 모든 user_id = '...' 값을 인증된 userId로 강제 치환
+        //         → AI가 타인 userId를 주입하는 취약점 원천 차단
+        try {
+            sql = SqlValidator.enforceUserId(sql, userId);
+        } catch (IllegalArgumentException e) {
+            log.warn("[AiToolExecutor] userId 강제 치환 실패: {}", e.getMessage());
+            return AiToolResponse.fail(e.getMessage());
         }
 
         log.info("[AiToolExecutor] SQL실행(개인 userId={}): {}",
