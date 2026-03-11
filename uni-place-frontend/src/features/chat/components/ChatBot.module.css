@@ -376,6 +376,26 @@
   justify-content: flex-end;
 }
 
+.actionRow {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.actionBtn {
+  border: 1px solid rgba(217, 173, 91, 0.7);
+  background: rgba(255, 247, 236, 0.9);
+  color: #48535f;
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.actionBtn:hover {
+  background: rgba(217, 173, 91, 0.18);
+}
+
 /* 🔊 TTS 버튼 */
 .speakBtn {
   background: none;
