@@ -24,6 +24,8 @@ public class AiGatewayProperties {
     private String paymentSummaryDocumentPath = "/api/v1/ai/payments/summary-documents";
     private String paymentStatusSummaryPath = "/api/v1/ai/payments/status-summaries";
     private String paymentOrderSuggestionPath = "/api/v1/ai/payments/order-suggestions";
+    private String paymentOrderFormCreatePath = "/api/v1/ai/payments/order-forms";
+    private String paymentOrderFormDownloadPath = "/api/v1/ai/payments/order-forms/downloads";
     private String roomserviceStockMonitorPath = "/api/v1/ai/operations/roomservice-stock-monitoring";
     private String complainPriorityClassifyPath = "/api/v1/ai/operations/complaint-priority-classification";
     // ✅ 추가
