@@ -33,7 +33,7 @@ TOOL_DEFINITIONS = [
                     "type": "string",
                     "description": (
                         "실행할 SELECT SQL 쿼리. "
-                        "예) SELECT COUNT(*) as cnt FROM room r "
+                        "예) SELECT COUNT(*) as cnt FROM rooms r "
                         "JOIN building b ON r.building_id = b.building_id "
                         "WHERE b.building_nm LIKE '%유니플레이스B%'"
                     ),
@@ -67,7 +67,7 @@ TOOL_DEFINITIONS = [
                         "실행할 SELECT SQL. user_id 조건에 반드시 {user_id} 플레이스홀더 사용. "
                         "예) SELECT c.*, r.room_no, b.building_nm "
                         "FROM contract c "
-                        "JOIN room r ON c.room_id = r.room_id "
+                        "JOIN rooms r ON c.room_id = r.room_id "
                         "JOIN building b ON r.building_id = b.building_id "
                         "WHERE c.user_id = '{user_id}' AND c.contract_st = 'active'"
                     ),

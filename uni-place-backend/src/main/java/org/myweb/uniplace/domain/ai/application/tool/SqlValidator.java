@@ -12,9 +12,10 @@ public class SqlValidator {
 
     /** 조회 허용 테이블 화이트리스트 */
     private static final Set<String> ALLOWED_TABLES = Set.of(
-        "building", "room", "review", "common_space",
-        "tour_reservation", "board", "notice", "faq", "company_info",
-        "contract", "space_reservation", "complain", "payment",
+        // 실제 DB: rooms (복수), LLM이 room(단수)을 생성할 수 있으므로 양쪽 허용
+        "building", "room", "rooms", "reviews", "common_space",
+        "room_reservation", "board", "notice", "faq", "company_info",
+        "contract", "space_reservations", "complain", "payment",
         "product_building_stock"
     );
 
@@ -77,7 +78,7 @@ public class SqlValidator {
 
     /** 로그인 필요 테이블이 SQL에 포함되어 있는지 확인 */
     public static boolean requiresAuth(String sql) {
-        Set<String> authTables = Set.of("contract", "space_reservation", "complain", "payment");
+        Set<String> authTables = Set.of("contract", "space_reservations", "complain", "payment");
         String lower = sql.toLowerCase();
         for (String t : authTables) {
             if (lower.contains(t)) return true;
