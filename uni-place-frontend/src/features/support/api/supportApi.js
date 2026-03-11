@@ -233,7 +233,8 @@ export const supportApi = {
 
   // ===== Complains =====
   getComplains: (params = {}) => {
-    const defaults = { page: 1, size: 10, sort: 'compId', direct: 'DESC' };
+    const defaults = { page: 1, size: 10 };
+    // sort 제거 → 백엔드 쿼리의 중요도순 정렬 적용
     const merged = { ...defaults, ...params };
     if (merged.code) {
       const normalized = normalizeSupportCode(merged.code);
@@ -244,14 +245,13 @@ export const supportApi = {
     });
   },
   getMyComplains: (params = {}) => {
-    const defaults = { page: 1, size: 10, sort: 'compId', direct: 'DESC' };
+    const defaults = { page: 1, size: 10 };
+    // sort 제거 → 백엔드 쿼리의 중요도순 정렬 적용
     const merged = { ...defaults, ...params };
     return request(
       `/complains/me${buildQuery({
         page: merged.page,
         size: merged.size,
-        sort: merged.sort,
-        direct: merged.direct,
       })}`,
       {
         auth: true,

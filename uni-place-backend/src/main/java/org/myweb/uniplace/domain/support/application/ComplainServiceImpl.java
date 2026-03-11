@@ -12,14 +12,18 @@ import org.myweb.uniplace.domain.support.api.dto.request.ComplainUpdateRequest;
 import org.myweb.uniplace.domain.support.api.dto.response.ComplainResponse;
 import org.myweb.uniplace.domain.commoncode.repository.CommonCodeRepository;
 import org.myweb.uniplace.domain.support.domain.entity.Complain;
+import org.myweb.uniplace.domain.support.domain.enums.ComplainImportance;
+import org.myweb.uniplace.domain.support.infrastructure.ComplainAiClient;
 import org.myweb.uniplace.domain.support.repository.ComplainRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.myweb.uniplace.domain.ai.application.moderation.BannedWordService;
 
 @Slf4j
 @Service
@@ -32,6 +36,8 @@ public class ComplainServiceImpl implements ComplainService {
     private final ComplainRepository complainRepository;
     private final CommonCodeRepository commonCodeRepository;
     private final NotificationService notificationService;
+    private final BannedWordService bannedWordService;
+    private final ComplainAiClient complainAiClient;  // ← 추가: AI 클라이언트
 
     @Override
     @Transactional(readOnly = true)
@@ -66,9 +72,9 @@ public class ComplainServiceImpl implements ComplainService {
     @Override
     public ComplainResponse create(String userId, ComplainCreateRequest request) {
         Complain complain = Complain.builder()
-                .compTitle(request.getCompTitle())
+        		.compTitle(bannedWordService.filter(request.getCompTitle()))
                 .userId(userId)
-                .compCtnt(request.getCompCtnt())
+                .compCtnt(bannedWordService.filter(request.getCompCtnt()))
                 .code(normalizeSupportCodeForWrite(request.getCode()))
                 .build();
         Complain saved = complainRepository.save(complain);
@@ -84,14 +90,55 @@ public class ComplainServiceImpl implements ComplainService {
             log.warn("[COMP][NOTIFY][ADMIN] compId={} reason={}", saved.getCompId(), e.getMessage());
         }
 
+        // ↓ 추가: AI 중요도 분류 (비동기 — 사용자는 기다리지 않아도 됨)
+        classifyAsync(saved.getCompId(), saved.getCompTitle(), saved.getCompCtnt());
+
         return ComplainResponse.from(saved);
+    }
+
+    /**
+     * AI 중요도 분류 — 백그라운드 실행
+     * @Async: 별도 스레드에서 실행되므로 create() 응답 속도에 영향 없음
+     * 독립 트랜잭션(@Transactional)으로 AI 결과만 따로 DB 저장
+     */
+    @Async
+    @Transactional
+    public void classifyAsync(Integer compId, String title, String content) {
+        try {
+            ComplainAiClient.AiClassifyResult result =
+                    complainAiClient.classify(compId, title, content);
+
+            if (result == null || result.getImportance() == null) {
+                log.warn("[COMP][AI] 분류 결과 없음 compId={}", compId);
+                return;
+            }
+
+            ComplainImportance importance;
+            try {
+                importance = ComplainImportance.valueOf(result.getImportance());
+            } catch (IllegalArgumentException e) {
+                log.warn("[COMP][AI] 알 수 없는 중요도값 compId={} value={}", compId, result.getImportance());
+                return;
+            }
+
+            complainRepository.findById(compId).ifPresent(c -> {
+                c.updateAiResult(importance, result.getAiReason());
+                log.info("[COMP][AI] 분류완료 compId={} importance={}", compId, importance);
+            });
+
+        } catch (Exception e) {
+            log.warn("[COMP][AI] 분류 실패 compId={} reason={}", compId, e.getMessage());
+        }
     }
 
     @Override
     public ComplainResponse update(Integer compId, ComplainUpdateRequest request) {
         Complain complain = complainRepository.findById(compId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPLAIN_NOT_FOUND));
-        complain.update(request.getCompTitle(), request.getCompCtnt());
+        String filteredTitle = bannedWordService.filter(request.getCompTitle());
+        String filteredContent = bannedWordService.filter(request.getCompCtnt());
+
+        complain.update(filteredTitle, filteredContent);
         return ComplainResponse.from(complain);
     }
 
