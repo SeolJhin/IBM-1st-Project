@@ -3,9 +3,11 @@ from datetime import date, datetime
 from app.schemas.ai_request import AiRequest
 from app.services.actions.event_sink import publish_action_event
 from app.services.document.draft_writer import write_document_draft
+from app.services.document.payment_excel_loader import load_payment_slots_from_excel
 
 
 def make_payment_summary(req: AiRequest) -> tuple[str, dict]:
+    _enrich_slots_from_excel(req)
     if req.intent == "PAYMENT_STATUS_SUMMARY":
         answer, payload = _build_payment_status_summary(req)
         draft_path = write_document_draft("payment_status_summary", payload=payload, user_id=req.user_id)
@@ -21,6 +23,15 @@ def make_payment_summary(req: AiRequest) -> tuple[str, dict]:
         {"user_id": req.user_id, "draft_path": draft_path, "summary": payload},
     )
     return answer, {"draft_path": draft_path, "draft_type": "payment_summary_document", "event_status": event}
+
+
+def _enrich_slots_from_excel(req: AiRequest) -> None:
+    loaded = load_payment_slots_from_excel(req)
+    if not loaded:
+        return
+    for key, value in loaded.items():
+        if req.get_slot(key) in (None, "") and value not in (None, ""):
+            req.slots[key] = value
 
 
 def _build_payment_document_summary(req: AiRequest) -> tuple[str, dict]:

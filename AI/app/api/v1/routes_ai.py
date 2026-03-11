@@ -19,6 +19,8 @@ from app.services.orchestrator.tool_orchestrator import run_tool_orchestrator
 from app.services.anomaly.contract_anomaly import detect_contract_anomaly
 from app.services.classify.complain_priority import classify_complain_priority
 from app.services.document.payment_summary_doc import make_payment_summary
+from app.services.document.payment_order_suggestion import suggest_order_from_payment
+from app.services.document.order_form_generator import create_order_form_from_suggestion
 from app.services.rag.retriever import retrieve_context
 from app.services.rag.generator import generate_answer
 
@@ -117,7 +119,8 @@ def complaint_priority(payload: Dict[str, Any] = Body(...)) -> AiResponse:
 @router.post("/payments/summary-documents", response_model=AiResponse, responses=ERROR_RESPONSES)
 def payment_summary(payload: Dict[str, Any] = Body(...)) -> AiResponse:
     req = _req(payload, "PAYMENT_SUMMARY_DOCUMENT")
-    return AiResponse(answer=make_payment_summary(req), confidence=0.85)
+    answer, metadata = make_payment_summary(req)
+    return AiResponse(answer=answer, confidence=0.85, metadata=metadata)
 
 
 @router.post("/payments/status-summaries", response_model=AiResponse, responses=ERROR_RESPONSES)
@@ -128,7 +131,15 @@ def payment_status(payload: Dict[str, Any] = Body(...)) -> AiResponse:
 @router.post("/payments/order-suggestions", response_model=AiResponse, responses=ERROR_RESPONSES)
 def payment_order_suggest(payload: Dict[str, Any] = Body(...)) -> AiResponse:
     req = _req(payload, "PAYMENT_ORDER_SUGGESTION")
-    return AiResponse(answer=make_payment_summary(req), confidence=0.85)
+    answer, metadata = suggest_order_from_payment(req)
+    return AiResponse(answer=answer, confidence=0.85, metadata=metadata)
+
+
+@router.post("/payments/order-forms", response_model=AiResponse, responses=ERROR_RESPONSES)
+def payment_order_form(payload: Dict[str, Any] = Body(...)) -> AiResponse:
+    req = _req(payload, "PAYMENT_ORDER_FORM_CREATE")
+    answer, metadata = create_order_form_from_suggestion(req)
+    return AiResponse(answer=answer, confidence=0.85, metadata=metadata)
 
 
 @router.post("/operations/roomservice-stock-monitoring", response_model=AiResponse, responses=ERROR_RESPONSES)
