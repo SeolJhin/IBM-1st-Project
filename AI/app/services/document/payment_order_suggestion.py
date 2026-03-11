@@ -35,11 +35,13 @@ def suggest_order_from_payment(req: AiRequest) -> tuple[str, dict[str, Any]]:
 
         candidates.append(
             {
+                "building_id": item_building or 0,
                 "prod_nm": prod_nm,
                 "prod_stock": stock,
                 "paid_amount": paid_amount,
                 "affiliate_id": affiliate_id or 0,
                 "priority": priority,
+                "order_qty": _suggest_order_qty(stock),
             }
         )
 
@@ -74,6 +76,12 @@ def _priority_score(stock: int, paid_amount: int) -> int:
     if stock <= 10 and paid_amount >= 300000:
         return 1
     return 0
+
+
+def _suggest_order_qty(stock: int) -> int:
+    target_stock = 12
+    qty = target_stock - stock
+    return qty if qty > 0 else 1
 
 
 def _load_items(value: object) -> list[dict]:
