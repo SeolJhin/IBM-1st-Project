@@ -2,6 +2,7 @@
 package org.myweb.uniplace.domain.property.repository;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.domain.property.domain.enums.PetAllowedYn;
@@ -19,6 +20,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Integer> {
 
+    // ──────────────────────────────────────────────────────────────────────
+    //  기존: 검색 필터 페이징 조회
+    // ──────────────────────────────────────────────────────────────────────
     @Query("""
         select r
           from Room r
@@ -97,4 +101,42 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
 
             Pageable pageable
     );
+
+    // ──────────────────────────────────────────────────────────────────────
+    //  ✅ 신규: AI 추천용 — 리뷰 평점·계약 수 기반 후보 방 최대 10개 조회
+    //
+    //  점수 가중치:
+    //    평균 평점    × 0.5
+    //    리뷰 수      × 0.3
+    //    계약 수      × 0.2
+    //
+    //  조건:
+    //    - delete_yn = 'N'
+    //    - room_st   = 'available'
+    //    - 리뷰 or 계약이 1건 이상 있는 방만 포함
+    // ──────────────────────────────────────────────────────────────────────
+    @Query(
+        nativeQuery = true,
+        value = """
+            SELECT
+                r.room_id                          AS roomId,
+                COALESCE(AVG(rv.rating), 0)        AS avgRating,
+                COUNT(DISTINCT rv.review_id)       AS reviewCount,
+                COUNT(DISTINCT c.contract_id)      AS contractCount
+            FROM rooms r
+            LEFT JOIN reviews  rv ON rv.room_id  = r.room_id
+            LEFT JOIN contract c  ON c.room_id   = r.room_id
+                                 AND c.contract_st IN ('active', 'ended')
+            WHERE r.delete_yn = 'N'
+              AND r.room_st   = 'available'
+            GROUP BY r.room_id
+            HAVING (COUNT(DISTINCT rv.review_id) + COUNT(DISTINCT c.contract_id)) > 0
+            ORDER BY
+                (COALESCE(AVG(rv.rating), 0) * 0.5
+                 + COUNT(DISTINCT rv.review_id) * 0.3
+                 + COUNT(DISTINCT c.contract_id) * 0.2) DESC
+            LIMIT 10
+        """
+    )
+    List<RoomStatProjection> findTopCandidateRooms();
 }

@@ -77,5 +77,5 @@ public enum NotificationType {
     ADM_ABNORMAL_API,     // 비정상 API 접근 감지
 
     // ===== admin/system =====
-    ADMIN_NOTICE
+    ADMIN_NOTICE, COMP_URGENT
 }
