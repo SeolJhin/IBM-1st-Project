@@ -201,8 +201,45 @@ export async function sendToBackend(prompt, userId, userSegment, history) {
       history: recentHistory,
     },
   });
-  var answer = res && res.data && res.data.data && res.data.data.answer;
-  return answer || '응답을 받지 못했습니다.';
+var data = res && res.data && res.data.data ? res.data.data : {};
+var metadata = data.metadata || {};
+var buttons = Array.isArray(metadata.action_buttons)
+  ? metadata.action_buttons
+  : [];
+
+return {
+  answer: data.answer || '응답을 받지 못했습니다.',
+  metadata,
+  buttons,
+};
+}
+
+export async function createOrderForm(payload, userId) {
+  var res = await api.post('/ai/payment/order-form', {
+    userId: userId != null ? String(userId) : null,
+    buildingId: payload && payload.buildingId != null ? payload.buildingId : null,
+    month: payload && payload.month ? payload.month : null,
+    approved: true,
+    approvedItems:
+      payload && Array.isArray(payload.approvedItems)
+        ? payload.approvedItems
+        : [],
+    supplierName: payload && payload.supplierName ? payload.supplierName : null,
+    supplierContact:
+      payload && payload.supplierContact ? payload.supplierContact : null,
+  });
+
+  var data = res && res.data && res.data.data ? res.data.data : {};
+  var metadata = data.metadata || {};
+  var buttons = Array.isArray(metadata.action_buttons)
+    ? metadata.action_buttons
+    : [];
+
+  return {
+    answer: data.answer || '발주서가 생성되었습니다.',
+    metadata,
+    buttons,
+  };
 }
 
 // ── 대화 맥락에서 슬롯 자동 추출 ──────────────────────────────

@@ -78,6 +78,11 @@ INTENT_CONTRACT: dict[str, dict[str, object]] = {
         "required": [],
         "optional": ["userId", "buildingId", "month", "items", "slots.*"],
     },
+    "PAYMENT_ORDER_FORM_CREATE": {
+        "endpoint": "/api/v1/ai/payments/order-forms",
+        "required": [],
+        "optional": ["userId", "buildingId", "month", "approved", "approvedItems", "items", "orderDate", "orderNo", "slots.*"],
+    },
     "ROOMSERVICE_STOCK_MONITOR": {
         "endpoint": "/api/v1/ai/operations/roomservice-stock-monitoring",
         "required": [],

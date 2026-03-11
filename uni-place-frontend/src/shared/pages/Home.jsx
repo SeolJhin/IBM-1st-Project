@@ -288,107 +288,131 @@ function RecommendCarousel() {
   );
 }
 
-const lineupItems = [
-  {
-    id: 1,
-    tag: '추천 하우스 1',
-    image:
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=500&fit=crop',
-    name: '강남역 10분 프리미엄 코리빙',
-  },
-  {
-    id: 2,
-    tag: '추천 하우스 2',
-    image:
-      'https://images.unsplash.com/photo-1560185008-b033106af5c3?w=400&h=500&fit=crop',
-    name: '여성 전용 하우스',
-  },
-  {
-    id: 3,
-    tag: '추천 하우스 3',
-    image:
-      'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400&h=500&fit=crop',
-    name: '성수 반려동물 가능 하우스',
-  },
-  {
-    id: 4,
-    tag: '추천',
-    image:
-      'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=400&h=500&fit=crop',
-    name: '장기 거주 특화 하우스',
-  },
-  {
-    id: 5,
-    tag: '인기',
-    image:
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&h=500&fit=crop',
-    name: '합정 커뮤니티 하우스',
-  },
-  {
-    id: 6,
-    tag: '신규',
-    image:
-      'https://images.unsplash.com/photo-1449844908441-8829872d2607?w=400&h=500&fit=crop',
-    name: '광화문 비즈니스 하우스',
-  },
-];
+// ✅ 신규: AI 추천 Top3 섹션 (기존 HouseLineup 교체)
+const ROOM_TYPE_LABEL = {
+  one_room:   '원룸형',
+  two_room:   '투룸형',
+  three_room: '쓰리룸형',
+  loft:       '복층',
+  share:      '쉐어',
+};
 
-function HouseLineup() {
-  const [currentIndex, setCurrentIndex] = useState(0);
+const RANK_LABEL = ['🥇 1위', '🥈 2위', '🥉 3위'];
+const RANK_COLOR = ['#f59e0b', '#9ca3af', '#cd7c2f']; // 금·은·동
 
-  const visibleCount = 4;
-  const maxIndex = lineupItems.length - visibleCount;
+function AiTop3Section() {
+  const navigate = useNavigate();
+  const [items, setItems]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
 
-  const handleNext = () => setCurrentIndex((p) => (p >= maxIndex ? 0 : p + 1));
-  const handlePrev = () => setCurrentIndex((p) => (p <= 0 ? maxIndex : p - 1));
+  useEffect(() => {
+    propertyApi
+      .getRecommendations()
+      .then((data) => setItems(Array.isArray(data) ? data : []))
+      .catch((e) => setError(e?.message || '추천 정보를 불러오지 못했습니다.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <section className={styles.sectionWhite}>
       <div className={styles.contentWide}>
         <div className={styles.sectionHeadCenter}>
-          <p className={styles.sectionEyebrow}>UNI-PLACE LINEUP</p>
-          <h2 className={styles.sectionTitle}>이달의 PICK</h2>
-          <button className={styles.primaryPill} type="button">
+          <p className={styles.sectionEyebrow}>AI PICK · 데이터 기반 선정</p>
+          <h2 className={styles.sectionTitle}>이달의 추천 하우스 Top 3</h2>
+          <button
+            className={styles.primaryPill}
+            type="button"
+            onClick={() => navigate('/rooms')}
+          >
             전체 보기
           </button>
         </div>
 
-        <div className={styles.lineupFrame}>
-          <div
-            className={styles.lineupTrack}
-            style={{ transform: `translateX(-${currentIndex * 25}%)` }}
-          >
-            {lineupItems.map((item) => (
-              <article key={item.id} className={styles.lineupCard}>
-                <span className={styles.lineupTag}>{item.tag}</span>
-                <div className={styles.lineupImageWrap}>
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className={styles.lineupImage}
-                    draggable={false}
-                  />
-                </div>
-                <p className={styles.lineupName}>{item.name}</p>
-              </article>
-            ))}
-          </div>
+        {loading && (
+          <p className={styles.typeHint}>AI 추천 방을 불러오는 중입니다…</p>
+        )}
+        {!loading && error && (
+          <p className={styles.typeHintError}>{error}</p>
+        )}
+        {!loading && !error && items.length === 0 && (
+          <p className={styles.typeHint}>아직 추천 데이터가 없습니다.</p>
+        )}
 
-          <button
-            className={`${styles.lineBtn} ${styles.lineBtnLeft}`}
-            onClick={handlePrev}
-            type="button"
-          >
-            &#8249;
-          </button>
-          <button
-            className={`${styles.lineBtn} ${styles.lineBtnRight}`}
-            onClick={handleNext}
-            type="button"
-          >
-            &#8250;
-          </button>
-        </div>
+        {!loading && !error && items.length > 0 && (
+          <div className={styles.aiTop3Grid}>
+            {items.map((item) => {
+              const rankIdx = (item.rankNo ?? 1) - 1;
+              return (
+                <article
+                  key={item.roomId}
+                  className={styles.aiTop3Card}
+                  onClick={() => navigate(`/rooms/${item.roomId}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) =>
+                    e.key === 'Enter' && navigate(`/rooms/${item.roomId}`)
+                  }
+                >
+                  {/* 순위 뱃지 */}
+                  <div
+                    className={styles.aiTop3RankBadge}
+                    style={{ color: RANK_COLOR[rankIdx] ?? '#374151' }}
+                  >
+                    {RANK_LABEL[rankIdx] ?? `${item.rankNo}위`}
+                  </div>
+
+                  {/* 썸네일 placeholder */}
+                  <div className={styles.aiTop3ImgWrap}>
+                    {item.thumbnailUrl ? (
+                      <img
+                        src={item.thumbnailUrl}
+                        alt={item.buildingNm}
+                        className={styles.aiTop3Img}
+                      />
+                    ) : (
+                      <div className={styles.aiTop3ImgPlaceholder}>
+                        <span>🏠</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 정보 */}
+                  <div className={styles.aiTop3Body}>
+                    <p className={styles.aiTop3Building}>{item.buildingNm}</p>
+                    <p className={styles.aiTop3Addr}>{item.buildingAddr}</p>
+
+                    <div className={styles.aiTop3Tags}>
+                      <span className={styles.aiTop3Tag}>
+                        {ROOM_TYPE_LABEL[item.roomType] ?? item.roomType}
+                      </span>
+                      <span className={styles.aiTop3Tag}>{item.floor}층</span>
+                    </div>
+
+                    <p className={styles.aiTop3Price}>
+                      월 {Number(item.rentPrice ?? 0).toLocaleString()}원
+                    </p>
+
+                    {/* AI 추천 이유 */}
+                    <div className={styles.aiTop3Reason}>
+                      <span className={styles.aiTop3ReasonIcon}>🤖</span>
+                      <span className={styles.aiTop3ReasonText}>
+                        {item.aiReason}
+                      </span>
+                    </div>
+
+                    {/* 통계 */}
+                    <div className={styles.aiTop3Stats}>
+                      <span>⭐ {Number(item.avgRating ?? 0).toFixed(1)}</span>
+                      <span>리뷰 {item.reviewCount ?? 0}건</span>
+                      <span>계약 {item.contractCount ?? 0}건</span>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -791,7 +815,10 @@ export default function Home() {
       </section>
 
       <IntroActionSection />
-      <HouseLineup />
+
+      {/* ✅ HouseLineup → AI 추천 Top3 로 교체 */}
+      <AiTop3Section />
+
       <EventSection />
       <LivingTypeSection />
 

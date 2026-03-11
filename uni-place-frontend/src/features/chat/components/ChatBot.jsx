@@ -1,6 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps, no-unused-vars */
 // src/features/chat/components/ChatBot.jsx
 import React, { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
+import TourReservationList from '../../reservation/pages/TourReservationList';
+import Modal from '../../../shared/components/Modal/Modal';
 import styles from './ChatBot.module.css';
 import { useChat, speakText } from '../hooks/useChat';
 import {
@@ -20,8 +24,49 @@ function formatTime(ts) {
   });
 }
 
-function MessageBubble({ msg, onSpeak }) {
+// 챗봇 내 모달로 열어야 하는 URL 목록
+var MODAL_ROUTES = {
+  '/reservations/tour/create': 'tour_create',
+  '/reservations/tour/list': 'tour_list',
+};
+
+function ActionButtons({ buttons, onModalRoute }) {
+  var navigate = useNavigate();
+  if (!buttons || buttons.length === 0) return null;
+
+  return (
+    <div className={styles.actionButtons}>
+      {buttons.map(function (btn, i) {
+        return (
+          <button
+            key={i}
+            className={styles.actionBtn}
+            onClick={function () {
+              if (!btn.url) return;
+              var normalizedUrl = btn.url.trim().replace(/\/$/, '');
+              var pathOnly = normalizedUrl.split('?')[0];
+
+              if (normalizedUrl.startsWith('http')) {
+                window.open(normalizedUrl, '_blank');
+              } else if (MODAL_ROUTES[pathOnly] && onModalRoute) {
+                onModalRoute(MODAL_ROUTES[pathOnly]);
+              } else {
+                navigate(normalizedUrl);
+              }
+            }}
+          >
+            {btn.icon && <span className={styles.actionBtnIcon}>{btn.icon}</span>}
+            {btn.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function MessageBubble({ msg, onSpeak, onAction, onModalRoute }) {
   var isUser = msg.role === 'user';
+  var actions = Array.isArray(msg.actions) ? msg.actions : [];
   return (
     <div className={isUser ? styles.rowUser : styles.rowAssistant}>
       {!isUser && <div className={styles.bubbleAvatar}>🤖</div>}
@@ -29,6 +74,28 @@ function MessageBubble({ msg, onSpeak }) {
         <div className={isUser ? styles.bubbleUser : styles.bubbleAssistant}>
           {msg.content}
         </div>
+        {!isUser && (actions.length > 0 || (msg.buttons && msg.buttons.length > 0)) && (
+          <div className={styles.actionRow}>
+            {actions.length > 0 &&
+              actions.map(function (action, index) {
+                return (
+                  <button
+                    key={(action.type || 'action') + '-' + index}
+                    className={styles.actionBtn}
+                    onClick={function () {
+                      if (onAction) onAction(msg, action);
+                    }}
+                  >
+                    {action.label}
+                  </button>
+                );
+              })}
+
+            {msg.buttons && msg.buttons.length > 0 && (
+              <ActionButtons buttons={msg.buttons} onModalRoute={onModalRoute} />
+            )}
+          </div>
+        )}
         <div className={styles.bubbleTime}>
           {formatTime(msg.ts)}
           {!isUser && onSpeak && (
@@ -88,6 +155,12 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
   var openState = React.useState(false);
   var open = openState[0];
   var setOpen = openState[1];
+  var tourModalState = React.useState(false);
+  var tourModalOpen = tourModalState[0];
+  var setTourModalOpen = tourModalState[1];
+  var tourListModalState = React.useState(false);
+  var tourListModalOpen = tourListModalState[0];
+  var setTourListModalOpen = tourListModalState[1];
   var unreadState = React.useState(false);
   var hasUnread = unreadState[0];
   var setHasUnread = unreadState[1];
@@ -112,6 +185,7 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
   var setVoiceMode = chat.setVoiceMode;
   var exitMode = chat.exitMode;
   var speakMessage = chat.speakMessage;
+  var handleAction = chat.handleAction;
 
   React.useEffect(
     function () {
@@ -268,6 +342,13 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
                     key={msg.ts + '-' + i}
                     msg={msg}
                     onSpeak={!isBlind ? speakMessage : null}
+
+                    onAction={handleAction}
+                    onModalRoute={function (routeKey) {
+                      if (routeKey === 'tour_create') setTourModalOpen(true);
+                      else if (routeKey === 'tour_list') setTourListModalOpen(true);
+                    }}
+
                   />
                 );
               })
@@ -405,6 +486,51 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
           </div>
         </div>
       )}
+      {/* ── 투어 예약 모달 ── */}
+      <Modal
+        open={tourModalOpen}
+        onClose={function () {
+          setTourModalOpen(false);
+        }}
+        title="📅 사전 방문 예약"
+        size="lg"
+      >
+        <TourReservationCreate
+          inlineMode
+          onSuccess={function () {
+            setTourModalOpen(false);
+            setTourListModalOpen(true);
+          }}
+          onClose={function () {
+            setTourModalOpen(false);
+          }}
+          onGoList={function () {
+            setTourModalOpen(false);
+            setTourListModalOpen(true);
+          }}
+        />
+      </Modal>
+
+      {/* ── 투어 예약 조회 모달 ── */}
+      <Modal
+        open={tourListModalOpen}
+        onClose={function () {
+          setTourListModalOpen(false);
+        }}
+        title="📋 방문 예약 조회"
+        size="lg"
+      >
+        <TourReservationList
+          inlineMode
+          onGoCreate={function () {
+            setTourListModalOpen(false);
+            setTourModalOpen(true);
+          }}
+          onClose={function () {
+            setTourListModalOpen(false);
+          }}
+        />
+      </Modal>
     </>
   );
 }

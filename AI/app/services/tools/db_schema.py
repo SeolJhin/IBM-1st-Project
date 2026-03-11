@@ -38,7 +38,11 @@ DB_SCHEMA = """
   - rent_type         ENUM          monthly_rent / stay
   - room_st           ENUM          available / reserved / contracted / repair / cleaning
   - room_capacity     INT           수용 인원
-  - room_options      VARCHAR(500)  옵션 설명
+  - room_options      VARCHAR(500)  옵션 목록 (영문 쉼표 구분, 예: aircon,desk,refrigerator)
+    저장 예시: "냉장고,에어컨,세탁기,침대,책상,옷장,전자레인지,인터넷,TV"
+    ※ 반드시 영문으로 LIKE 검색: WHERE r.room_options LIKE '%aircon%'  (에어컨→aircon, 냉장고→refrigerator 등)
+    ※ 영문 입력 시 한글로 변환: aircon→에어컨, fridge→냉장고, washer→세탁기,
+       bed→침대, desk→책상, closet→옷장, microwave→전자레인지, TV→TV
   - delete_yn         CHAR(1)       논리 삭제 여부 ('N'=정상, 'Y'=삭제) ← 반드시 WHERE delete_yn='N' 포함
 
 ▶ reviews (리뷰)

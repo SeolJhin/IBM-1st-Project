@@ -11,10 +11,11 @@
 // GET /buildings/{buildingId}/spaces    → 빌딩별 공용공간 목록 (페이지)
 // GET /rooms                            → 객실 전체 목록 (페이지 + 필터)
 // GET /rooms/{roomId}                   → 객실 상세
+// GET /rooms/recommendations            → ✅ AI 추천 Top3 (신규)
 // GET /spaces                           → 공용공간 전체 목록 (페이지 + 필터)
 // GET /spaces/{spaceId}                 → 공용공간 상세
 
-import { fetchWithAuthRetry } from '../../../app/http/apiBase'; // 필요하면 Vite env로 교체: import.meta.env.VITE_API_BASE_URL
+import { fetchWithAuthRetry } from '../../../app/http/apiBase';
 
 function getAccessToken() {
   return localStorage.getItem('access_token') || '';
@@ -41,7 +42,6 @@ async function request(
     { auth }
   );
 
-  // 204 No Content
   if (res.status === 204) return null;
 
   const contentType = res.headers.get('content-type') || '';
@@ -50,7 +50,6 @@ async function request(
     ? await res.json().catch(() => null)
     : await res.text().catch(() => null);
 
-  // ApiResponse unwrap
   const api =
     payload && typeof payload === 'object' && 'success' in payload
       ? payload
@@ -68,13 +67,9 @@ async function request(
     throw error;
   }
 
-  // ApiResponse면 data만 반환
   return api ? api.data : payload;
 }
 
-// 쿼리 파라미터 빌더 유틸 함수
-// 예) buildQuery({ page: 1, size: 10, sort: 'buildingId', direct: 'DESC' })
-//  → "?page=1&size=10&sort=buildingId&direct=DESC"
 function buildQuery(params = {}) {
   const entries = Object.entries(params).filter(
     ([, v]) => v !== undefined && v !== null && v !== ''
@@ -88,13 +83,6 @@ export const propertyApi = {
 
   /**
    * 빌딩 목록 조회 (페이지)
-   * @param {{ page?: number, size?: number, sort?: string, direct?: 'ASC'|'DESC' }} params
-   * @returns {Promise<PageResponse<BuildingSummaryResponse>>}
-   *
-   * BuildingSummaryResponse 필드:
-   *   buildingId, buildingNm, buildingAddr, buildingDesc,
-   *   landCategory, buildSize, buildingUsage, existElv, parkingCapacity,
-   *   thumbFileId, thumbUrl
    */
   getBuildings: (params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'buildingId', direct: 'DESC' };
@@ -104,27 +92,11 @@ export const propertyApi = {
 
   /**
    * 빌딩 상세 조회
-   * @param {number} buildingId
-   * @returns {Promise<BuildingDetailResponse>}
-   *
-   * BuildingDetailResponse 필드:
-   *   buildingId, buildingNm, buildingAddr, buildingDesc,
-   *   landCategory, buildSize, buildingUsage, existElv, parkingCapacity,
-   *   files: [{ fileId, fileUrl, ... }]
    */
   getBuildingDetail: (buildingId) => request(`/buildings/${buildingId}`),
 
   /**
    * 빌딩별 객실 목록 조회 (페이지)
-   * @param {number} buildingId
-   * @param {{ page?: number, size?: number, sort?: string, direct?: 'ASC'|'DESC' }} params
-   * @returns {Promise<PageResponse<RoomSummaryResponse>>}
-   *
-   * RoomSummaryResponse 필드:
-   *   roomId, buildingId, buildingNm, buildingAddr, buildingDesc, parkingCapacity,
-   *   roomNo, floor, roomSize, deposit, rentPrice, manageFee,
-   *   rentType, roomSt, roomCapacity, rentMin, sunDirection,
-   *   thumbnailFileId, thumbnailUrl
    */
   getRooms: (buildingId, params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'roomId', direct: 'DESC' };
@@ -134,13 +106,6 @@ export const propertyApi = {
 
   /**
    * 빌딩별 공용공간 목록 조회 (페이지)
-   * @param {number} buildingId
-   * @param {{ page?: number, size?: number, sort?: string, direct?: 'ASC'|'DESC' }} params
-   * @returns {Promise<PageResponse<SpaceResponse>>}
-   *
-   * SpaceResponse 필드:
-   *   spaceId, buildingId, buildingNm, buildingAddr, buildingDesc, parkingCapacity,
-   *   spaceNm, spaceFloor, spaceCapacity, spaceOptions, thumbnailFileId, thumbnailUrl
    */
   getSpaces: (buildingId, params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'spaceId', direct: 'DESC' };
@@ -152,29 +117,6 @@ export const propertyApi = {
 
   /**
    * 객실 전체 목록 조회 (페이지 + 다양한 필터)
-   * @param {{
-   *   buildingId?: number,        → 빌딩 ID 필터
-   *   buildingNm?: string,        → 빌딩명 검색어
-   *   buildingAddr?: string,      → 주소 검색어
-   *   minParkingCapacity?: number,
-   *   roomNo?: number,
-   *   floor?: number,
-   *   minRoomSize?: number,       maxRoomSize?: number,
-   *   minDeposit?: number,        maxDeposit?: number,
-   *   minRentPrice?: number,      maxRentPrice?: number,
-   *   minManageFee?: number,      maxManageFee?: number,
-   *   rentType?: string,          → RentType enum
-   *   roomSt?: string,            → RoomStatus enum
-   *   sunDirection?: string,      → SunDirection enum
-   *   minRoomCapacity?: number,   maxRoomCapacity?: number,
-   *   minRentMin?: number,        maxRentMin?: number,
-   *   roomOptions?: string,       → 옵션 검색어
-   *   page?: number,
-   *   size?: number,
-   *   sort?: string,
-   *   direct?: 'ASC'|'DESC'
-   * }} params
-   * @returns {Promise<PageResponse<RoomSummaryResponse>>}
    */
   getRoomsAll: (params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'roomId', direct: 'DESC' };
@@ -184,40 +126,26 @@ export const propertyApi = {
 
   /**
    * 객실 상세 조회
-   * @param {number} roomId
-   * @returns {Promise<RoomDetailResponse>}
-   *
-   * RoomDetailResponse 필드:
-   *   roomId, buildingId, buildingNm, buildingAddr, buildingDesc, parkingCapacity,
-   *   roomNo, floor, roomSize, deposit, rentPrice, manageFee,
-   *   rentType, roomSt, roomOptions, roomCapacity, rentMin, sunDirection, roomDesc,
-   *   files: [{ fileId, fileUrl, ... }]
    */
   getRoomDetail: (roomId) => request(`/rooms/${roomId}`),
+
+  // ✅ 신규: AI 추천 Top3 조회
+  /**
+   * AI 방 추천 Top3 조회
+   * @returns {Promise<RoomRecommendationResponse[]>}
+   *
+   * RoomRecommendationResponse 필드:
+   *   rankNo, roomId, buildingNm, buildingAddr,
+   *   roomType, rentPrice, floor,
+   *   aiReason, avgRating, reviewCount, contractCount,
+   *   thumbnailUrl, generatedAt
+   */
+  getRecommendations: () => request('/rooms/recommendations'),
 
   // ===== SpaceController (/spaces) =====
 
   /**
    * 공용공간 전체 목록 조회 (페이지 + 다양한 필터)
-   * @param {{
-   *   buildingId?: number,         → 빌딩 ID 필터
-   *   buildingNm?: string,         → 빌딩명 검색어
-   *   buildingAddr?: string,       → 주소 검색어
-   *   minParkingCapacity?: number,
-   *   spaceNm?: string,            → 공간명 검색어
-   *   spaceFloor?: number,         → 층수 정확일치
-   *   minSpaceCapacity?: number,   maxSpaceCapacity?: number,
-   *   spaceOptions?: string,       → 옵션 검색어
-   *   page?: number,
-   *   size?: number,
-   *   sort?: string,
-   *   direct?: 'ASC'|'DESC'
-   * }} params
-   * @returns {Promise<PageResponse<SpaceResponse>>}
-   *
-   * SpaceResponse 필드:
-   *   spaceId, buildingId, buildingNm, buildingAddr, buildingDesc, parkingCapacity,
-   *   spaceNm, spaceFloor, spaceCapacity, spaceOptions, thumbnailFileId, thumbnailUrl
    */
   getSpacesAll: (params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'spaceId', direct: 'DESC' };
@@ -227,13 +155,6 @@ export const propertyApi = {
 
   /**
    * 공용공간 상세 조회
-   * @param {number} spaceId
-   * @returns {Promise<SpaceDetailResponse>}
-   *
-   * SpaceDetailResponse 필드:
-   *   spaceId, buildingId, buildingNm, buildingAddr, buildingDesc, parkingCapacity,
-   *   spaceNm, spaceFloor, spaceCapacity, spaceOptions, spaceDesc,
-   *   files: [{ fileId, fileUrl, ... }]
    */
   getSpaceDetail: (spaceId) => request(`/spaces/${spaceId}`),
 };
