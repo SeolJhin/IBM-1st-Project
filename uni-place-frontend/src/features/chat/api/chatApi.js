@@ -241,7 +241,6 @@ export async function createOrderForm(payload, userId) {
     buttons,
   };
 }
-}
 
 // ── 대화 맥락에서 슬롯 자동 추출 ──────────────────────────────
 // 후속 질문에서 건물명을 직접 추출하거나 이전 AI 답변에서 인계

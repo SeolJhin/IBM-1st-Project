@@ -74,28 +74,27 @@ function MessageBubble({ msg, onSpeak, onAction, onModalRoute }) {
         <div className={isUser ? styles.bubbleUser : styles.bubbleAssistant}>
           {msg.content}
         </div>
-{!isUser && (actions.length > 0 || (msg.buttons && msg.buttons.length > 0)) && (
-  <div className={styles.actionRow}>
-    {actions.length > 0 &&
-      actions.map(function (action, index) {
-        return (
-          <button
-            key={(action.type || 'action') + '-' + index}
-            className={styles.actionBtn}
-            onClick={function () {
-              if (onAction) onAction(msg, action);
-            }}
-          >
-            {action.label}
-          </button>
-        );
-      })}
+        {!isUser && (actions.length > 0 || (msg.buttons && msg.buttons.length > 0)) && (
+          <div className={styles.actionRow}>
+            {actions.length > 0 &&
+              actions.map(function (action, index) {
+                return (
+                  <button
+                    key={(action.type || 'action') + '-' + index}
+                    className={styles.actionBtn}
+                    onClick={function () {
+                      if (onAction) onAction(msg, action);
+                    }}
+                  >
+                    {action.label}
+                  </button>
+                );
+              })}
 
-    {msg.buttons && msg.buttons.length > 0 && (
-      <ActionButtons buttons={msg.buttons} onModalRoute={onModalRoute} />
-    )}
-  </div>
-)}
+            {msg.buttons && msg.buttons.length > 0 && (
+              <ActionButtons buttons={msg.buttons} onModalRoute={onModalRoute} />
+            )}
+          </div>
         )}
         <div className={styles.bubbleTime}>
           {formatTime(msg.ts)}
