@@ -43,10 +43,19 @@ export default function ComplainDetail() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // 상태 변경
   const [statusValue, setStatusValue] = useState('received');
   const [statusSubmitting, setStatusSubmitting] = useState(false);
+
+  // 이미지 추가
   const [pendingImages, setPendingImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+
+  // 관리자 답변
+  const [replyCtnt, setReplyCtnt] = useState('');
+  const [replyStatus, setReplyStatus] = useState('resolved');
+  const [replySubmitting, setReplySubmitting] = useState(false);
 
   const role = normalizeRole(user);
   const isAdmin = role === 'admin';
@@ -54,6 +63,9 @@ export default function ComplainDetail() {
   const isOwner = isTenant && data?.userId === user?.userId;
   const canEdit = isAdmin || isOwner;
   const canDelete = isAdmin || isOwner;
+
+  // replyCk가 'Y'이면 이미 답변이 있는 상태
+  const hasReply = data?.replyCk === 'Y';
 
   const loadDetail = async () => {
     setLoading(true);
@@ -65,6 +77,9 @@ export default function ComplainDetail() {
       setData(res);
       setImages(Array.isArray(files) ? files : []);
       setStatusValue(res?.compSt ?? 'received');
+      // 기존 답변 내용이 있으면 입력창에 채워두기
+      if (res?.replyCtnt) setReplyCtnt(res.replyCtnt);
+      if (res?.compSt) setReplyStatus(res.compSt);
     } catch (err) {
       if (Number(err?.status) === 404) {
         navigate(complainListPath, { replace: true });
@@ -155,8 +170,33 @@ export default function ComplainDetail() {
     }
   };
 
+  /** 관리자 답변 등록 / 수정 */
+  const handleCreateReply = async () => {
+    if (!replyCtnt.trim()) return alert('답변 내용을 입력해주세요.');
+    setReplySubmitting(true);
+    try {
+      const updated = await supportApi.createComplainReply(id, {
+        replyCtnt,
+        compSt: replyStatus,
+      });
+      setData((prev) => ({
+        ...prev,
+        ...(updated ?? {}),
+        replyCk: 'Y',
+        replyCtnt: updated?.replyCtnt ?? replyCtnt,
+        compSt: updated?.compSt ?? replyStatus,
+      }));
+      alert('답변이 등록되었습니다.');
+    } catch (e) {
+      alert(e.message || '답변 등록에 실패했습니다.');
+    } finally {
+      setReplySubmitting(false);
+    }
+  };
+
   return (
     <div className={styles.container}>
+      {/* ── 민원 본문 카드 ── */}
       <div className={styles.card}>
         <div
           style={{
@@ -354,6 +394,7 @@ export default function ComplainDetail() {
           </div>
         )}
 
+        {/* 처리상태 변경 + 수정/삭제 버튼 (관리자/본인) */}
         {canEdit && (
           <>
             <div
@@ -404,10 +445,127 @@ export default function ComplainDetail() {
         )}
       </div>
 
+      {/* ── 관리자 답변 표시 (replyCk=Y이고 내용 있을 때) ── */}
+      {hasReply && data.replyCtnt && (
+        <div
+          className={styles.card}
+          style={{
+            borderColor: 'var(--primary)',
+            background: 'var(--b-5)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 12,
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: 'var(--primary)',
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+            >
+              A
+            </span>
+            <span
+              style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)' }}
+            >
+              관리자 답변
+            </span>
+            {data.updatedAt && (
+              <span
+                style={{
+                  fontSize: 13,
+                  color: 'var(--muted)',
+                  marginLeft: 'auto',
+                }}
+              >
+                {data.updatedAt.slice(0, 10)}
+              </span>
+            )}
+          </div>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 14,
+              lineHeight: 1.8,
+              color: 'var(--muted)',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {data.replyCtnt}
+          </p>
+        </div>
+      )}
+
+      {/* ── 관리자 답변 입력 카드 ── */}
+      {isAdmin && (
+        <div className={styles.card}>
+          <h3
+            style={{
+              fontSize: 16,
+              fontWeight: 700,
+              marginBottom: 16,
+              color: 'var(--text)',
+            }}
+          >
+            {hasReply ? '✏️ 답변 수정' : '💬 답변 등록'}
+          </h3>
+
+          <label className={styles.formLabel}>처리 완료 상태</label>
+          <select
+            className={styles.formSelect}
+            value={replyStatus}
+            onChange={(e) => setReplyStatus(e.target.value)}
+            disabled={replySubmitting}
+            style={{ maxWidth: 200 }}
+          >
+            <option value="in_progress">처리중</option>
+            <option value="resolved">처리완료</option>
+          </select>
+
+          <label className={styles.formLabel}>답변 내용</label>
+          <textarea
+            className={styles.formTextarea}
+            placeholder="입주민에게 전달할 답변 내용을 입력하세요."
+            value={replyCtnt}
+            onChange={(e) => setReplyCtnt(e.target.value)}
+            disabled={replySubmitting}
+            style={{ minHeight: 120 }}
+          />
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button
+              className={styles.buttonPrimary}
+              onClick={handleCreateReply}
+              disabled={replySubmitting}
+            >
+              {replySubmitting
+                ? '등록 중...'
+                : hasReply
+                  ? '답변 수정'
+                  : '답변 등록'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <button
         className={styles.pageBtn}
         onClick={() => navigate(complainListPath)}
-        style={{ marginTop: 16 }}
+        style={{ marginTop: 8 }}
       >
         목록으로
       </button>

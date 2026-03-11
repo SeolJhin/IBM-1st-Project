@@ -32,7 +32,7 @@ public class ComplainServiceImpl implements ComplainService {
     private final ComplainRepository     complainRepository;
     private final CommonCodeRepository   commonCodeRepository;
     private final NotificationService    notificationService;
-    private final ComplainAiAsyncService complainAiAsyncService; // ← 별도 빈으로 분리된 비동기 서비스
+    private final ComplainAiAsyncService complainAiAsyncService;
 
     // -------------------------------------------------------
     // 조회
@@ -85,7 +85,7 @@ public class ComplainServiceImpl implements ComplainService {
                 .build();
         Complain saved = complainRepository.save(complain);
 
-        // 2. AI 분류 + 알림 비동기 처리 (별도 빈 호출 → @Async 정상 동작)
+        // 2. AI 분류 + 알림 비동기 처리
         complainAiAsyncService.classifyAndNotify(
                 saved.getCompId(), userId,
                 request.getCompTitle(), request.getCompCtnt()
@@ -118,7 +118,9 @@ public class ComplainServiceImpl implements ComplainService {
     public ComplainResponse createReply(Integer compId, ComplainReplyRequest request) {
         Complain complain = complainRepository.findById(compId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPLAIN_NOT_FOUND));
-        complain.markReplied(request.getCompSt());
+
+        // 답변 내용 + 상태 저장
+        complain.markReplied(request.getCompSt(), request.getReplyCtnt());
 
         try {
             notificationService.notifyUser(
