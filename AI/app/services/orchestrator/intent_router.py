@@ -12,6 +12,8 @@ from app.services.anomaly.contract_anomaly import detect_contract_anomaly
 from app.services.classify.complain_priority import classify_complain_priority
 from app.services.monitor.roomservice_stock import monitor_roomservice_stock
 from app.services.document.payment_summary_doc import make_payment_summary
+from app.services.document.payment_order_suggestion import suggest_order_from_payment
+from app.services.document.order_form_generator import create_order_form_from_suggestion
 
 logger = logging.getLogger(__name__)
 
@@ -95,9 +97,17 @@ class IntentRouter:
             return AiResponse(answer=answer, confidence=_conf_result(answer, 0.78))
 
         # ── 결제 ──────────────────────────────────────────────────────
-        if intent in {"PAYMENT_SUMMARY_DOCUMENT", "PAYMENT_STATUS_SUMMARY", "PAYMENT_ORDER_SUGGESTION"}:
-            answer = make_payment_summary(req)
-            return AiResponse(answer=answer, confidence=_conf_result(answer, 0.85))
+        if intent in {"PAYMENT_SUMMARY_DOCUMENT", "PAYMENT_STATUS_SUMMARY"}:
+            answer, metadata = make_payment_summary(req)
+            return AiResponse(answer=answer, confidence=_conf_result(answer, 0.85), metadata=metadata)
+
+        if intent == "PAYMENT_ORDER_SUGGESTION":
+            answer, metadata = suggest_order_from_payment(req)
+            return AiResponse(answer=answer, confidence=_conf_result(answer, 0.85), metadata=metadata)
+
+        if intent == "PAYMENT_ORDER_FORM_CREATE":
+            answer, metadata = create_order_form_from_suggestion(req)
+            return AiResponse(answer=answer, confidence=_conf_result(answer, 0.85), metadata=metadata)
 
         # ── 계약 이상 탐지 ────────────────────────────────────────────
         if intent == "CONTRACT_ANOMALY_DETECTION":

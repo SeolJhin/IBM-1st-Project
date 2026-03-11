@@ -34,6 +34,26 @@ public class Complain extends BaseTimeEntity {
             columnDefinition = "ENUM('received','in_progress','resolved') DEFAULT 'received'")
     private ComplainStatus compSt;
 
+    /**
+     * AI가 분류한 민원 중요도
+     * high   : 긴급 (화재/누수/폭력 등) → 관리자 즉시 알림
+     * medium : 일반 수리/불편 민원
+     * low    : 단순 문의/건의
+     * null   : AI 분류 전 상태
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "importance",
+            columnDefinition = "ENUM('high','medium','low') NULL COMMENT 'AI 분류 중요도'")
+    private ComplainImportance importance;
+
+    /**
+     * AI가 중요도를 판단한 근거 (관리자 참고용)
+     * 예: "천장 누수 + 감전 위험 키워드 감지 → 즉각 대응 필요"
+     */
+    @Column(name = "ai_reason", length = 500,
+            columnDefinition = "VARCHAR(500) NULL COMMENT 'AI 분류 근거'")
+    private String aiReason;
+
     /** FK -> common_code(code) */
     @Column(name = "code", nullable = false, length = 20)
     private String code;
@@ -43,15 +63,6 @@ public class Complain extends BaseTimeEntity {
 
     @Column(name = "reply_ck", columnDefinition = "CHAR(1) DEFAULT 'N'")
     private String replyCk;
-
-    /** AI 분류 중요도: high / medium / low */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "importance")
-    private ComplainImportance importance;
-
-    /** AI 분류 근거 */
-    @Column(name = "ai_reason", length = 500)
-    private String aiReason;
 
     @PrePersist
     public void prePersist() {
@@ -77,8 +88,8 @@ public class Complain extends BaseTimeEntity {
         else this.compSt = ComplainStatus.resolved;
     }
 
-    /** AI 분류 결과 저장 */
-    public void updateAiResult(ComplainImportance importance, String aiReason) {
+    /** AI 분류 결과 저장 - 민원 등록 후 비동기로 호출됨 */
+    public void applyAiClassification(ComplainImportance importance, String aiReason) {
         this.importance = importance;
         this.aiReason = aiReason;
     }

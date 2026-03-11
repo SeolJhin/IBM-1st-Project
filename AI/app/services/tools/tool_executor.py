@@ -23,7 +23,7 @@ def execute_tool(tool_name: str, tool_args: dict, user_id: str | None = None) ->
     payload = {
         "tool":    tool_name,
         "args":    tool_args,
-        "user_id": user_id,
+        "userId":  user_id,
     }
 
     base_url = settings.spring_base_url

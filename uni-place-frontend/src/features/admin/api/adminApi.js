@@ -251,7 +251,9 @@ export const adminApi = {
     return request(`/admin/users?${q.toString()}`, { auth: true });
   },
   userCountByRole: async (role) => {
-    const normalizedRole = String(role ?? '').trim().toLowerCase();
+    const normalizedRole = String(role ?? '')
+      .trim()
+      .toLowerCase();
     const query =
       !normalizedRole || normalizedRole === 'all'
         ? buildQuery({
@@ -267,10 +269,7 @@ export const adminApi = {
             direct: 'DESC',
             role: normalizedRole,
           });
-    const payload = await request(
-      `/admin/users${query}`,
-      { auth: true }
-    );
+    const payload = await request(`/admin/users${query}`, { auth: true });
     return extractTotalCount(payload);
   },
   getUserDetail: (userId) => request(`/admin/users/${userId}`, { auth: true }),
@@ -725,4 +724,11 @@ export const adminApi = {
   getFaqDetail: (faqId) => request(`/faqs/${faqId}`, { auth: true }),
   getNoticeDetail: (noticeId) =>
     request(`/notices/${noticeId}`, { auth: true }),
+
+  // AI 방 추천 수동 갱신
+  refreshRoomRecommendations: () =>
+    request('/admin/rooms/recommendations/refresh', {
+      method: 'POST',
+      auth: true,
+    }),
 };
