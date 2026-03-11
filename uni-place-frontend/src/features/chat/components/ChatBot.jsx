@@ -50,6 +50,9 @@ function ActionButtons({ buttons, onModalRoute }) {
               } else if (MODAL_ROUTES[pathOnly] && onModalRoute) {
                 // 챗봇 내 모달로 처리할 라우트
                 onModalRoute(MODAL_ROUTES[pathOnly]);
+              } else if (pathOnly === '/spaces') {
+                // 공용시설 목록 → /rooms 페이지의 공용공간 탭으로 이동
+                navigate('/rooms', { state: { tab: 'spaces' } });
               } else {
                 navigate(normalizedUrl);
               }

@@ -26,7 +26,7 @@ export const GROQ_TEMPERATURE = 0.7;
 export const GROQ_MAX_TOKENS = 1024;
 
 // ── 대화 히스토리 설정 ────────────────────────────────────────
-export const HISTORY_WINDOW = 10; // AI에게 전달하는 최근 대화 수
+export const HISTORY_WINDOW = 5; // AI에게 전달하는 최근 대화 수 (토큰 절감: 10→5턴)
 export const HISTORY_STORAGE_KEY = 'uniplace_chat_history';
 
 // ── 역할별 대화 보존 기간 (일) ───────────────────────────────
