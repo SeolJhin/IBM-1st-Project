@@ -70,6 +70,7 @@ public class AiGatewayImpl implements AiGateway {
             case PAYMENT_SUMMARY_DOCUMENT     -> properties.getPaymentSummaryDocumentPath();
             case PAYMENT_STATUS_SUMMARY       -> properties.getPaymentStatusSummaryPath();
             case PAYMENT_ORDER_SUGGESTION     -> properties.getPaymentOrderSuggestionPath();
+            case PAYMENT_ORDER_FORM_CREATE    -> properties.getPaymentOrderFormCreatePath();
             case ROOMSERVICE_STOCK_MONITOR    -> properties.getRoomserviceStockMonitorPath();
             case COMPLAIN_PRIORITY_CLASSIFY   -> properties.getComplainPriorityClassifyPath();
             // ✅ 추가

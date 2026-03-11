@@ -53,6 +53,9 @@ class Settings(BaseSettings):
 
     # ── 문서 출력 ─────────────────────────────────────────────────
     document_output_dir: str = str(BASE_DIR / "output_docs")
+    payment_input_dir: str = str(BASE_DIR / "data" / "payments" / "raw")
+    payment_order_template_path: str = str(BASE_DIR / "data" / "payments" / "raw" / "purchase_order_form.xlsx")
+    payment_order_output_dir: str = str(BASE_DIR / "output_docs" / "order_forms")
 
     # ── 음성 ──────────────────────────────────────────────────────
     voice_input_dir: str = str(BASE_DIR / "voice_input")

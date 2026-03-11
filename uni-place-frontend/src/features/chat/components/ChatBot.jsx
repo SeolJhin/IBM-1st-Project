@@ -20,8 +20,9 @@ function formatTime(ts) {
   });
 }
 
-function MessageBubble({ msg, onSpeak }) {
+function MessageBubble({ msg, onSpeak, onAction }) {
   var isUser = msg.role === 'user';
+  var actions = Array.isArray(msg.actions) ? msg.actions : [];
   return (
     <div className={isUser ? styles.rowUser : styles.rowAssistant}>
       {!isUser && <div className={styles.bubbleAvatar}>🤖</div>}
@@ -29,6 +30,23 @@ function MessageBubble({ msg, onSpeak }) {
         <div className={isUser ? styles.bubbleUser : styles.bubbleAssistant}>
           {msg.content}
         </div>
+        {!isUser && actions.length > 0 && (
+          <div className={styles.actionRow}>
+            {actions.map(function (action, index) {
+              return (
+                <button
+                  key={action.type + '-' + index}
+                  className={styles.actionBtn}
+                  onClick={function () {
+                    if (onAction) onAction(msg, action);
+                  }}
+                >
+                  {action.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className={styles.bubbleTime}>
           {formatTime(msg.ts)}
           {!isUser && onSpeak && (
@@ -112,6 +130,7 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
   var setVoiceMode = chat.setVoiceMode;
   var exitMode = chat.exitMode;
   var speakMessage = chat.speakMessage;
+  var handleAction = chat.handleAction;
 
   React.useEffect(
     function () {
@@ -268,6 +287,7 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
                     key={msg.ts + '-' + i}
                     msg={msg}
                     onSpeak={!isBlind ? speakMessage : null}
+                    onAction={handleAction}
                   />
                 );
               })
