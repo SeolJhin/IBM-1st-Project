@@ -163,6 +163,26 @@ def complaint_priority(payload: Dict[str, Any] = Body(...)):
 
 @router.post("/operations/room-recommendation")
 def room_recommendation(payload: Dict[str, Any] = Body(...)):
+    """
+    Java RoomRecommendAiClient 전용 엔드포인트.
+
+    Java 요청:
+        {
+          "rooms": [
+            {"roomId": 1, "roomNo": 101, "buildingNm": "...",
+             "roomType": "one_room", "rentPrice": 500000,
+             "avgRating": 4.3, "reviewCount": 12, "contractCount": 8},
+            ...
+          ]
+        }
+
+    Java 기대 응답 (List<RoomRecommendationResponse>):
+        [
+          {"roomId": 1, "reason": "...", "score": 92.5},
+          {"roomId": 3, "reason": "...", "score": 88.0},
+          {"roomId": 5, "reason": "...", "score": 81.5}
+        ]
+    """
     try:
         from app.ai.room_recommend import recommend_rooms
         import asyncio
