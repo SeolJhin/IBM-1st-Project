@@ -1,6 +1,6 @@
 // features/community/pages/MyPosts.jsx
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { communityApi } from '../api/communityApi';
 import { reviewApi } from '../../review/api/reviewApi';
 import ReviewModal from '../../review/components/ReviewModal';
@@ -28,9 +28,14 @@ function Stars({ value = 0 }) {
 
 export default function MyPosts() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   // 탭: 'boards' | 'replies' | 'reviews'
-  const [tab, setTab] = useState('boards');
+  // URL ?postTab=reviews 로 직접 진입 지원 (AI 챗봇 내 리뷰 버튼용)
+  const [tab, setTab] = useState(() => {
+    const pt = searchParams.get('postTab');
+    return ['boards', 'replies', 'reviews'].includes(pt) ? pt : 'boards';
+  });
   const [category, setCategory] = useState('ALL');
   const [page, setPage] = useState(1);
 
