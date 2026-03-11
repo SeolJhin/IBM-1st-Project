@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     spring_base_url: str = "http://localhost:8080"
 
     # ── Milvus (RAG 벡터DB) ───────────────────────────────────────
-    milvus_uri: str = ""
+    milvus_uri: str = "http://localhost:19530"
     milvus_token: str = ""
     milvus_db_name: str = "default"
     milvus_collection: str = "uniplace_knowledge"
