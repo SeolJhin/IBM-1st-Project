@@ -82,6 +82,7 @@ public class AiGatewayImpl implements AiGateway {
             case MY_RESERVATION  -> properties.getMyReservationPath();
             case MY_TOUR         -> properties.getMyTourPath();
             case MY_COMPLAIN     -> properties.getMyComplainPath();
+            case ADMIN_CHATBOT   -> properties.getAdminChatbotPath();
             default -> properties.getExecutePath();
         };
     }

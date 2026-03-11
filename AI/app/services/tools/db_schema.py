@@ -7,180 +7,39 @@ Text-to-SQL에서 LLM이 올바른 SQL을 생성하려면
 """
 
 DB_SCHEMA = """
-[UNI PLACE 데이터베이스 스키마]
+[UNI PLACE DB 스키마]
+⚠️ 테이블명 정확히 사용. building(단수)·rooms(복수) 혼용 주의.
 
-⚠️ 반드시 아래의 정확한 테이블명을 사용하세요. 임의로 변경하지 마세요.
+== 공개 테이블 ==
+▶ building: building_id(PK) building_nm building_addr build_size exist_elv(Y/N) parking_capacity delete_yn
+▶ rooms: room_id(PK) room_no building_id(FK) floor room_size room_type(one_room/two_room/three_room/loft/share) pet_allowed_yn(Y/N) deposit rent_price manage_fee rent_type(monthly_rent/stay) room_st(available/reserved/contracted/repair/cleaning) room_capacity room_options delete_yn
+  room_options: 영문 저장(aircon,desk,refrigerator,washer,bed,wardrobe,microwave,TV)
+  ⚠️ LIKE 검색: (r.room_options LIKE '%에어컨%' OR r.room_options LIKE '%aircon%') 형태
+▶ reviews: review_id(PK) user_id room_id(FK) rating(1~5) review_title review_ctnt read_count like_count created_at
+▶ common_space: space_id(PK) space_nm building_id(FK) space_capacity space_floor space_options space_desc
+▶ room_reservation: tour_id(PK) building_id(FK) room_id(FK) tour_start_at tour_end_at tour_nm tour_tel tour_st(pending/confirmed/cancelled/completed/ended/no_show) created_at
+  ⚠️ user_id 컬럼 없음 → query_my_data 사용 불가
+▶ board: board_id(PK) board_title user_id board_ctnt read_count code created_at anonymity(Y/N)
+▶ notice: notice_id(PK) notice_title notice_ctnt notice_st(active/inactive) read_count created_at
+▶ faq: faq_id(PK) faq_title faq_ctnt is_active(1/0) created_at
+▶ company_info: company_info_id(PK) company_nm company_ceo company_tel company_email company_addr
+▶ product_building_stock: stock_id(PK) building_id(FK) prod_nm prod_stock updated_at
 
-== 공개 조회 가능 테이블 ==
+== 로그인 필요 테이블 (query_my_data + WHERE user_id=\'{{user_id}}\' 필수) ==
+▶ contract: contract_id(PK) user_id room_id(FK) contract_start contract_end deposit rent_price manage_fee payment_day contract_st(requested/approved/active/ended/cancelled)
+▶ space_reservations: reservation_id(PK) user_id building_id(FK) space_id(FK) sr_start_at sr_end_at sr_no_people sr_st(requested/confirmed/cancelled)
+▶ complain: comp_id(PK) user_id comp_title comp_ctnt comp_st(pending/received/in_progress/resolved/closed) importance(high/medium/low) ai_reason reply_ck created_at
+▶ payment: payment_id(PK) user_id total_price captured_price payment_st(ready/paid/cancelled/pending/disputed) provider paid_at created_at
 
-▶ building (빌딩)
-  - building_id       INT PK
-  - building_nm       VARCHAR(50)   빌딩명
-  - building_addr     VARCHAR(500)  주소
-  - building_desc     VARCHAR(500)  설명
-  - build_size        DECIMAL(5,2)  규모(㎡)
-  - building_usage    VARCHAR(20)   용도
-  - exist_elv         CHAR(1)       엘리베이터 여부 ('Y'/'N')
-  - parking_capacity  INT           주차 가능 대수
-  - delete_yn         CHAR(1)       논리 삭제 여부 ('N'=정상, 'Y'=삭제) ← 반드시 WHERE delete_yn='N' 포함
+[빌딩명] 한글→영문 변환 필수 (DB는 영문 저장)
+  유니플레이스/유니플A → Uniplace A | 유니플B → Uniplace B | 유니플C → Uniplace C
+  검색: WHERE b.building_nm LIKE '%Uniplace A%'
 
-▶ rooms (방)
-  - room_id           INT PK
-  - room_no           INT           호수
-  - building_id       INT FK → building.building_id
-  - floor             INT           층
-  - room_size         DECIMAL(5,2)  면적(㎡)
-  - room_type         ENUM          one_room / two_room / three_room / loft / share
-  - pet_allowed_yn    ENUM          Y / N
-  - deposit           DECIMAL(12,0) 보증금(원)
-  - rent_price        DECIMAL(12,0) 월세(원)
-  - manage_fee        DECIMAL(12,0) 관리비(원)
-  - rent_type         ENUM          monthly_rent / stay
-  - room_st           ENUM          available / reserved / contracted / repair / cleaning
-  - room_capacity     INT           수용 인원
-  - room_options      VARCHAR(500)  옵션 목록 (영문 쉼표 구분, 예: aircon,desk,refrigerator)
-    저장 예시: "냉장고,에어컨,세탁기,침대,책상,옷장,전자레인지,인터넷,TV"
-    ※ 반드시 영문으로 LIKE 검색: WHERE r.room_options LIKE '%aircon%'  (에어컨→aircon, 냉장고→refrigerator 등)
-    ※ 영문 입력 시 한글로 변환: aircon→에어컨, fridge→냉장고, washer→세탁기,
-       bed→침대, desk→책상, closet→옷장, microwave→전자레인지, TV→TV
-  - delete_yn         CHAR(1)       논리 삭제 여부 ('N'=정상, 'Y'=삭제) ← 반드시 WHERE delete_yn='N' 포함
-
-▶ reviews (리뷰)
-  - review_id         INT PK
-  - user_id           VARCHAR(50)   작성자
-  - room_id           INT FK → rooms.room_id
-  - rating            INT           별점 (1~5)
-  - review_title      VARCHAR(100)  제목
-  - review_ctnt       VARCHAR(3000) 내용
-  - read_count        INT           조회수
-  - like_count        INT           좋아요 수
-  - created_at        DATETIME
-
-▶ common_space (공용 시설)
-  - space_id          INT PK
-  - space_nm          VARCHAR(50)   시설명 (헬스장, 회의실 등)
-  - building_id       INT FK → building.building_id
-  - space_capacity    INT           수용 인원
-  - space_floor       INT           층
-  - space_options     VARCHAR(500)  옵션
-  - space_desc        VARCHAR(3000) 설명
-
-▶ room_reservation (투어 예약)
-  - tour_id           INT PK
-  - building_id       INT FK → building.building_id
-  - room_id           INT FK → rooms.room_id
-  - tour_start_at     DATETIME      투어 시작
-  - tour_end_at       DATETIME      투어 종료
-  - tour_nm           VARCHAR(50)   예약자명
-  - tour_tel          VARCHAR(20)   전화번호
-  - tour_st           ENUM          pending / confirmed / cancelled / completed / ended / no_show
-  - created_at        DATETIME
-
-▶ board (커뮤니티 게시글)
-  - board_id          INT PK
-  - board_title       VARCHAR(300)  제목
-  - user_id           VARCHAR(50)
-  - board_ctnt        LONGTEXT      내용
-  - read_count        INT
-  - code              VARCHAR(20)   카테고리 코드
-  - created_at        DATETIME
-  - anonymity         CHAR(1)       익명 여부 ('Y'/'N')
-
-▶ notice (공지사항)
-  - notice_id         INT PK
-  - notice_title      VARCHAR(100)  제목
-  - notice_ctnt       VARCHAR(3000) 내용
-  - notice_st         ENUM          active / inactive
-  - read_count        INT
-  - created_at        DATETIME
-
-▶ faq (자주 묻는 질문)
-  - faq_id            INT PK
-  - faq_title         VARCHAR(100)  질문
-  - faq_ctnt          VARCHAR(3000) 답변
-  - is_active         INT           1=활성, 0=비활성
-  - created_at        DATETIME
-
-▶ company_info (회사 정보)
-  - company_info_id   INT PK
-  - company_nm        VARCHAR(100)  회사명
-  - company_ceo       VARCHAR(50)   대표자
-  - company_tel       VARCHAR(20)   전화번호
-  - company_email     VARCHAR(100)  이메일
-  - company_addr      VARCHAR(200)  주소
-
-== 로그인 필요 테이블 ==
-
-▶ contract (계약) — user_id 필터 필수
-  - contract_id       INT PK
-  - user_id           VARCHAR(50) FK → user
-  - room_id           INT FK → rooms.room_id
-  - contract_start    DATE          계약 시작일
-  - contract_end      DATE          계약 종료일
-  - deposit           DECIMAL(12,0) 보증금
-  - rent_price        DECIMAL(12,0) 월세
-  - manage_fee        DECIMAL(12,0) 관리비
-  - payment_day       INT           납부일
-  - contract_st       ENUM          requested / approved / active / ended / cancelled
-
-▶ space_reservations (공용 시설 예약) — user_id 필터 필수
-  - reservation_id    INT PK
-  - user_id           VARCHAR(50) FK
-  - building_id       INT FK → building.building_id
-  - space_id          INT FK → common_space.space_id
-  - sr_start_at       DATETIME
-  - sr_end_at         DATETIME
-  - sr_no_people      INT
-  - sr_st             ENUM          requested / confirmed / cancelled
-
-▶ complain (민원) — user_id 필터 필수
-  - comp_id           INT PK
-  - user_id           VARCHAR(50)
-  - comp_title        VARCHAR(300)  제목
-  - comp_ctnt         VARCHAR(3000) 내용
-  - comp_st           ENUM          pending / received / in_progress / resolved / closed
-  - importance        ENUM          high / medium / low
-  - ai_reason         VARCHAR(500)  AI 분석 결과
-  - reply_ck          CHAR(1)       답변 여부
-  - created_at        DATETIME
-
-▶ payment (결제) — user_id 필터 필수
-  - payment_id        INT PK
-  - user_id           VARCHAR(50)
-  - total_price       DECIMAL(12,0) 결제 금액
-  - captured_price    DECIMAL(12,0) 실 결제 금액
-  - payment_st        VARCHAR(20)   ready / paid / cancelled / pending / disputed
-  - provider          VARCHAR(20)   결제 수단
-  - paid_at           DATETIME
-  - created_at        DATETIME
-
-▶ product_building_stock (룸서비스 재고)
-  - stock_id          INT PK
-  - building_id       INT FK → building.building_id
-  - prod_nm           VARCHAR(100)  상품명
-  - prod_stock        INT           재고 수량
-  - updated_at        DATETIME
-
-[빌딩명 한글↔영문 대응표]
-⚠️ DB에는 영문명으로 저장되어 있습니다. 사용자가 한글로 입력해도 반드시 아래 영문명으로 SQL을 작성하세요.
-  유니플레이스     → Uniplace
-  유니플레이스a / 유니플레이스 A / 유니플A  → Uniplace A
-  유니플레이스b / 유니플레이스 B / 유니플B  → Uniplace B
-  유니플레이스c / 유니플레이스 C / 유니플C  → Uniplace C
-예시: 사용자가 "유니플레이스A" 라고 하면 → WHERE b.building_nm LIKE '%Uniplace A%'
-
-[JOIN 예시]
-- 빌딩별 방 목록: SELECT r.* FROM rooms r JOIN building b ON r.building_id = b.building_id WHERE b.building_nm LIKE '%Uniplace B%' AND b.delete_yn = 'N' AND r.delete_yn = 'N'
-- 방 개수: SELECT COUNT(*) FROM rooms r JOIN building b ON r.building_id = b.building_id WHERE b.building_nm LIKE '%Uniplace A%' AND b.delete_yn = 'N' AND r.delete_yn = 'N'
-- 리뷰 + 빌딩: SELECT rv.*, b.building_nm FROM reviews rv JOIN rooms r ON rv.room_id = r.room_id JOIN building b ON r.building_id = b.building_id WHERE b.delete_yn = 'N' AND r.delete_yn = 'N'
-
-[중요 규칙]
-- 빌딩명 검색은 반드시 LIKE '%영문명%' 사용 (한글 입력이어도 영문으로 변환 후 사용)
-- building 테이블 조회 시 반드시 AND b.delete_yn = 'N' 조건 포함 (논리 삭제 필터)
-- rooms 테이블 조회 시 반드시 AND r.delete_yn = 'N' 조건 포함 (논리 삭제 필터)
-- 로그인 필요 테이블(contract, space_reservations, complain, payment)은 반드시 WHERE user_id = '{user_id}' 포함
-- SELECT만 허용, INSERT/UPDATE/DELETE/DROP 절대 금지
-- 결과는 최대 50건 제한 (LIMIT 50)
+[핵심 규칙]
+- building/rooms: WHERE delete_yn=\'N\' 필수
+- 방 조회: SELECT r.room_id, r.room_no, r.floor, r.deposit, r.rent_price, r.manage_fee, r.room_options, b.building_nm FROM rooms r JOIN building b ON r.building_id=b.building_id WHERE r.delete_yn=\'N\' AND b.delete_yn=\'N\'
+- 로그인 테이블: WHERE user_id=\'{user_id}\' 필수
+- SELECT만 허용, LIMIT 50
 """
 
 # SQL 실행 허용 테이블 화이트리스트

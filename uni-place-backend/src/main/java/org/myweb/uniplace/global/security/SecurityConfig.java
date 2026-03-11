@@ -53,6 +53,8 @@ public class SecurityConfig {
                 .requestMatchers("/auth/check-nickname").permitAll()
                 .requestMatchers("/auth/oauth2/kakao/complete").permitAll()
                 .requestMatchers("/auth/oauth2/google/complete").permitAll()
+                // AI 엔드포인트: 어드민 챗봇은 ADMIN 전용, 나머지는 permitAll
+                .requestMatchers("/ai/chat/admin-chatbot").hasRole("ADMIN")
                 .requestMatchers("/ai/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/member/login").permitAll()
