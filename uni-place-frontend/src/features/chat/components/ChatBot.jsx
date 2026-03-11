@@ -33,6 +33,7 @@ var MODAL_ROUTES = {
 function ActionButtons({ buttons, onModalRoute }) {
   var navigate = useNavigate();
   if (!buttons || buttons.length === 0) return null;
+
   return (
     <div className={styles.actionButtons}>
       {buttons.map(function (btn, i) {
@@ -43,12 +44,11 @@ function ActionButtons({ buttons, onModalRoute }) {
             onClick={function () {
               if (!btn.url) return;
               var normalizedUrl = btn.url.trim().replace(/\/$/, '');
-              // ?query 제거한 경로만으로 모달 여부 판단
               var pathOnly = normalizedUrl.split('?')[0];
+
               if (normalizedUrl.startsWith('http')) {
                 window.open(normalizedUrl, '_blank');
               } else if (MODAL_ROUTES[pathOnly] && onModalRoute) {
-                // 챗봇 내 모달로 처리할 라우트
                 onModalRoute(MODAL_ROUTES[pathOnly]);
               } else if (pathOnly === '/spaces') {
                 // 공용시설 목록 → /rooms 페이지의 공용공간 탭으로 이동
@@ -58,9 +58,7 @@ function ActionButtons({ buttons, onModalRoute }) {
               }
             }}
           >
-            {btn.icon && (
-              <span className={styles.actionBtnIcon}>{btn.icon}</span>
-            )}
+            {btn.icon && <span className={styles.actionBtnIcon}>{btn.icon}</span>}
             {btn.label}
           </button>
         );
@@ -69,8 +67,9 @@ function ActionButtons({ buttons, onModalRoute }) {
   );
 }
 
-function MessageBubble({ msg, onSpeak, onModalRoute }) {
+function MessageBubble({ msg, onSpeak, onAction, onModalRoute }) {
   var isUser = msg.role === 'user';
+  var actions = Array.isArray(msg.actions) ? msg.actions : [];
   return (
     <div className={isUser ? styles.rowUser : styles.rowAssistant}>
       {!isUser && <div className={styles.bubbleAvatar}>🤖</div>}
@@ -78,8 +77,27 @@ function MessageBubble({ msg, onSpeak, onModalRoute }) {
         <div className={isUser ? styles.bubbleUser : styles.bubbleAssistant}>
           {msg.content}
         </div>
-        {!isUser && msg.buttons && msg.buttons.length > 0 && (
-          <ActionButtons buttons={msg.buttons} onModalRoute={onModalRoute} />
+        {!isUser && (actions.length > 0 || (msg.buttons && msg.buttons.length > 0)) && (
+          <div className={styles.actionRow}>
+            {actions.length > 0 &&
+              actions.map(function (action, index) {
+                return (
+                  <button
+                    key={(action.type || 'action') + '-' + index}
+                    className={styles.actionBtn}
+                    onClick={function () {
+                      if (onAction) onAction(msg, action);
+                    }}
+                  >
+                    {action.label}
+                  </button>
+                );
+              })}
+
+            {msg.buttons && msg.buttons.length > 0 && (
+              <ActionButtons buttons={msg.buttons} onModalRoute={onModalRoute} />
+            )}
+          </div>
         )}
         <div className={styles.bubbleTime}>
           {formatTime(msg.ts)}
@@ -170,6 +188,7 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
   var setVoiceMode = chat.setVoiceMode;
   var exitMode = chat.exitMode;
   var speakMessage = chat.speakMessage;
+  var handleAction = chat.handleAction;
 
   React.useEffect(
     function () {
@@ -326,11 +345,13 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
                     key={msg.ts + '-' + i}
                     msg={msg}
                     onSpeak={!isBlind ? speakMessage : null}
+
+                    onAction={handleAction}
                     onModalRoute={function (routeKey) {
                       if (routeKey === 'tour_create') setTourModalOpen(true);
-                      else if (routeKey === 'tour_list')
-                        setTourListModalOpen(true);
+                      else if (routeKey === 'tour_list') setTourListModalOpen(true);
                     }}
+
                   />
                 );
               })

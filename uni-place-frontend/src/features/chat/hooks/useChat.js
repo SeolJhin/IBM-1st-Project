@@ -1,4 +1,4 @@
-﻿/* eslint-disable react-hooks/exhaustive-deps, no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps, no-unused-vars */
 // src/features/chat/hooks/useChat.js
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
@@ -7,6 +7,7 @@ import {
   clearHistory,
   sendToGemini,
   sendToBackend,
+  createOrderForm,
   SYSTEM_PROMPT,
 } from '../api/chatApi';
 import { HISTORY_WINDOW } from '../config/chatConfig';
@@ -54,6 +55,38 @@ export function useChat(params) {
   var activeMode = useRef(null);
   var isSendingRef = useRef(false); // 중복 전송 방지
   var messagesRef = useRef([]); // 항상 최신 messages를 ref로 유지 (클로저 버그 방지)
+
+  function normalizeBackendResult(result) {
+    if (typeof result === 'string') {
+      return { answer: result, metadata: {} };
+    }
+    if (!result || typeof result !== 'object') {
+      return { answer: '응답을 받지 못했습니다.', metadata: {} };
+    }
+    return {
+      answer: result.answer || '응답을 받지 못했습니다.',
+      metadata: result.metadata || {},
+    };
+  }
+
+  function buildActions(metadata) {
+    if (!metadata || typeof metadata !== 'object') return [];
+    var actions = [];
+    if (Array.isArray(metadata.suggestions) && metadata.suggestions.length > 0) {
+      actions.push({
+        type: 'create_order_form',
+        label: '발주서 제작하기',
+      });
+    }
+    if (metadata.file_name) {
+      actions.push({
+        type: 'download_order_form',
+        label: '발주서 다운로드',
+        fileName: metadata.file_name,
+      });
+    }
+    return actions;
+  }
 
   useEffect(
     function () {
@@ -243,11 +276,9 @@ export function useChat(params) {
 
     promise
       .then(function (result) {
-        // sendToBackend는 {answer, buttons} 반환, sendToGemini는 문자열 반환
-        var answer =
-          typeof result === 'object' && result !== null
-            ? result.answer
-            : result;
+
+       var normalized = normalizeBackendResult(result);
+        var actions = buildActions(normalized.metadata);
         var buttons =
           typeof result === 'object' && result !== null
             ? result.buttons || []
@@ -258,9 +289,13 @@ export function useChat(params) {
           return prev.concat([
             {
               role: 'assistant',
-              content: answer,
+
+              content: normalized.answer,
               buttons: buttons,
               ts: Date.now(),
+              metadata: normalized.metadata,
+              actions: actions,
+
             },
           ]);
         });
@@ -269,7 +304,7 @@ export function useChat(params) {
 
         if (currentMode === 'blind') {
           // 시각장애인 모드: TTS 자동 → 끝나면 재시작
-          speakText(answer, 1.4, function () {
+          speakText(normalized.answer, 1.4, function () {
             if (activeMode.current === 'blind') {
               setTimeout(function () {
                 startListening('blind');
@@ -343,6 +378,63 @@ export function useChat(params) {
     [userId]
   );
 
+  var handleAction = useCallback(
+    function (msg, action) {
+      if (!action || !msg || msg.role !== 'assistant') return;
+      if (action.type === 'download_order_form' && action.fileName) {
+        window.open(
+          '/ai/payment/order-form/download/' + encodeURIComponent(action.fileName),
+          '_blank'
+        );
+        return;
+      }
+
+      if (action.type === 'create_order_form') {
+        var metadata = msg.metadata || {};
+        var approvedItems = Array.isArray(metadata.suggestions)
+          ? metadata.suggestions
+          : [];
+        if (!approvedItems.length) return;
+
+        setLoading(true);
+        createOrderForm(
+          {
+            buildingId: metadata.building_id || null,
+            month: metadata.month || null,
+            approvedItems: approvedItems,
+          },
+          userId
+        )
+          .then(function (result) {
+            var normalized = normalizeBackendResult(result);
+            var buttons =
+              typeof result === 'object' && result !== null
+                ? result.buttons || []
+                : [];
+          
+            setMessages(function (prev) {
+              return prev.concat([
+                {
+                  role: 'assistant',
+                  content: normalized.answer,
+                  buttons: buttons,
+                  ts: Date.now(),
+                  metadata: normalized.metadata,
+                  actions: buildActions(normalized.metadata),
+                },
+              ]);
+            });
+            setLoading(false);
+          })
+          .catch(function (e) {
+            setError(e && e.message ? e.message : '발주서 생성 중 오류가 발생했습니다.');
+            setLoading(false);
+          });
+      }
+    },
+    [userId]
+  );
+
   return {
     messages: messages,
     input: input,
@@ -358,5 +450,6 @@ export function useChat(params) {
     setVoiceMode: setVoiceMode,
     exitMode: exitMode,
     speakMessage: speakMessage,
+    handleAction: handleAction,
   };
 }

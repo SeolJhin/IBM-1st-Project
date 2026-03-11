@@ -8,8 +8,9 @@ from pathlib import Path
 import tempfile
 
 from fastapi import APIRouter, Body, File, Form, UploadFile, HTTPException
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, FileResponse
 
+from app.config.settings import settings
 from app.api.v1.executor import ERROR_RESPONSES, execute_ai_request, parse_ai_request
 from app.schemas.ai_request import AiRequest
 from app.schemas.ai_response import AiResponse
@@ -122,6 +123,32 @@ def payment_status(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONResp
 def payment_order_suggest(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONResponse:
     _set_intent(payload, "PAYMENT_ORDER_SUGGESTION")
     return _run(payload)
+
+
+@router.post("/payments/order-forms", response_model=AiResponse, responses=ERROR_RESPONSES)
+def payment_order_form(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONResponse:
+    _set_intent(payload, "PAYMENT_ORDER_FORM_CREATE")
+    return _run(payload)
+
+
+@router.get("/payments/order-forms/downloads/{file_name}", responses=ERROR_RESPONSES)
+def download_payment_order_form(file_name: str) -> FileResponse:
+    safe_name = Path(file_name).name
+    if safe_name != file_name or not safe_name.lower().endswith(".xlsx"):
+        raise HTTPException(400, "Invalid file name")
+
+    base_dir = Path(settings.payment_order_output_dir).resolve()
+    target = (base_dir / safe_name).resolve()
+    if base_dir not in target.parents:
+        raise HTTPException(400, "Invalid file path")
+    if not target.exists() or not target.is_file():
+        raise HTTPException(404, "File not found")
+
+    return FileResponse(
+        path=target,
+        filename=safe_name,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 # ── operations ────────────────────────────────────────────────────────────────
 @router.post("/operations/roomservice-stock-monitoring", response_model=AiResponse, responses=ERROR_RESPONSES)
