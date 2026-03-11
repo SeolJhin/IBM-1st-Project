@@ -64,6 +64,10 @@ public class Complain extends BaseTimeEntity {
     @Column(name = "reply_ck", columnDefinition = "CHAR(1) DEFAULT 'N'")
     private String replyCk;
 
+    /** 관리자 답변 내용 */
+    @Column(name = "reply_ctnt", length = 2000)
+    private String replyCtnt;
+
     @PrePersist
     public void prePersist() {
         if (compSt == null) compSt = ComplainStatus.received;
@@ -81,9 +85,10 @@ public class Complain extends BaseTimeEntity {
         if (compCtnt != null) this.compCtnt = compCtnt;
     }
 
-    /** 관리자 답변 처리: reply_ck = 'Y', 상태 변경 */
-    public void markReplied(ComplainStatus compSt) {
+    /** 관리자 답변 처리: reply_ck = 'Y', 답변 내용 저장, 상태 변경 */
+    public void markReplied(ComplainStatus compSt, String replyCtnt) {
         this.replyCk = "Y";
+        if (replyCtnt != null && !replyCtnt.isBlank()) this.replyCtnt = replyCtnt;
         if (compSt != null) this.compSt = compSt;
         else this.compSt = ComplainStatus.resolved;
     }
