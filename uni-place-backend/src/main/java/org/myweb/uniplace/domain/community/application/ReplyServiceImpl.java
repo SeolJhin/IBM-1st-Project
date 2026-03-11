@@ -27,6 +27,7 @@ import org.myweb.uniplace.global.response.PageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.myweb.uniplace.domain.ai.application.moderation.BannedWordService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,6 +41,7 @@ public class ReplyServiceImpl implements ReplyService {
     private final ReplyLikeRepository replyLikeRepository;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final BannedWordService bannedWordService;
 
     
     @Override
@@ -103,7 +105,7 @@ public class ReplyServiceImpl implements ReplyService {
         Reply reply = Reply.builder()
             .boardId(boardId)
             .userId(userId)
-            .replyCtnt(request.getReplyCtnt())
+            .replyCtnt(bannedWordService.filter(request.getReplyCtnt()))
             .anonymity("Y".equalsIgnoreCase(request.getAnonymity()) ? "Y" : "N")
             .parentId(null)
             .replyLev(1)
@@ -143,7 +145,7 @@ public class ReplyServiceImpl implements ReplyService {
         Reply child = Reply.builder()
             .boardId(boardId)
             .userId(userId)
-            .replyCtnt(request.getReplyCtnt())
+            .replyCtnt(bannedWordService.filter(request.getReplyCtnt()))
             .anonymity("Y".equalsIgnoreCase(request.getAnonymity()) ? "Y" : "N")
             .parentId(parentId)
             .replyLev(2)
@@ -177,7 +179,7 @@ public class ReplyServiceImpl implements ReplyService {
         }
 
         if (request.getReplyCtnt() != null) {
-            reply.setReplyCtnt(request.getReplyCtnt());
+            reply.setReplyCtnt(bannedWordService.filter(request.getReplyCtnt()));
         }
         if (request.getAnonymity() != null) {
             reply.setAnonymity(request.getAnonymity());

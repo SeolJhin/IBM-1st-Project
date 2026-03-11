@@ -28,11 +28,14 @@ import org.myweb.uniplace.domain.ai.api.dto.response.RoomSearchResponse;
 import org.myweb.uniplace.domain.ai.application.AiOrchestratorService;
 import org.myweb.uniplace.domain.ai.application.gateway.dto.AiGatewayRequest;
 import org.myweb.uniplace.domain.ai.application.gateway.dto.AiGatewayResponse;
+import org.myweb.uniplace.domain.ai.domain.AiIntent;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
 @RequiredArgsConstructor
@@ -53,14 +56,7 @@ public class AiController {
                 .slots(request.getSlots())
                 .build()
         );
-
         return ApiResponse.ok(AiChatResponse.from(response));
-    }
-
-    @PostMapping("/contract/recommend")
-    public ApiResponse<ContractRecommendResponse> recommendContract(@RequestBody ContractRecommendRequest request) {
-        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
-        return ApiResponse.ok(ContractRecommendResponse.from(response));
     }
 
     @PostMapping("/chat/agent-chatbot")
@@ -73,6 +69,12 @@ public class AiController {
     public ApiResponse<AiChatResponse> voiceChatbot(@RequestBody VoiceChatbotRequest request) {
         AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
         return ApiResponse.ok(AiChatResponse.from(response));
+    }
+
+    @PostMapping("/contract/recommend")
+    public ApiResponse<ContractRecommendResponse> recommendContract(@RequestBody ContractRecommendRequest request) {
+        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+        return ApiResponse.ok(ContractRecommendResponse.from(response));
     }
 
     @PostMapping("/search/rag")
@@ -119,7 +121,18 @@ public class AiController {
 
     @PostMapping("/community/search")
     public ApiResponse<AiChatResponse> communitySearch(@RequestBody CommunityContentSearchRequest request) {
-        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = authentication.getName();
+
+        AiGatewayResponse response = aiOrchestratorService.handle(
+            AiGatewayRequest.builder()
+                .intent(request.getIntent())
+                .userId(userId)
+                .slots(objectMapper.convertValue(request, Map.class))
+                .build()
+        );
+
         return ApiResponse.ok(AiChatResponse.from(response));
     }
 
@@ -141,26 +154,34 @@ public class AiController {
         return ApiResponse.ok(AiChatResponse.from(response));
     }
 
-    private AiGatewayRequest toGateway(org.myweb.uniplace.domain.ai.domain.AiIntent intent, Object request) {
+    /**
+     * ✅ 핵심 수정: slots에서 prompt도 꺼내서 AiGatewayRequest.prompt에 세팅
+     * 기존: prompt = null → FastAPI에서 빈 질문으로 처리 → 에러
+     * 수정: slots.prompt → AiGatewayRequest.prompt로 승격
+     */
+    private AiGatewayRequest toGateway(AiIntent intent, Object request) {
         Map<String, Object> slots = objectMapper.convertValue(request, new TypeReference<>() { });
 
-        String userId = null;
-        Object maybeUserId = slots.get("userId");
-        if (maybeUserId instanceof String) {
-            userId = (String) maybeUserId;
-        }
+        String userId = extractString(slots, "userId");
+        String userSegment = extractString(slots, "userSegment");
 
-        String userSegment = null;
-        Object maybeSegment = slots.get("userSegment");
-        if (maybeSegment instanceof String) {
-            userSegment = (String) maybeSegment;
-        }
+        // ✅ prompt 추출 (slots에서 꺼내서 AiGatewayRequest.prompt에 세팅)
+        String prompt = extractString(slots, "prompt");
 
         return AiGatewayRequest.builder()
             .intent(intent)
             .userId(userId)
             .userSegment(userSegment)
+            .prompt(prompt)
             .slots(slots)
             .build();
+    }
+
+    private String extractString(Map<String, Object> slots, String key) {
+        Object value = slots.get(key);
+        if (value instanceof String str && !str.isBlank()) {
+            return str;
+        }
+        return null;
     }
 }

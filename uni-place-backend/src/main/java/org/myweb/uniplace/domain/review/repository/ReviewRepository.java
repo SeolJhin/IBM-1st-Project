@@ -36,4 +36,27 @@ public interface ReviewRepository extends JpaRepository<Review, Integer> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Review r set r.readCount = r.readCount + 1 where r.reviewId = :reviewId")
     void incrementReadCount(@Param("reviewId") int reviewId);
+
+    /**
+     * AI 챗봇용 필터 + 정렬 검색.
+     * - roomId, buildingNm, minRating, maxRating 조건 지원
+     * - Pageable 로 sort_by / sort_order / limit 제어
+     */
+    @Query("""
+        select r from Review r
+         join Room rm on rm.roomId = r.roomId
+         join rm.building b
+         where (:roomId     is null or r.roomId  = :roomId)
+           and (:minRating  is null or r.rating >= :minRating)
+           and (:maxRating  is null or r.rating <= :maxRating)
+           and (:buildingNm is null or :buildingNm = ''
+                or lower(b.buildingNm) like lower(concat('%', :buildingNm, '%')))
+    """)
+    Page<Review> searchWithFilters(
+            @Param("roomId")     Integer roomId,
+            @Param("minRating")  Integer minRating,
+            @Param("maxRating")  Integer maxRating,
+            @Param("buildingNm") String  buildingNm,
+            Pageable pageable
+    );
 }

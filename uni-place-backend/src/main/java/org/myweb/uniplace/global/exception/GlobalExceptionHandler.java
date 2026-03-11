@@ -88,7 +88,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnknown(Exception e) {
+    public ResponseEntity<ApiResponse<Void>> handleUnknown(Exception e) {    	
         return ResponseEntity
                 .status(ErrorCode.INTERNAL_ERROR.getStatus())
                 .body(ApiResponse.error(ErrorCode.INTERNAL_ERROR));

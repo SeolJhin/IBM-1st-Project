@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.myweb.uniplace.domain.ai.application.moderation.BannedWordService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,6 +34,7 @@ public class QnaServiceImpl implements QnaService {
     private final QnaRepository qnaRepository;
     private final CommonCodeRepository commonCodeRepository;
     private final NotificationService notificationService;
+    private final BannedWordService bannedWordService;
 
     // ────────────────────────── 조회 ──────────────────────────
 
@@ -96,9 +98,9 @@ public class QnaServiceImpl implements QnaService {
     public QnaResponse create(String userId, QnaCreateRequest request) {
         Qna qna = Qna.builder()
                 .parentId(request.getParentId())
-                .qnaTitle(request.getQnaTitle())
+                .qnaTitle(bannedWordService.filter(request.getQnaTitle()))
                 .userId(userId)
-                .qnaCtnt(request.getQnaCtnt())
+                .qnaCtnt(bannedWordService.filter(request.getQnaCtnt()))
                 .code(normalizeSupportCodeForWrite(request.getCode()))
                 .groupId(request.getGroupId())
                 .qnaLev(request.getQnaLev() != null ? request.getQnaLev() : 0)
@@ -123,7 +125,10 @@ public class QnaServiceImpl implements QnaService {
     public QnaResponse update(Integer qnaId, QnaUpdateRequest request) {
         Qna qna = qnaRepository.findById(qnaId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.QNA_NOT_FOUND));
-        qna.update(request.getQnaTitle(), request.getQnaCtnt());
+        String filteredTitle = bannedWordService.filter(request.getQnaTitle());
+        String filteredContent = bannedWordService.filter(request.getQnaCtnt());
+
+        qna.update(filteredTitle, filteredContent);
         return QnaResponse.from(qna);
     }
 

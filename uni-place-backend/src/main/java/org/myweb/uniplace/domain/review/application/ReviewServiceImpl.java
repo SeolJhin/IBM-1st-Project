@@ -29,6 +29,7 @@ import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
+import org.myweb.uniplace.domain.ai.application.moderation.BannedWordService;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -54,6 +55,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final FileService fileService;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final BannedWordService bannedWordService;
 
     // ─────────────────────────────────────────────────────────────────────
     // 조회
@@ -259,8 +261,8 @@ public class ReviewServiceImpl implements ReviewService {
                 .userId(userId)
                 .roomId(request.getRoomId())
                 .rating(request.getRating())
-                .reviewTitle(request.getReviewTitle())
-                .reviewCtnt(request.getReviewCtnt())
+                .reviewTitle(bannedWordService.filter(request.getReviewTitle()))
+                .reviewCtnt(bannedWordService.filter(request.getReviewCtnt()))
                 .code(request.getCode())
                 .build();
 
@@ -292,8 +294,11 @@ public class ReviewServiceImpl implements ReviewService {
         if (!me.equals(review.getUserId())) {
             throw new BusinessException(ErrorCode.REVIEW_ACCESS_DENIED);
         }
+        
+        String filteredTitle = bannedWordService.filter(request.getReviewTitle());
+        String filteredContent = bannedWordService.filter(request.getReviewCtnt());
 
-        review.update(request.getRating(), request.getReviewTitle(), request.getReviewCtnt(), request.getCode());
+        review.update(request.getRating(), filteredTitle, filteredContent, request.getCode());
 
         if (deleteFiles) {
             softDeleteAllFiles(reviewId);
