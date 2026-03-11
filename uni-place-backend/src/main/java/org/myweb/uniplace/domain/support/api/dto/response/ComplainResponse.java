@@ -33,6 +33,10 @@ public class ComplainResponse {
     private String code;
     private String fileCk;
     private String replyCk;
+
+    /** 관리자 답변 내용 */
+    private String replyCtnt;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -48,6 +52,7 @@ public class ComplainResponse {
                 .code(c.getCode())
                 .fileCk(c.getFileCk())
                 .replyCk(c.getReplyCk())
+                .replyCtnt(c.getReplyCtnt())
                 .createdAt(c.getCreatedAt())
                 .updatedAt(c.getUpdatedAt())
                 .build();
