@@ -1,78 +1,63 @@
 package org.myweb.uniplace.domain.support.infrastructure;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
+import org.myweb.uniplace.domain.support.domain.enums.ComplainImportance;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
-import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Python AI 서버 호출 클라이언트
- * POST /api/v1/ai/operations/complaint-priority-classification
- */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ComplainAiClient {
 
-    @Value("${ai.server.url:http://localhost:8000}")
-    private String aiServerUrl;
+    @Qualifier("aiRestClient")
+    private final RestClient aiRestClient;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private static final String ENDPOINT = "/api/v1/ai/operations/complaint-priority-classification";
 
-    public AiClassifyResult classify(Integer compId, String title, String content) {
-        String url = aiServerUrl + "/api/v1/ai/operations/complaint-priority-classification";
-
-        // Python ComplainPriorityClassifyRequest 형식에 맞게 전달
-        Map<String, Object> body = new HashMap<>();
-        body.put("compId", compId);
-        body.put("compTitle", title != null ? title : "");
-        body.put("compCtnt", content != null ? content : "");
-
+    public AiClassifyResult classify(String compTitle, String compCtnt) {
         try {
-            ResponseEntity<AiRawResponse> res =
-                    restTemplate.postForEntity(url, body, AiRawResponse.class);
+            Map<String, String> body = Map.of(
+                    "comp_title", compTitle != null ? compTitle : "",
+                    "comp_ctnt",  compCtnt  != null ? compCtnt  : ""
+            );
 
-            AiRawResponse raw = res.getBody();
-            if (raw == null) return null;
+            Map response = aiRestClient.post()
+                    .uri(ENDPOINT)
+                    .header("Content-Type", "application/json")
+                    .body(body)
+                    .retrieve()
+                    .body(Map.class);
 
-            // answer = "high"|"medium"|"low"
-            // metadata.ai_reason = 판단 근거
-            String importance = raw.getAnswer();
-            String aiReason = raw.getMetadata() != null
-                    ? (String) raw.getMetadata().get("ai_reason")
-                    : null;
+            if (response != null) {
+                String importanceStr = String.valueOf(response.getOrDefault("importance", "medium"));
 
-            return new AiClassifyResult(importance, aiReason);
+                // Python은 "ai_reason" 키로 반환
+                String reason = String.valueOf(response.getOrDefault("ai_reason",
+                                response.getOrDefault("reason", "")));
+
+                ComplainImportance importance;
+                try {
+                    importance = ComplainImportance.valueOf(importanceStr.toLowerCase());
+                } catch (IllegalArgumentException e) {
+                    log.warn("[AI][CLASSIFY] 알 수 없는 importance 값: {}", importanceStr);
+                    importance = ComplainImportance.medium;
+                }
+
+                log.info("[AI][CLASSIFY] 분류 완료 → importance={}, reason={}", importance, reason);
+                return new AiClassifyResult(importance, reason);
+            }
 
         } catch (Exception e) {
-            // AI 서버 오류여도 민원 등록은 정상 처리
-            log.warn("[ComplainAiClient] AI 분류 실패 compId={} error={}", compId, e.getMessage());
-            return null;
+            log.warn("[AI][CLASSIFY] AI 분류 실패 (민원 등록은 정상 처리됨): {}", e.getMessage());
         }
+
+        return null;
     }
 
-    // Python AiResponse 매핑용 내부 클래스
-    @Getter @Setter
-    public static class AiRawResponse {
-        private String answer;
-        private Double confidence;
-        private Map<String, Object> metadata;
-    }
-
-    // AI 분류 결과 반환용
-    @Getter
-    public static class AiClassifyResult {
-        private final String importance;  // "high" | "medium" | "low"
-        private final String aiReason;
-
-        public AiClassifyResult(String importance, String aiReason) {
-            this.importance = importance;
-            this.aiReason = aiReason;
-        }
-    }
+    public record AiClassifyResult(ComplainImportance importance, String reason) {}
 }

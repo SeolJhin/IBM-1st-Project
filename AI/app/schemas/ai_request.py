@@ -53,6 +53,13 @@ class AiRequest(BaseModel):
                 data["user_id"] = slots["userId"]
             if "userSegment" in slots and not data.get("user_segment") and not data.get("userSegment"):
                 data["user_segment"] = slots["userSegment"]
+            # slots.slots 중첩 구조에서도 userId 추출 (Spring toGateway 중첩 이슈)
+            nested_slots = slots.get("slots") or {}
+            if isinstance(nested_slots, dict):
+                if "userId" in nested_slots and not data.get("user_id") and not data.get("userId"):
+                    data["user_id"] = nested_slots["userId"]
+                if "userSegment" in nested_slots and not data.get("user_segment") and not data.get("userSegment"):
+                    data["user_segment"] = nested_slots["userSegment"]
 
         return data
 
@@ -87,7 +94,18 @@ class AiRequest(BaseModel):
         return parts[0] + "".join(p.capitalize() for p in parts[1:])
 
     def get_history(self) -> List[Dict[str, str]]:
-        return self.get_slot("history") or self.get_slot("conversationHistory") or []
+        # 1. 직접 slots["history"] 탐색
+        history = self.get_slot("history") or self.get_slot("conversationHistory")
+        if history:
+            return history
+        # 2. Spring toGateway() 에서 AiAgentChatbotRequest 전체를 slots로 변환하면
+        #    slots = { ..., "slots": { "history": [...] } } 처럼 중첩됨 → fallback 처리
+        nested = self.slots.get("slots")
+        if isinstance(nested, dict):
+            history = nested.get("history") or nested.get("conversationHistory")
+            if history:
+                return history
+        return []
 
     def get_language(self) -> str:
         return self.get_slot("language") or "ko"

@@ -665,3 +665,39 @@
     bottom: 20px;
   }
 }
+
+/* ── AI 링크 액션 버튼 ─────────────────────────────────── */
+.actionButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 13px;
+  background: #fff;
+  border: 1.5px solid #6c63ff;
+  border-radius: 18px;
+  color: #6c63ff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  white-space: nowrap;
+}
+
+.actionBtn:hover {
+  background: #6c63ff;
+  color: #fff;
+}
+
+.actionBtnIcon {
+  font-size: 14px;
+  line-height: 1;
+}

@@ -9,6 +9,8 @@ Text-to-SQL에서 LLM이 올바른 SQL을 생성하려면
 DB_SCHEMA = """
 [UNI PLACE 데이터베이스 스키마]
 
+⚠️ 반드시 아래의 정확한 테이블명을 사용하세요. 임의로 변경하지 마세요.
+
 == 공개 조회 가능 테이블 ==
 
 ▶ building (빌딩)
@@ -20,8 +22,9 @@ DB_SCHEMA = """
   - building_usage    VARCHAR(20)   용도
   - exist_elv         CHAR(1)       엘리베이터 여부 ('Y'/'N')
   - parking_capacity  INT           주차 가능 대수
+  - delete_yn         CHAR(1)       논리 삭제 여부 ('N'=정상, 'Y'=삭제) ← 반드시 WHERE delete_yn='N' 포함
 
-▶ room (방)
+▶ rooms (방)
   - room_id           INT PK
   - room_no           INT           호수
   - building_id       INT FK → building.building_id
@@ -35,12 +38,17 @@ DB_SCHEMA = """
   - rent_type         ENUM          monthly_rent / stay
   - room_st           ENUM          available / reserved / contracted / repair / cleaning
   - room_capacity     INT           수용 인원
-  - room_options      VARCHAR(500)  옵션 설명
+  - room_options      VARCHAR(500)  옵션 목록 (영문 쉼표 구분, 예: aircon,desk,refrigerator)
+    저장 예시: "냉장고,에어컨,세탁기,침대,책상,옷장,전자레인지,인터넷,TV"
+    ※ 반드시 영문으로 LIKE 검색: WHERE r.room_options LIKE '%aircon%'  (에어컨→aircon, 냉장고→refrigerator 등)
+    ※ 영문 입력 시 한글로 변환: aircon→에어컨, fridge→냉장고, washer→세탁기,
+       bed→침대, desk→책상, closet→옷장, microwave→전자레인지, TV→TV
+  - delete_yn         CHAR(1)       논리 삭제 여부 ('N'=정상, 'Y'=삭제) ← 반드시 WHERE delete_yn='N' 포함
 
-▶ review (리뷰)
+▶ reviews (리뷰)
   - review_id         INT PK
   - user_id           VARCHAR(50)   작성자
-  - room_id           INT FK → room.room_id
+  - room_id           INT FK → rooms.room_id
   - rating            INT           별점 (1~5)
   - review_title      VARCHAR(100)  제목
   - review_ctnt       VARCHAR(3000) 내용
@@ -57,10 +65,10 @@ DB_SCHEMA = """
   - space_options     VARCHAR(500)  옵션
   - space_desc        VARCHAR(3000) 설명
 
-▶ tour_reservation (투어 예약)
+▶ room_reservation (투어 예약)
   - tour_id           INT PK
   - building_id       INT FK → building.building_id
-  - room_id           INT FK → room.room_id
+  - room_id           INT FK → rooms.room_id
   - tour_start_at     DATETIME      투어 시작
   - tour_end_at       DATETIME      투어 종료
   - tour_nm           VARCHAR(50)   예약자명
@@ -106,7 +114,7 @@ DB_SCHEMA = """
 ▶ contract (계약) — user_id 필터 필수
   - contract_id       INT PK
   - user_id           VARCHAR(50) FK → user
-  - room_id           INT FK → room.room_id
+  - room_id           INT FK → rooms.room_id
   - contract_start    DATE          계약 시작일
   - contract_end      DATE          계약 종료일
   - deposit           DECIMAL(12,0) 보증금
@@ -115,7 +123,7 @@ DB_SCHEMA = """
   - payment_day       INT           납부일
   - contract_st       ENUM          requested / approved / active / ended / cancelled
 
-▶ space_reservation (공용 시설 예약) — user_id 필터 필수
+▶ space_reservations (공용 시설 예약) — user_id 필터 필수
   - reservation_id    INT PK
   - user_id           VARCHAR(50) FK
   - building_id       INT FK → building.building_id
@@ -153,14 +161,24 @@ DB_SCHEMA = """
   - prod_stock        INT           재고 수량
   - updated_at        DATETIME
 
+[빌딩명 한글↔영문 대응표]
+⚠️ DB에는 영문명으로 저장되어 있습니다. 사용자가 한글로 입력해도 반드시 아래 영문명으로 SQL을 작성하세요.
+  유니플레이스     → Uniplace
+  유니플레이스a / 유니플레이스 A / 유니플A  → Uniplace A
+  유니플레이스b / 유니플레이스 B / 유니플B  → Uniplace B
+  유니플레이스c / 유니플레이스 C / 유니플C  → Uniplace C
+예시: 사용자가 "유니플레이스A" 라고 하면 → WHERE b.building_nm LIKE '%Uniplace A%'
+
 [JOIN 예시]
-- 빌딩별 방 목록: SELECT r.* FROM room r JOIN building b ON r.building_id = b.building_id WHERE b.building_nm LIKE '%유니플레이스B%'
-- 방 개수: SELECT COUNT(*) FROM room r JOIN building b ON r.building_id = b.building_id WHERE b.building_nm LIKE '%이름%'
-- 리뷰 + 빌딩: SELECT rv.*, b.building_nm FROM review rv JOIN room r ON rv.room_id = r.room_id JOIN building b ON r.building_id = b.building_id
+- 빌딩별 방 목록: SELECT r.* FROM rooms r JOIN building b ON r.building_id = b.building_id WHERE b.building_nm LIKE '%Uniplace B%' AND b.delete_yn = 'N' AND r.delete_yn = 'N'
+- 방 개수: SELECT COUNT(*) FROM rooms r JOIN building b ON r.building_id = b.building_id WHERE b.building_nm LIKE '%Uniplace A%' AND b.delete_yn = 'N' AND r.delete_yn = 'N'
+- 리뷰 + 빌딩: SELECT rv.*, b.building_nm FROM reviews rv JOIN rooms r ON rv.room_id = r.room_id JOIN building b ON r.building_id = b.building_id WHERE b.delete_yn = 'N' AND r.delete_yn = 'N'
 
 [중요 규칙]
-- 빌딩명 검색은 반드시 LIKE '%이름%' 사용 (정확한 이름을 모를 수 있음)
-- 로그인 필요 테이블(contract, space_reservation, complain, payment)은 반드시 WHERE user_id = '{user_id}' 포함
+- 빌딩명 검색은 반드시 LIKE '%영문명%' 사용 (한글 입력이어도 영문으로 변환 후 사용)
+- building 테이블 조회 시 반드시 AND b.delete_yn = 'N' 조건 포함 (논리 삭제 필터)
+- rooms 테이블 조회 시 반드시 AND r.delete_yn = 'N' 조건 포함 (논리 삭제 필터)
+- 로그인 필요 테이블(contract, space_reservations, complain, payment)은 반드시 WHERE user_id = '{user_id}' 포함
 - SELECT만 허용, INSERT/UPDATE/DELETE/DROP 절대 금지
 - 결과는 최대 50건 제한 (LIMIT 50)
 """
@@ -168,16 +186,16 @@ DB_SCHEMA = """
 # SQL 실행 허용 테이블 화이트리스트
 ALLOWED_TABLES = {
     # 공개
-    "building", "room", "review", "common_space",
-    "tour_reservation", "board", "notice", "faq", "company_info",
+    "building", "rooms", "reviews", "common_space",
+    "room_reservation", "board", "notice", "faq", "company_info",
     # 로그인 필요
-    "contract", "space_reservation", "complain", "payment",
+    "contract", "space_reservations", "complain", "payment",
     "product_building_stock",
 }
 
 # 로그인이 필요한 테이블 (user_id 강제 주입)
 AUTH_REQUIRED_TABLES = {
-    "contract", "space_reservation", "complain", "payment",
+    "contract", "space_reservations", "complain", "payment",
 }
 
 # 절대 허용 안 되는 SQL 키워드

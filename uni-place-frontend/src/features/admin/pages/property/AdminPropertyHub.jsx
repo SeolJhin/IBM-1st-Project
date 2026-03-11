@@ -1,15 +1,42 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminPropertyHub.module.css';
+import { adminApi } from '../../api/adminApi';
 
 export default function AdminPropertyHub() {
+  const [refreshState, setRefreshState] = useState('idle'); // idle | loading | done | error
+
+  async function handleRefresh() {
+    if (refreshState === 'loading') return;
+    setRefreshState('loading');
+    try {
+      await adminApi.refreshRoomRecommendations();
+      setRefreshState('done');
+      setTimeout(() => setRefreshState('idle'), 3000);
+    } catch (e) {
+      setRefreshState('error');
+      setTimeout(() => setRefreshState('idle'), 3000);
+    }
+  }
+
+  const btnLabel = {
+    idle: '🤖 AI 추천 갱신',
+    loading: '갱신 중...',
+    done: '✅ 갱신 완료',
+    error: '❌ 갱신 실패',
+  }[refreshState];
+
   return (
     <div className={styles.wrap}>
       <div className={styles.topRow}>
         <h1 className={styles.title}>시설 관리</h1>
-
-        {/* (원하면) 검색 아이콘/검색창 자리 */}
-        <div className={styles.right} />
+        <button
+          className={`${styles.refreshBtn} ${styles[refreshState]}`}
+          onClick={handleRefresh}
+          disabled={refreshState === 'loading'}
+        >
+          {btnLabel}
+        </button>
       </div>
 
       <div className={styles.tabs}>
