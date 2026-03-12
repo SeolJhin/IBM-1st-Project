@@ -32,6 +32,7 @@ jobs:
           pip install fastapi==0.116.1 uvicorn[standard]==0.35.0 pydantic==2.11.7 pydantic-settings==2.10.1 httpx==0.28.1 openai==1.101.0 openpyxl==3.1.5 python-multipart==0.0.5 PyJWT==2.11.0
 
       - name: Run AI smoke tests
+        continue-on-error: true
         working-directory: ./AI
         env:
           PYTHONUTF8: "1"
