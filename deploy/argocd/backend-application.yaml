@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/replace-owner/IBM-1st-Project.git
+    repoURL: https://github.com/SeolJhin/IBM-1st-Project.git
     targetRevision: dev
     path: deploy/k8s/backend
   destination:

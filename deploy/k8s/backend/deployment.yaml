@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/replace-owner/uniplace-backend:latest
+          image: 194722402714.dkr.ecr.ap-northeast-2.amazonaws.com/uniplace-backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
