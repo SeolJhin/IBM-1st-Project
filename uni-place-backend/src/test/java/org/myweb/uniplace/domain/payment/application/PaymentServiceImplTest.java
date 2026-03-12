@@ -115,7 +115,6 @@ class PaymentServiceImplTest {
             .build();
 
 
-//
         PaymentGatewayReadyResponse ready = PaymentGatewayReadyResponse.builder()
             .providerRefId("pref-1")
             .redirectPcUrl("https://pc")
