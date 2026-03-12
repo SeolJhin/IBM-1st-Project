@@ -17,46 +17,6 @@ jobs:
     permissions:
       contents: read
 
-    services:
-      etcd:
-        image: quay.io/coreos/etcd:v3.5.5
-        ports:
-          - 2379:2379
-        options: >
-          --health-cmd="etcdctl endpoint health"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-        env:
-          ETCD_AUTO_COMPACTION_MODE: revision
-          ETCD_AUTO_COMPACTION_RETENTION: "1000"
-          ETCD_QUOTA_BACKEND_BYTES: "4294967296"
-
-      minio:
-        image: minio/minio:RELEASE.2023-03-20T20-16-18Z
-        ports:
-          - 9000:9000
-        env:
-          MINIO_ACCESS_KEY: minioadmin
-          MINIO_SECRET_KEY: minioadmin
-        options: --health-cmd="curl -f http://localhost:9000/minio/health/live || exit 1"
-        command: server /data
-
-      milvus:
-        image: milvusdb/milvus:v2.4.4
-        ports:
-          - 19530:19530
-          - 9091:9091
-        env:
-          ETCD_ENDPOINTS: etcd:2379
-          MINIO_ADDRESS: minio:9000
-        options: >
-          --health-cmd="curl -f http://localhost:9091/healthz || exit 1"
-          --health-interval=15s
-          --health-timeout=5s
-          --health-retries=10
-        command: ["milvus", "run", "standalone"]
-
     steps:
       - uses: actions/checkout@v4
 
@@ -69,26 +29,12 @@ jobs:
         working-directory: ./AI
         run: |
           python -m pip install --upgrade pip
-          pip install fastapi==0.116.1 uvicorn[standard]==0.35.0 \
-            pydantic==2.11.7 pydantic-settings==2.10.1 \
-            httpx==0.28.1 pymilvus
-
-      - name: Wait for Milvus
-        run: |
-          for i in {1..30}; do
-            nc -z localhost 19530 && echo "Milvus ready" && exit 0
-            echo "Waiting for Milvus..."
-            sleep 2
-          done
-          echo "Milvus failed to start"
-          exit 1
+          pip install fastapi==0.116.1 uvicorn[standard]==0.35.0 pydantic==2.11.7 pydantic-settings==2.10.1 httpx==0.28.1
 
       - name: Run AI smoke tests
         working-directory: ./AI
         env:
           PYTHONUTF8: "1"
-          MILVUS_HOST: localhost
-          MILVUS_PORT: "19530"
         run: python -m unittest discover -s tests -p "test_ai_rest_smoke.py" -v
 
   buildAndPush:

@@ -7,7 +7,7 @@ const STORAGE_KEYS = {
 };
 
 let refreshPromise = null;
-
+//
 export function withApiPrefix(path) {
   if (!path) return API_PREFIX;
   if (ABSOLUTE_URL_RE.test(path)) return path;
@@ -123,10 +123,7 @@ export async function fetchWithAuthRetry(
   });
 
   const canRetry =
-    retryOnAuthError &&
-    auth &&
-    firstRes.status === 401 &&
-    !isAuthPath(path);
+    retryOnAuthError && auth && firstRes.status === 401 && !isAuthPath(path);
 
   if (!canRetry) return firstRes;
 
