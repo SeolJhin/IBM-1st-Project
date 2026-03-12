@@ -112,9 +112,9 @@ export default function TourReservationCreate({
       const page = await reservationApi.reservableRooms({
         buildingId,
         page: 1,
-        size: 50,
-        sort: 'roomId',
-        direct: 'DESC',
+        size: 200,
+        sort: 'roomNo',
+        direct: 'ASC',
       });
       setRoomsPage(page);
     } catch (e) {
@@ -308,8 +308,7 @@ export default function TourReservationCreate({
             <label className={styles.label}>방 선택</label>
             {selectedRoomInfo && (
               <p className={styles.autoSelectedBadge}>
-                🏠 자동 선택:{' '}
-                {selectedRoomInfo.roomNm ?? `Room #${selectedRoomInfo.roomId}`}
+                🏠 자동 선택: {`${selectedRoomInfo.roomNo}호`}
               </p>
             )}
             <select
@@ -321,7 +320,7 @@ export default function TourReservationCreate({
               <option value="">선택하세요</option>
               {rooms.map((r) => (
                 <option key={r.roomId} value={r.roomId}>
-                  {r.roomNm ?? 'Room'} (#{r.roomId})
+                  {r.roomNo}호
                 </option>
               ))}
             </select>
@@ -410,9 +409,7 @@ export default function TourReservationCreate({
               <span>건물</span>
               <span>{selectedBuilding.buildingNm}</span>
               <span>방</span>
-              <span>
-                {selectedRoomInfo.roomNm ?? `#${selectedRoomInfo.roomId}`}
-              </span>
+              <span>{`${selectedRoomInfo.roomNo}호`}</span>
               <span>날짜</span>
               <span>{date}</span>
               <span>시간</span>
@@ -491,8 +488,8 @@ export default function TourReservationCreate({
                   }}
                 >
                   {selectedBuilding?.buildingNm ?? '-'} {'>'}{' '}
-                  {selectedRoomInfo.roomNm ?? `방 #${selectedRoomInfo.roomId}`}{' '}
-                  · {date} · {selectedSlot.startAt?.slice(11, 16)}~
+                  {`${selectedRoomInfo.roomNo}호`} · {date} ·{' '}
+                  {selectedSlot.startAt?.slice(11, 16)}~
                   {selectedSlot.endAt?.slice(11, 16)}
                 </p>
               )}
@@ -621,8 +618,7 @@ export default function TourReservationCreate({
             <label className={styles.label}>방 선택</label>
             {selectedRoomInfo && (
               <p className={styles.autoSelectedBadge}>
-                🏠 자동 선택:{' '}
-                {selectedRoomInfo.roomNm ?? `Room #${selectedRoomInfo.roomId}`}
+                🏠 자동 선택: {`${selectedRoomInfo.roomNo}호`}
               </p>
             )}
             <select
@@ -634,7 +630,7 @@ export default function TourReservationCreate({
               <option value="">선택하세요</option>
               {rooms.map((r) => (
                 <option key={r.roomId} value={r.roomId}>
-                  {r.roomNm ?? 'Room'} (#{r.roomId})
+                  {r.roomNo}호
                 </option>
               ))}
             </select>
@@ -723,9 +719,7 @@ export default function TourReservationCreate({
               <span>건물</span>
               <span>{selectedBuilding.buildingNm}</span>
               <span>방</span>
-              <span>
-                {selectedRoomInfo.roomNm ?? `#${selectedRoomInfo.roomId}`}
-              </span>
+              <span>{`${selectedRoomInfo.roomNo}호`}</span>
               <span>날짜</span>
               <span>{date}</span>
               <span>시간</span>
@@ -796,8 +790,8 @@ export default function TourReservationCreate({
                   }}
                 >
                   {selectedBuilding?.buildingNm ?? '-'} {'>'}{' '}
-                  {selectedRoomInfo.roomNm ?? `방 #${selectedRoomInfo.roomId}`}{' '}
-                  · {date} · {selectedSlot.startAt?.slice(11, 16)}~
+                  {`${selectedRoomInfo.roomNo}호`} · {date} ·{' '}
+                  {selectedSlot.startAt?.slice(11, 16)}~
                   {selectedSlot.endAt?.slice(11, 16)}
                 </p>
               )}
