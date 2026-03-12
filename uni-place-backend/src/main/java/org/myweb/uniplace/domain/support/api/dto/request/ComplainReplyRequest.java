@@ -7,4 +7,7 @@ import org.myweb.uniplace.domain.support.domain.enums.ComplainStatus;
 public class ComplainReplyRequest {
     /** 답변 처리 후 변경할 상태 (기본 resolved) */
     private ComplainStatus compSt;
+
+    /** 관리자 답변 내용 */
+    private String replyCtnt;
 }

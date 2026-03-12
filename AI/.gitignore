@@ -2,3 +2,5 @@
 __pycache__/
 *.py[cod]
 runtime/
+AI/volumes/
+AI/rag_docs/.manifest.json

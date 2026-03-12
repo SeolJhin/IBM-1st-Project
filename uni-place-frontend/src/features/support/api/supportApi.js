@@ -130,12 +130,12 @@ export const supportApi = {
   uploadFiles,
   getFilesByParent,
   getFileViewUrl: (fileId) => withApiPrefix(`/files/${fileId}/view`),
+
   // ===== FAQ =====
   getFaqs: (params = {}) => {
     const defaults = { page: 1, size: 10, sort: 'faqId', direct: 'DESC' };
     return request(`/faqs${buildQuery({ ...defaults, ...params })}`);
   },
-
   getFaqDetail: (faqId) => request(`/faqs/${faqId}`),
   createFaq: (body) =>
     request('/faqs', {
@@ -195,9 +195,7 @@ export const supportApi = {
       const normalized = normalizeSupportCode(merged.code);
       merged.code = normalized === 'ALL' ? '' : normalized;
     }
-    return request(`/qna${buildQuery(merged)}`, {
-      auth: true,
-    });
+    return request(`/qna${buildQuery(merged)}`, { auth: true });
   },
   getQnaDetail: (qnaId) => request(`/qna/${qnaId}`, { auth: true }),
   getQnaReplies: (qnaId) => request(`/qna/${qnaId}/replies`, { auth: true }),
@@ -208,17 +206,9 @@ export const supportApi = {
       auth: true,
     }),
   createQnaAnswer: (qnaId, body) =>
-    request(`/qna/${qnaId}/answer`, {
-      method: 'POST',
-      body,
-      auth: true,
-    }),
+    request(`/qna/${qnaId}/answer`, { method: 'POST', body, auth: true }),
   updateQnaAnswer: (qnaId, body) =>
-    request(`/qna/${qnaId}/answer`, {
-      method: 'PUT',
-      body,
-      auth: true,
-    }),
+    request(`/qna/${qnaId}/answer`, { method: 'PUT', body, auth: true }),
   updateQna: (qnaId, body) =>
     request(`/qna/${qnaId}`, {
       method: 'PUT',
@@ -234,28 +224,19 @@ export const supportApi = {
   // ===== Complains =====
   getComplains: (params = {}) => {
     const defaults = { page: 1, size: 10 };
-    // sort 제거 → 백엔드 쿼리의 중요도순 정렬 적용
     const merged = { ...defaults, ...params };
     if (merged.code) {
       const normalized = normalizeSupportCode(merged.code);
       merged.code = normalized === 'ALL' ? '' : normalized;
     }
-    return request(`/complains${buildQuery(merged)}`, {
-      auth: true,
-    });
+    return request(`/complains${buildQuery(merged)}`, { auth: true });
   },
   getMyComplains: (params = {}) => {
     const defaults = { page: 1, size: 10 };
-    // sort 제거 → 백엔드 쿼리의 중요도순 정렬 적용
     const merged = { ...defaults, ...params };
     return request(
-      `/complains/me${buildQuery({
-        page: merged.page,
-        size: merged.size,
-      })}`,
-      {
-        auth: true,
-      }
+      `/complains/me${buildQuery({ page: merged.page, size: merged.size })}`,
+      { auth: true }
     );
   },
   getComplainDetail: (compId) =>
@@ -279,6 +260,16 @@ export const supportApi = {
     request(`/complains/${compId}/status`, {
       method: 'PATCH',
       body: { compSt },
+      auth: true,
+    }),
+  /** 관리자 답변 등록 - reply_ck='Y' + 상태 변경 + 답변 내용 저장 */
+  createComplainReply: (compId, body) =>
+    request(`/complains/${compId}/reply`, {
+      method: 'POST',
+      body: {
+        compSt: body?.compSt ?? 'resolved',
+        replyCtnt: body?.replyCtnt,
+      },
       auth: true,
     }),
   deleteComplain: (compId) =>
