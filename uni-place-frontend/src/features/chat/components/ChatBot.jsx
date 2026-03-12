@@ -4,6 +4,8 @@ import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
 import TourReservationList from '../../reservation/pages/TourReservationList';
+import SpaceReservationCreate from '../../reservation/pages/SpaceReservationCreate';
+import SpaceReservationList from '../../reservation/pages/SpaceReservationList';
 import Modal from '../../../shared/components/Modal/Modal';
 import styles from './ChatBot.module.css';
 import { useChat, speakText } from '../hooks/useChat';
@@ -27,10 +29,10 @@ function formatTime(ts) {
 // 챗봇 내 모달로 열어야 하는 URL 목록
 var MODAL_ROUTES = {
   '/reservations/tour/create': 'tour_create',
-  '/reservations/tour/list': 'tour_list',
+  '/reservations/tour/list': 'tour_list_modal',
 };
 
-function ActionButtons({ buttons, onModalRoute }) {
+function ActionButtons({ buttons, onModalRoute, onAction, allMessages }) {
   var navigate = useNavigate();
   if (!buttons || buttons.length === 0) return null;
 
@@ -50,15 +52,67 @@ function ActionButtons({ buttons, onModalRoute }) {
                 window.open(normalizedUrl, '_blank');
               } else if (MODAL_ROUTES[pathOnly] && onModalRoute) {
                 onModalRoute(MODAL_ROUTES[pathOnly]);
+              } else if (
+                (pathOnly === '/me' &&
+                  (normalizedUrl.includes('tab=space') ||
+                    !normalizedUrl.includes('tab='))) ||
+                normalizedUrl.includes('tab=space&sub=create') ||
+                normalizedUrl.includes('tab=space&sub=list') ||
+                pathOnly === '/reservations/space/create' ||
+                pathOnly === '/reservations/space/list'
+              ) {
+                // 공용공간 → 대화 내역에서 building_id / space_id 추출 후 모달 오픈
+                var isList =
+                  normalizedUrl.includes('sub=list') ||
+                  pathOnly === '/reservations/space/list';
+                if (isList) {
+                  if (onAction) onAction(null, { type: 'space_list' });
+                  return;
+                }
+                // 대화 내역에서 building_id / space_id 파싱
+                var extractedBuildingId = null;
+                var extractedSpaceId = null;
+                if (allMessages) {
+                  for (var mi = allMessages.length - 1; mi >= 0; mi--) {
+                    var m = allMessages[mi];
+                    if (m.role !== 'assistant') continue;
+                    var txt = m.content || '';
+                    // "building_id: 3" 패턴
+                    var bidMatch = txt.match(/building_id[:\s]+(\d+)/i);
+                    if (bidMatch && !extractedBuildingId)
+                      extractedBuildingId = Number(bidMatch[1]);
+                    // "space_id: 4" 패턴
+                    var sidMatch = txt.match(/space_id[:\s]+(\d+)/i);
+                    if (sidMatch && !extractedSpaceId)
+                      extractedSpaceId = Number(sidMatch[1]);
+                    if (extractedBuildingId && extractedSpaceId) break;
+                  }
+                }
+                // URL 파라미터에서도 시도
+                var urlParams = new URLSearchParams(
+                  normalizedUrl.split('?')[1] || ''
+                );
+                if (!extractedSpaceId && urlParams.get('spaceId'))
+                  extractedSpaceId = Number(urlParams.get('spaceId'));
+                if (!extractedBuildingId && urlParams.get('buildingId'))
+                  extractedBuildingId = Number(urlParams.get('buildingId'));
+                if (onAction) {
+                  onAction(null, {
+                    type: 'space_reserve',
+                    spaceId: extractedSpaceId,
+                    buildingId: extractedBuildingId,
+                  });
+                }
               } else if (pathOnly === '/spaces') {
-                // 공용시설 목록 → /rooms 페이지의 공용공간 탭으로 이동
-                navigate('/rooms', { state: { tab: 'spaces' } });
+                if (onAction) onAction(null, { type: 'space_list' });
               } else {
                 navigate(normalizedUrl);
               }
             }}
           >
-            {btn.icon && <span className={styles.actionBtnIcon}>{btn.icon}</span>}
+            {btn.icon && (
+              <span className={styles.actionBtnIcon}>{btn.icon}</span>
+            )}
             {btn.label}
           </button>
         );
@@ -67,7 +121,7 @@ function ActionButtons({ buttons, onModalRoute }) {
   );
 }
 
-function MessageBubble({ msg, onSpeak, onAction, onModalRoute }) {
+function MessageBubble({ msg, onSpeak, onAction, onModalRoute, allMessages }) {
   var isUser = msg.role === 'user';
   var actions = Array.isArray(msg.actions) ? msg.actions : [];
   return (
@@ -77,28 +131,34 @@ function MessageBubble({ msg, onSpeak, onAction, onModalRoute }) {
         <div className={isUser ? styles.bubbleUser : styles.bubbleAssistant}>
           {msg.content}
         </div>
-        {!isUser && (actions.length > 0 || (msg.buttons && msg.buttons.length > 0)) && (
-          <div className={styles.actionRow}>
-            {actions.length > 0 &&
-              actions.map(function (action, index) {
-                return (
-                  <button
-                    key={(action.type || 'action') + '-' + index}
-                    className={styles.actionBtn}
-                    onClick={function () {
-                      if (onAction) onAction(msg, action);
-                    }}
-                  >
-                    {action.label}
-                  </button>
-                );
-              })}
+        {!isUser &&
+          (actions.length > 0 || (msg.buttons && msg.buttons.length > 0)) && (
+            <div className={styles.actionRow}>
+              {actions.length > 0 &&
+                actions.map(function (action, index) {
+                  return (
+                    <button
+                      key={(action.type || 'action') + '-' + index}
+                      className={styles.actionBtn}
+                      onClick={function () {
+                        if (onAction) onAction(msg, action);
+                      }}
+                    >
+                      {action.label}
+                    </button>
+                  );
+                })}
 
-            {msg.buttons && msg.buttons.length > 0 && (
-              <ActionButtons buttons={msg.buttons} onModalRoute={onModalRoute} />
-            )}
-          </div>
-        )}
+              {msg.buttons && msg.buttons.length > 0 && (
+                <ActionButtons
+                  buttons={msg.buttons}
+                  onModalRoute={onModalRoute}
+                  onAction={onAction}
+                  allMessages={allMessages}
+                />
+              )}
+            </div>
+          )}
         <div className={styles.bubbleTime}>
           {formatTime(msg.ts)}
           {!isUser && onSpeak && (
@@ -158,16 +218,38 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
   var openState = React.useState(false);
   var open = openState[0];
   var setOpen = openState[1];
+
+  // ── 투어 예약 모달 상태 ─────────────────────────────────────
   var tourModalState = React.useState(false);
   var tourModalOpen = tourModalState[0];
   var setTourModalOpen = tourModalState[1];
   var tourListModalState = React.useState(false);
   var tourListModalOpen = tourListModalState[0];
   var setTourListModalOpen = tourListModalState[1];
+
+  // ── 투어 자동선택 파라미터 ───────────────────────────────────
+  var tourInitState = React.useState(null); // { buildingId, roomId, date, startAt, endAt }
+  var tourInit = tourInitState[0];
+  var setTourInit = tourInitState[1];
+
+  // ── 공용공간 예약 모달 상태 ──────────────────────────────────
+  var spaceModalState = React.useState(false);
+  var spaceModalOpen = spaceModalState[0];
+  var setSpaceModalOpen = spaceModalState[1];
+  var spaceListModalState = React.useState(false);
+  var spaceListModalOpen = spaceListModalState[0];
+  var setSpaceListModalOpen = spaceListModalState[1];
+
+  // ── 공용공간 자동선택 파라미터 ───────────────────────────────
+  var spaceInitState = React.useState(null); // { spaceId, buildingId, startAt, endAt }
+  var spaceInit = spaceInitState[0];
+  var setSpaceInit = spaceInitState[1];
+
   var unreadState = React.useState(false);
   var hasUnread = unreadState[0];
   var setHasUnread = unreadState[1];
   var textareaRef = useRef(null);
+  var navigate = useNavigate();
 
   var chat = useChat({
     user: user,
@@ -200,12 +282,34 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
     [messages, open]
   );
 
+  // ── 건물 상세에서 "AI에게 물어보기" 이벤트 수신 ──────────────
+  React.useEffect(
+    function () {
+      function handleOpenChatbot(e) {
+        var detail = e.detail || {};
+        setOpen(true);
+        setHasUnread(false);
+        setTimeout(function () {
+          if (textareaRef.current) textareaRef.current.focus();
+          var nm = detail.buildingNm || '';
+          if (nm) {
+            setInput(nm + ' 건물에 대해 알려줘');
+          }
+        }, 100);
+      }
+      window.addEventListener('open-chatbot', handleOpenChatbot);
+      return function () {
+        window.removeEventListener('open-chatbot', handleOpenChatbot);
+      };
+    },
+    [setInput]
+  );
+
   function onOpen() {
     setOpen(true);
     setHasUnread(false);
     setTimeout(function () {
       if (textareaRef.current) textareaRef.current.focus();
-      // 열릴 때 최하단으로 스크롤
       if (bottomRef.current)
         bottomRef.current.scrollIntoView({ behavior: 'auto' });
     }, 80);
@@ -215,6 +319,50 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
+    }
+  }
+
+  // ── 액션 버튼 핸들러 ─────────────────────────────────────────
+  function onActionClick(msg, action) {
+    if (!action) return;
+
+    // 기존 발주서 액션
+    if (handleAction) handleAction(msg, action);
+
+    // 공용공간 예약 → 마이페이지 공용시설 탭 (모달)
+    if (action.type === 'space_reserve') {
+      setSpaceInit({
+        spaceId: action.spaceId || null,
+        buildingId: action.buildingId || null,
+        startAt: action.startAt || null,
+        endAt: action.endAt || null,
+      });
+      setSpaceModalOpen(true);
+      return;
+    }
+    // 공용공간 조회 → 마이페이지 공용시설 조회 탭 (모달)
+    if (action.type === 'space_list') {
+      setSpaceInit(null);
+      setSpaceListModalOpen(true);
+      return;
+    }
+    // 투어 예약 → 모달 (기존 방식 + 자동선택)
+    if (action.type === 'tour_reserve') {
+      setTourInit({
+        buildingId: action.buildingId || null,
+        roomId: action.roomId ? String(action.roomId) : '',
+        date: action.date || null,
+        startAt: action.startAt || null,
+        endAt: action.endAt || null,
+      });
+      setTourModalOpen(true);
+      return;
+    }
+    // 투어 조회 → 모달
+    if (action.type === 'tour_list') {
+      setTourInit(null);
+      setTourListModalOpen(true);
+      return;
     }
   }
 
@@ -345,13 +493,13 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
                     key={msg.ts + '-' + i}
                     msg={msg}
                     onSpeak={!isBlind ? speakMessage : null}
-
-                    onAction={handleAction}
+                    onAction={onActionClick}
+                    allMessages={messages}
                     onModalRoute={function (routeKey) {
                       if (routeKey === 'tour_create') setTourModalOpen(true);
-                      else if (routeKey === 'tour_list') setTourListModalOpen(true);
+                      else if (routeKey === 'tour_list_modal')
+                        setTourListModalOpen(true);
                     }}
-
                   />
                 );
               })
@@ -494,21 +642,30 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
         open={tourModalOpen}
         onClose={function () {
           setTourModalOpen(false);
+          setTourInit(null);
         }}
         title="📅 사전 방문 예약"
         size="lg"
       >
         <TourReservationCreate
           inlineMode
+          initialBuildingId={tourInit?.buildingId || null}
+          initialRoomId={tourInit?.roomId || ''}
+          initialDate={tourInit?.date || null}
+          initialSlotStartAt={tourInit?.startAt || null}
+          initialSlotEndAt={tourInit?.endAt || null}
           onSuccess={function () {
             setTourModalOpen(false);
+            setTourInit(null);
             setTourListModalOpen(true);
           }}
           onClose={function () {
             setTourModalOpen(false);
+            setTourInit(null);
           }}
           onGoList={function () {
             setTourModalOpen(false);
+            setTourInit(null);
             setTourListModalOpen(true);
           }}
         />
@@ -531,6 +688,48 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
           }}
           onClose={function () {
             setTourListModalOpen(false);
+          }}
+        />
+      </Modal>
+
+      {/* ── 공용공간 예약 모달 (마이페이지 공용시설 탭 연결) ── */}
+      <Modal
+        open={spaceModalOpen}
+        onClose={function () {
+          setSpaceModalOpen(false);
+          setSpaceInit(null);
+        }}
+        title="🛋️ 공용시설 예약"
+        size="lg"
+      >
+        <SpaceReservationCreate
+          inlineMode
+          initSpaceId={spaceInit?.spaceId || null}
+          initBuildingId={spaceInit?.buildingId || null}
+          initStartAt={spaceInit?.startAt || null}
+          initEndAt={spaceInit?.endAt || null}
+          onSuccess={function () {
+            setSpaceModalOpen(false);
+            setSpaceInit(null);
+            setSpaceListModalOpen(true);
+          }}
+        />
+      </Modal>
+
+      {/* ── 공용공간 예약 조회 모달 (마이페이지 공용시설 탭 연결) ── */}
+      <Modal
+        open={spaceListModalOpen}
+        onClose={function () {
+          setSpaceListModalOpen(false);
+        }}
+        title="📋 공용시설 예약 조회"
+        size="lg"
+      >
+        <SpaceReservationList
+          inlineMode
+          onGoCreate={function () {
+            setSpaceListModalOpen(false);
+            setSpaceModalOpen(true);
           }}
         />
       </Modal>

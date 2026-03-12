@@ -6,6 +6,13 @@
 // ── API 키 ────────────────────────────────────────────────────
 export const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY ?? '';
 
+// ── 지도/날씨 API 키 ──────────────────────────────────────────
+// 발급 후 .env.local 파일에 추가하세요:
+//   REACT_APP_KAKAO_MAP_KEY=발급받은_JavaScript키
+//   REACT_APP_KMA_KEY=공공데이터포털_Decoding키 (기상청 단기예보)
+export const KAKAO_MAP_KEY = process.env.REACT_APP_KAKAO_MAP_KEY ?? '';
+export const KMA_KEY = process.env.REACT_APP_KMA_KEY ?? '';
+
 // ── 백엔드 사용 여부 ──────────────────────────────────────────
 // true  → Spring /api/ai/chat/agent-chatbot 호출 (권장)
 // false → Groq API 직접 호출 (API 키 필요)
@@ -67,8 +74,8 @@ export const QUICK_QUESTIONS = {
   tenant: [
     '내 계약 정보 확인하고 싶어요',
     '이번 달 납부 금액이 얼마예요?',
-    '결제가 안 돼요',
-    '공용공간 예약하고 싶어요',
+    '우리 건물 공용공간 예약 추천해줘',
+    '회의실 비는 시간 알려줘',
     '민원 접수하고 싶어요',
     '룸서비스 주문하고 싶어요',
   ],

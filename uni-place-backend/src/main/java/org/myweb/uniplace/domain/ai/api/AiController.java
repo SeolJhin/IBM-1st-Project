@@ -69,7 +69,28 @@ public class AiController {
 
     @PostMapping("/chat/agent-chatbot")
     public ApiResponse<AiChatResponse> agentChatbot(@RequestBody AiAgentChatbotRequest request) {
-        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+        // ✅ 로그인 상태면 SecurityContext에서 userId를 직접 추출해 주입
+        // (클라이언트가 userId를 안 보내거나 잘못 보내도 서버가 보정)
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String serverUserId = (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getName()))
+                ? auth.getName()
+                : null;
+
+        AiGatewayRequest gatewayRequest = toGateway(request.getIntent(), request);
+
+        // 서버에서 추출한 userId가 있으면 덮어씌움
+        if (serverUserId != null) {
+            gatewayRequest = AiGatewayRequest.builder()
+                    .intent(gatewayRequest.getIntent())
+                    .userId(serverUserId)
+                    .userSegment(gatewayRequest.getUserSegment())
+                    .prompt(gatewayRequest.getPrompt())
+                    .slots(gatewayRequest.getSlots())
+                    .build();
+        }
+
+        AiGatewayResponse response = aiOrchestratorService.handle(gatewayRequest);
         return ApiResponse.ok(AiChatResponse.from(response));
     }
 
@@ -87,7 +108,8 @@ public class AiController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String adminId = auth.getName();   // JWT에서 추출 — 클라이언트 전달값 무시
 
-        Map<String, Object> slots = objectMapper.convertValue(request, new java.util.HashMap<String, Object>().getClass());
+        // ✅ TypeReference 사용 — 제네릭 타입 안전하게 변환
+        Map<String, Object> slots = objectMapper.convertValue(request, new TypeReference<Map<String, Object>>() {});
         slots.put("userId", adminId);      // 서버 측 userId 강제 주입
 
         AiGatewayRequest gatewayReq = AiGatewayRequest.builder()
@@ -104,7 +126,25 @@ public class AiController {
 
     @PostMapping("/chat/voice")
     public ApiResponse<AiChatResponse> voiceChatbot(@RequestBody VoiceChatbotRequest request) {
-        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String serverUserId = (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getName()))
+                ? auth.getName()
+                : null;
+
+        AiGatewayRequest gatewayRequest = toGateway(request.getIntent(), request);
+
+        if (serverUserId != null) {
+            gatewayRequest = AiGatewayRequest.builder()
+                    .intent(gatewayRequest.getIntent())
+                    .userId(serverUserId)
+                    .userSegment(gatewayRequest.getUserSegment())
+                    .prompt(gatewayRequest.getPrompt())
+                    .slots(gatewayRequest.getSlots())
+                    .build();
+        }
+
+        AiGatewayResponse response = aiOrchestratorService.handle(gatewayRequest);
         return ApiResponse.ok(AiChatResponse.from(response));
     }
 

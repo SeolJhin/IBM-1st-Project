@@ -74,8 +74,16 @@ export const router = createBrowserRouter([
   { path: '/reservations/tour/list', element: <TourReservationList /> },
 
   // reservation – space (로그인 필수)
-  { path: '/reservations/space/create', element: <SpaceReservationCreate /> },
-  { path: '/reservations/space/list', element: <SpaceReservationList /> },
+  {
+    element: <RequireAuth />,
+    children: [
+      {
+        path: '/reservations/space/create',
+        element: <SpaceReservationCreate />,
+      },
+      { path: '/reservations/space/list', element: <SpaceReservationList /> },
+    ],
+  },
 
   // review
   { path: '/reviews/write', element: <ReviewWrite /> }, // ?roomId=xxx
@@ -136,7 +144,10 @@ export const router = createBrowserRouter([
   // admin
   { path: '/admin', element: <AdminInfo /> },
   { path: '/admin/reservations/tours', element: <AdminTourReservationList /> },
-  { path: '/admin/reservations/spaces', element: <AdminSpaceReservationList /> },
+  {
+    path: '/admin/reservations/spaces',
+    element: <AdminSpaceReservationList />,
+  },
   {
     path: '/admin/property',
     element: <AdminShell />,
