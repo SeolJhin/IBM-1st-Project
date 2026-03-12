@@ -1,17 +1,17 @@
 name: ai-docker
 
 on:
-    push:
-        branches:
-            - dev
-        paths:
-            - ".github/workflows/ai-docker.yml"
-            - "AI/**"
-    workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - ".github/workflows/ai-docker.yml"
+      - "AI/**"
+  workflow_dispatch:
 
 jobs:
 
-    aiSmokeGate:
+  aiSmokeGate:
     name: AI REST Smoke Gate
     runs-on: ubuntu-latest
     permissions:
@@ -123,4 +123,3 @@ jobs:
           tags: |
             ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/uniplace-ai:${{ github.sha }}
             ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/uniplace-ai:latest
-
