@@ -108,7 +108,8 @@ public class AiController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String adminId = auth.getName();   // JWT에서 추출 — 클라이언트 전달값 무시
 
-        Map<String, Object> slots = objectMapper.convertValue(request, new java.util.HashMap<String, Object>().getClass());
+        // ✅ TypeReference 사용 — 제네릭 타입 안전하게 변환
+        Map<String, Object> slots = objectMapper.convertValue(request, new TypeReference<Map<String, Object>>() {});
         slots.put("userId", adminId);      // 서버 측 userId 강제 주입
 
         AiGatewayRequest gatewayReq = AiGatewayRequest.builder()

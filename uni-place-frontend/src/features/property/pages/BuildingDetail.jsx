@@ -1,5 +1,5 @@
 // features/property/pages/BuildingDetail.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
@@ -7,6 +7,264 @@ import { propertyApi } from '../api/propertyApi';
 import styles from './BuildingDetail.module.css';
 import { toApiImageUrl } from '../../../shared/utils/imageUrl';
 import ImageGallery from '../../file/components/ImageGallery';
+import { KAKAO_MAP_KEY, KMA_KEY } from '../../chat/config/chatConfig';
+
+// ── 카카오맵 동적 로드 ────────────────────────────────────────
+let _kakaoLoadPromise = null;
+function loadKakaoMap(appKey) {
+  if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
+    return Promise.resolve(window.kakao.maps);
+  }
+  if (_kakaoLoadPromise) return _kakaoLoadPromise;
+  _kakaoLoadPromise = new Promise((resolve, reject) => {
+    // 이미 스크립트 태그가 있으면 로드 완료 대기
+    const existing = document.querySelector('script[src*="dapi.kakao.com"]');
+    if (existing) {
+      const check = setInterval(() => {
+        if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
+          clearInterval(check);
+          resolve(window.kakao.maps);
+        }
+      }, 100);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
+    script.onload = () =>
+      window.kakao.maps.load(() => resolve(window.kakao.maps));
+    script.onerror = (e) => {
+      _kakaoLoadPromise = null;
+      reject(e);
+    };
+    document.head.appendChild(script);
+  });
+  return _kakaoLoadPromise;
+}
+
+// ── 기상청 날씨 코드 매핑 ─────────────────────────────────────
+// PTY(강수형태): 0없음 1비 2비/눈 3눈 4소나기
+// SKY(하늘상태): 1맑음 3구름많음 4흐림
+const KMA_SKY = {
+  1: { icon: '☀️', label: '맑음' },
+  3: { icon: '⛅', label: '구름많음' },
+  4: { icon: '☁️', label: '흐림' },
+};
+const KMA_PTY = {
+  1: { icon: '🌧️', label: '비' },
+  2: { icon: '🌨️', label: '비/눈' },
+  3: { icon: '❄️', label: '눈' },
+  4: { icon: '🌦️', label: '소나기' },
+};
+
+// ── 위경도 → 기상청 격자 변환 (기상청 공식 알고리즘) ──────────
+function latLonToGrid(lat, lon) {
+  const RE = 6371.00877,
+    GRID = 5.0,
+    SLAT1 = 30.0,
+    SLAT2 = 60.0;
+  const OLON = 126.0,
+    OLAT = 38.0,
+    XO = 43,
+    YO = 136;
+  const DEGRAD = Math.PI / 180.0;
+  const re = RE / GRID,
+    slat1 = SLAT1 * DEGRAD,
+    slat2 = SLAT2 * DEGRAD;
+  const olon = OLON * DEGRAD,
+    olat = OLAT * DEGRAD;
+  let sn =
+    Math.tan(Math.PI * 0.25 + slat2 * 0.5) /
+    Math.tan(Math.PI * 0.25 + slat1 * 0.5);
+  sn = Math.log(Math.cos(slat1) / Math.cos(slat2)) / Math.log(sn);
+  let sf = Math.tan(Math.PI * 0.25 + slat1 * 0.5);
+  sf = (Math.pow(sf, sn) * Math.cos(slat1)) / sn;
+  let ro = Math.tan(Math.PI * 0.25 + olat * 0.5);
+  ro = (re * sf) / Math.pow(ro, sn);
+  let ra = Math.tan(Math.PI * 0.25 + lat * DEGRAD * 0.5);
+  ra = (re * sf) / Math.pow(ra, sn);
+  let theta = lon * DEGRAD - olon;
+  if (theta > Math.PI) theta -= 2.0 * Math.PI;
+  if (theta < -Math.PI) theta += 2.0 * Math.PI;
+  theta *= sn;
+  return {
+    nx: Math.floor(ra * Math.sin(theta) + XO + 0.5),
+    ny: Math.floor(ro - ra * Math.cos(theta) + YO + 0.5),
+  };
+}
+
+// ── 기상청 베이스타임 계산 ────────────────────────────────────
+function getKmaBaseTime() {
+  const now = new Date();
+  const h = now.getHours(),
+    m = now.getMinutes();
+  const totalMin = h * 60 + m;
+  // 발표 후 10분 뒤부터 유효
+  const times = [200, 500, 800, 1100, 1400, 1700, 2000, 2300];
+  let base = 2300;
+  for (const t of times) {
+    const th = Math.floor(t / 100),
+      tm = t % 100;
+    if (totalMin >= th * 60 + tm + 10) base = t;
+  }
+  const pad = (n) => String(n).padStart(2, '0');
+  const bh = Math.floor(base / 100);
+  const date = new Date(now);
+  if (bh > h) date.setDate(date.getDate() - 1);
+  return {
+    base_date: `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`,
+    base_time: `${pad(bh)}00`,
+  };
+}
+
+// ── 날씨 카드 컴포넌트 (기상청) ──────────────────────────────
+function WeatherCard({ addr, kmaKey }) {
+  const [weather, setWeather] = useState(null);
+  const [err, setErr] = useState(false);
+
+  useEffect(() => {
+    if (!addr || !kmaKey) return;
+
+    // 1단계: 카카오 지오코더로 주소 → 위경도
+    loadKakaoMap(KAKAO_MAP_KEY)
+      .then((maps) => {
+        return new Promise((resolve, reject) => {
+          const geocoder = new maps.services.Geocoder();
+          geocoder.addressSearch(addr, (result, status) => {
+            if (status !== maps.services.Status.OK) {
+              reject(new Error('geocode fail'));
+              return;
+            }
+            resolve({
+              lat: parseFloat(result[0].y),
+              lon: parseFloat(result[0].x),
+            });
+          });
+        });
+      })
+      .then(({ lat, lon }) => {
+        // 2단계: 위경도 → 기상청 격자
+        const { nx, ny } = latLonToGrid(lat, lon);
+        const { base_date, base_time } = getKmaBaseTime();
+        const url =
+          `https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst` +
+          `?serviceKey=${encodeURIComponent(kmaKey)}` +
+          `&numOfRows=60&pageNo=1&dataType=JSON` +
+          `&base_date=${base_date}&base_time=${base_time}` +
+          `&nx=${nx}&ny=${ny}`;
+        return fetch(url).then((r) => r.json());
+      })
+      .then((data) => {
+        const items = data?.response?.body?.items?.item;
+        if (!items) throw new Error('no items');
+        // 가장 가까운 시각의 데이터 추출
+        const fcstTime = items[0]?.fcstTime;
+        const row = (cat) =>
+          items.find((i) => i.category === cat && i.fcstTime === fcstTime)
+            ?.fcstValue;
+        const T1H = row('T1H'); // 기온
+        const REH = row('REH'); // 습도
+        const PTY = parseInt(row('PTY') ?? '0', 10); // 강수형태
+        const SKY = parseInt(row('SKY') ?? '1', 10); // 하늘상태
+        const WSD = row('WSD'); // 풍속 (체감온도 계산용)
+        // 체감온도 (바람냉각지수 근사)
+        const t = parseFloat(T1H ?? 0),
+          v = parseFloat(WSD ?? 0);
+        const feels =
+          t <= 10
+            ? Math.round(
+                13.12 +
+                  0.6215 * t -
+                  11.37 * Math.pow(v, 0.16) +
+                  0.3965 * Math.pow(v, 0.16) * t
+              )
+            : Math.round(t);
+        setWeather({ T1H: Math.round(t), feels, REH, PTY, SKY });
+      })
+      .catch(() => setErr(true));
+  }, [addr, kmaKey]);
+
+  if (err || !kmaKey) return null;
+  if (!weather) {
+    return (
+      <div className={styles.weatherSkeleton}>
+        <span className={styles.weatherSkeletonDot} />
+        날씨 불러오는 중...
+      </div>
+    );
+  }
+
+  const pty = KMA_PTY[weather.PTY];
+  const sky = KMA_SKY[weather.SKY] || KMA_SKY[1];
+  const { icon, label } = pty || sky;
+
+  return (
+    <div className={styles.weatherCard}>
+      <span className={styles.weatherIcon}>{icon}</span>
+      <div className={styles.weatherInfo}>
+        <span className={styles.weatherTemp}>{weather.T1H}°C</span>
+        <span className={styles.weatherLabel}>{label}</span>
+      </div>
+      <div className={styles.weatherSub}>
+        <span>체감 {weather.feels}°C</span>
+        <span>습도 {weather.REH}%</span>
+      </div>
+    </div>
+  );
+}
+
+// ── 카카오맵 컴포넌트 ─────────────────────────────────────────
+function KakaoMapView({ addr, kakaoKey }) {
+  const mapRef = useRef(null);
+  const [mapErr, setMapErr] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+
+  // DOM이 마운트된 후 ready 상태로 전환
+  useEffect(() => {
+    setMapReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!addr || !kakaoKey || !mapReady || !mapRef.current) return;
+    let cancelled = false;
+
+    loadKakaoMap(kakaoKey)
+      .then((maps) => {
+        if (cancelled || !mapRef.current) return;
+        const geocoder = new maps.services.Geocoder();
+        geocoder.addressSearch(addr, (result, status) => {
+          if (cancelled || !mapRef.current) return;
+          if (status !== maps.services.Status.OK) {
+            setMapErr(true);
+            return;
+          }
+          const coords = new maps.LatLng(result[0].y, result[0].x);
+          const map = new maps.Map(mapRef.current, {
+            center: coords,
+            level: 4,
+          });
+          const marker = new maps.Marker({ position: coords });
+          marker.setMap(map);
+          const infowindow = new maps.InfoWindow({
+            content: `<div style="padding:6px 10px;font-size:13px;font-weight:600;">${addr.split(' ').slice(0, 3).join(' ')}</div>`,
+          });
+          infowindow.open(map, marker);
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setMapErr(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [addr, kakaoKey, mapReady]);
+
+  if (!kakaoKey) return null;
+  if (mapErr)
+    return <div className={styles.mapErr}>지도를 불러올 수 없습니다.</div>;
+
+  return <div ref={mapRef} className={styles.kakaoMap} />;
+}
 
 function SpaceCard({ space, onDetail }) {
   const options = space.spaceOptions
@@ -288,6 +546,8 @@ export default function BuildingDetail() {
             <p className={styles.infoKicker}>BUILDING INFO</p>
             <h1 className={styles.buildingNm}>{building.buildingNm}</h1>
             <p className={styles.buildingAddr}>📍 {building.buildingAddr}</p>
+            {/* 날씨 */}
+            <WeatherCard addr={building.buildingAddr} kmaKey={KMA_KEY} />
             {building.buildingDesc && (
               <p className={styles.buildingDesc}>{building.buildingDesc}</p>
             )}
@@ -356,6 +616,28 @@ export default function BuildingDetail() {
               </button>
             </div>
           </div>
+        </div>
+
+        {/* ── 지도 + 챗봇 AI 버튼 ── */}
+        <div className={styles.mapSection}>
+          <div className={styles.mapHeader}>
+            <h2 className={styles.mapTitle}>📍 건물 위치</h2>
+            <button
+              className={styles.askAiBtn}
+              onClick={() => {
+                // 챗봇에 건물 컨텍스트 주입하여 열기
+                window.dispatchEvent(
+                  new CustomEvent('open-chatbot', {
+                    detail: { buildingId, buildingNm: building.buildingNm },
+                  })
+                );
+              }}
+              type="button"
+            >
+              🤖 AI에게 이 건물 물어보기
+            </button>
+          </div>
+          <KakaoMapView addr={building.buildingAddr} kakaoKey={KAKAO_MAP_KEY} />
         </div>
 
         {/* ── 탭 바 ── */}

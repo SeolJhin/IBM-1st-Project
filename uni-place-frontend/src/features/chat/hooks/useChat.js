@@ -122,9 +122,30 @@ export function useChat(params) {
     return actions;
   }
 
+  // userId가 바뀌면(로그인/로그아웃) 해당 사용자의 히스토리로 교체
+  var prevUserIdRef = useRef(userId);
   useEffect(
     function () {
-      saveHistory(userId, userRole, messages);
+      if (prevUserIdRef.current !== userId) {
+        // 이전 userId의 현재 메시지를 먼저 저장 (전환 전 히스토리 보존)
+        var prevMessages = messagesRef.current;
+        if (prevMessages.length > 0) {
+          saveHistory(prevUserIdRef.current, userRole, prevMessages);
+        }
+        prevUserIdRef.current = userId;
+        var loaded = loadHistory(userId, userRole);
+        setMessages(loaded);
+      }
+    },
+    [userId, userRole]
+  );
+
+  useEffect(
+    function () {
+      // messages가 비어있을 때는 저장하지 않음 (초기 렌더링 또는 userId 전환 시 덮어쓰기 방지)
+      if (messages.length > 0) {
+        saveHistory(userId, userRole, messages);
+      }
     },
     [messages, userId, userRole]
   );

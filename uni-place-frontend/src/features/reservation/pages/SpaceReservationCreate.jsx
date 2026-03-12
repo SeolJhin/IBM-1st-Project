@@ -93,6 +93,9 @@ export default function SpaceReservationCreate({
       );
       if (activeBuildingIds.size === 0) {
         setBuildings([]);
+        setBError(
+          '현재 활성 계약이 없습니다. 공용공간 예약은 계약 중인 건물만 가능합니다.'
+        );
         setBLoading(false);
         return;
       }
@@ -171,12 +174,19 @@ export default function SpaceReservationCreate({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spaces]);
 
+  // currentSpace를 AI 추천 시간 useEffect보다 먼저 선언 (참조 오류 방지)
+  const currentSpace = useMemo(
+    () => spaces.find((s) => String(s.spaceId) === String(spaceId)),
+    [spaces, spaceId]
+  );
+  const availableSlots = currentSpace?.availableSlots ?? [];
+
   // AI 추천 시간 자동 선택: availableSlots 로드 후 startAt 매칭
   useEffect(() => {
     if (!initStartAt || !initEndAt || aiSlotAppliedRef.current) return;
     if (!currentSpace?.availableSlots?.length) return;
 
-    const targetStart = initStartAt.replace('T', ' ').slice(0, 16); // "2025-03-12T09:00" → "2025-03-12 09:00"
+    const targetStart = initStartAt.replace('T', ' ').slice(0, 16);
     const match = currentSpace.availableSlots.find((s) => {
       const sStart = (s.startAt || '').replace('T', ' ').slice(0, 16);
       return sStart === targetStart;
@@ -190,12 +200,6 @@ export default function SpaceReservationCreate({
   useEffect(() => {
     setSelectedSlot(null);
   }, [spaceId]);
-
-  const currentSpace = useMemo(
-    () => spaces.find((s) => String(s.spaceId) === String(spaceId)),
-    [spaces, spaceId]
-  );
-  const availableSlots = currentSpace?.availableSlots ?? [];
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -488,6 +492,14 @@ export default function SpaceReservationCreate({
       return (
         <div className={styles.centerBox}>
           <span className={styles.spinner} />
+        </div>
+      );
+    if (!user)
+      return (
+        <div className={styles.centerBox}>
+          <p className={styles.errMsg}>
+            🔒 공용공간 예약은 로그인 후 이용 가능합니다.
+          </p>
         </div>
       );
     return formContent;

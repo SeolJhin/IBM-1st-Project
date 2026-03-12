@@ -877,6 +877,17 @@ export default function MemberInfo() {
     goTab(key);
   };
 
+  // 로딩 중이거나 미인증이면 자식 탭(SpaceReservationCreate 등) 렌더 차단
+  // → contractApi/reservationApi가 401로 터져서 에러페이지+흰화면 되는 것 방지
+  if (loading || !user) {
+    return (
+      <div className={styles.page}>
+        <Header />
+        <div className={styles.loading}>불러오는 중…</div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <Header />

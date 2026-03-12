@@ -42,8 +42,8 @@ public class TourReservationController {
             @RequestParam(name = "buildingNm", required = false) String buildingNm,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "sort", defaultValue = "roomId") String sort,
-            @RequestParam(name = "direct", defaultValue = "DESC") String direct
+            @RequestParam(name = "sort", defaultValue = "roomNo") String sort,
+            @RequestParam(name = "direct", defaultValue = "ASC") String direct
     ) {
         if (page < 1) page = 1;
         if (size < 1) size = 10;

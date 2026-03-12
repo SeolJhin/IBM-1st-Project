@@ -24,12 +24,16 @@ DB_SCHEMA = """
 ▶ faq: faq_id(PK) faq_title faq_ctnt is_active(1/0) created_at
 ▶ company_info: company_info_id(PK) company_nm company_ceo company_tel company_email company_addr
 ▶ product_building_stock: stock_id(PK) building_id(FK) prod_nm prod_stock updated_at
+  (prod_stock=0이면 품절. query_database로 조회 가능)
 
 == 로그인 필요 테이블 (query_my_data + WHERE user_id=\'{{user_id}}\' 필수) ==
 ▶ contract: contract_id(PK) user_id room_id(FK) contract_start contract_end deposit rent_price manage_fee payment_day contract_st(requested/approved/active/ended/cancelled)
 ▶ space_reservations: reservation_id(PK) user_id building_id(FK) space_id(FK) sr_start_at sr_end_at sr_no_people sr_st(requested/confirmed/cancelled)
 ▶ complain: comp_id(PK) user_id comp_title comp_ctnt comp_st(pending/received/in_progress/resolved/closed) importance(high/medium/low) ai_reason reply_ck created_at
-▶ payment: payment_id(PK) user_id total_price captured_price payment_st(ready/paid/cancelled/pending/disputed) provider paid_at created_at
+▶ payment: payment_id(PK) user_id service_goods_id(FK) total_price captured_price payment_st(ready/paid/cancelled/pending/disputed) provider paid_at
+  ⚠️ created_at 컬럼 없음. 정렬은 paid_at 사용. query_my_data 필수.
+  상품명 조회 시 JOIN service_goods sg ON p.service_goods_id=sg.service_goods_id
+▶ service_goods: service_goods_id(PK) service_goods_cd service_goods_nm is_active display_order
 
 [빌딩명] 한글→영문 변환 필수 (DB는 영문 저장)
   유니플레이스/유니플A → Uniplace A | 유니플B → Uniplace B | 유니플C → Uniplace C
@@ -48,13 +52,16 @@ ALLOWED_TABLES = {
     "building", "rooms", "reviews", "common_space",
     "room_reservation", "board", "notice", "faq", "company_info",
     # 로그인 필요
-    "contract", "space_reservations", "complain", "payment",
-    "product_building_stock",
+    "contract", "space_reservations", "complain", "payment", "qna", "monthly_charge",
+    "product_building_stock", "service_goods",
+    "orders", "order_items", "product",
+    "qna",
+    "monthly_charge",
 }
 
 # 로그인이 필요한 테이블 (user_id 강제 주입)
 AUTH_REQUIRED_TABLES = {
-    "contract", "space_reservations", "complain", "payment",
+    "contract", "space_reservations", "complain", "payment", "qna", "monthly_charge",
 }
 
 # 절대 허용 안 되는 SQL 키워드

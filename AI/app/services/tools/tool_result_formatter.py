@@ -19,8 +19,20 @@ def format_tool_result(tool_name: str, result: dict[str, Any]) -> list[str]:
     data = result.get("data") or []
     meta = result.get("meta") or {}
 
-    # query_database / query_my_data — 범용 자동 포맷
-    if tool_name in ("query_database", "query_my_data"):
+    # ── RAG 검색 결과 포맷 ─────────────────────────────────────────────────────
+    if tool_name == "rag_search":
+        if result.get("rag"):
+            results = result.get("data", [])
+            if not results:
+                return ["[RAG] 관련 문서를 찾지 못했습니다."]
+            lines = [f"[RAG 검색 결과 {len(results)}건]"]
+            for i, r in enumerate(results, 1):
+                lines.append(f"{i}. [{r.get('source','')}] (관련도: {r.get('relevance', r.get('score', 0)):.2f})")
+                lines.append(f"   {r.get('content', '')[:300]}")
+            return lines
+
+    # query_database / query_my_data / query_database_admin — 범용 자동 포맷
+    if tool_name in ("query_database", "query_my_data", "query_database_admin"):
         return _fmt_query_result(data, meta)
 
     # 전용 tool 포맷
