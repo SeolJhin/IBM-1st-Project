@@ -5,7 +5,7 @@ on:
     branches:
       - dev
     paths:
-      - ".github/workflows/backend-deploy.yml"
+      - ".github/workflows/backend-docker.yml"
       - "uni-place-backend/src/**"
       - "uni-place-backend/build.gradle"
       - "uni-place-backend/settings.gradle"
@@ -46,32 +46,29 @@ jobs:
     needs: makeTagAndRelease
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
-      - name: Login to GHCR
-        uses: docker/login-action@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Set lower case owner name
-        run: echo "OWNER_LC=${OWNER,,}" >> "$GITHUB_ENV"
-        env:
-          OWNER: ${{ github.repository_owner }}
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and Push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           context: ./uni-place-backend
           file: ./uni-place-backend/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ env.OWNER_LC }}/deploy:${{ needs.makeTagAndRelease.outputs.tag_name }}
-            ghcr.io/${{ env.OWNER_LC }}/deploy:latest
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/uniplace-backend:${{ needs.makeTagAndRelease.outputs.tag_name }}
+            ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/uniplace-backend:latest
