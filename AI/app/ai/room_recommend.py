@@ -234,4 +234,5 @@ async def recommend_rooms(payload: dict[str, Any]) -> list[dict]:
     result = _parse_result(raw, rooms)
 
     logger.info("[RoomRecommend] Top3 결정 완료: %s", result)
+    
     return result
