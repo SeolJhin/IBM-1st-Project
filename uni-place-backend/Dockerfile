@@ -9,4 +9,5 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/build/libs/*.war app.war
 EXPOSE 8080
-ENTRYPOINT ["java", "-war", "/app/app.war"]
+# Spring Boot executable WAR is launched with `java -jar`.
+ENTRYPOINT ["java", "-jar", "/app/app.war"]
