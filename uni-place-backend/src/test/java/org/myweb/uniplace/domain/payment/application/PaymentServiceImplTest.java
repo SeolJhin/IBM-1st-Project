@@ -82,7 +82,6 @@ class PaymentServiceImplTest {
     @InjectMocks
     private PaymentServiceImpl paymentService;
 
-
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(paymentService, "objectMapper", new ObjectMapper());
@@ -115,6 +114,8 @@ class PaymentServiceImplTest {
             .isActive(1)
             .build();
 
+
+//
         PaymentGatewayReadyResponse ready = PaymentGatewayReadyResponse.builder()
             .providerRefId("pref-1")
             .redirectPcUrl("https://pc")
