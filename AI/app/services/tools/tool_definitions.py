@@ -120,6 +120,27 @@ TOOL_DEFINITIONS = [
             "required": ["complain_text"],
         },
     },
+
+    # ── RAG 문서 검색 (ChromaDB — 완전 무료 로컬) ─────────────────────────────
+    {
+        "name": "rag_search",
+        "description": (
+            "UNI PLACE 내부 지식베이스(FAQ·규정·매뉴얼·공지사항 문서)에서 관련 내용을 검색합니다. "
+            "DB에 없는 정책·규정·절차·안내 정보를 찾을 때 사용하세요. "
+            "예: 계약 해지 절차, 환불 정책, 반려동물 규정, 이용 약관 등. "
+            "실시간 DB 데이터(예약 현황, 결제 내역 등)는 query_database를 사용하세요."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "검색할 질문 또는 키워드 (한국어 권장)",
+                },
+            },
+            "required": ["query"],
+        },
+    },
 ]
 
 # tool name → definition 빠른 조회용

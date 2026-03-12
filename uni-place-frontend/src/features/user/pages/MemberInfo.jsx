@@ -759,7 +759,13 @@ function RoomServiceTab() {
   );
 }
 
-function SpaceTab({ spaceSubTab, setSpaceSubTab, setSearchParams }) {
+function SpaceTab({
+  spaceSubTab,
+  setSpaceSubTab,
+  setSearchParams,
+  aiSpaceInit,
+  clearAiSpaceInit,
+}) {
   return (
     <div className={styles.card}>
       <div className={styles.cardHeader}>
@@ -782,6 +788,7 @@ function SpaceTab({ spaceSubTab, setSpaceSubTab, setSearchParams }) {
           onClick={() => {
             setSpaceSubTab('list');
             setSearchParams({ tab: TAB.SPACE, sub: 'list' });
+            if (clearAiSpaceInit) clearAiSpaceInit();
           }}
         >
           내 예약 조회
@@ -790,9 +797,14 @@ function SpaceTab({ spaceSubTab, setSpaceSubTab, setSearchParams }) {
       {spaceSubTab === 'create' && (
         <SpaceReservationCreate
           inlineMode
+          initSpaceId={aiSpaceInit?.spaceId ?? null}
+          initBuildingId={aiSpaceInit?.buildingId ?? null}
+          initStartAt={aiSpaceInit?.startAt ?? null}
+          initEndAt={aiSpaceInit?.endAt ?? null}
           onSuccess={() => {
             setSpaceSubTab('list');
             setSearchParams({ tab: TAB.SPACE, sub: 'list' });
+            if (clearAiSpaceInit) clearAiSpaceInit();
           }}
         />
       )}
@@ -864,6 +876,17 @@ export default function MemberInfo() {
     }
     goTab(key);
   };
+
+  // 로딩 중이거나 미인증이면 자식 탭(SpaceReservationCreate 등) 렌더 차단
+  // → contractApi/reservationApi가 401로 터져서 에러페이지+흰화면 되는 것 방지
+  if (loading || !user) {
+    return (
+      <div className={styles.page}>
+        <Header />
+        <div className={styles.loading}>불러오는 중…</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -972,6 +995,8 @@ export default function MemberInfo() {
               spaceSubTab={spaceSubTab}
               setSpaceSubTab={setSpaceSubTab}
               setSearchParams={setSearchParams}
+              aiSpaceInit={null}
+              clearAiSpaceInit={null}
             />
           )}
 
