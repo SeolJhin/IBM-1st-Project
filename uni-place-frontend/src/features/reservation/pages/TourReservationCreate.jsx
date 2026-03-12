@@ -17,13 +17,15 @@ export default function TourReservationCreate({
   onSuccess,
   onClose,
   onGoList,
-  initialBuildingId = null, // RoomDetail에서 직접 전달
+  initialBuildingId = null,
   initialRoomId: propRoomId = '',
+  initialDate = null, // AI 추천: 자동 선택할 날짜 (YYYY-MM-DD)
+  initialSlotStartAt = null, // AI 추천: 자동 선택할 시작 시간
+  initialSlotEndAt = null, // AI 추천: 자동 선택할 종료 시간
 }) {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // URL 또는 prop에서 자동 선택값 읽기
   const initRoomId =
     propRoomId ||
     (searchParams.get('roomId') ? String(searchParams.get('roomId')) : '');
@@ -32,6 +34,11 @@ export default function TourReservationCreate({
     (searchParams.get('buildingId')
       ? Number(searchParams.get('buildingId'))
       : null);
+  // AI 추천 날짜
+  const initDate = initialDate ?? searchParams.get('date') ?? null;
+  const initSlotStartAt =
+    initialSlotStartAt ?? searchParams.get('startAt') ?? null;
+  const initSlotEndAt = initialSlotEndAt ?? searchParams.get('endAt') ?? null;
 
   // 빌딩 목록
   const [buildings, setBuildings] = useState([]);
@@ -46,7 +53,9 @@ export default function TourReservationCreate({
   const rooms = roomsPage?.content ?? [];
 
   // slot
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(
+    initDate ?? new Date().toISOString().slice(0, 10)
+  );
   const [roomId, setRoomId] = useState(initRoomId);
   const [slots, setSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
@@ -56,6 +65,9 @@ export default function TourReservationCreate({
   const [form, setForm] = useState({ tourNm: '', tourTel: '', tourPwd: '' });
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitError, setSubmitError] = useState('');
+
+  // AI 추천 슬롯 자동 선택 (slots 로드 후 한 번만 적용)
+  const aiSlotAppliedRef = React.useRef(false);
 
   // 빌딩 목록 로드
   const loadBuildings = async () => {
@@ -163,12 +175,29 @@ export default function TourReservationCreate({
     if (!selectedBuilding?.buildingId || !roomId || !date) return;
     setSelectedSlot(null);
     setSubmitError('');
+    aiSlotAppliedRef.current = false; // 날짜/방 변경 시 AI 자동선택 재시도 허용
     loadSlots({
       buildingId: Number(selectedBuilding.buildingId),
       roomId: Number(roomId),
       date,
     });
   }, [selectedBuilding, roomId, date]);
+
+  // AI 추천 시간 자동 선택: slots 로드 후 startAt 매칭
+  useEffect(() => {
+    if (!initSlotStartAt || aiSlotAppliedRef.current) return;
+    if (!slots.length) return;
+
+    const targetStart = initSlotStartAt.replace('T', ' ').slice(0, 16);
+    const match = slots.find((s) => {
+      const sStart = (s.startAt || '').replace('T', ' ').slice(0, 16);
+      return sStart === targetStart;
+    });
+    if (match) {
+      setSelectedSlot(match);
+      aiSlotAppliedRef.current = true;
+    }
+  }, [slots, initSlotStartAt]);
 
   const canSubmit = useMemo(() => {
     if (!selectedBuilding?.buildingId) return false;
@@ -305,6 +334,15 @@ export default function TourReservationCreate({
                 <span className={styles.mutedInline}>(조회중…)</span>
               )}
             </label>
+            {initSlotStartAt &&
+              selectedSlot &&
+              (String(selectedSlot.startAt) || '').slice(0, 16) ===
+                initSlotStartAt.slice(0, 16) && (
+                <p className={styles.autoSelectedBadge}>
+                  🤖 AI 추천 시간 자동 선택: {initSlotStartAt.slice(11, 16)} ~{' '}
+                  {(initSlotEndAt || '').slice(11, 16)}
+                </p>
+              )}
             {slotsError && <p className={styles.errMsg}>{slotsError}</p>}
             <TimeSlotButtons
               slots={slots}
@@ -609,6 +647,15 @@ export default function TourReservationCreate({
                 <span className={styles.mutedInline}>(조회중…)</span>
               )}
             </label>
+            {initSlotStartAt &&
+              selectedSlot &&
+              (String(selectedSlot.startAt) || '').slice(0, 16) ===
+                initSlotStartAt.slice(0, 16) && (
+                <p className={styles.autoSelectedBadge}>
+                  🤖 AI 추천 시간 자동 선택: {initSlotStartAt.slice(11, 16)} ~{' '}
+                  {(initSlotEndAt || '').slice(11, 16)}
+                </p>
+              )}
             {slotsError && <p className={styles.errMsg}>{slotsError}</p>}
             <TimeSlotButtons
               slots={slots}

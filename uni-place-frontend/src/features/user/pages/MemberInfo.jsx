@@ -759,7 +759,13 @@ function RoomServiceTab() {
   );
 }
 
-function SpaceTab({ spaceSubTab, setSpaceSubTab, setSearchParams }) {
+function SpaceTab({
+  spaceSubTab,
+  setSpaceSubTab,
+  setSearchParams,
+  aiSpaceInit,
+  clearAiSpaceInit,
+}) {
   return (
     <div className={styles.card}>
       <div className={styles.cardHeader}>
@@ -782,6 +788,7 @@ function SpaceTab({ spaceSubTab, setSpaceSubTab, setSearchParams }) {
           onClick={() => {
             setSpaceSubTab('list');
             setSearchParams({ tab: TAB.SPACE, sub: 'list' });
+            if (clearAiSpaceInit) clearAiSpaceInit();
           }}
         >
           내 예약 조회
@@ -790,9 +797,14 @@ function SpaceTab({ spaceSubTab, setSpaceSubTab, setSearchParams }) {
       {spaceSubTab === 'create' && (
         <SpaceReservationCreate
           inlineMode
+          initSpaceId={aiSpaceInit?.spaceId ?? null}
+          initBuildingId={aiSpaceInit?.buildingId ?? null}
+          initStartAt={aiSpaceInit?.startAt ?? null}
+          initEndAt={aiSpaceInit?.endAt ?? null}
           onSuccess={() => {
             setSpaceSubTab('list');
             setSearchParams({ tab: TAB.SPACE, sub: 'list' });
+            if (clearAiSpaceInit) clearAiSpaceInit();
           }}
         />
       )}
@@ -972,6 +984,8 @@ export default function MemberInfo() {
               spaceSubTab={spaceSubTab}
               setSpaceSubTab={setSpaceSubTab}
               setSearchParams={setSearchParams}
+              aiSpaceInit={null}
+              clearAiSpaceInit={null}
             />
           )}
 

@@ -24,6 +24,8 @@ export default function SpaceReservationCreate({
   onSuccess,
   initSpaceId: propSpaceId,
   initBuildingId: propBuildingId,
+  initStartAt: propStartAt, // AI 추천: 자동 선택할 시작 시간 (ISO string)
+  initEndAt: propEndAt, // AI 추천: 자동 선택할 종료 시간 (ISO string)
 }) {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
@@ -38,6 +40,11 @@ export default function SpaceReservationCreate({
     (searchParams.get('buildingId')
       ? Number(searchParams.get('buildingId'))
       : null);
+  // AI 추천 시간: prop 또는 URL 파라미터
+  const initStartAt = propStartAt ?? searchParams.get('startAt') ?? null;
+  const initEndAt = propEndAt ?? searchParams.get('endAt') ?? null;
+  // AI 추천 시간에서 날짜 추출
+  const initDateFromAi = initStartAt ? initStartAt.slice(0, 10) : null;
 
   // 로그인 필수 (독립 페이지일 때만 리다이렉트)
   useEffect(() => {
@@ -53,7 +60,9 @@ export default function SpaceReservationCreate({
   const [bError, setBError] = useState('');
   const [selectedBuilding, setSelectedBuilding] = useState(null);
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(
+    initDateFromAi ?? new Date().toISOString().slice(0, 10)
+  );
   const [spacesPage, setSpacesPage] = useState(null);
   const [spacesLoading, setSpacesLoading] = useState(false);
   const [spacesError, setSpacesError] = useState('');
@@ -65,6 +74,9 @@ export default function SpaceReservationCreate({
   );
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [srNoPeople, setSrNoPeople] = useState(1);
+
+  // AI 추천 시간 자동 선택 (availableSlots 로드 후)
+  const aiSlotAppliedRef = React.useRef(false);
 
   const loadBuildings = async () => {
     setBLoading(true);
@@ -158,6 +170,22 @@ export default function SpaceReservationCreate({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spaces]);
+
+  // AI 추천 시간 자동 선택: availableSlots 로드 후 startAt 매칭
+  useEffect(() => {
+    if (!initStartAt || !initEndAt || aiSlotAppliedRef.current) return;
+    if (!currentSpace?.availableSlots?.length) return;
+
+    const targetStart = initStartAt.replace('T', ' ').slice(0, 16); // "2025-03-12T09:00" → "2025-03-12 09:00"
+    const match = currentSpace.availableSlots.find((s) => {
+      const sStart = (s.startAt || '').replace('T', ' ').slice(0, 16);
+      return sStart === targetStart;
+    });
+    if (match) {
+      setSelectedSlot(match);
+      aiSlotAppliedRef.current = true;
+    }
+  }, [currentSpace, initStartAt, initEndAt]);
 
   useEffect(() => {
     setSelectedSlot(null);
@@ -306,6 +334,15 @@ export default function SpaceReservationCreate({
         </div>
         <div className={styles.formGroup}>
           <label className={styles.label}>예약 가능 시간</label>
+          {initStartAt &&
+            selectedSlot &&
+            String(selectedSlot.startAt).slice(0, 16) ===
+              initStartAt.slice(0, 16) && (
+              <p className={styles.autoSelectedBadge}>
+                🤖 AI 추천 시간 자동 선택: {initStartAt.slice(11, 16)} ~{' '}
+                {initEndAt?.slice(11, 16)}
+              </p>
+            )}
           <TimeSlotButtons
             slots={availableSlots}
             selectedKey={selectedSlot ? String(selectedSlot.startAt) : ''}
