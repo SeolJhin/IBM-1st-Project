@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: ai
-          image: ghcr.io/replace-owner/uniplace-ai:latest
+          image: 194722402714.dkr.ecr.ap-northeast-2.amazonaws.com/uniplace-ai:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000

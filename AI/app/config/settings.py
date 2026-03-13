@@ -33,22 +33,28 @@ class Settings(BaseSettings):
     watsonx_project_id: str = ""
     watsonx_url: str = "https://us-south.ml.cloud.ibm.com"
     watsonx_model_id: str = "ibm/granite-3-8b-instruct"
-    watsonx_embedding_model_id: str = ""
+    watsonx_embedding_model_id: str = "ibm/slate-125m-english-rtrvr"
 
-    # ── Spring Boot (Tool Calling 역방향 호출) ★ 추가 ─────────────
+    # ── Spring Boot (Tool Calling 역방향 호출) ────────────────────
     spring_base_url: str = "http://localhost:8080"
 
-    # ── Milvus (RAG 벡터DB) ───────────────────────────────────────
+    # ── Milvus (RAG 벡터DB - 유료, 기존 설정 유지) ───────────────
     milvus_uri: str = "http://localhost:19530"
     milvus_token: str = ""
     milvus_db_name: str = "default"
     milvus_collection: str = "uniplace_knowledge"
 
+    # ── ChromaDB (RAG 벡터DB - 무료 로컬, Milvus 대체) ───────────
+    # rag_engine: "chroma" (무료 로컬) | "milvus" (유료)
+    rag_engine: str = "chroma"
+    chroma_persist_dir: str = str(BASE_DIR / "chroma_db")
+    chroma_collection: str = "uniplace_knowledge"
+
     # ── Embedding ─────────────────────────────────────────────────
-    embedding_provider: str = "openai"
+    embedding_provider: str = "watsonx"
     top_k: int = 5
     similarity_threshold: float = 0.2
-    default_model: str = "llama-3.3-70b-versatile"
+    default_model: str = "ibm/granite-3-8b-instruct"
 
     # ── RAG 파이프라인 ────────────────────────────────────────────
     rag_source_dir: str = str(BASE_DIR / "rag_docs")
@@ -57,6 +63,13 @@ class Settings(BaseSettings):
     rag_auto_reindex_enabled: bool = False
     rag_reindex_interval_seconds: int = 3600
     rag_reindex_strategy: str = "incremental"
+
+    # ── 웹 검색 (Tavily — 무료 1000회/월) ────────────────────────
+    # 발급: https://tavily.com → 대시보드 → API Keys
+    # .env에 추가: TAVILY_API_KEY=tvly-xxxx
+    tavily_api_key: str = ""
+    tavily_max_results: int = 5          # 검색당 최대 결과 수
+    tavily_search_depth: str = "basic"   # "basic" (무료) | "advanced" (유료)
 
     # ── 문서 출력 ─────────────────────────────────────────────────
     document_output_dir: str = str(BASE_DIR / "output_docs")

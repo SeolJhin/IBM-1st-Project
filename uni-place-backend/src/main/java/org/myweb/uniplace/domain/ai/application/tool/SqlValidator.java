@@ -1,5 +1,7 @@
 package org.myweb.uniplace.domain.ai.application.tool;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -10,6 +12,8 @@ import java.util.regex.Pattern;
  * - query_database 공개 조회에서 room_reservation(예약자 이름/전화번호) 접근 차단
  * - query_my_data에서 AI가 임의의 userId 값을 SQL에 주입하는 취약점 차단
  *   → enforceUserId()로 SQL 내 모든 user_id = '...' 값을 서버 측 userId로 강제 치환
+ * - space_reservations: AUTH_REQUIRED에서 제외 (예약 시간대는 비민감 공개 데이터)
+ *   단, user_id / sr_no_people 컬럼 직접 SELECT는 코드 레벨에서 차단
  */
 public class SqlValidator {
 
@@ -18,19 +22,32 @@ public class SqlValidator {
         "building", "buildings",  // building 단수·복수 모두 허용 (AI가 혼용)
         "room", "rooms", "reviews", "common_space",
         "room_reservation", "board", "notice", "faq", "company_info",
-        "contract", "space_reservations", "complain", "payment",
-        "product_building_stock"
+        "contract", "space_reservations", "complain", "payment", "qna",
+        "product_building_stock", "service_goods",
+        "orders", "order_items", "product",
+        "monthly_charge"
     );
 
     /**
      * query_database(비인증)에서 접근 불가 테이블.
-     * room_reservation은 user_id 컬럼이 없어 query_my_data로도 조회 불가.
-     * 비인증 접근 시 개인정보(이름·전화) 노출 위험이 있으나,
-     * AI 프롬프트에서 SELECT 컬럼 제한으로 대응. 여기선 차단하지 않음.
+     * space_reservations는 예약 시간대(sr_start_at/sr_end_at)만 조회하는 용도로
+     * 비인증 접근을 허용. 단, 개인정보 컬럼(user_id, sr_no_people)은
+     * checkRestrictedColumns()에서 SELECT 레벨로 별도 차단.
+     * room_reservation: user_id 컬럼이 없어 query_my_data로도 조회 불가.
      */
     private static final Set<String> AUTH_REQUIRED_TABLES = Set.of(
-        "contract", "space_reservations", "complain", "payment"
-        // room_reservation: user_id 없음 → 비인증 조회 허용 (통계 등), AI 프롬프트에서 개인정보 컬럼 제한
+        "contract", "complain", "payment", "monthly_charge"
+        // space_reservations: 제거 — 예약 시간대는 공개 데이터, 컬럼 레벨 차단으로 대응
+        // room_reservation: user_id 없음 → 비인증 조회 허용, AI 프롬프트에서 개인정보 컬럼 제한
+    );
+
+    /**
+     * 테이블별 비인증 SELECT 금지 컬럼 목록.
+     * space_reservations에서 user_id(개인 식별자), sr_no_people(사용 인원)은
+     * 공개 조회(query_database)에서 SELECT 불가.
+     */
+    private static final Map<String, List<String>> RESTRICTED_COLUMNS = Map.of(
+        "space_reservations", List.of("user_id", "sr_no_people")
     );
 
     /** 절대 허용 안 되는 키워드 */
@@ -86,11 +103,50 @@ public class SqlValidator {
                 throw new IllegalArgumentException("허용되지 않는 테이블: " + tableName);
             }
         }
+
+        // 테이블별 제한 컬럼 SELECT 차단 (예: space_reservations.user_id)
+        checkRestrictedColumns(sql);
+    }
+
+    /**
+     * 테이블별 개인정보 컬럼을 SELECT 절에서 직접 조회하는 시도를 차단.
+     * space_reservations의 user_id, sr_no_people은 공개 조회 불가.
+     *
+     * 탐지 패턴: alias.column 또는 단독 column 형태 모두 검사.
+     * SELECT * 도 차단하여 우회 방지.
+     */
+    private static void checkRestrictedColumns(String sql) {
+        String lower = sql.toLowerCase();
+
+        for (Map.Entry<String, List<String>> entry : RESTRICTED_COLUMNS.entrySet()) {
+            String table = entry.getKey();
+            if (!lower.contains(table)) continue;
+
+            // SELECT * 차단 (해당 테이블이 쿼리에 포함된 경우)
+            if (lower.matches("(?s).*select\\s+\\*.*")) {
+                throw new IllegalArgumentException(
+                    table + " 테이블이 포함된 쿼리에서 SELECT * 는 허용되지 않습니다. 필요한 컬럼만 명시하세요."
+                );
+            }
+
+            // 제한 컬럼 개별 차단 (alias.col 또는 단독 col 패턴)
+            for (String col : entry.getValue()) {
+                Pattern colPattern = Pattern.compile(
+                    "(?i)\\b(?:[a-z_][a-z0-9_]*\\.)?" + Pattern.quote(col) + "\\b"
+                );
+                if (colPattern.matcher(lower).find()) {
+                    throw new IllegalArgumentException(
+                        table + "." + col + " 컬럼은 공개 조회가 허용되지 않습니다."
+                    );
+                }
+            }
+        }
     }
 
     /**
      * 비인증 공개 조회(query_database)에서 인증 필요 테이블 접근 여부 확인.
-     * contract / space_reservations / complain / payment 는 반드시 로그인 후 query_my_data로만 접근.
+     * contract / complain / payment 는 반드시 로그인 후 query_my_data로만 접근.
+     * space_reservations는 checkRestrictedColumns()에서 컬럼 레벨로 차단.
      */
     public static boolean requiresAuth(String sql) {
         String lower = sql.toLowerCase();

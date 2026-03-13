@@ -1,5 +1,6 @@
 package org.myweb.uniplace.domain.payment.application;
 
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -113,6 +114,7 @@ class PaymentServiceImplTest {
             .serviceGoodsNm("room-service")
             .isActive(1)
             .build();
+
 
         PaymentGatewayReadyResponse ready = PaymentGatewayReadyResponse.builder()
             .providerRefId("pref-1")
