@@ -16,7 +16,7 @@ from anyascii import anyascii
 from jamo import hangul_to_jamo
 
 
-
+## 한국어 텍스트 정규화
 def normalize(text):
     text = text.strip()
     text = normalize_with_dictionary(text, etc_dictionary)
