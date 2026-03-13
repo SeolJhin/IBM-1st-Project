@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
+import { withApiPrefix } from '../../../../app/http/apiBase';
 import styles from '../reservation/AdminReservation.module.css';
 
 const CONTRACT_STATUS_OPTIONS = [
@@ -26,8 +27,6 @@ function StatusBadge({ status }) {
   const s = STATUS_LABELS[key] ?? { label: status ?? '-', cls: styles.badgePending };
   return <span className={`${styles.badge} ${s.cls}`}>{s.label}</span>;
 }
-const API_BASE = 'http://localhost:8080';
-
 function fmtDate(v) {
   if (!v) return '-';
   return String(v).slice(0, 10);
@@ -399,7 +398,7 @@ export default function AdminContractList() {
                   <td>
                     {c.contractPdfUrl ? (
                       <a
-                        href={`${API_BASE}${c.contractPdfUrl}`}
+                        href={withApiPrefix(c.contractPdfUrl)}
                         target="_blank"
                         rel="noreferrer"
                         style={{ textDecoration: 'underline' }}
@@ -530,7 +529,7 @@ export default function AdminContractList() {
                       <span className={styles.detailValue}>
                         {detail.contractPdfUrl ? (
                           <a
-                            href={`${API_BASE}${detail.contractPdfUrl}`}
+                            href={withApiPrefix(detail.contractPdfUrl)}
                             target="_blank"
                             rel="noreferrer"
                             style={{ textDecoration: 'underline' }}

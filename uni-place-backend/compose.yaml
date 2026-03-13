@@ -28,6 +28,7 @@
       - .env
     environment:
       SERVER_PORT: ${SERVER_PORT:-8080}
+      SERVER_SERVLET_CONTEXT_PATH: ${SERVER_SERVLET_CONTEXT_PATH:-/api}
       DB_URL: ${DB_URL:-jdbc:mysql://mysql:3306/student123?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
       DB_USERNAME: ${DB_USERNAME:-student123}
       DB_PASSWORD: ${DB_PASSWORD:-student123}
