@@ -40,6 +40,8 @@ tavily-python>=0.3.0      # 또는 requests만으로도 동작 (web_search_tool.
  
 # 2. RAG - ChromaDB (Milvus 무료 대체)
 chromadb>=0.5.0
+pymysql==1.1.2
+soxr==1.0.0
  
 # 3. RAG - 한국어 임베딩 모델 (무료 로컬, 최초 실행 시 ~500MB 다운로드)
 sentence-transformers==2.2.2
