@@ -25,7 +25,8 @@ public class SqlValidator {
         "contract", "space_reservations", "complain", "payment", "qna",
         "product_building_stock", "service_goods",
         "orders", "order_items", "product",
-        "monthly_charge"
+        "monthly_charge",
+        "banner", "affiliate", "users"
     );
 
     /**
@@ -62,6 +63,38 @@ public class SqlValidator {
     );
 
     private static final Pattern SEMICOLON_MULTI = Pattern.compile(";.+", Pattern.DOTALL);
+
+    /**
+     * 어드민 전용 SQL 유효성 검사.
+     * - 테이블 화이트리스트 체크 생략 (어드민은 모든 테이블 조회 가능)
+     * - DDL/DML 금지 키워드 및 SELECT 전용 체크는 동일하게 적용
+     * @throws IllegalArgumentException 허용되지 않는 SQL인 경우
+     */
+    public static void validateAdmin(String sql) {
+        if (sql == null || sql.isBlank()) {
+            throw new IllegalArgumentException("SQL이 비어있습니다.");
+        }
+
+        String upper = sql.toUpperCase().trim();
+
+        // SELECT로 시작해야 함
+        if (!ONLY_SELECT.matcher(sql).matches()) {
+            throw new IllegalArgumentException("SELECT 쿼리만 허용됩니다.");
+        }
+
+        // 세미콜론 뒤 추가 쿼리 금지 (SQL stacking)
+        if (SEMICOLON_MULTI.matcher(sql.trim()).find()) {
+            throw new IllegalArgumentException("여러 쿼리를 동시에 실행할 수 없습니다.");
+        }
+
+        // 위험 키워드 차단 (DDL/DML/인젝션)
+        for (String keyword : FORBIDDEN) {
+            if (Pattern.compile("\\b" + keyword + "\\b").matcher(upper).find()) {
+                throw new IllegalArgumentException("허용되지 않는 SQL 키워드: " + keyword);
+            }
+        }
+        // 테이블 화이트리스트 체크 생략 — 어드민은 전체 테이블 접근 허용
+    }
 
     /**
      * SQL 유효성 검사.

@@ -1,8 +1,6 @@
-/* src/features/chat/components/AdminChatBot.module.css */
-/* 어드민 전용 챗봇 — 일반 챗봇과 색상만 다름 (남색/다크 테마) */
+/* AdminChatBot.module.css — 어드민 챗봇 + 가격 리포트 카드 */
 
 /* ── 플로팅 버튼 ── */
-/* 일반 챗봇(right:28px)보다 위에 배치 — bottom:100px */
 .fab {
   position: fixed;
   bottom: 100px;
@@ -62,8 +60,8 @@
   bottom: 100px;
   right: 96px;
   z-index: 999;
-  width: 380px;
-  max-height: 620px;
+  width: 420px;
+  max-height: 680px;
   border-radius: 18px;
   background: #0f172a;
   border: 1px solid #1e3a6e;
@@ -92,7 +90,7 @@
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
-  background: linear-gradient(135deg, #1a3a6b 0%, #1e4080 100%);
+  background: linear-gradient(135deg, #1a3a6b, #1e4080);
   border-bottom: 1px solid #1e3a6e;
   flex-shrink: 0;
 }
@@ -109,7 +107,6 @@
   font-weight: 700;
   color: #e2e8f0;
   margin: 0;
-  line-height: 1.3;
 }
 .headerSub {
   font-size: 11px;
@@ -255,10 +252,8 @@
   padding: 9px 13px;
   font-size: 13px;
   line-height: 1.6;
-  max-width: 86%;
   word-break: break-word;
   white-space: pre-wrap;
-  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
 }
 .bubbleTime {
   font-size: 10px;
@@ -318,7 +313,7 @@
   font-size: 12px;
 }
 
-/* ── 버튼 ── */
+/* 액션 버튼 */
 .actionButtons {
   display: flex;
   flex-wrap: wrap;
@@ -351,7 +346,7 @@
   font-size: 13px;
 }
 
-/* ── 빠른 질문 ── */
+/* 빠른 질문 */
 .quickChips {
   padding: 0 12px 10px;
   display: flex;
@@ -378,7 +373,7 @@
   color: #bfdbfe;
 }
 
-/* ── 입력 영역 ── */
+/* ── 입력 ── */
 .footer {
   padding: 10px 12px 12px;
   border-top: 1px solid #1e3a6e;
@@ -445,17 +440,508 @@
   margin: 6px 0 0;
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   가격 리포트 카드
+══════════════════════════════════════════════════════════════════════ */
+
+.priceCard {
+  background: #0f1e38;
+  border: 1px solid #1e3a6e;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 6px;
+  font-size: 12.5px;
+}
+
+/* 카드 헤더 */
+.priceCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #0d1f40, #1a3a6b);
+  border-bottom: 1px solid #1e3a6e;
+}
+.priceCardIcon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.priceCardTitle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+.priceCardSub {
+  font-size: 10.5px;
+  color: #64748b;
+  font-weight: 400;
+}
+.priceVerdict {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* 탭 */
+.priceTabs {
+  display: flex;
+  border-bottom: 1px solid #1e3a6e;
+  background: #0a1628;
+}
+.priceTab {
+  flex: 1;
+  padding: 7px 4px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+  border-bottom: 2px solid transparent;
+}
+.priceTab:hover {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.06);
+}
+.priceTabActive {
+  color: #60a5fa;
+  border-bottom-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+/* 바디 공통 */
+.priceBody {
+  padding: 12px;
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #1e3a6e transparent;
+}
+.priceBody::-webkit-scrollbar {
+  width: 3px;
+}
+.priceBody::-webkit-scrollbar-thumb {
+  background: #1e3a6e;
+  border-radius: 4px;
+}
+
+/* 추천 배너 */
+.recBanner {
+  background: linear-gradient(
+    135deg,
+    rgba(29, 78, 216, 0.2),
+    rgba(30, 58, 138, 0.25)
+  );
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.recBannerLabel {
+  font-size: 10.5px;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.recBannerPrice {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.recLow {
+  font-size: 22px;
+  font-weight: 800;
+  color: #60a5fa;
+}
+.recRange {
+  font-size: 16px;
+  color: #475569;
+}
+.recHigh {
+  font-size: 22px;
+  font-weight: 800;
+  color: #60a5fa;
+}
+.recUnit {
+  font-size: 13px;
+  color: #64748b;
+  margin-left: 2px;
+}
+.recOptimal {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+.recOptimal strong {
+  color: #34d399;
+}
+.recConfidence {
+  font-size: 11px;
+}
+
+/* 범위 바 */
+.rangeBarWrap {
+  margin-bottom: 12px;
+}
+.rangeBarLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: #475569;
+  margin-bottom: 4px;
+}
+.rangeBar {
+  position: relative;
+  height: 14px;
+  background: rgba(30, 58, 110, 0.4);
+  border-radius: 7px;
+  overflow: visible;
+}
+.rangeBarRec {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: rgba(59, 130, 246, 0.35);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  border-radius: 7px;
+}
+.rangeBarCurrent {
+  position: absolute;
+  top: -4px;
+  transform: translateX(-50%);
+}
+.rangeBarCurrentPin {
+  width: 4px;
+  height: 22px;
+  background: #f59e0b;
+  border-radius: 2px;
+  margin: 0 auto;
+}
+.rangeBarCurrentLabel {
+  font-size: 9.5px;
+  color: #f59e0b;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: center;
+  margin-top: 2px;
+}
+.rangeBarAvg {
+  position: absolute;
+  top: -2px;
+  transform: translateX(-50%);
+}
+.rangeBarAvgPin {
+  width: 2px;
+  height: 18px;
+  background: #94a3b8;
+  border-radius: 1px;
+  margin: 0 auto;
+}
+.rangeBarAvgLabel {
+  font-size: 9px;
+  color: #64748b;
+  white-space: nowrap;
+  text-align: center;
+  margin-top: 2px;
+}
+.rangeBarLegend {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 10px;
+  color: #64748b;
+}
+.rangeBarLegend span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.legendRec {
+  display: inline-block;
+  width: 12px;
+  height: 8px;
+  background: rgba(59, 130, 246, 0.4);
+  border: 1px solid rgba(59, 130, 246, 0.6);
+  border-radius: 2px;
+}
+.legendCur {
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background: #f59e0b;
+  border-radius: 1px;
+}
+.legendAvg {
+  display: inline-block;
+  width: 2px;
+  height: 12px;
+  background: #94a3b8;
+  border-radius: 1px;
+}
+
+/* 현재가 vs 추천가 비교 */
+.compareRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 10px 12px;
+  background: rgba(15, 30, 56, 0.5);
+  border: 1px solid #1e3a6e;
+  border-radius: 10px;
+}
+.compareBox {
+  flex: 1;
+  text-align: center;
+}
+.compareLabel {
+  font-size: 10px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.compareValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+.compareValue span {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 400;
+}
+.compareArrow {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* 표본 수 노트 */
+.sampleNote {
+  font-size: 10.5px;
+  color: #334155;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* 근거표 */
+.statsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.statsTable th {
+  background: rgba(30, 58, 110, 0.5);
+  color: #94a3b8;
+  padding: 6px 8px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid #1e3a6e;
+}
+.statsTable td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(30, 58, 110, 0.3);
+  color: #cbd5e1;
+}
+.statsTable tr:hover td {
+  background: rgba(30, 58, 110, 0.2);
+}
+.tdNum {
+  text-align: right;
+  font-weight: 700;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+}
+.tdDesc {
+  font-size: 10.5px;
+  color: #475569;
+}
+.trHighlight td {
+  background: rgba(30, 58, 110, 0.25);
+}
+.trRec td {
+  background: rgba(29, 78, 216, 0.1);
+}
+
+/* 근거 텍스트 */
+.basisText {
+  background: rgba(15, 30, 56, 0.6);
+  border: 1px solid #1e3a6e;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+.basisLine {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.7;
+}
+.basisLine:first-child {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+/* 매물 리스트 */
+.listingsSectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+.listingsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.listingCard {
+  background: #0a1628;
+  border: 1px solid #1e3a6e;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.listingCard:hover {
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.18);
+}
+
+/* 매물 이미지 */
+.listingImg {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #0d1f40;
+  overflow: hidden;
+}
+.listingImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.listingImgPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: #1e3a6e;
+}
+.listingSource {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #93c5fd;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+}
+.listingDist {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #94a3b8;
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* 매물 정보 */
+.listingInfo {
+  padding: 7px 8px;
+}
+.listingPrice {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 2px;
+}
+.listingMeta {
+  font-size: 10.5px;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+.listingBldg {
+  font-size: 10.5px;
+  color: #475569;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.listingOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 3px;
+}
+.listingOption {
+  background: rgba(30, 58, 110, 0.5);
+  color: #93c5fd;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 9.5px;
+}
+.listingMonth {
+  font-size: 9.5px;
+  color: #334155;
+}
+
+/* 매물 없음 */
+.noListings {
+  text-align: center;
+  color: #475569;
+  padding: 24px 0;
+  font-size: 12px;
+}
+
 /* ── 반응형 ── */
 @media (max-width: 480px) {
   .panel {
     right: 0;
     bottom: 0;
     width: 100vw;
-    max-height: 90vh;
+    max-height: 92vh;
     border-radius: 18px 18px 0 0;
   }
   .fab {
     bottom: 88px;
     right: 16px;
   }
+  .listingsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 타이핑 레이블 (시세 수집 중 안내) ── */
+.typingLabel {
+  font-size: 11px;
+  color: #64748b;
+  margin-left: 6px;
+  white-space: nowrap;
 }

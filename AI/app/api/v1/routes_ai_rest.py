@@ -154,6 +154,21 @@ def download_payment_order_form(file_name: str) -> FileResponse:
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
+# ── admin stock alerts ───────────────────────────────────────────────────────
+@router.get("/admin/stock-alerts")
+def get_stock_alerts(adminId: str = "") -> dict:
+    """
+    챗봇 open 시 호출 — 오늘 재고 부족 알림 반환.
+    부족 상품 없으면 {"alert": null} 반환.
+    """
+    try:
+        from app.services.monitor.stock_alert_service import get_pending_alert
+        message = get_pending_alert(adminId)
+        return {"alert": message}
+    except Exception as exc:
+        logger.warning("[stock-alerts] 오류: %s", exc)
+        return {"alert": None}
+
 # ── operations ────────────────────────────────────────────────────────────────
 @router.post("/operations/roomservice-stock-monitoring", response_model=AiResponse, responses=ERROR_RESPONSES)
 def roomservice_stock(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONResponse:

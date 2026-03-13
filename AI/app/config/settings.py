@@ -58,6 +58,12 @@ class Settings(BaseSettings):
     rag_source_dir: str = str(BASE_DIR / "rag_docs")
     rag_manifest_path: str = str(BASE_DIR / "rag_docs" / ".manifest.json")
     rag_chunk_size: int = 500
+
+    # ── 주변 부동산 매물 조회 (가격 추천 AI) ──────────────────────
+    # data.go.kr에서 '오피스텔 전월세 실거래 자료' 신청 후 발급 (무료)
+    molit_api_key: str = ""
+    # 카카오 지도 API (주소→위경도 변환, 더 정확). 없으면 Nominatim 사용
+    kakao_map_api_key: str = ""
     rag_auto_reindex_enabled: bool = False
     rag_reindex_interval_seconds: int = 3600
     rag_reindex_strategy: str = "incremental"
