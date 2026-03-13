@@ -1,16 +1,321 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
 from app.config.settings import settings
 from app.schemas.ai_request import AiRequest
 from app.services.actions.event_sink import publish_action_event
+from app.services.tools.tool_executor import execute_tool
+
+logger = logging.getLogger(__name__)
+
+# ════════════════════════════════════════════════════════════════════════════
+# 빌딩별 결제 내역 리포트 (DB → xlsx)
+# ════════════════════════════════════════════════════════════════════════════
+
+# 스타일 상수
+_HDR_FILL = PatternFill("solid", fgColor="1F4E79")
+_HDR_FONT = Font(bold=True, color="FFFFFF", size=10)
+_TOT_FILL = PatternFill("solid", fgColor="D9E1F2")
+_TOT_FONT = Font(bold=True, size=10)
+_BORDER   = Border(
+    left=Side(style="thin"), right=Side(style="thin"),
+    top=Side(style="thin"),  bottom=Side(style="thin"),
+)
+_CENTER = Alignment(horizontal="center", vertical="center", wrap_text=True)
+_LEFT   = Alignment(horizontal="left",   vertical="center")
+_RIGHT  = Alignment(horizontal="right",  vertical="center")
+
+
+def generate_billing_report(
+    admin_id: str,
+    target_month: str | None = None,
+    building_nm: str | None = None,
+) -> dict[str, Any]:
+    """
+    빌딩별 결제 내역 xlsx 리포트 생성.
+    target_month : 'YYYY-MM' (None → 이번달)
+    building_nm  : 특정 빌딩명 (None → 전체)
+    반환: {file_name, download_url, summary 통계}
+    """
+    month = target_month or datetime.now().strftime("%Y-%m")
+    bld_filter = f"AND b.building_nm LIKE '%{building_nm}%'" if building_nm else ""
+
+    # ── 1) monthly_charge (월세·관리비 청구) ────────────────────────────────
+    sql_mc = f"""
+SELECT b.building_nm, r.room_no, u.user_nm, u.user_id,
+       mc.billing_dt, mc.charge_type, mc.price, mc.charge_st
+FROM monthly_charge mc
+JOIN contract c ON mc.contract_id = c.contract_id
+JOIN rooms r    ON c.room_id = r.room_id
+JOIN building b ON r.building_id = b.building_id
+JOIN users u    ON c.user_id = u.user_id
+WHERE mc.billing_dt = '{month}' AND b.delete_yn = 'N' {bld_filter}
+ORDER BY b.building_nm, r.room_no, mc.charge_type
+LIMIT 500""".strip()
+
+    # ── 2) payment (룸서비스 등 기타 결제) ─────────────────────────────────
+    sql_pay = f"""
+SELECT b.building_nm, r.room_no, u.user_nm, p.payment_id,
+       DATE_FORMAT(p.paid_at, '%Y-%m-%d') AS paid_date,
+       sg.service_goods_nm, p.total_price, p.captured_price,
+       p.payment_st, p.provider
+FROM payment p
+JOIN contract c       ON c.user_id = p.user_id AND c.contract_st = 'active'
+JOIN rooms r          ON c.room_id = r.room_id
+JOIN building b       ON r.building_id = b.building_id
+JOIN users u          ON p.user_id = u.user_id
+LEFT JOIN service_goods sg ON p.service_goods_id = sg.service_goods_id
+WHERE DATE_FORMAT(p.paid_at, '%Y-%m') = '{month}'
+  AND p.payment_st = 'paid' AND b.delete_yn = 'N' {bld_filter}
+ORDER BY b.building_nm, r.room_no, p.paid_at
+LIMIT 500""".strip()
+
+    mc_res  = execute_tool("query_database_admin", {"sql": sql_mc,  "description": "월세·관리비 조회"}, admin_id)
+    pay_res = execute_tool("query_database_admin", {"sql": sql_pay, "description": "기타결제 조회"},   admin_id)
+
+    mc_rows  = mc_res.get("data")  or [] if mc_res.get("success")  else []
+    pay_rows = pay_res.get("data") or [] if pay_res.get("success") else []
+    logger.info("[BillingReport] monthly_charge=%d건, payment=%d건", len(mc_rows), len(pay_rows))
+
+    # ── xlsx 생성 ─────────────────────────────────────────────────────────
+    fname = _billing_file_name(month, building_nm, admin_id)
+    out   = Path(settings.payment_order_output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    wb = Workbook()
+    wb.remove(wb.active)
+    _sheet_summary(wb, mc_rows, pay_rows, month)
+    _sheet_monthly_charge(wb, mc_rows, month)
+    _sheet_payment(wb, pay_rows, month)
+
+    save_path = out / fname
+    wb.save(save_path)
+
+    file_size = save_path.stat().st_size if save_path.exists() else 0
+    logger.info("[BillingReport] 파일 저장 완료: %s (%d bytes)", save_path, file_size)
+    if file_size == 0:
+        raise RuntimeError(f"저장된 파일 크기가 0입니다: {save_path}")
+
+    mc_total  = sum(int(r.get("price", 0) or 0) for r in mc_rows)
+    pay_total = sum(int(r.get("captured_price", 0) or 0) for r in pay_rows)
+    buildings = sorted({r.get("building_nm", "") for r in mc_rows + pay_rows} - {""})
+
+    return {
+        "month":        month,
+        "buildings":    buildings,
+        "mc_count":     len(mc_rows),
+        "mc_total":     mc_total,
+        "pay_count":    len(pay_rows),
+        "pay_total":    pay_total,
+        "grand_total":  mc_total + pay_total,
+        "file_name":    fname,
+        "download_url": f"http://localhost:8080/ai/payment/order-form/download/{fname}",
+    }
+
+
+# ── 시트 작성 ────────────────────────────────────────────────────────────────
+
+def _sheet_summary(wb: Workbook, mc_rows: list, pay_rows: list, month: str) -> None:
+    """빌딩별 × 건별 전체 상세 내역 시트 (첫 번째)."""
+    ws = wb.create_sheet("전체 상세 내역", 0)
+    _title(ws, f"빌딩별 결제 상세 내역  ({month})", 9)
+    _hdr_row(ws, ["건물명", "호수", "입주자", "일자", "구분", "유형/상품", "금액", "납부상태", "비고"])
+
+    ct_map = {"rent": "월세", "manage_fee": "관리비", "deposit": "보증금"}
+    cs_map = {"paid": "✅ 납부", "unpaid": "❌ 미납", "pending": "⏳ 대기"}
+
+    buildings = sorted({r.get("building_nm", "") for r in mc_rows + pay_rows} - {""})
+    grand_total = 0
+
+    for bld in buildings:
+        # 해당 빌딩 월세·관리비
+        mc_b  = [r for r in mc_rows  if r.get("building_nm") == bld]
+        pay_b = [r for r in pay_rows if r.get("building_nm") == bld]
+
+        if not mc_b and not pay_b:
+            continue
+
+        # 빌딩 소계 행 (구분선)
+        ws.append([bld, "", "", "", "", "", "", "", ""])
+        r = ws.max_row
+        for ci in range(1, 10):
+            c = ws.cell(r, ci)
+            c.font = Font(bold=True, size=10, color="FFFFFF")
+            c.fill = _SUB_FILL if hasattr(globals().get('_SUB_FILL', None), 'fgColor') else PatternFill("solid", fgColor="2E75B6")
+            c.border = _BORDER
+            c.alignment = _LEFT
+        ws.row_dimensions[r].height = 18
+
+        bld_total = 0
+
+        for row in mc_b:
+            price = int(row.get("price") or 0)
+            bld_total += price
+            _data_row(ws, [
+                row.get("building_nm", ""),
+                row.get("room_no", ""),
+                row.get("user_nm", ""),
+                row.get("billing_dt", ""),
+                "월세·관리비",
+                ct_map.get(row.get("charge_type", ""), row.get("charge_type", "")),
+                price,
+                cs_map.get(row.get("charge_st", ""), row.get("charge_st", "")),
+                "",
+            ], 9)
+
+        for row in pay_b:
+            captured = int(row.get("captured_price") or 0)
+            bld_total += captured
+            _data_row(ws, [
+                row.get("building_nm", ""),
+                row.get("room_no", ""),
+                row.get("user_nm", ""),
+                row.get("paid_date", ""),
+                "기타결제",
+                row.get("service_goods_nm", "-"),
+                captured,
+                "✅ 결제완료",
+                row.get("provider", ""),
+            ], 9)
+
+        # 빌딩 소계
+        ws.append(["", "", "", "", bld + " 소계", "", bld_total, "", ""])
+        r = ws.max_row
+        for ci in range(1, 10):
+            c = ws.cell(r, ci)
+            c.font = _TOT_FONT; c.fill = _TOT_FILL; c.border = _BORDER
+            if isinstance(c.value, int):
+                c.number_format = "#,##0"; c.alignment = _RIGHT
+            else:
+                c.alignment = _LEFT
+        grand_total += bld_total
+
+    # 총합계
+    ws.append(["", "", "", "", "총 합계", "", grand_total, "", ""])
+    r = ws.max_row
+    for ci in range(1, 10):
+        c = ws.cell(r, ci)
+        c.font = Font(bold=True, size=11); c.fill = PatternFill("solid", fgColor="1F4E79")
+        c.font = Font(bold=True, size=11, color="FFFFFF")
+        c.border = _BORDER
+        if isinstance(c.value, int):
+            c.number_format = "#,##0"; c.alignment = _RIGHT
+        else:
+            c.alignment = _LEFT
+
+    _col_widths(ws, [16, 8, 12, 12, 12, 18, 14, 12, 12])
+    ws.freeze_panes = "A3"
+
+
+def _sheet_monthly_charge(wb: Workbook, rows: list, month: str) -> None:
+    ws = wb.create_sheet("월세·관리비 청구")
+    _title(ws, f"월세·관리비 청구 내역  ({month})", 8)
+    _hdr_row(ws, ["건물명", "호수", "입주자", "청구월", "청구유형", "금액", "납부상태", "비고"])
+
+    ct_map = {"rent": "월세", "manage_fee": "관리비", "deposit": "보증금"}
+    cs_map = {"paid": "✅ 납부", "unpaid": "❌ 미납", "pending": "⏳ 대기"}
+    total = 0
+    for r in rows:
+        price = int(r.get("price") or 0)
+        total += price
+        _data_row(ws, [
+            r.get("building_nm", ""), r.get("room_no", ""), r.get("user_nm", ""),
+            r.get("billing_dt", ""),
+            ct_map.get(r.get("charge_type", ""), r.get("charge_type", "")),
+            price,
+            cs_map.get(r.get("charge_st", ""), r.get("charge_st", "")),
+            "",
+        ], 8)
+
+    _total_row(ws, ["", "합  계", "", "", "", total, "", ""], 8)
+    _col_widths(ws, [16, 8, 12, 12, 12, 14, 12, 10])
+
+
+def _sheet_payment(wb: Workbook, rows: list, month: str) -> None:
+    ws = wb.create_sheet("기타 결제")
+    _title(ws, f"기타 결제 내역 (룸서비스 등)  ({month})", 8)
+    _hdr_row(ws, ["건물명", "호수", "입주자", "결제일", "상품명", "결제금액", "실결제", "결제수단"])
+
+    total = 0
+    for r in rows:
+        captured = int(r.get("captured_price") or 0)
+        total += captured
+        _data_row(ws, [
+            r.get("building_nm", ""), r.get("room_no", ""), r.get("user_nm", ""),
+            r.get("paid_date", ""), r.get("service_goods_nm", "-"),
+            int(r.get("total_price") or 0), captured, r.get("provider", ""),
+        ], 8)
+
+    _total_row(ws, ["", "합  계", "", "", "", "", total, ""], 8)
+    _col_widths(ws, [16, 8, 12, 12, 18, 14, 14, 12])
+
+
+# ── 공통 스타일 헬퍼 ──────────────────────────────────────────────────────────
+
+def _title(ws, text: str, cols: int) -> None:
+    last = get_column_letter(cols)
+    ws.merge_cells(f"A1:{last}1")
+    ws["A1"].value = text
+    ws["A1"].font  = Font(bold=True, size=13)
+    ws["A1"].alignment = _CENTER
+    ws.row_dimensions[1].height = 26
+
+
+def _hdr_row(ws, headers: list) -> None:
+    ws.append(headers)
+    r = ws.max_row
+    for ci, h in enumerate(headers, 1):
+        c = ws.cell(r, ci)
+        c.value = h; c.font = _HDR_FONT
+        c.fill = _HDR_FILL; c.alignment = _CENTER; c.border = _BORDER
+    ws.row_dimensions[r].height = 20
+
+
+def _data_row(ws, values: list, col_count: int) -> None:
+    ws.append(values)
+    r = ws.max_row
+    for ci in range(1, col_count + 1):
+        c = ws.cell(r, ci)
+        c.font = Font(size=10); c.border = _BORDER
+        if isinstance(c.value, int) and ci > 1:
+            c.number_format = "#,##0"; c.alignment = _RIGHT
+        else:
+            c.alignment = _CENTER if ci == 2 else _LEFT
+
+
+def _total_row(ws, values: list, col_count: int) -> None:
+    ws.append(values)
+    r = ws.max_row
+    for ci in range(1, col_count + 1):
+        c = ws.cell(r, ci)
+        c.font = _TOT_FONT; c.fill = _TOT_FILL; c.border = _BORDER
+        if isinstance(c.value, int) and c.value > 0:
+            c.number_format = "#,##0"; c.alignment = _RIGHT
+        else:
+            c.alignment = _LEFT
+
+
+def _col_widths(ws, widths: list) -> None:
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+
+def _billing_file_name(month: str, building_nm: str | None, user_id: str) -> str:
+    ts    = datetime.now().strftime("%Y%m%dT%H%M%SZ")
+    m_tag = month.replace("-", "")
+    b_tag = _safe("".join(c if c.isalnum() else "_" for c in (building_nm or "all")))
+    u_tag = _safe(user_id or "admin")
+    return f"billing_report_{m_tag}_{b_tag}_{u_tag}_{uuid4().hex[:6]}.xlsx"
 
 
 def create_order_form_from_suggestion(req: AiRequest) -> tuple[str, dict[str, Any]]:

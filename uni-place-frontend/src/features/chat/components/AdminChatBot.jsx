@@ -518,7 +518,7 @@ function AdminActionButtons({ buttons }) {
           key={i}
           className={styles.actionBtn}
           onClick={() =>
-            btn.url?.startsWith('http')
+            btn.url?.startsWith('http') || btn.url?.startsWith('/ai/')
               ? window.open(btn.url, '_blank')
               : navigate(btn.url)
           }
@@ -707,7 +707,7 @@ export default function AdminChatBot({ user }) {
     '민원 처리 현황 알려줘',
     '계약 이상 감지 결과',
     '룸서비스 재고 현황은?',
-    '이번 달 결제 요약',
+    '각 건물 이번달 결제 내역 문서 만들어줘',
     'C건물 120호 적정 월세 추천해줘',
   ];
 
@@ -877,6 +877,28 @@ export default function AdminChatBot({ user }) {
                   <line x1="22" y1="2" x2="11" y2="13" />
                   <polygon points="22 2 15 22 11 13 2 9 22 2" />
                 </svg>
+              </button>
+            </div>
+            <div className={styles.bottomBtns}>
+              <button
+                className={styles.bottomBtn}
+                onClick={() => {
+                  setInput('결제 내역 문서 만들어줘');
+                  setTimeout(() => textareaRef.current?.focus(), 50);
+                }}
+                disabled={loading}
+              >
+                💰 결제 문서 생성
+              </button>
+              <button
+                className={styles.bottomBtn}
+                onClick={() => {
+                  setInput('  월세 적정한지 분석해줘');
+                  setTimeout(() => textareaRef.current?.focus(), 50);
+                }}
+                disabled={loading}
+              >
+                🏷️ 방 가격 추천
               </button>
             </div>
             <p className={styles.footerNote}>
