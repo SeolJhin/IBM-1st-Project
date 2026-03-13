@@ -7,8 +7,6 @@ import os, shutil
 KOREAN_FILE = r"C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\melo\text\korean.py"
 BACKUP_FILE = KOREAN_FILE + ".bak"
 
-
-
 NEW_CONTENT = r'''# MeloTTS Korean text processing — patched v3 (no eunjeon/mecab)
 import re
 from transformers import AutoTokenizer
@@ -18,6 +16,7 @@ from anyascii import anyascii
 from jamo import hangul_to_jamo
 
 
+## 한국어 텍스트 정규화
 def normalize(text):
     text = text.strip()
     text = normalize_with_dictionary(text, etc_dictionary)
