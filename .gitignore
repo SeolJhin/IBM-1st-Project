@@ -39,6 +39,7 @@ application-dev.properties
 application-prod.yml
 application-prod.properties
 .env
+aws.env
 .env.local
 jwt-secret.txt
 oauth-secret.json
