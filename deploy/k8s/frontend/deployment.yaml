@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/replace-owner/uniplace-frontend:latest
+          image: 194722402714.dkr.ecr.ap-northeast-2.amazonaws.com/uniplace-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80

@@ -57,6 +57,10 @@ def general_qa(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONResponse
 @router.post("/chat/agent-chatbot", response_model=AiResponse, responses=ERROR_RESPONSES)
 def agent_chatbot(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONResponse:
     _set_intent(payload, "AI_AGENT_CHATBOT")
+    # ★ 디버그: Spring에서 수신한 userId 확인 로그
+    logger.info("[agent-chatbot] received userId=%s slots_keys=%s",
+                payload.get("userId", "MISSING"),
+                list((payload.get("slots") or {}).keys()))
     return _run(payload)
 
 # ── chat/voice-assistant ──────────────────────────────────────────────────────

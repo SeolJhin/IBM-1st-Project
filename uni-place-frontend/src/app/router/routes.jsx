@@ -54,7 +54,7 @@ import AdminBuildingList from '../../features/admin/pages/property/AdminBuilding
 import AdminRoomList from '../../features/admin/pages/property/AdminRoomList';
 import AdminSpaceList from '../../features/admin/pages/property/AdminSpaceList';
 
-// ── admin/inspection (새로 추가) ───────────────────────────────
+// ── admin/inspection ──────────────────────────────────────────
 import AdminInspectionList from '../../features/admin/pages/inspection/AdminInspectionList';
 import AdminInspectionDetail from '../../features/admin/pages/inspection/AdminInspectionDetail';
 import AdminOpenTickets from '../../features/admin/pages/inspection/AdminOpenTickets';
@@ -78,9 +78,20 @@ export const router = createBrowserRouter([
   { path: '/reservations/tour/create', element: <TourReservationCreate /> },
   { path: '/reservations/tour/list', element: <TourReservationList /> },
 
-  // reservation – space
-  { path: '/reservations/space/create', element: <SpaceReservationCreate /> },
-  { path: '/reservations/space/list', element: <SpaceReservationList /> },
+  // reservation – space (로그인 필수)
+  {
+    element: <RequireAuth />,
+    children: [
+      {
+        path: '/reservations/space/create',
+        element: <SpaceReservationCreate />,
+      },
+      {
+        path: '/reservations/space/list',
+        element: <SpaceReservationList />,
+      },
+    ],
+  },
 
   // review
   { path: '/reviews/write', element: <ReviewWrite /> },
@@ -99,29 +110,52 @@ export const router = createBrowserRouter([
   { path: '/support/qna/:qnaId', element: <QnaDetail /> },
   {
     path: '/support/qna/write',
-    element: (<RequireAuth><QnaWrite /></RequireAuth>),
+    element: (
+      <RequireAuth>
+        <QnaWrite />
+      </RequireAuth>
+    ),
   },
   {
     path: '/support/complain',
-    element: (<RequireAuth><ComplainList /></RequireAuth>),
+    element: (
+      <RequireAuth>
+        <ComplainList />
+      </RequireAuth>
+    ),
   },
   {
     path: '/support/complain/:id',
-    element: (<RequireAuth><ComplainDetail /></RequireAuth>),
+    element: (
+      <RequireAuth>
+        <ComplainDetail />
+      </RequireAuth>
+    ),
   },
   {
     path: '/support/complain/edit/:id',
-    element: (<RequireAuth><ComplainEdit /></RequireAuth>),
+    element: (
+      <RequireAuth>
+        <ComplainEdit />
+      </RequireAuth>
+    ),
   },
   {
     path: '/support/complain/write',
-    element: (<RequireAuth><ComplainWrite /></RequireAuth>),
+    element: (
+      <RequireAuth>
+        <ComplainWrite />
+      </RequireAuth>
+    ),
   },
 
   // admin
   { path: '/admin', element: <AdminInfo /> },
   { path: '/admin/reservations/tours', element: <AdminTourReservationList /> },
-  { path: '/admin/reservations/spaces', element: <AdminSpaceReservationList /> },
+  {
+    path: '/admin/reservations/spaces',
+    element: <AdminSpaceReservationList />,
+  },
   {
     path: '/admin/property',
     element: <AdminShell />,
@@ -137,10 +171,13 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // ── admin/inspection (새로 추가) ───────────────────────────────
-  { path: '/admin/inspections',                element: <AdminInspectionList /> },
-  { path: '/admin/inspections/:inspectionId',  element: <AdminInspectionDetail /> },
-  { path: '/admin/inspections/tickets',        element: <AdminOpenTickets /> },
+  // admin inspection
+  { path: '/admin/inspections', element: <AdminInspectionList /> },
+  {
+    path: '/admin/inspections/:inspectionId',
+    element: <AdminInspectionDetail />,
+  },
+  { path: '/admin/inspections/tickets', element: <AdminOpenTickets /> },
 ]);
 
 export default router;

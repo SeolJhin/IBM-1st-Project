@@ -43,7 +43,7 @@ public class AiToolExecutor {
         try {
             return switch (tool) {
                 case "query_database"              -> executePublicSql(args);
-                case "query_database_admin"        -> executeAdminSql(args);   // 어드민: requiresAuth 우회
+                case "query_database_admin"        -> executeAdminSql(args, userId);   // AI 내부 집계용: requiresAuth 우회, userId 필요
                 case "query_my_data"               -> executePrivateSql(args, userId);
                 case "get_tour_available_slots"    -> getTourSlots(args);
                 case "classify_complain_priority"  -> AiToolResponse.fail("관리자 API를 통해 처리됩니다.");
@@ -64,7 +64,12 @@ public class AiToolExecutor {
 
     // ── 어드민 SQL 실행 (requiresAuth 우회 — ADMIN 엔드포인트 전용) ──────────
 
-    private AiToolResponse executeAdminSql(Map<String, Object> args) {
+    private AiToolResponse executeAdminSql(Map<String, Object> args, String userId) {
+        // AI 내부에서만 호출 가능 — userId가 있는(로그인된) 요청에서만 허용
+        if (userId == null || userId.isBlank()) {
+            log.warn("[AiToolExecutor] query_database_admin: userId 없음 → 차단");
+            return AiToolResponse.authRequired();
+        }
         String sql  = getString(args, "sql");
         String desc = getString(args, "description");
 

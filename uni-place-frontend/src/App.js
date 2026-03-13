@@ -104,6 +104,8 @@ import AdminOpenTickets from './features/admin/pages/inspection/AdminOpenTickets
 
 // ── 챗봇 ──────────────────────────────────────────────────────
 import ChatBot from './features/chat/components/ChatBot';
+import AdminChatBot from './features/chat/components/AdminChatBot';
+
 import {
   GEMINI_API_KEY,
   USE_BACKEND_AI,
@@ -286,6 +288,11 @@ export default function App() {
         geminiApiKey={GEMINI_API_KEY}
         useBackend={USE_BACKEND_AI}
       />
+
+      {(user?.userRole === 'ADMIN' ||
+        user?.role === 'ADMIN' ||
+        user?.userRole === 'admin' ||
+        user?.role === 'admin') && <AdminChatBot user={user} />}
     </>
   );
 }

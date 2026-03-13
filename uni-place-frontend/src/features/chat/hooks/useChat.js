@@ -72,7 +72,10 @@ export function useChat(params) {
   function buildActions(metadata) {
     if (!metadata || typeof metadata !== 'object') return [];
     var actions = [];
-    if (Array.isArray(metadata.suggestions) && metadata.suggestions.length > 0) {
+    if (
+      Array.isArray(metadata.suggestions) &&
+      metadata.suggestions.length > 0
+    ) {
       actions.push({
         type: 'create_order_form',
         label: '발주서 제작하기',
@@ -85,12 +88,64 @@ export function useChat(params) {
         fileName: metadata.file_name,
       });
     }
+    // ── 공용공간 예약 자동 선택 액션 ──────────────────────────────
+    if (metadata.recommend_type === 'space_reserve' && metadata.space_id) {
+      actions.push({
+        type: 'space_reserve',
+        label: '🛋️ 바로 예약하기',
+        spaceId: metadata.space_id,
+        buildingId: metadata.building_id,
+        startAt: metadata.start_at,
+        endAt: metadata.end_at,
+      });
+      actions.push({
+        type: 'space_list',
+        label: '📋 내 예약 조회',
+      });
+    }
+    // ── 사전방문(투어) 예약 자동 선택 액션 ────────────────────────
+    if (metadata.recommend_type === 'tour_reserve' && metadata.building_id) {
+      actions.push({
+        type: 'tour_reserve',
+        label: '📅 바로 예약하기',
+        buildingId: metadata.building_id,
+        roomId: metadata.room_id,
+        date: metadata.date,
+        startAt: metadata.start_at,
+        endAt: metadata.end_at,
+      });
+      actions.push({
+        type: 'tour_list',
+        label: '📋 예약 조회',
+      });
+    }
     return actions;
   }
 
+  // userId가 바뀌면(로그인/로그아웃) 해당 사용자의 히스토리로 교체
+  var prevUserIdRef = useRef(userId);
   useEffect(
     function () {
-      saveHistory(userId, userRole, messages);
+      if (prevUserIdRef.current !== userId) {
+        // 이전 userId의 현재 메시지를 먼저 저장 (전환 전 히스토리 보존)
+        var prevMessages = messagesRef.current;
+        if (prevMessages.length > 0) {
+          saveHistory(prevUserIdRef.current, userRole, prevMessages);
+        }
+        prevUserIdRef.current = userId;
+        var loaded = loadHistory(userId, userRole);
+        setMessages(loaded);
+      }
+    },
+    [userId, userRole]
+  );
+
+  useEffect(
+    function () {
+      // messages가 비어있을 때는 저장하지 않음 (초기 렌더링 또는 userId 전환 시 덮어쓰기 방지)
+      if (messages.length > 0) {
+        saveHistory(userId, userRole, messages);
+      }
     },
     [messages, userId, userRole]
   );
@@ -276,8 +331,7 @@ export function useChat(params) {
 
     promise
       .then(function (result) {
-
-       var normalized = normalizeBackendResult(result);
+        var normalized = normalizeBackendResult(result);
         var actions = buildActions(normalized.metadata);
         var buttons =
           typeof result === 'object' && result !== null
@@ -295,7 +349,6 @@ export function useChat(params) {
               ts: Date.now(),
               metadata: normalized.metadata,
               actions: actions,
-
             },
           ]);
         });
@@ -383,7 +436,8 @@ export function useChat(params) {
       if (!action || !msg || msg.role !== 'assistant') return;
       if (action.type === 'download_order_form' && action.fileName) {
         window.open(
-          '/ai/payment/order-form/download/' + encodeURIComponent(action.fileName),
+          '/ai/payment/order-form/download/' +
+            encodeURIComponent(action.fileName),
           '_blank'
         );
         return;
@@ -411,7 +465,7 @@ export function useChat(params) {
               typeof result === 'object' && result !== null
                 ? result.buttons || []
                 : [];
-          
+
             setMessages(function (prev) {
               return prev.concat([
                 {
@@ -427,7 +481,9 @@ export function useChat(params) {
             setLoading(false);
           })
           .catch(function (e) {
-            setError(e && e.message ? e.message : '발주서 생성 중 오류가 발생했습니다.');
+            setError(
+              e && e.message ? e.message : '발주서 생성 중 오류가 발생했습니다.'
+            );
             setLoading(false);
           });
       }
