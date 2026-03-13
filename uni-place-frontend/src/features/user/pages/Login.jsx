@@ -54,7 +54,7 @@ export default function Login() {
   };
 
   const backendBaseUrl =
-    process.env.REACT_APP_BACKEND_BASE_URL || 'http://localhost:8080';
+    process.env.REACT_APP_BACKEND_BASE_URL || '/api';
 
   // ✅ 버튼만 존재(기능 없음) / 나중에 연결
   const goSignup = () => navigate('/signup');

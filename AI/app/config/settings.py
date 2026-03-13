@@ -13,6 +13,8 @@ class Settings(BaseSettings):
 
     # ── Gemini (OpenAI 호환 엔드포인트) ───────────────────────────
     gemini_api_key: str = ""
+    gemini_api_key_2: str = ""   # 키 로테이션용 (RPM 한도 2배 확장)
+    gemini_api_key_3: str = ""   # 키 로테이션용 (RPM 한도 3배 확장)
     gemini_model: str = "gemini-2.5-flash-lite"
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
@@ -58,6 +60,12 @@ class Settings(BaseSettings):
     rag_source_dir: str = str(BASE_DIR / "rag_docs")
     rag_manifest_path: str = str(BASE_DIR / "rag_docs" / ".manifest.json")
     rag_chunk_size: int = 500
+
+    # ── 주변 부동산 매물 조회 (가격 추천 AI) ──────────────────────
+    # data.go.kr에서 '오피스텔 전월세 실거래 자료' 신청 후 발급 (무료)
+    molit_api_key: str = ""
+    # 카카오 지도 API (주소→위경도 변환, 더 정확). 없으면 Nominatim 사용
+    kakao_map_api_key: str = ""
     rag_auto_reindex_enabled: bool = False
     rag_reindex_interval_seconds: int = 3600
     rag_reindex_strategy: str = "incremental"

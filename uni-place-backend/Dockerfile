@@ -7,6 +7,7 @@ RUN gradle clean bootJar --no-daemon
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /app/build/libs/*.war app.war
+COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-war", "/app/app.war"]
+# `bootJar` produces an executable JAR, so run that artifact directly.
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
