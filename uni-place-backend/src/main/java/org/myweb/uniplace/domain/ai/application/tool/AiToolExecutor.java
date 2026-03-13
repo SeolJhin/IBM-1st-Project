@@ -77,9 +77,8 @@ public class AiToolExecutor {
             return AiToolResponse.fail("SQL이 전달되지 않았습니다.");
         }
 
-        // SELECT 전용, 위험 키워드 차단 — 어드민도 DDL/DML 금지
-        SqlValidator.validate(sql);
-        // requiresAuth 체크 생략 — 어드민은 모든 테이블 접근 허용
+        // SELECT 전용, 위험 키워드 차단 — 어드민도 DDL/DML 금지, 테이블 whitelist는 우회
+        SqlValidator.validateAdmin(sql);
 
         log.info("[AiToolExecutor] SQL실행(어드민): {}", sql.substring(0, Math.min(150, sql.length())));
         List<Map<String, Object>> rows = runNativeQuery(sql, null);

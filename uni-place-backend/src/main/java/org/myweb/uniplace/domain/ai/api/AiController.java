@@ -43,6 +43,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequiredArgsConstructor
@@ -240,6 +241,138 @@ public class AiController {
     @GetMapping("/payment/order-form/download/{fileName}")
     public ResponseEntity<ByteArrayResource> downloadPaymentOrderForm(@PathVariable String fileName) {
         return aiOrderFormDownloadProxy.download(fileName);
+    }
+
+    /**
+     * ★ 직방/다방 프록시 엔드포인트
+     * 브라우저는 직방 CORS 정책으로 직접 호출 불가 → Spring이 서버 사이드로 대신 호출
+     * GET /ai/proxy/market?lat=...&lon=...&radius=...&room_type=...&rent_type=...&size_sqm=...
+     */
+    @GetMapping("/proxy/market")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Object> proxyMarketData(
+            @RequestParam double lat,
+            @RequestParam double lon,
+            @RequestParam(defaultValue = "3") double radius,
+            @RequestParam(defaultValue = "all") String room_type,
+            @RequestParam(defaultValue = "monthly_rent") String rent_type,
+            @RequestParam(required = false) Double size_sqm) {
+        try {
+            java.util.List<java.util.Map<String, Object>> listings = new java.util.ArrayList<>();
+
+            // 직방 API 호출 (서버 사이드)
+            try {
+                String zigbangUrl = String.format(
+                    "https://apis.zigbang.com/v2/items/map?lat1=%.6f&lat2=%.6f&lng1=%.6f&lng2=%.6f" +
+                    "&deposit_gteq=0&rent_gteq=0&service_type=room&type=%s",
+                    lat - radius / 111.0, lat + radius / 111.0,
+                    lon - radius / 88.0,  lon + radius / 88.0,
+                    "jeonse".equals(rent_type) ? "jeonse" : "rent"
+                );
+
+                org.springframework.web.client.RestClient restClient = org.springframework.web.client.RestClient.builder()
+                    .defaultHeader("User-Agent", "Mozilla/5.0 (compatible)")
+                    .defaultHeader("Referer", "https://www.zigbang.com/")
+                    .build();
+
+                String geoJson = restClient.get().uri(zigbangUrl).retrieve().body(String.class);
+                com.fasterxml.jackson.databind.JsonNode geoNode = objectMapper.readTree(geoJson);
+                java.util.List<String> itemIds = new java.util.ArrayList<>();
+                if (geoNode.has("items")) {
+                    for (com.fasterxml.jackson.databind.JsonNode item : geoNode.get("items")) {
+                        String id = item.has("item_id") ? item.get("item_id").asText()
+                                  : item.has("id")      ? item.get("id").asText() : null;
+                        if (id != null) itemIds.add(id);
+                        if (itemIds.size() >= 40) break;
+                    }
+                }
+
+                if (!itemIds.isEmpty()) {
+                    String detailUrl = "https://apis.zigbang.com/v2/items?item_ids=" +
+                        String.join(",", itemIds) + "&domain=zigbang&withCoords=true&withTags=true&withPhotos=true";
+                    String detailJson = restClient.get().uri(detailUrl).retrieve().body(String.class);
+                    com.fasterxml.jackson.databind.JsonNode detailNode = objectMapper.readTree(detailJson);
+                    if (detailNode.has("items")) {
+                        for (com.fasterxml.jackson.databind.JsonNode item : detailNode.get("items")) {
+                            long rent = item.has("rent") ? item.get("rent").asLong() : 0;
+                            if (rent <= 0) continue;
+                            double area = item.has("전용면적") ? item.get("전용면적").asDouble()
+                                        : item.has("area") ? item.get("area").asDouble() : 0;
+                            if (size_sqm != null && area > 0 && (area < size_sqm * 0.65 || area > size_sqm * 1.35)) continue;
+
+                            java.util.Map<String, Object> listing = new java.util.LinkedHashMap<>();
+                            listing.put("source", "직방");
+                            listing.put("address", item.has("address") ? item.get("address").asText() : "");
+                            listing.put("size_sqm", area);
+                            listing.put("size_pyeong", area > 0 ? Math.round(area / 3.305 * 10.0) / 10.0 : null);
+                            listing.put("floor", item.has("floor") ? item.get("floor").asText() : "");
+                            listing.put("deposit_wan", item.has("deposit") ? item.get("deposit").asLong() / 10000 : 0);
+                            listing.put("monthly_rent_wan", rent / 10000);
+                            listing.put("rent_type", "jeonse".equals(rent_type) ? "jeonse" : "monthly_rent");
+
+                            String imageUrl = null;
+                            if (item.has("photos") && item.get("photos").isArray() && item.get("photos").size() > 0) {
+                                imageUrl = item.get("photos").get(0).has("path") ? item.get("photos").get(0).get("path").asText() : null;
+                            }
+                            listing.put("image_url", imageUrl);
+                            listing.put("listing_url", item.has("item_id") ? "https://www.zigbang.com/home/room/" + item.get("item_id").asText() : null);
+                            listing.put("building_name", item.has("building_name") ? item.get("building_name").asText() : "");
+                            listing.put("is_realtime", true);
+                            listings.add(listing);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // 직방 실패 시 조용히 무시 (다방으로 fallback)
+            }
+
+            // 다방 fallback (직방 5건 미만 시)
+            if (listings.size() < 5) {
+                try {
+                    String typeCode = "one_room".equals(room_type) ? "1" : "two_room".equals(room_type) ? "2" : "1";
+                    String saleType = "jeonse".equals(rent_type) ? "2" : "1";
+                    String dabangUrl = String.format(
+                        "https://www.dabangapp.com/api/3/room/bbox?bbox=%.6f,%.6f,%.6f,%.6f&page=1&per_page=40&room_type=%s&sale_type=%s&zoom=14",
+                        lon - radius / 88.0, lat - radius / 111.0,
+                        lon + radius / 88.0, lat + radius / 111.0,
+                        typeCode, saleType
+                    );
+                    org.springframework.web.client.RestClient rc = org.springframework.web.client.RestClient.builder()
+                        .defaultHeader("User-Agent", "Mozilla/5.0 (compatible)")
+                        .defaultHeader("Referer", "https://www.dabangapp.com/")
+                        .build();
+                    String dabangJson = rc.get().uri(dabangUrl).retrieve().body(String.class);
+                    com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(dabangJson);
+                    if (node.has("rooms")) {
+                        for (com.fasterxml.jackson.databind.JsonNode item : node.get("rooms")) {
+                            long rent = item.has("rent") ? item.get("rent").asLong() : 0;
+                            if (rent <= 0) continue;
+                            double area = item.has("area") ? item.get("area").asDouble() : 0;
+                            if (size_sqm != null && area > 0 && (area < size_sqm * 0.65 || area > size_sqm * 1.35)) continue;
+
+                            java.util.Map<String, Object> listing = new java.util.LinkedHashMap<>();
+                            listing.put("source", "다방");
+                            listing.put("address", item.has("address") ? item.get("address").asText() : "");
+                            listing.put("size_sqm", area);
+                            listing.put("size_pyeong", area > 0 ? Math.round(area / 3.305 * 10.0) / 10.0 : null);
+                            listing.put("floor", item.has("floor") ? item.get("floor").asText() : "");
+                            listing.put("deposit_wan", item.has("deposit") ? item.get("deposit").asLong() / 10000 : 0);
+                            listing.put("monthly_rent_wan", rent / 10000);
+                            listing.put("rent_type", "jeonse".equals(rent_type) ? "jeonse" : "monthly_rent");
+                            listing.put("image_url", item.has("img_url") ? item.get("img_url").asText() : null);
+                            listing.put("listing_url", item.has("id") ? "https://www.dabangapp.com/room/" + item.get("id").asText() : null);
+                            listing.put("building_name", item.has("building_name") ? item.get("building_name").asText() : "");
+                            listing.put("is_realtime", true);
+                            listings.add(listing);
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            return ApiResponse.ok(java.util.Map.of("listings", listings, "count", listings.size()));
+        } catch (Exception e) {
+            return ApiResponse.ok(java.util.Map.of("listings", java.util.List.of(), "count", 0, "error", e.getMessage()));
+        }
     }
 
     /**
