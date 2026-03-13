@@ -1,0 +1,319 @@
+/* src/features/admin/pages/inspection/AdminInspectionDetail.module.css */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.center {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.errorBox {
+  padding: 14px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #dc2626;
+}
+
+.backBtn {
+  align-self: flex-start;
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #374151;
+}
+.backBtn:hover {
+  background: #f3f4f6;
+}
+
+.deleteBtn {
+  background: none;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #dc2626;
+  font-weight: 700;
+}
+.deleteBtn:hover {
+  background: #fef2f2;
+}
+.deleteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: #1f2328;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1f2328;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+.infoItem span {
+  font-size: 12px;
+  color: #6b7280;
+}
+.infoItem b {
+  font-size: 15px;
+  color: #1f2328;
+}
+
+.aiSummary {
+  margin: 0;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.7;
+  background: #f0f9ff;
+  border-left: 3px solid #38bdf8;
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+}
+
+/* 이미지 */
+.imageRow {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.imageBox {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.imageLabel {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.image {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* diff 이미지는 contain으로 → 빨간 사각형이 잘리지 않게 전체 이미지 표시 */
+.diffImage {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid #fca5a5;
+  background: #111;
+}
+
+.noImage {
+  width: 100%;
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #9ca3af;
+  border: 1px dashed #d1d5db;
+}
+
+/* 티켓 */
+.noTicket {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.ticketList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ticketCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ticketHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.issueType {
+  font-weight: 800;
+  font-size: 14px;
+  color: #1f2328;
+  background: #f3f4f6;
+  padding: 2px 10px;
+  border-radius: 6px;
+}
+
+.ticketDesc {
+  margin: 0;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.ticketFooter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ticketLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.statusSelect {
+  padding: 5px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+.saving {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ── 라이트박스 ── */
+.imageClickable {
+  cursor: zoom-in;
+  transition: opacity 0.15s;
+}
+.imageClickable:hover {
+  opacity: 0.88;
+}
+
+.lightboxOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 24px;
+}
+
+.lightboxContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.lightboxHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lightboxLabel {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.lightboxClose {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.lightboxClose:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.lightboxImage {
+  max-width: 100%;
+  max-height: calc(90vh - 60px);
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}

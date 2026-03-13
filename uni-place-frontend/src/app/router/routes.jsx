@@ -29,7 +29,7 @@ import ReviewWrite from '../../features/review/pages/ReviewWrite';
 import MyReviewsList from '../../features/review/pages/MyReviewsList';
 import MyReviewsDetail from '../../features/review/pages/MyReviewsDetail';
 
-// ── supoort ────────────────────────────────────────────────────
+// ── support ────────────────────────────────────────────────────
 import NoticeList from '../../features/support/pages/NoticeList';
 import NoticeDetail from '../../features/support/pages/NoticeDetail';
 import FaqList from '../../features/support/pages/FaqList';
@@ -54,6 +54,11 @@ import AdminBuildingList from '../../features/admin/pages/property/AdminBuilding
 import AdminRoomList from '../../features/admin/pages/property/AdminRoomList';
 import AdminSpaceList from '../../features/admin/pages/property/AdminSpaceList';
 
+// ── admin/inspection (새로 추가) ───────────────────────────────
+import AdminInspectionList from '../../features/admin/pages/inspection/AdminInspectionList';
+import AdminInspectionDetail from '../../features/admin/pages/inspection/AdminInspectionDetail';
+import AdminOpenTickets from '../../features/admin/pages/inspection/AdminOpenTickets';
+
 export const router = createBrowserRouter([
   { path: '/', element: <Home /> },
   { path: '/notifications', element: <NotificationList /> },
@@ -69,16 +74,16 @@ export const router = createBrowserRouter([
   { path: '/spaces', element: <SpaceList /> },
   { path: '/spaces/:spaceId', element: <SpaceDetail /> },
 
-  // reservation – tour (비회원: 전화번호+비밀번호 조회)
+  // reservation – tour
   { path: '/reservations/tour/create', element: <TourReservationCreate /> },
   { path: '/reservations/tour/list', element: <TourReservationList /> },
 
-  // reservation – space (로그인 필수)
+  // reservation – space
   { path: '/reservations/space/create', element: <SpaceReservationCreate /> },
   { path: '/reservations/space/list', element: <SpaceReservationList /> },
 
   // review
-  { path: '/reviews/write', element: <ReviewWrite /> }, // ?roomId=xxx
+  { path: '/reviews/write', element: <ReviewWrite /> },
   { path: '/reviews/:reviewId/edit', element: <ReviewWrite /> },
   { path: '/reviews/my', element: <MyReviewsList /> },
   { path: '/reviews/:reviewId', element: <MyReviewsDetail /> },
@@ -86,7 +91,7 @@ export const router = createBrowserRouter([
   // contract
   { path: '/contracts/apply', element: <ContractApply /> },
 
-  // ── support ──
+  // support
   { path: '/support/notice', element: <NoticeList /> },
   { path: '/support/notice/:noticeId', element: <NoticeDetail /> },
   { path: '/support/faq', element: <FaqList /> },
@@ -94,43 +99,23 @@ export const router = createBrowserRouter([
   { path: '/support/qna/:qnaId', element: <QnaDetail /> },
   {
     path: '/support/qna/write',
-    element: (
-      <RequireAuth>
-        <QnaWrite />
-      </RequireAuth>
-    ),
+    element: (<RequireAuth><QnaWrite /></RequireAuth>),
   },
   {
     path: '/support/complain',
-    element: (
-      <RequireAuth>
-        <ComplainList />
-      </RequireAuth>
-    ),
+    element: (<RequireAuth><ComplainList /></RequireAuth>),
   },
   {
     path: '/support/complain/:id',
-    element: (
-      <RequireAuth>
-        <ComplainDetail />
-      </RequireAuth>
-    ),
+    element: (<RequireAuth><ComplainDetail /></RequireAuth>),
   },
   {
     path: '/support/complain/edit/:id',
-    element: (
-      <RequireAuth>
-        <ComplainEdit />
-      </RequireAuth>
-    ),
+    element: (<RequireAuth><ComplainEdit /></RequireAuth>),
   },
   {
     path: '/support/complain/write',
-    element: (
-      <RequireAuth>
-        <ComplainWrite />
-      </RequireAuth>
-    ),
+    element: (<RequireAuth><ComplainWrite /></RequireAuth>),
   },
 
   // admin
@@ -151,6 +136,11 @@ export const router = createBrowserRouter([
       },
     ],
   },
+
+  // ── admin/inspection (새로 추가) ───────────────────────────────
+  { path: '/admin/inspections',                element: <AdminInspectionList /> },
+  { path: '/admin/inspections/:inspectionId',  element: <AdminInspectionDetail /> },
+  { path: '/admin/inspections/tickets',        element: <AdminOpenTickets /> },
 ]);
 
 export default router;
