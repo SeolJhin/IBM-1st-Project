@@ -14,6 +14,12 @@ export function withApiPrefix(path) {
   if (ABSOLUTE_URL_RE.test(path)) return path;
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  if (
+    normalizedPath === API_PREFIX ||
+    normalizedPath.startsWith(`${API_PREFIX}/`)
+  ) {
+    return normalizedPath;
+  }
   return `${API_PREFIX}${normalizedPath}`;
 }
 
