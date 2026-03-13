@@ -4,3 +4,4 @@ __pycache__/
 runtime/
 AI/volumes/
 AI/rag_docs/.manifest.json
+AI/.env
