@@ -239,7 +239,7 @@ public class AiController {
     }
 
     @GetMapping("/payment/order-form/download/{fileName}")
-    public ResponseEntity<ByteArrayResource> downloadPaymentOrderForm(@PathVariable String fileName) {
+    public ResponseEntity<ByteArrayResource> downloadPaymentOrderForm(@PathVariable("fileName") String fileName) {
         return aiOrderFormDownloadProxy.download(fileName);
     }
 
