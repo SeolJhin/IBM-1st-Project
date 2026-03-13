@@ -1,8 +1,8 @@
 # app/services/anomaly/complain_priority_classify.py
 # 위치: AI/app/services/anomaly/complain_priority_classify.py
 #
-# LLM_PROVIDER 설정에 따라 OpenAI / Groq / Watsonx 자동 선택.
-# Watsonx API 키 오류 시에도 OpenAI/Groq 폴백으로 정상 동작.
+# LLM 자동 폴백(Fallback) 순서: OpenAI → Groq → Watsonx
+# 토큰 부족 / API 오류 시 자동으로 다음 LLM으로 넘어감.
 
 import json
 import logging
@@ -32,8 +32,8 @@ def classify_complain(title: str, content: str) -> dict:
     else:
         keyword_score = 0.5   # medium
 
-    # 2단계: LLM 호출
-    llm_result = _call_llm(title, content)
+    # 2단계: LLM 호출 (실패 시 다음 LLM으로 자동 폴백)
+    llm_result = _call_llm_with_fallback(title, content)
 
     # 3단계: 키워드 + LLM 결합 (high_priority_threshold = 0.75)
     llm_score = {"high": 1.0, "medium": 0.5, "low": 0.0}.get(
@@ -54,7 +54,62 @@ def classify_complain(title: str, content: str) -> dict:
     }
 
 
-# ── LLM 호출 (provider 자동 선택) ─────────────────────────────────────────────
+# ── LLM 폴백 체인 ──────────────────────────────────────────────────────────────
+
+def _call_llm_with_fallback(title: str, content: str) -> dict:
+    """
+    LLM 폴백 순서: OpenAI → Groq → Watsonx
+    각 단계에서 성공하면 즉시 반환, 실패하면 다음 단계로 넘어감.
+    전부 실패하면 빈 dict 반환 → 키워드 점수만으로 판단.
+    """
+    prompt = _build_prompt(title, content)
+
+    # 1순위: OpenAI
+    if settings.openai_api_key:
+        logger.info("[COMPLAIN_CLASSIFY] OpenAI 호출 시도")
+        raw = _call_openai_compatible(
+            prompt,
+            api_key=settings.openai_api_key,
+            base_url=None,
+            model=settings.openai_model,
+        )
+        result = _parse_json(raw)
+        if result:
+            logger.info("[COMPLAIN_CLASSIFY] OpenAI 성공")
+            return result
+        logger.warning("[COMPLAIN_CLASSIFY] OpenAI 실패 → Groq으로 전환")
+
+    # 2순위: Groq
+    if settings.groq_api_key:
+        logger.info("[COMPLAIN_CLASSIFY] Groq 호출 시도")
+        raw = _call_openai_compatible(
+            prompt,
+            api_key=settings.groq_api_key,
+            base_url=settings.groq_base_url,
+            model=settings.groq_model,
+        )
+        result = _parse_json(raw)
+        if result:
+            logger.info("[COMPLAIN_CLASSIFY] Groq 성공")
+            return result
+        logger.warning("[COMPLAIN_CLASSIFY] Groq 실패 → Watsonx로 전환")
+
+    # 3순위: Watsonx
+    if settings.watsonx_api_key:
+        logger.info("[COMPLAIN_CLASSIFY] Watsonx 호출 시도")
+        raw = _call_watsonx(prompt)
+        result = _parse_json(raw)
+        if result:
+            logger.info("[COMPLAIN_CLASSIFY] Watsonx 성공")
+            return result
+        logger.warning("[COMPLAIN_CLASSIFY] Watsonx 실패")
+
+    # 전부 실패 → 키워드 점수만으로 판단
+    logger.error("[COMPLAIN_CLASSIFY] 모든 LLM 실패 → 키워드 규칙만 사용")
+    return {}
+
+
+# ── 프롬프트 빌더 ───────────────────────────────────────────────────────────────
 
 def _build_prompt(title: str, content: str) -> str:
     return f"""민원 제목: {title}
@@ -69,33 +124,10 @@ def _build_prompt(title: str, content: str) -> str:
 {{"importance": "high|medium|low", "reason": "한 문장 근거"}}"""
 
 
-def _call_llm(title: str, content: str) -> dict:
-    """LLM 호출 후 {"importance": ..., "reason": ...} 반환. 실패 시 빈 dict."""
-    provider = (settings.llm_provider or "openai").lower()
-    prompt   = _build_prompt(title, content)
-
-    raw = ""
-    if provider == "watsonx":
-        raw = _call_watsonx(prompt)
-    elif provider == "groq":
-        raw = _call_openai_compatible(
-            prompt,
-            api_key=settings.groq_api_key,
-            base_url=settings.groq_base_url,
-            model=settings.groq_model,
-        )
-    else:  # openai (기본값)
-        raw = _call_openai_compatible(
-            prompt,
-            api_key=settings.openai_api_key,
-            base_url=None,
-            model=settings.openai_model,
-        )
-
-    return _parse_json(raw)
-
+# ── LLM 호출 함수들 ─────────────────────────────────────────────────────────────
 
 def _call_openai_compatible(prompt: str, api_key: str, base_url: str | None, model: str) -> str:
+    """OpenAI 또는 OpenAI 호환 API(Groq 등) 호출."""
     if not api_key:
         logger.warning("[COMPLAIN_CLASSIFY] API key 없음")
         return ""
@@ -117,6 +149,7 @@ def _call_openai_compatible(prompt: str, api_key: str, base_url: str | None, mod
 
 
 def _call_watsonx(prompt: str) -> str:
+    """IBM Watsonx API 호출."""
     if not settings.watsonx_api_key:
         logger.warning("[COMPLAIN_CLASSIFY] Watsonx API key 없음")
         return ""
@@ -137,6 +170,8 @@ def _call_watsonx(prompt: str) -> str:
         logger.error(f"[COMPLAIN_CLASSIFY] Watsonx 호출 실패: {e}")
         return ""
 
+
+# ── JSON 파싱 ───────────────────────────────────────────────────────────────────
 
 def _parse_json(raw: str) -> dict:
     """LLM 응답에서 JSON 파싱. 실패 시 빈 dict 반환."""

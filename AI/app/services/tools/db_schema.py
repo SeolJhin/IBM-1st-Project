@@ -10,6 +10,17 @@ DB_SCHEMA = """
 [UNI PLACE DB 스키마]
 ⚠️ 테이블명 정확히 사용. building(단수)·rooms(복수) 혼용 주의.
 
+== 회원 테이블 ==
+▶ users: user_id(PK) user_nm user_email user_pwd user_birth user_tel user_nickname user_role(user/admin) last_login_at user_st delete_yn
+  (회원수 조회: SELECT COUNT(*) FROM users WHERE delete_yn='N'  /  역할별: GROUP BY user_role)
+
+== 시스템 관리 테이블 ==
+▶ banner: ban_id(PK) ban_title ban_url ban_order ban_st(active/inactive) start_at end_at created_at updated_at
+  (활성 배너: WHERE ban_st='active')
+▶ affiliate: affiliate_id(PK) building_id(FK) affiliate_nm affiliate_ceo affiliate_tel business_no affiliate_fax
+  (제휴업체 조회: SELECT affiliate_id, affiliate_nm, building_id FROM affiliate)
+▶ company_info: company_id(PK) company_nm company_ceo business_no company_tel company_email company_addr created_at updated_at
+
 == 공개 테이블 ==
 ▶ building: building_id(PK) building_nm building_addr build_size exist_elv(Y/N) parking_capacity delete_yn
 ▶ rooms: room_id(PK) room_no building_id(FK) floor room_size room_type(one_room/two_room/three_room/loft/share) pet_allowed_yn(Y/N) deposit rent_price manage_fee rent_type(monthly_rent/stay) room_st(available/reserved/contracted/repair/cleaning) room_capacity room_options delete_yn
@@ -23,7 +34,8 @@ DB_SCHEMA = """
 ▶ notice: notice_id(PK) notice_title notice_ctnt notice_st(active/inactive) read_count created_at
 ▶ faq: faq_id(PK) faq_title faq_ctnt is_active(1/0) created_at
 ▶ company_info: company_info_id(PK) company_nm company_ceo company_tel company_email company_addr
-▶ product_building_stock: stock_id(PK) building_id(FK) prod_nm prod_stock updated_at
+▶ product_building_stock: stock_id(PK) prod_id(FK→product) building_id(FK→building) stock updated_at
+  (prod_nm은 product 테이블 JOIN 필요: JOIN product p ON pbs.prod_id=p.prod_id)
   (prod_stock=0이면 품절. query_database로 조회 가능)
 
 == 로그인 필요 테이블 (query_my_data + WHERE user_id=\'{{user_id}}\' 필수) ==
