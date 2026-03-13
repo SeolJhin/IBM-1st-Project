@@ -14,7 +14,8 @@ public enum FileRefType {
     SPACE("SPACE"),
     COMPANY("COMPANY"),
     PRODUCT("PRODUCT"),
-    BUILDING("BUILDING");
+	BUILDING("BUILDING"),
+	INSPECTION("INSPECTION");
 
     private final String value;
 
