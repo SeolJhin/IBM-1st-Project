@@ -11,6 +11,11 @@ Use this when running backend with IDE `Spring Boot App` configuration.
   - `SERVER_SERVLET_CONTEXT_PATH=/api`
   - `APP_CORS_ALLOWED_ORIGINS=http://localhost:3000`
 
+## Frontend .env (recommended)
+
+- `FRONTEND_PROXY_TARGET=http://localhost:8080`
+- `REACT_APP_BACKEND_BASE_URL=/api`
+
 ## Required IDE settings
 
 - Enable automatic build.

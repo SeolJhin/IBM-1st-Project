@@ -1,9 +1,13 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
+
+const proxyTarget =
+  process.env.FRONTEND_PROXY_TARGET || 'http://localhost:8080';
+
 module.exports = function (app) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: 'http://localhost:8080',
+      target: proxyTarget,
       changeOrigin: true,
       ws: true,
       pathRewrite: {
@@ -11,26 +15,12 @@ module.exports = function (app) {
       },
     })
   );
+
   app.use(
     '/ai/payment/order-form/download',
     createProxyMiddleware({
-      target: 'http://localhost:8080',
+      target: proxyTarget,
       changeOrigin: true,
     })
   );
-
-  const { createProxyMiddleware } = require('http-proxy-middleware');
-  const proxyTarget =
-    process.env.FRONTEND_PROXY_TARGET || 'http://localhost:8080';
-
-  module.exports = function (app) {
-    app.use(
-      createProxyMiddleware({
-        target: proxyTarget,
-        changeOrigin: true,
-        ws: true,
-        pathFilter: ['/api'],
-      })
-    );
-  };
 };
