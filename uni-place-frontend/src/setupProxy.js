@@ -3,11 +3,11 @@ const proxyTarget = process.env.FRONTEND_PROXY_TARGET || "http://localhost:8080"
 
 module.exports = function (app) {
     app.use(
-        "/api",
-        createProxyMiddleware({
+        createProxyMiddleware("/api", {
             target: proxyTarget,
             changeOrigin: true,
             ws: true,
+            logLevel: "warn",
         })
     );
 };
