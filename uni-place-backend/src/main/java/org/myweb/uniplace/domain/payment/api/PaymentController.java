@@ -16,7 +16,7 @@ import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 @RestController
-@RequestMapping({"/payments", "/api/payments"})
+@RequestMapping("/payments")
 @RequiredArgsConstructor
 public class PaymentController {
 

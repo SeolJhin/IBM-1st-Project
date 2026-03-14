@@ -40,6 +40,8 @@ tavily-python>=0.3.0      # 또는 requests만으로도 동작 (web_search_tool.
  
 # 2. RAG - ChromaDB (Milvus 무료 대체)
 chromadb>=0.5.0
+pymysql==1.1.2
+soxr==1.0.0
  
 # 3. RAG - 한국어 임베딩 모델 (무료 로컬, 최초 실행 시 ~500MB 다운로드)
 sentence-transformers==2.2.2
@@ -53,3 +55,9 @@ sentence-transformers==2.2.2
 # TAVILY_API_KEY=tvly-xxxx          ← https://tavily.com 에서 발급 (무료 1000회/월)
 # RAG_ENGINE=chroma                  ← chromadb 사용 (기본값)
 # CHROMA_PERSIST_DIR=./chroma_db     ← 로컬 저장 경로 (기본값)
+
+# 건물 점검 AI (이미지 비교 + Gemini Vision)
+httpx>=0.27.0              # Gemini API HTTP 클라이언트
+Pillow>=10.0.0             # 이미지 리사이즈 (damage_analyzer)
+opencv-python>=4.9.0       # Before/After 이미지 비교 (image_diff)
+numpy>=1.26.0              # OpenCV 이미지 배열 처리

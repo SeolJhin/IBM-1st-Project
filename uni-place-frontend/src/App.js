@@ -97,6 +97,11 @@ import AdminCompanyInfoDetail from './features/admin/pages/system/AdminCompanyIn
 import AdminUserHub from './features/admin/pages/user/AdminUserHub';
 import AdminUserList from './features/admin/pages/user/AdminUserList';
 
+// ── 건물 점검 (새로 추가) ──────────────────────────────────────
+import AdminInspectionList from './features/admin/pages/inspection/AdminInspectionList';
+import AdminInspectionDetail from './features/admin/pages/inspection/AdminInspectionDetail';
+import AdminOpenTickets from './features/admin/pages/inspection/AdminOpenTickets';
+
 // ── 챗봇 ──────────────────────────────────────────────────────
 import ChatBot from './features/chat/components/ChatBot';
 import AdminChatBot from './features/chat/components/AdminChatBot';
@@ -258,6 +263,17 @@ export default function App() {
                 <Route path="products" element={<AdminProductList />} />
                 <Route index element={<Navigate to="payments" replace />} />
               </Route>
+
+              {/* ── 건물 점검 (새로 추가) ── */}
+              <Route path="inspections" element={<AdminInspectionList />} />
+              <Route
+                path="inspections/tickets"
+                element={<AdminOpenTickets />}
+              />
+              <Route
+                path="inspections/:inspectionId"
+                element={<AdminInspectionDetail />}
+              />
             </Route>
           </Route>
         </Route>

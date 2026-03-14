@@ -11,7 +11,7 @@ import org.myweb.uniplace.global.exception.ErrorCode;
 import java.util.List;
 
 @RestController
-@RequestMapping({"/admin/payments", "/api/admin/payments"})
+@RequestMapping("/admin/payments")
 @RequiredArgsConstructor
 public class AdminPaymentController {
 

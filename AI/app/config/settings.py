@@ -28,6 +28,8 @@ class Settings(BaseSettings):
 
     # ── Gemini (OpenAI 호환 엔드포인트) ───────────────────────────
     gemini_api_key: str = ""
+    gemini_api_key_2: str = ""   # 키 로테이션용 (RPM 한도 2배 확장)
+    gemini_api_key_3: str = ""   # 키 로테이션용 (RPM 한도 3배 확장)
     gemini_model: str = "gemini-2.5-flash-lite"
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
 

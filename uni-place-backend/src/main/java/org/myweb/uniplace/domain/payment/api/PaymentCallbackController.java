@@ -22,7 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/payments/callback")
+@RequestMapping("/payments/callback")
 @RequiredArgsConstructor
 public class PaymentCallbackController {
 

@@ -5,6 +5,7 @@ import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.security.oauth.CustomOAuth2UserService;
 import org.myweb.uniplace.global.security.oauth.OAuth2FailureHandler;
 import org.myweb.uniplace.global.security.oauth.OAuth2SuccessHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,6 +20,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -32,6 +34,8 @@ public class SecurityConfig {
     private final OAuth2FailureHandler oAuth2FailureHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
+    @Value("${app.cors.allowed-origins:http://localhost:3000}")
+    private String corsAllowedOrigins;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -61,10 +65,10 @@ public class SecurityConfig {
                 .requestMatchers("/login/**").permitAll()
                 .requestMatchers("/oauth2/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/swagger-ui/**", "/v4/api-docs/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/payments/callback/*/approval").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/payments/callback/*/cancel").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/payments/callback/*/fail").permitAll()
-                .requestMatchers("/api/payments/webhook/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/payments/callback/*/approval").permitAll()
+                .requestMatchers(HttpMethod.GET, "/payments/callback/*/cancel").permitAll()
+                .requestMatchers(HttpMethod.GET, "/payments/callback/*/fail").permitAll()
+                .requestMatchers("/payments/webhook/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/tour-reservations/rooms").permitAll()
                 .requestMatchers(HttpMethod.GET, "/tour-reservations/slots").permitAll()
                 .requestMatchers(HttpMethod.POST, "/tour-reservations").permitAll()
@@ -98,19 +102,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/faqs/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/faqs/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/complains/me").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/complains/me").authenticated()
                 .requestMatchers(HttpMethod.GET, "/complains").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/complains").authenticated()
                 .requestMatchers(HttpMethod.GET, "/complains/**").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/complains/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/complains").hasAnyRole("ADMIN", "TENANT")
-                .requestMatchers(HttpMethod.POST, "/api/complains").hasAnyRole("ADMIN", "TENANT")
                 .requestMatchers(HttpMethod.PUT, "/complains/**").hasAnyRole("ADMIN", "TENANT")
-                .requestMatchers(HttpMethod.PUT, "/api/complains/**").hasAnyRole("ADMIN", "TENANT")
                 .requestMatchers(HttpMethod.PATCH, "/complains/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/api/complains/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/complains/**").hasAnyRole("ADMIN", "TENANT")
-                .requestMatchers(HttpMethod.DELETE, "/api/complains/**").hasAnyRole("ADMIN", "TENANT")
                 .requestMatchers(HttpMethod.GET, "/qna/all").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/qna").authenticated()
                 .requestMatchers(HttpMethod.GET, "/qna/**").authenticated()
@@ -126,12 +123,11 @@ public class SecurityConfig {
                 .requestMatchers("/auth/reset-password/request").permitAll()
                 .requestMatchers("/auth/reset-password/verify").permitAll()
                 .requestMatchers("/auth/reset-password/confirm").permitAll()
-                .requestMatchers("/api/v1/ai/**").permitAll()
+                .requestMatchers("/v1/ai/**").permitAll()
                 .requestMatchers("/auth/email/send-code").permitAll()
                 .requestMatchers("/auth/email/verify-code").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/files").permitAll()
                 .requestMatchers(HttpMethod.GET, "/admin/common-codes/PRODUCT_CATEGORY").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
@@ -157,7 +153,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOriginPatterns(
+            Arrays.stream(corsAllowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList()
+        );
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
