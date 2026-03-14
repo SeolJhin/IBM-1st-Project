@@ -3,5 +3,6 @@ __pycache__/
 *.py[cod]
 runtime/
 AI/volumes/
+AI/chromadb/
 AI/rag_docs/.manifest.json
 AI/.env

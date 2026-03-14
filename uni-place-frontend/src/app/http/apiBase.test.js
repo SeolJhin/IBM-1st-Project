@@ -1,4 +1,4 @@
-import { fetchWithAuthRetry } from './apiBase';
+import { fetchWithAuthRetry, withApiPrefix } from './apiBase';
 
 function jsonResponse(status, payload) {
   return {
@@ -93,5 +93,12 @@ describe('fetchWithAuthRetry', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(localStorage.getItem('refresh_token')).toBeNull();
+  });
+});
+
+describe('withApiPrefix', () => {
+  test('does not duplicate /api prefix', () => {
+    expect(withApiPrefix('/api/auth/login')).toBe('/api/auth/login');
+    expect(withApiPrefix('/auth/login')).toBe('/api/auth/login');
   });
 });

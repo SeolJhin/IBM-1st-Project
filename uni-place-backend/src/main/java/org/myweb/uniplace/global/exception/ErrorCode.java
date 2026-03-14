@@ -128,12 +128,17 @@ public enum ErrorCode {
     SPACE_RESERVATION_USER_INACTIVE(HttpStatus.FORBIDDEN, "SPACE_RSV_403_2", "비활성 상태의 계정은 예약할 수 없습니다."),
     SPACE_RESERVATION_BUILDING_MISMATCH(HttpStatus.FORBIDDEN, "SPACE_RSV_403_3", "해당 건물에 활성 계약이 있는 입주자만 예약할 수 있습니다."),
 
+    // ===== 추가 본 ===========
+    INSPECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "INSPECTION_404", "점검 기록을 찾을 수 없습니다."),
+    TICKET_NOT_FOUND(HttpStatus.NOT_FOUND, "TICKET_404", "유지보수 티켓을 찾을 수 없습니다."),
+
     // ===== Admin / Tour Reservation =====
     TOUR_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "TOUR_ST_404", "해당 투어 예약 상태를 찾을 수 없습니다."),
 
     // ===== RoomServiceOrder =====
     ROOM_SERVICE_ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "RSO_404", "룸서비스 주문을 찾을 수 없습니다."),
     ROOM_SERVICE_TENANT_ONLY(HttpStatus.FORBIDDEN, "RSO_403_1", "입주자만 룸서비스 주문이 가능합니다.");
+	
 
     private final HttpStatus status;
     private final String code;
