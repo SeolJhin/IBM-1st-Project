@@ -34,7 +34,7 @@ public class SecurityConfig {
     private final OAuth2FailureHandler oAuth2FailureHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
     private final RestAccessDeniedHandler restAccessDeniedHandler;
-    @Value("${app.cors.allowed-origins:http://localhost:3000}")
+    @Value("${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}")
     private String corsAllowedOrigins;
 
     @Bean
