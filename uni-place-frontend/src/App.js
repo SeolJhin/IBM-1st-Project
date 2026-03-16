@@ -188,7 +188,7 @@ export default function App() {
 
         {/* ── support ── */}
         <Route path="/support" element={<Support />}>
-          <Route index element={<Navigate to="faq" replace />} />
+          <Route index element={<Navigate to="notice" replace />} />
           <Route path="faq" element={<FaqList />} />
           <Route path="notice" element={<NoticeList />} />
           <Route path="notice/:noticeId" element={<NoticeDetail />} />
