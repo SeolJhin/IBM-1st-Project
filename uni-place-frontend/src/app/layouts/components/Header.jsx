@@ -51,7 +51,11 @@ export default function Header() {
           role="button"
           tabIndex={0}
         >
-          <img className={styles.logoMark} src={homeLogo} alt="UNI PLACE logo" />
+          <img
+            className={styles.logoMark}
+            src={homeLogo}
+            alt="UNI PLACE logo"
+          />
           <div className={styles.brandText}>
             <div className={styles.brandName}>UNI PLACE</div>
             <div className={styles.brandSub}>Living as a Serivce</div>
@@ -93,16 +97,6 @@ export default function Header() {
         </nav>
 
         <div className={styles.icons}>
-          {/* 검색 - 항상 표시 */}
-          <button
-            className={styles.iconBtn}
-            type="button"
-            aria-label="search"
-            onClick={() => navigate('/search')}
-          >
-            검색
-          </button>
-
           {/* 로그인 상태에 따라 변경 */}
           {loading ? null : user ? (
             <>

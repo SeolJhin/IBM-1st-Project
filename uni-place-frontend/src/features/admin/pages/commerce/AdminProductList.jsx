@@ -455,7 +455,8 @@ function ProductFormModal({
                 <option value="">없음</option>
                 {affiliateOptions.map((a) => (
                   <option key={a.affiliateId} value={String(a.affiliateId)}>
-                    {a.affiliateNm}
+                    {a.affiliateNm} ({a.buildingNm}
+                    {a.buildingId ? ` / 건물ID: ${a.buildingId}` : ''})
                   </option>
                 ))}
               </select>
@@ -668,7 +669,8 @@ export default function AdminProductList() {
   const [notice, setNotice] = useState('');
 
   const [codeOptions, setCodeOptions] = useState(CODE_FALLBACK);
-  const [affiliateOptions, setAffiliateOptions] = useState([]); // { affiliateId, affiliateNm }
+  const [affiliateOptions, setAffiliateOptions] = useState([]); // { affiliateId, affiliateNm, buildingId, buildingNm }
+  const [buildingMap, setBuildingMap] = useState({}); // buildingId → buildingNm
 
   // 필터
   const [statusFilter, setStatusFilter] = useState('all');
@@ -728,15 +730,34 @@ export default function AdminProductList() {
     }
   }, []);
 
-  // 제휴사 목록 로드
+  // 제휴사 목록 로드 (건물명 포함)
   const fetchAffiliates = useCallback(async () => {
     try {
-      const data = await adminApi.getAffiliates({ page: 0, size: 100 });
-      const list = Array.isArray(data) ? data : (data?.content ?? []);
+      const [affiliateData, buildingData] = await Promise.all([
+        adminApi.getAffiliates({ page: 0, size: 100 }),
+        adminApi.getBuildings({ page: 1, size: 100 }).catch(() => null),
+      ]);
+      const list = Array.isArray(affiliateData)
+        ? affiliateData
+        : (affiliateData?.content ?? []);
+      const buildings = Array.isArray(buildingData)
+        ? buildingData
+        : (buildingData?.content ?? []);
+
+      const bMap = buildings.reduce((acc, b) => {
+        acc[b.buildingId] = b.buildingNm ?? `건물 #${b.buildingId}`;
+        return acc;
+      }, {});
+      setBuildingMap(bMap);
+
       setAffiliateOptions(
         list.map((a) => ({
           affiliateId: a.affiliateId,
           affiliateNm: a.affiliateNm ?? `제휴사 #${a.affiliateId}`,
+          buildingId: a.buildingId,
+          buildingNm:
+            bMap[a.buildingId] ??
+            (a.buildingId ? `건물 #${a.buildingId}` : '-'),
         }))
       );
     } catch {
@@ -761,12 +782,13 @@ export default function AdminProductList() {
         if (codeFilter !== 'all' && String(p.code ?? '') !== codeFilter)
           return false;
         if (!q) return true;
-        return [p.prodId, p.prodNm, p.prodDesc, p.code, p.affiliateId]
+        const affName = affiliateName(p.affiliateId);
+        return [p.prodId, p.prodNm, p.prodDesc, p.code, affName]
           .map((v) => String(v ?? '').toLowerCase())
           .join(' ')
           .includes(q);
       });
-  }, [products, statusFilter, codeFilter, keyword]);
+  }, [products, statusFilter, codeFilter, keyword, affiliateOptions]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / size));
   const safePage = clamp(page, 1, totalPages);
@@ -794,10 +816,9 @@ export default function AdminProductList() {
 
   const affiliateName = (id) => {
     if (id == null) return '-';
-    return (
-      affiliateOptions.find((a) => a.affiliateId === id)?.affiliateNm ??
-      `#${id}`
-    );
+    const a = affiliateOptions.find((opt) => opt.affiliateId === id);
+    if (!a) return `#${id}`;
+    return a.buildingNm ? `${a.affiliateNm} (${a.buildingNm})` : a.affiliateNm;
   };
 
   const getBuildingStocks = (p) => {

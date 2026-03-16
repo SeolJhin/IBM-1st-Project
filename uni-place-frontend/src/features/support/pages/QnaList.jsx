@@ -1,7 +1,8 @@
 import React from 'react';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQnas } from '../hooks/useQnas';
 import { useAuth } from '../../user/hooks/useAuth';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import styles from './Support.module.css';
 
 const STATUS_MAP = {
@@ -42,7 +43,8 @@ export default function QnaList() {
   );
   const navigate = useNavigate();
 
-  if (!user) return <Navigate to="/login" replace />;
+  const blocked = useRequireAuth(user, '1:1 문의');
+  if (blocked) return null;
 
   const role = normalizeRole(user);
   const isAdmin = role === 'admin';
