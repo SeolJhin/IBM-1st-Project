@@ -37,19 +37,20 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         Authentication authentication
     ) throws IOException, ServletException {
         UserContext userContext = (UserContext) authentication.getPrincipal();
+        String resolvedRedirectUri = resolveRedirectUri(request);
 
         if (userContext.isSignupRequired()) {
-            handleSignupPending(response, userContext);
+            handleSignupPending(request, response, userContext);
             return;
         }
 
         User user = userContext.getUser();
         if (user == null || !hasText(user.getUserId())) {
-            response.sendRedirect(redirectUri + "#error=oauth_user_not_found");
+            response.sendRedirect(resolvedRedirectUri + "#error=oauth_user_not_found");
             return;
         }
         if (!user.canLogin()) {
-            response.sendRedirect(redirectUri + "#error=oauth_user_blocked");
+            response.sendRedirect(resolvedRedirectUri + "#error=oauth_user_blocked");
             return;
         }
 
@@ -59,7 +60,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         persistRefreshToken(user, refreshToken, deviceId, request);
 
-        String redirectUrl = redirectUri
+        String redirectUrl = resolvedRedirectUri
             + "#accessToken=" + enc(accessToken)
             + "&refreshToken=" + enc(refreshToken)
             + "&deviceId=" + enc(deviceId)
@@ -67,9 +68,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         response.sendRedirect(redirectUrl);
     }
 
-    private void handleSignupPending(HttpServletResponse response, UserContext userContext) throws IOException {
+    private void handleSignupPending(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        UserContext userContext
+    ) throws IOException {
+        String resolvedRedirectUri = resolveRedirectUri(request);
         if (!hasText(userContext.getProvider()) || !hasText(userContext.getProviderId())) {
-            response.sendRedirect(redirectUri + "#error=oauth_profile_invalid");
+            response.sendRedirect(resolvedRedirectUri + "#error=oauth_profile_invalid");
             return;
         }
 
@@ -80,10 +86,39 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             userContext.getNickname()
         );
 
-        String redirectUrl = redirectUri
+        String redirectUrl = resolvedRedirectUri
             + "#signupToken=" + enc(signupToken)
             + "&provider=" + enc(userContext.getProvider().toLowerCase());
         response.sendRedirect(redirectUrl);
+    }
+
+    private String resolveRedirectUri(HttpServletRequest request) {
+        if (!shouldUseRequestHostFallback(request)) {
+            return redirectUri;
+        }
+        String proto = firstNonBlank(request.getHeader("X-Forwarded-Proto"), request.getScheme());
+        String host = firstNonBlank(request.getHeader("X-Forwarded-Host"), request.getHeader("Host"));
+        if (!hasText(proto) || !hasText(host)) {
+            return redirectUri;
+        }
+        return proto + "://" + host + "/oauth2/success";
+    }
+
+    private boolean shouldUseRequestHostFallback(HttpServletRequest request) {
+        if (!hasText(redirectUri)) {
+            return true;
+        }
+        if (!redirectUri.contains("localhost")) {
+            return false;
+        }
+        String host = firstNonBlank(request.getHeader("X-Forwarded-Host"), request.getHeader("Host"));
+        return hasText(host)
+            && !host.startsWith("localhost")
+            && !host.startsWith("127.0.0.1");
+    }
+
+    private static String firstNonBlank(String first, String second) {
+        return hasText(first) ? first : second;
     }
 
     private void persistRefreshToken(User user, String refreshToken, String deviceId, HttpServletRequest request) {
