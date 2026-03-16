@@ -602,14 +602,14 @@ export default function BuildingDetail() {
             <div className={styles.quickBtns}>
               <button
                 className={`${styles.quickBtn} ${styles.quickBtnPrimary}`}
-                onClick={() => scrollToTab('rooms')}
+                onClick={() => navigate(`/rooms?buildingId=${buildingId}`)}
                 type="button"
               >
                 🏠 이 건물 방 보기
               </button>
               <button
                 className={`${styles.quickBtn} ${styles.quickBtnSecondary}`}
-                onClick={() => scrollToTab('spaces')}
+                onClick={() => navigate('/rooms', { state: { tab: 'spaces' } })}
                 type="button"
               >
                 🛋️ 공용공간 보기

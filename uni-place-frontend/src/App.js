@@ -282,17 +282,19 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {/* 챗봇 — 모든 페이지에 플로팅 */}
-      <ChatBot
-        user={user}
-        geminiApiKey={GEMINI_API_KEY}
-        useBackend={USE_BACKEND_AI}
-      />
-
-      {(user?.userRole === 'ADMIN' ||
-        user?.role === 'ADMIN' ||
-        user?.userRole === 'admin' ||
-        user?.role === 'admin') && <AdminChatBot user={user} />}
+      {/* 챗봇 — 어드민이면 AdminChatBot만, 일반 유저면 ChatBot만 */}
+      {user?.userRole === 'ADMIN' ||
+      user?.role === 'ADMIN' ||
+      user?.userRole === 'admin' ||
+      user?.role === 'admin' ? (
+        <AdminChatBot user={user} />
+      ) : (
+        <ChatBot
+          user={user}
+          geminiApiKey={GEMINI_API_KEY}
+          useBackend={USE_BACKEND_AI}
+        />
+      )}
     </>
   );
 }
