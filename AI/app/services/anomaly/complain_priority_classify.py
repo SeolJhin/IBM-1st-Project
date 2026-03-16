@@ -1,7 +1,7 @@
 # app/services/anomaly/complain_priority_classify.py
 # 위치: AI/app/services/anomaly/complain_priority_classify.py
 #
-# LLM 자동 폴백(Fallback) 순서: OpenAI → Groq → Watsonx
+# LLM 자동 폴백(Fallback) 순서: Groq → OpenAI → Watsonx
 # 토큰 부족 / API 오류 시 자동으로 다음 LLM으로 넘어감.
 
 import json
@@ -35,7 +35,17 @@ def classify_complain(title: str, content: str) -> dict:
     # 2단계: LLM 호출 (실패 시 다음 LLM으로 자동 폴백)
     llm_result = _call_llm_with_fallback(title, content)
 
-    # 3단계: 키워드 + LLM 결합 (high_priority_threshold = 0.75)
+    # 3단계: LLM 실패 시 키워드 결과를 그대로 사용
+    if not llm_result:
+        if keyword_score == 1.0:
+            importance = "high"
+        elif keyword_score == 0.0:
+            importance = "low"
+        else:
+            importance = "medium"
+        return {"importance": importance, "ai_reason": "키워드 규칙 적용"}
+
+    # 4단계: 키워드 + LLM 결합
     llm_score = {"high": 1.0, "medium": 0.5, "low": 0.0}.get(
         llm_result.get("importance", "medium"), 0.5
     )
@@ -58,11 +68,26 @@ def classify_complain(title: str, content: str) -> dict:
 
 def _call_llm_with_fallback(title: str, content: str) -> dict:
     """
-    LLM 폴백 순서: OpenAI → Groq → Watsonx
+    LLM 폴백 순서: Groq → OpenAI → Watsonx
     각 단계에서 성공하면 즉시 반환, 실패하면 다음 단계로 넘어감.
     전부 실패하면 빈 dict 반환 → 키워드 점수만으로 판단.
     """
     prompt = _build_prompt(title, content)
+
+    # 0순위: Groq
+    if settings.groq_api_key:
+        logger.info("[COMPLAIN_CLASSIFY] Groq 호출 시도")
+        raw = _call_openai_compatible(
+            prompt,
+            api_key=settings.groq_api_key,
+            base_url=settings.groq_base_url,
+            model=settings.groq_model,
+        )
+        result = _parse_json(raw)
+        if result:
+            logger.info("[COMPLAIN_CLASSIFY] Groq 성공")
+            return result
+        logger.warning("[COMPLAIN_CLASSIFY] Groq 실패 → OpenAI로 전환")
 
     # 1순위: OpenAI
     if settings.openai_api_key:
@@ -77,24 +102,9 @@ def _call_llm_with_fallback(title: str, content: str) -> dict:
         if result:
             logger.info("[COMPLAIN_CLASSIFY] OpenAI 성공")
             return result
-        logger.warning("[COMPLAIN_CLASSIFY] OpenAI 실패 → Groq으로 전환")
+        logger.warning("[COMPLAIN_CLASSIFY] OpenAI 실패 → Watsonx로 전환")
 
-    # 2순위: Groq
-    if settings.groq_api_key:
-        logger.info("[COMPLAIN_CLASSIFY] Groq 호출 시도")
-        raw = _call_openai_compatible(
-            prompt,
-            api_key=settings.groq_api_key,
-            base_url=settings.groq_base_url,
-            model=settings.groq_model,
-        )
-        result = _parse_json(raw)
-        if result:
-            logger.info("[COMPLAIN_CLASSIFY] Groq 성공")
-            return result
-        logger.warning("[COMPLAIN_CLASSIFY] Groq 실패 → Watsonx로 전환")
-
-    # 3순위: Watsonx
+    # 2순위: Watsonx
     if settings.watsonx_api_key:
         logger.info("[COMPLAIN_CLASSIFY] Watsonx 호출 시도")
         raw = _call_watsonx(prompt)
