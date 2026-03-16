@@ -5,6 +5,7 @@ import styles from '../payment/AdminPaymentTable.module.css';
 const CHARGE_STATUS_OPTIONS = [
   { value: 'unpaid', label: '미납' },
   { value: 'paid', label: '납부완료' },
+  { value: 'overdue', label: '연체' },
 ];
 
 const TARGET_LABELS = {
@@ -42,8 +43,20 @@ function pageWindow(page, totalPages, radius = 2) {
 
 function ChargeStatusBadge({ status }) {
   const key = String(status ?? '').toLowerCase();
-  const className = key === 'paid' ? styles.badgePaid : styles.badgeReady;
-  const label = key === 'paid' ? '납부완료' : key === 'unpaid' ? '미납' : key;
+  const className =
+    key === 'paid'
+      ? styles.badgePaid
+      : key === 'overdue'
+        ? styles.badgeOverdue
+        : styles.badgeReady;
+  const label =
+    key === 'paid'
+      ? '납부완료'
+      : key === 'unpaid'
+        ? '미납'
+        : key === 'overdue'
+          ? '연체'
+          : key;
   return <span className={`${styles.badge} ${className}`}>{label || '-'}</span>;
 }
 
@@ -53,7 +66,12 @@ async function fetchAllUsers() {
   let totalPages = 1;
 
   while (page <= totalPages) {
-    const res = await adminApi.users({ page, size: 200, sort: 'userId', direct: 'ASC' });
+    const res = await adminApi.users({
+      page,
+      size: 200,
+      sort: 'userId',
+      direct: 'ASC',
+    });
     const content = Array.isArray(res?.content) ? res.content : [];
     users.push(...content);
 
@@ -71,7 +89,12 @@ async function fetchAllContracts() {
   let totalPages = 1;
 
   while (page <= totalPages) {
-    const res = await adminApi.getContracts({ page, size: 200, sort: 'contractId', direct: 'DESC' });
+    const res = await adminApi.getContracts({
+      page,
+      size: 200,
+      sort: 'contractId',
+      direct: 'DESC',
+    });
     const content = Array.isArray(res?.content) ? res.content : [];
     contracts.push(...content);
 
@@ -112,7 +135,9 @@ export default function AdminMonthlyChargeList() {
 
       const [chargeData, paymentData, contracts, users] = await Promise.all([
         adminApi.getMonthlyCharges(
-          contractId === '' || !Number.isFinite(parsedContractId) ? undefined : parsedContractId
+          contractId === '' || !Number.isFinite(parsedContractId)
+            ? undefined
+            : parsedContractId
         ),
         adminApi.getPayments().catch(() => []),
         fetchAllContracts().catch(() => []),
@@ -120,13 +145,18 @@ export default function AdminMonthlyChargeList() {
       ]);
 
       const chargeRows = Array.isArray(chargeData) ? chargeData : [];
-      chargeRows.sort((a, b) => Number(b?.chargeId ?? 0) - Number(a?.chargeId ?? 0));
+      chargeRows.sort(
+        (a, b) => Number(b?.chargeId ?? 0) - Number(a?.chargeId ?? 0)
+      );
       setCharges(chargeRows);
 
-      const paymentMap = (Array.isArray(paymentData) ? paymentData : []).reduce((acc, payment) => {
-        acc[payment.paymentId] = payment;
-        return acc;
-      }, {});
+      const paymentMap = (Array.isArray(paymentData) ? paymentData : []).reduce(
+        (acc, payment) => {
+          acc[payment.paymentId] = payment;
+          return acc;
+        },
+        {}
+      );
       setPaymentById(paymentMap);
 
       const contractMap = contracts.reduce((acc, contract) => {
@@ -141,7 +171,13 @@ export default function AdminMonthlyChargeList() {
         const id = String(user?.userId ?? '').trim();
         if (!id) return acc;
         acc[id] = String(
-          user?.userNm ?? user?.userName ?? user?.name ?? user?.nickName ?? user?.nickname ?? user?.email ?? id
+          user?.userNm ??
+            user?.userName ??
+            user?.name ??
+            user?.nickName ??
+            user?.nickname ??
+            user?.email ??
+            id
         );
         return acc;
       }, {});
@@ -165,11 +201,13 @@ export default function AdminMonthlyChargeList() {
     const q = keyword.trim().toLowerCase();
 
     return charges.filter((charge) => {
-      if (statusFilter !== 'all' && charge?.chargeSt !== statusFilter) return false;
+      if (statusFilter !== 'all' && charge?.chargeSt !== statusFilter)
+        return false;
       if (!q) return true;
 
       const payment = paymentById[charge?.paymentId] || {};
-      const tenantUserId = tenantUserIdByContractId[Number(charge?.contractId)] || '';
+      const tenantUserId =
+        tenantUserIdByContractId[Number(charge?.contractId)] || '';
       const userName = userNameById[tenantUserId] || '';
 
       const haystack = [
@@ -187,7 +225,14 @@ export default function AdminMonthlyChargeList() {
 
       return haystack.includes(q);
     });
-  }, [charges, keyword, paymentById, statusFilter, tenantUserIdByContractId, userNameById]);
+  }, [
+    charges,
+    keyword,
+    paymentById,
+    statusFilter,
+    tenantUserIdByContractId,
+    userNameById,
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / size));
   const safePage = Math.min(page, totalPages);
@@ -201,7 +246,10 @@ export default function AdminMonthlyChargeList() {
     if (page !== safePage) setPage(safePage);
   }, [page, safePage]);
 
-  const pages = useMemo(() => pageWindow(safePage, totalPages), [safePage, totalPages]);
+  const pages = useMemo(
+    () => pageWindow(safePage, totalPages),
+    [safePage, totalPages]
+  );
 
   return (
     <section className={styles.wrap}>
@@ -322,7 +370,8 @@ export default function AdminMonthlyChargeList() {
             <tbody>
               {rows.map((charge) => {
                 const payment = paymentById[charge.paymentId] || {};
-                const tenantUserId = tenantUserIdByContractId[Number(charge.contractId)] || '';
+                const tenantUserId =
+                  tenantUserIdByContractId[Number(charge.contractId)] || '';
                 const userName = userNameById[tenantUserId] || '-';
 
                 return (
@@ -330,25 +379,39 @@ export default function AdminMonthlyChargeList() {
                     <td>{normalizeTargetLabel(charge.chargeType)}</td>
                     <td>
                       <div>#{charge.paymentId ?? '-'}</div>
-                      <div className={styles.subCell}>정산ID: #{charge.chargeId ?? '-'}</div>
+                      <div className={styles.subCell}>
+                        정산ID: #{charge.chargeId ?? '-'}
+                      </div>
                     </td>
                     <td>
                       <div>{userName}</div>
-                      <div className={styles.subCell}>회원ID: {tenantUserId || '-'}</div>
+                      <div className={styles.subCell}>
+                        회원ID: {tenantUserId || '-'}
+                      </div>
                     </td>
-                    <td>{formatMoney(charge.price, payment.currency || 'KRW')}</td>
+                    <td>
+                      {formatMoney(charge.price, payment.currency || 'KRW')}
+                    </td>
                     <td>
                       <ChargeStatusBadge status={charge.chargeSt} />
                     </td>
                     <td>
                       <div>{payment.provider || '-'}</div>
-                      <div className={styles.subCell}>결제사 ID: {payment.providerPaymentId || '-'}</div>
+                      <div className={styles.subCell}>
+                        결제사 ID: {payment.providerPaymentId || '-'}
+                      </div>
                     </td>
                     <td>
-                      <div className={styles.ellipsis}>{payment.merchantUid || '-'}</div>
-                      <div className={styles.subCell}>멱등키: {payment.idempotencyKey || '-'}</div>
+                      <div className={styles.ellipsis}>
+                        {payment.merchantUid || '-'}
+                      </div>
+                      <div className={styles.subCell}>
+                        멱등키: {payment.idempotencyKey || '-'}
+                      </div>
                     </td>
-                    <td>{formatDateTime(payment.paidAt || charge.billingDt)}</td>
+                    <td>
+                      {formatDateTime(payment.paidAt || charge.billingDt)}
+                    </td>
                   </tr>
                 );
               })}
