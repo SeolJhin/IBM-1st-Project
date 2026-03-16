@@ -1,4 +1,5 @@
 // App.js
+// ── 공통 ──────────────────────────────────────────────────────
 import React from 'react';
 import './app/styles/globals.css';
 

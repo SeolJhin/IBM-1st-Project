@@ -174,37 +174,39 @@ export default function NoticeList() {
         <h2 className={styles.pageTitle}>공지사항</h2>
       </div>
 
-      {/* ── 필터 칩 ─────────────────────────────────────── */}
-      <div className={styles.filterChipRow}>
-        {FILTER_CHIPS.map((chip) => (
+      {/* ── 필터 칩 + 글쓰기 버튼 (같은 줄) ────────────── */}
+      <div className={styles.filterBarRow}>
+        <div className={styles.filterChipRow}>
+          {FILTER_CHIPS.map((chip) => (
+            <button
+              key={chip.value || 'all'}
+              type="button"
+              className={`${styles.filterChip} ${
+                activeFilter === chip.value ? styles.filterChipActive : ''
+              }`}
+              onClick={() => handleFilterChange(chip.value)}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        {isAdmin && (
           <button
-            key={chip.value || 'all'}
-            type="button"
-            className={`${styles.filterChip} ${
-              activeFilter === chip.value ? styles.filterChipActive : ''
-            }`}
-            onClick={() => handleFilterChange(chip.value)}
+            className={styles.buttonPrimary}
+            onClick={() => {
+              setShowWriter((p) => !p);
+              if (showWriter) resetEditor();
+            }}
           >
-            {chip.label}
+            {showWriter ? '닫기' : '+ 공지 글쓰기'}
           </button>
-        ))}
+        )}
       </div>
 
-      {/* ── 관리자 글쓰기 ────────────────────────────────── */}
+      {/* ── 관리자 글쓰기 폼 ─────────────────────────────── */}
       {isAdmin && (
         <>
-          <div className={styles.listActions}>
-            <button
-              className={styles.buttonPrimary}
-              onClick={() => {
-                setShowWriter((p) => !p);
-                if (showWriter) resetEditor();
-              }}
-            >
-              {showWriter ? '닫기' : '+ 공지 글쓰기'}
-            </button>
-          </div>
-
           {showWriter && (
             <div className={styles.card} style={{ marginBottom: 24 }}>
               <div style={{ display: 'flex', gap: 12, marginBottom: 4 }}>
@@ -241,19 +243,30 @@ export default function NoticeList() {
                     ))}
                   </select>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label className={styles.formLabel}>분류</label>
-                  <select
-                    className={styles.formSelect}
-                    value={writeForm.code}
-                    onChange={(e) =>
-                      setWriteForm((p) => ({ ...p, code: e.target.value }))
-                    }
-                    disabled={submitting}
-                  >
-                    <option value="SUP_GENERAL">일반</option>
-                    <option value="SUP_BILLING">요금/정산</option>
-                  </select>
+                {/* ★ 중요 공지 토글 */}
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
+                    paddingBottom: 2,
+                  }}
+                >
+                  <label className={styles.formLabel}>중요 공지</label>
+                  <label className={styles.importanceToggle}>
+                    <input
+                      type="checkbox"
+                      checked={writeForm.importance === 'Y'}
+                      onChange={(e) =>
+                        setWriteForm((p) => ({
+                          ...p,
+                          importance: e.target.checked ? 'Y' : 'N',
+                        }))
+                      }
+                      disabled={submitting}
+                    />
+                    <span className={styles.importanceSlider} />
+                  </label>
                 </div>
               </div>
               <label className={styles.formLabel}>내용</label>

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import styles from './Support.module.css';
 
 const STATUS_MAP = { waiting: '답변 대기', complete: '답변 완료' };
@@ -80,7 +81,8 @@ export default function QnaDetail() {
     loadDetail();
   }, [qnaId, user]); // eslint-disable-line
 
-  if (!user) return <Navigate to="/login" replace />;
+  const blocked = useRequireAuth(user, '1:1 문의');
+  if (blocked) return null;
   if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
   if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
   if (!qna) return null;

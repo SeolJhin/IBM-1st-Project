@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import styles from './Support.module.css';
 
 const COMPLAIN_CATEGORIES = [
@@ -62,7 +63,8 @@ export default function ComplainEdit() {
       .finally(() => setLoading(false));
   }, [id, isAdmin, isTenant, user, navigate]);
 
-  if (!user) return <Navigate to="/login" replace />;
+  const blocked = useRequireAuth(user, '민원 접수');
+  if (blocked) return null;
   if (!isAdmin && !isTenant) {
     return (
       <div className={styles.container}>
