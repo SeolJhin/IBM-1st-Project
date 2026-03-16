@@ -59,6 +59,7 @@ function EventCard({ event, isHovered, onHover, onLeave }) {
 }
 
 function EventSection() {
+  const navigate = useNavigate();
   const [hoveredCard, setHoveredCard] = useState(null);
 
   const events = {
@@ -112,7 +113,11 @@ function EventSection() {
           <h2 className={styles.sectionTitle}>
             현재 진행 중인 공유주거 프로그램
           </h2>
-          <button className={styles.primaryPill} type="button">
+          <button
+            className={styles.primaryPill}
+            type="button"
+            onClick={() => navigate('/support/notice?noticeSt=event')}
+          >
             자세히 보기
           </button>
         </div>
@@ -290,11 +295,11 @@ function RecommendCarousel() {
 
 // ✅ 신규: AI 추천 Top3 섹션 (기존 HouseLineup 교체)
 const ROOM_TYPE_LABEL = {
-  one_room:   '원룸형',
-  two_room:   '투룸형',
+  one_room: '원룸형',
+  two_room: '투룸형',
   three_room: '쓰리룸형',
-  loft:       '복층',
-  share:      '쉐어',
+  loft: '복층',
+  share: '쉐어',
 };
 
 const RANK_LABEL = ['🥇 1위', '🥈 2위', '🥉 3위'];
@@ -302,9 +307,9 @@ const RANK_COLOR = ['#f59e0b', '#9ca3af', '#cd7c2f']; // 금·은·동
 
 function AiTop3Section() {
   const navigate = useNavigate();
-  const [items, setItems]     = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     propertyApi
@@ -332,9 +337,7 @@ function AiTop3Section() {
         {loading && (
           <p className={styles.typeHint}>AI 추천 방을 불러오는 중입니다…</p>
         )}
-        {!loading && error && (
-          <p className={styles.typeHintError}>{error}</p>
-        )}
+        {!loading && error && <p className={styles.typeHintError}>{error}</p>}
         {!loading && !error && items.length === 0 && (
           <p className={styles.typeHint}>아직 추천 데이터가 없습니다.</p>
         )}

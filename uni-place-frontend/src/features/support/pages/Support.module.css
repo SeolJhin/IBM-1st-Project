@@ -248,6 +248,27 @@
   color: #2563eb;
 }
 
+.type_faq_contract {
+  background: #e8f4fd;
+  color: #1a6fa8;
+}
+.type_faq_facility {
+  background: #edf7ed;
+  color: #2d7a2d;
+}
+.type_faq_moveinout {
+  background: #fef3e2;
+  color: #a05c00;
+}
+.type_faq_roomservice {
+  background: #f3e8fd;
+  color: #6a1fa8;
+}
+.type_faq_community {
+  background: #fde8f0;
+  color: #a81f5c;
+}
+
 /* ── 페이지네이션 ── */
 .pagination {
   display: flex;
@@ -461,4 +482,41 @@
   line-height: 1.8;
   color: var(--muted);
   white-space: pre-wrap;
+}
+
+.filterChipRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.filterChip {
+  padding: 7px 18px;
+  border-radius: 999px;
+  border: 1.5px solid #c8bfb0;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.filterChip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.filterChipActive {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.filterChipActive:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }

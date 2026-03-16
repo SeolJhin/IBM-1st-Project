@@ -3,6 +3,9 @@ from typing import Any
 
 from app.config.settings import settings
 from app.schemas.ai_request import AiRequest
+from sentence_transformers import SentenceTransformer
+
+_embedding_model = SentenceTransformer("BAAI/bge-m3")
 
 logger = logging.getLogger(__name__)
 
@@ -56,10 +59,8 @@ def _build_query(req: AiRequest) -> str:
 
 
 def _embed_query(text: str) -> list[float]:
-    provider = (settings.embedding_provider or "openai").strip().lower()
-    if provider == "watsonx":
-        return _embed_with_watsonx(text)
-    return _embed_with_openai(text)
+    vec = _embedding_model.encode(text)
+    return vec.tolist()
 
 
 def _embed_with_openai(text: str) -> list[float]:
