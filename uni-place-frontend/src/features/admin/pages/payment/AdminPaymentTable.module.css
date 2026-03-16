@@ -171,6 +171,11 @@
   background: rgba(87, 170, 108, 0.2);
 }
 
+.badgeOverdue {
+  color: #8a2f2f;
+  background: rgba(200, 70, 70, 0.18);
+}
+
 .badgeCancelled {
   color: #8a2f2f;
   background: rgba(200, 70, 70, 0.18);
