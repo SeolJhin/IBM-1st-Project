@@ -60,6 +60,7 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceImplTest {
+	//deploy test
 // build test
     @Mock
     private PaymentRepository paymentRepository;
@@ -88,7 +89,7 @@ class PaymentServiceImplTest {
         ReflectionTestUtils.setField(paymentService, "objectMapper", new ObjectMapper());
         ReflectionTestUtils.setField(paymentService, "appBaseUrl", "http://localhost:8080");
     }
-
+// 
     @Test
     @DisplayName("prepare(order): payment/intent 생성 후 ready 응답")
     void prepareOrderSuccess() {
