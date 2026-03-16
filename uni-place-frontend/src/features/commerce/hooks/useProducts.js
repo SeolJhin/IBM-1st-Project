@@ -22,10 +22,28 @@ export function useProducts() {
     setLoading(true);
     setError(null);
     try {
-      // ProductResponse[] 형태로 반환
-      // 각 항목: { prodId, prodNm, prodPrice, prodStock, code, prodDesc, prodSt, affiliateId }
       const data = await commerceApi.getProducts();
-      setProducts(data ?? []);
+      const list = data ?? [];
+
+      // 각 상품 이미지 병렬 조회 (실패해도 상품은 표시)
+      const imageResults = await Promise.allSettled(
+        list.map((p) => commerceApi.getProductImages(p.prodId).catch(() => []))
+      );
+
+      const productsWithImages = list.map((p, idx) => {
+        const imgs =
+          imageResults[idx].status === 'fulfilled'
+            ? (imageResults[idx].value ?? [])
+            : [];
+        const arr = Array.isArray(imgs?.data)
+          ? imgs.data
+          : Array.isArray(imgs)
+            ? imgs
+            : [];
+        return { ...p, images: arr };
+      });
+
+      setProducts(productsWithImages);
     } catch (err) {
       setError(err?.message || '상품 목록을 불러오는 데 실패했습니다.');
       setProducts([]);
@@ -39,7 +57,7 @@ export function useProducts() {
   }, [fetch]);
 
   return {
-    products, // ProductResponse[]
+    products, // ProductResponse[] — 각 항목에 images: FileResponse[] 포함
     loading,
     error,
     refetch: fetch,
@@ -89,7 +107,7 @@ export function useProduct(prodId) {
 
   return {
     product, // ProductResponse | null — { prodId, prodNm, prodPrice, prodStock, code, prodDesc, prodSt, affiliateId }
-    images,  // FileResponse[] — 상품 이미지 목록
+    images, // FileResponse[] — 상품 이미지 목록
     loading,
     error,
     refetch,

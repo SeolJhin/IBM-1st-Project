@@ -195,7 +195,7 @@ public class ContractServiceImpl implements ContractService {
         if (request.getContractStatus() != null) {
             targetStatus = request.getContractStatus();
 
-            if (targetStatus == ContractStatus.approved && !c.getContractStart().isAfter(today)) {
+            if (targetStatus == ContractStatus.approved && c.getContractStart().isBefore(today)) {
                 targetStatus = ContractStatus.active;
             }
 

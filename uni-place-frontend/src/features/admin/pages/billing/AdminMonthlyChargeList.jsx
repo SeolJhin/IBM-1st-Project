@@ -5,7 +5,7 @@ import styles from '../payment/AdminPaymentTable.module.css';
 const CHARGE_STATUS_OPTIONS = [
   { value: 'unpaid', label: '미납' },
   { value: 'paid', label: '납부완료' },
-  { value: 'overdue', label: '연체' },
+  { value: 'overdue', label: '납부지연' },
 ];
 
 const TARGET_LABELS = {
@@ -43,21 +43,17 @@ function pageWindow(page, totalPages, radius = 2) {
 
 function ChargeStatusBadge({ status }) {
   const key = String(status ?? '').toLowerCase();
-  const className =
-    key === 'paid'
-      ? styles.badgePaid
-      : key === 'overdue'
-        ? styles.badgeOverdue
-        : styles.badgeReady;
-  const label =
-    key === 'paid'
-      ? '납부완료'
-      : key === 'unpaid'
-        ? '미납'
-        : key === 'overdue'
-          ? '연체'
-          : key;
-  return <span className={`${styles.badge} ${className}`}>{label || '-'}</span>;
+  const map = {
+    paid: { label: '납부완료', className: styles.badgePaid },
+    unpaid: { label: '미납', className: styles.badgeReady },
+    overdue: { label: '납부지연', className: styles.badgeOverdue },
+    pending: { label: '대기', className: styles.badgePending },
+  };
+  const { label, className } = map[key] ?? {
+    label: key || '-',
+    className: styles.badgeReady,
+  };
+  return <span className={`${styles.badge} ${className}`}>{label}</span>;
 }
 
 async function fetchAllUsers() {

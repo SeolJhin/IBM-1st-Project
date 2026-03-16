@@ -119,7 +119,7 @@ LIMIT 500""".strip()
         "pay_total":    pay_total,
         "grand_total":  mc_total + pay_total,
         "file_name":    fname,
-        "download_url": f"/api/ai/payment/order-form/download/{fname}",
+        "download_url": f"http://localhost:8080/ai/payment/order-form/download/{fname}",
     }
 
 
@@ -151,7 +151,7 @@ def _sheet_summary(wb: Workbook, mc_rows: list, pay_rows: list, month: str) -> N
         for ci in range(1, 10):
             c = ws.cell(r, ci)
             c.font = Font(bold=True, size=10, color="FFFFFF")
-            c.fill = _SUB_FILL if hasattr(globals().get('_SUB_FILL', None), 'fgColor') else PatternFill("solid", fgColor="2E75B6")
+            c.fill = PatternFill("solid", fgColor="2E75B6")
             c.border = _BORDER
             c.alignment = _LEFT
         ws.row_dimensions[r].height = 18
