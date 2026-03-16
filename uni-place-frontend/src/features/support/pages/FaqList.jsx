@@ -4,10 +4,29 @@ import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 
+// ── 카테고리 정의 (코드 → 라벨/스타일) ──────────────────────
 const CODE_LABEL = {
   SUP_GENERAL: { label: '일반', cls: 'type_general' },
   SUP_BILLING: { label: '요금/정산', cls: 'type_billing' },
+  FAQ_CONTRACT: { label: '계약', cls: 'type_faq_contract' },
+  FAQ_FACILITY: { label: '시설 이용', cls: 'type_faq_facility' },
+  FAQ_MOVEINOUT: { label: '입주/퇴실', cls: 'type_faq_moveinout' },
+  FAQ_ROOMSERVICE: { label: '룸서비스', cls: 'type_faq_roomservice' },
+  FAQ_COMMUNITY: { label: '커뮤니티', cls: 'type_faq_community' },
+  FAQ_ETC: { label: '기타', cls: 'type_etc' },
 };
+
+// ── select 옵션용 배열 ────────────────────────────────────────
+const CODE_OPTIONS = [
+  { value: 'SUP_GENERAL', label: '일반' },
+  { value: 'SUP_BILLING', label: '요금/정산' },
+  { value: 'FAQ_CONTRACT', label: '계약' },
+  { value: 'FAQ_FACILITY', label: '시설 이용' },
+  { value: 'FAQ_MOVEINOUT', label: '입주/퇴실' },
+  { value: 'FAQ_ROOMSERVICE', label: '룸서비스' },
+  { value: 'FAQ_COMMUNITY', label: '커뮤니티' },
+  { value: 'FAQ_ETC', label: '기타' },
+];
 
 function normalizeRole(user) {
   const raw =
@@ -17,7 +36,9 @@ function normalizeRole(user) {
     user?.user_role ??
     user?.authority ??
     user?.authorities?.[0];
-  return String(raw ?? '').toLowerCase().replace('role_', '');
+  return String(raw ?? '')
+    .toLowerCase()
+    .replace('role_', '');
 }
 
 export default function FaqList() {
@@ -114,6 +135,7 @@ export default function FaqList() {
         <h2 className={styles.pageTitle}>FAQ</h2>
       </div>
 
+      {/* ── 관리자 글쓰기 ────────────────────────────────────── */}
       {isAdmin && (
         <>
           <div className={styles.listActions}>
@@ -124,6 +146,7 @@ export default function FaqList() {
               {showWriter ? '닫기' : '+ FAQ 글쓰기'}
             </button>
           </div>
+
           {showWriter && (
             <div className={styles.card} style={{ marginBottom: 16 }}>
               <label className={styles.formLabel}>제목</label>
@@ -134,6 +157,7 @@ export default function FaqList() {
                 maxLength={100}
                 disabled={submitting}
               />
+
               <label className={styles.formLabel}>분류</label>
               <select
                 className={styles.formSelect}
@@ -141,9 +165,13 @@ export default function FaqList() {
                 onChange={(e) => handleChange('code', e.target.value)}
                 disabled={submitting}
               >
-                <option value="SUP_GENERAL">일반</option>
-                <option value="SUP_BILLING">요금/정산</option>
+                {CODE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
               </select>
+
               <label className={styles.formLabel}>내용</label>
               <textarea
                 className={styles.formTextarea}
@@ -166,6 +194,7 @@ export default function FaqList() {
         </>
       )}
 
+      {/* ── FAQ 아코디언 목록 ─────────────────────────────────── */}
       <div className={styles.accordionList}>
         {faqs.length === 0 ? (
           <div
@@ -186,9 +215,7 @@ export default function FaqList() {
             return (
               <div
                 key={faq.faqId}
-                className={`${styles.accordionItem} ${
-                  isOpen ? styles.accordionItemOpen : ''
-                }`}
+                className={`${styles.accordionItem} ${isOpen ? styles.accordionItemOpen : ''}`}
               >
                 <button
                   className={styles.accordionHeader}
@@ -203,7 +230,9 @@ export default function FaqList() {
                     {codeMeta.label}
                   </span>
                   <span className={styles.accordionTitle}>{faq.faqTitle}</span>
-                  <span className={styles.accordionIcon}>{isOpen ? '-' : '+'}</span>
+                  <span className={styles.accordionIcon}>
+                    {isOpen ? '-' : '+'}
+                  </span>
                 </button>
 
                 {isOpen && (
@@ -217,40 +246,50 @@ export default function FaqList() {
                             className={styles.formInput}
                             value={editForm.faqTitle}
                             onChange={(e) =>
-                              setEditForm((prev) => ({
-                                ...prev,
+                              setEditForm((p) => ({
+                                ...p,
                                 faqTitle: e.target.value,
                               }))
                             }
                             maxLength={100}
                             disabled={editSubmitting}
                           />
+
                           <label className={styles.formLabel}>분류</label>
                           <select
                             className={styles.formSelect}
                             value={editForm.code}
                             onChange={(e) =>
-                              setEditForm((prev) => ({ ...prev, code: e.target.value }))
+                              setEditForm((p) => ({
+                                ...p,
+                                code: e.target.value,
+                              }))
                             }
                             disabled={editSubmitting}
                           >
-                            <option value="SUP_GENERAL">일반</option>
-                            <option value="SUP_BILLING">요금/정산</option>
+                            {CODE_OPTIONS.map((o) => (
+                              <option key={o.value} value={o.value}>
+                                {o.label}
+                              </option>
+                            ))}
                           </select>
+
                           <label className={styles.formLabel}>내용</label>
                           <textarea
                             className={styles.formTextarea}
                             value={editForm.faqCtnt}
                             onChange={(e) =>
-                              setEditForm((prev) => ({
-                                ...prev,
+                              setEditForm((p) => ({
+                                ...p,
                                 faqCtnt: e.target.value,
                               }))
                             }
                             maxLength={3000}
                             disabled={editSubmitting}
                           />
-                          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <div
+                            style={{ display: 'flex', gap: 8, marginTop: 8 }}
+                          >
                             <button
                               className={styles.buttonPrimary}
                               type="button"
@@ -300,6 +339,7 @@ export default function FaqList() {
         )}
       </div>
 
+      {/* ── 페이지네이션 ─────────────────────────────────────── */}
       {pagination.totalPages > 1 && (
         <div className={styles.pagination}>
           <button
