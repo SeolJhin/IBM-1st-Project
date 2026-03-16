@@ -6,6 +6,8 @@ import java.util.Base64;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.util.SerializationUtils;
@@ -35,7 +37,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
             removeCookie(request, response, COOKIE_NAME);
             return;
         }
-        addCookie(response, COOKIE_NAME, serialize(authorizationRequest), EXPIRE_SECONDS);
+        addCookie(request, response, COOKIE_NAME, serialize(authorizationRequest), EXPIRE_SECONDS);
     }
 
     @Override
@@ -61,13 +63,26 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
         return null;
     }
 
-    private static void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
-        Cookie cookie = new Cookie(name, value);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setMaxAge(maxAge);
-        response.addCookie(cookie);
+    private static void addCookie(
+        HttpServletRequest request,
+        HttpServletResponse response,
+        String name,
+        String value,
+        int maxAge
+    ) {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(name, value)
+            .path("/")
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Lax")
+            .maxAge(maxAge);
+
+        String cookieDomain = resolveCookieDomain(request);
+        if (cookieDomain != null) {
+            builder.domain(cookieDomain);
+        }
+
+        response.addHeader(HttpHeaders.SET_COOKIE, builder.build().toString());
     }
 
     private static void removeCookie(HttpServletRequest request, HttpServletResponse response, String name) {
@@ -75,12 +90,44 @@ public class HttpCookieOAuth2AuthorizationRequestRepository
         if (cookie == null) {
             return;
         }
-        Cookie remove = new Cookie(name, "");
-        remove.setPath("/");
-        remove.setHttpOnly(true);
-        remove.setSecure(true);
-        remove.setMaxAge(0);
-        response.addCookie(remove);
+
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(name, "")
+            .path("/")
+            .httpOnly(true)
+            .secure(true)
+            .sameSite("Lax")
+            .maxAge(0);
+
+        String cookieDomain = resolveCookieDomain(request);
+        if (cookieDomain != null) {
+            builder.domain(cookieDomain);
+        }
+
+        response.addHeader(HttpHeaders.SET_COOKIE, builder.build().toString());
+    }
+
+    private static String resolveCookieDomain(HttpServletRequest request) {
+        String host = request.getHeader("X-Forwarded-Host");
+        if (host == null || host.isBlank()) {
+            host = request.getHeader("Host");
+        }
+        if (host == null || host.isBlank()) {
+            host = request.getServerName();
+        }
+        if (host == null || host.isBlank()) {
+            return null;
+        }
+
+        String normalizedHost = host.split(",")[0].trim();
+        int portIndex = normalizedHost.indexOf(':');
+        if (portIndex >= 0) {
+            normalizedHost = normalizedHost.substring(0, portIndex);
+        }
+
+        if ("uniplace.site".equals(normalizedHost) || normalizedHost.endsWith(".uniplace.site")) {
+            return "uniplace.site";
+        }
+        return null;
     }
 
     private static String serialize(OAuth2AuthorizationRequest authorizationRequest) {
