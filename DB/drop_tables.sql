@@ -1,6 +1,9 @@
 -- ===============================
 -- 0) Drop All Tables
 -- ===============================
+DROP TABLE IF EXISTS maintenance_ticket;
+DROP TABLE IF EXISTS inspection;
+DROP TABLE IF EXISTS password_reset_tokens;
 DROP TABLE IF EXISTS payment_refund;
 DROP TABLE IF EXISTS payment_attempt;
 DROP TABLE IF EXISTS payment_intent;
@@ -29,6 +32,7 @@ DROP TABLE IF EXISTS reply;
 DROP TABLE IF EXISTS qna;
 DROP TABLE IF EXISTS complain;
 DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS review_likes;
 DROP TABLE IF EXISTS faq;
 DROP TABLE IF EXISTS notice;
 DROP TABLE IF EXISTS board;
@@ -42,12 +46,14 @@ DROP TABLE IF EXISTS residents;
 DROP TABLE IF EXISTS contract;
 
 
+DROP TABLE IF EXISTS product_building_stock;
 DROP TABLE IF EXISTS product;
 DROP TABLE IF EXISTS affiliate;
 
 
 DROP TABLE IF EXISTS common_space;
 DROP TABLE IF EXISTS rooms;
+DROP TABLE IF EXISTS ai_room_recommendation;
 DROP TABLE IF EXISTS building;
 
 
