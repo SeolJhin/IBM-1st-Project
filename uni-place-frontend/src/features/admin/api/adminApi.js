@@ -459,6 +459,39 @@ export const adminApi = {
       null
     );
   },
+  // 어드민 환불 실행 (전체/부분, 재고 복원 옵션)
+  adminRefund: (
+    paymentId,
+    { refundPrice, refundReason, restoreStock, refundItemIds } = {}
+  ) =>
+    request(`/admin/refunds/${paymentId}`, {
+      method: 'POST',
+      auth: true,
+      body: {
+        refundPrice: refundPrice ?? null,
+        refundReason,
+        restoreStock: restoreStock ?? false,
+        refundItemIds: refundItemIds ?? [],
+      },
+    }),
+  // 주문 결제의 orderItem 목록 조회 (환불 모달 상품 선택용)
+  getRefundOrderItems: (paymentId) =>
+    request(`/admin/refunds/${paymentId}/order-items`, { auth: true }),
+
+  // 룸서비스 주문 상품별 환불 (상품 선택 + 재고 복원)
+  adminOrderRefund: (
+    paymentId,
+    { refundReason, restoreStock, refundItems } = {}
+  ) =>
+    request(`/admin/refunds/${paymentId}/order`, {
+      method: 'POST',
+      auth: true,
+      body: {
+        refundReason,
+        restoreStock: restoreStock ?? false,
+        refundItems: refundItems ?? null,
+      },
+    }),
 
   // orders
   getAllOrders: ({ page = 0, size = 20, sort = 'orderCreatedAt' } = {}) =>

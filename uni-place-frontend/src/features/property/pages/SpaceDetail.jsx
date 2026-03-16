@@ -359,11 +359,7 @@ export default function SpaceDetail() {
               <h2 className={styles.sectionTitle}>같은 건물의 다른 공용공간</h2>
               <button
                 className={styles.otherSeeAll}
-                onClick={() =>
-                  navigate(
-                    `/spaces?buildingId=${space.buildingId}&buildingNm=${encodeURIComponent(space.buildingNm)}`
-                  )
-                }
+                onClick={() => navigate('/rooms', { state: { tab: 'spaces' } })}
                 type="button"
               >
                 전체 보기 →

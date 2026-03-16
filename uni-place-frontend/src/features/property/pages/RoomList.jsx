@@ -32,6 +32,8 @@ function queryReducer(state, action) {
   switch (action.type) {
     case 'SET_FILTER':
       return { ...state, ...action.payload, page: 1 };
+    case 'SET_STATE': // page 리셋 없이 state만 변경 (UI 동기화용)
+      return { ...state, ...action.payload };
     case 'SET_PAGE':
       return { ...state, page: action.payload };
     case 'SET_SORT':
@@ -541,6 +543,7 @@ export default function RoomList() {
       minRoomCapacity: n('minRoomCapacity'),
       maxRoomCapacity: n('maxRoomCapacity'),
       buildingNm: p('buildingNm'),
+      buildingId: n('buildingId'),
     };
   };
 
@@ -682,8 +685,30 @@ export default function RoomList() {
       propertyApi
         .getBuildings({ page: 1, size: 50 })
         .then((d) => {
-          setBldgs(d?.content ?? []);
+          const loaded = d?.content ?? [];
+          setBldgs(loaded);
           setBldgLoaded(true);
+
+          // URL에 buildingId가 있고 buildingNm이 아직 없으면 sync
+          // query.buildingId는 queryFromUrl()에서 이미 설정됨 → API 필터 이미 적용 중
+          // buildingNm만 추가로 채워서 필터 select UI에 선택값 표시
+          const urlBuildingId = searchParams.get('buildingId');
+          if (urlBuildingId && !searchParams.get('buildingNm')) {
+            const found = loaded.find(
+              (b) => String(b.buildingId) === String(urlBuildingId)
+            );
+            if (found) {
+              // SET_STATE: page 리셋·재조회 없이 buildingNm만 query에 보완
+              // (buildingId로 첫 fetch는 queryFromUrl에서 이미 완료)
+              dispatch({
+                type: 'SET_STATE',
+                payload: {
+                  buildingNm: found.buildingNm,
+                  buildingId: Number(urlBuildingId),
+                },
+              });
+            }
+          }
         })
         .catch(() => {})
         .finally(() => setBL(false));

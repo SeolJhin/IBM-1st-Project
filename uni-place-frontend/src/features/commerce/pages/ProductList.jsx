@@ -109,7 +109,29 @@ function ProductCard({
     >
       {cartQty > 0 && <div className={styles.cardBadge}>{cartQty}</div>}
       <div className={styles.cardImg}>
-        <span className={styles.cardImgLabel}>품목사진</span>
+        {product.images && product.images.length > 0 ? (
+          <img
+            src={(() => {
+              const u = product.images[0].viewUrl || '';
+              return u.startsWith('/api') ? u : `/api${u}`;
+            })()}
+            alt={product.prodNm}
+            className={styles.cardImgPhoto}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <span
+          className={styles.cardImgLabel}
+          style={{
+            display:
+              product.images && product.images.length > 0 ? 'none' : 'flex',
+          }}
+        >
+          품목사진
+        </span>
       </div>
       <div className={styles.cardBody}>
         <div className={styles.cardTop}>
@@ -458,7 +480,8 @@ export default function ProductList({
         />
         {!tenantLoading && !tenantContracts.length && (
           <p className={styles.errMsg}>
-            {tenantError || '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.'}
+            {tenantError ||
+              '현재 입주 중인 계약이 없어 룸서비스 주문이 불가합니다.'}
           </p>
         )}
         <div className={styles.catTabs}>
