@@ -235,11 +235,73 @@ function ProductFormModal({
   const [statusVal, setStatusVal] = useState(
     isEdit ? (product.prodSt ?? 'on_sale') : 'on_sale'
   );
+
+  // 이미지 상태
+  const [existingImages, setExistingImages] = useState([]); // 수정 시 기존 이미지
+  const [newFiles, setNewFiles] = useState([]); // 새로 추가할 파일
+  const [newPreviews, setNewPreviews] = useState([]); // 새 파일 미리보기 URL
+  const [deletedFileIds, setDeletedFileIds] = useState([]); // 삭제 표시된 기존 이미지 ID
+  const fileInputRef = useRef(null);
+
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
+  // 수정 모드일 때 기존 이미지 로드
+  useEffect(() => {
+    if (!isEdit) return;
+    adminApi
+      .getProductImages(product.prodId)
+      .then((res) => {
+        const list = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+            ? res
+            : [];
+        setExistingImages(list);
+      })
+      .catch(() => {});
+  }, [isEdit, product?.prodId]);
+
   const set = (k) => (e) =>
     setForm((prev) => ({ ...prev, [k]: e.target.value }));
+
+  // 파일 선택
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    const total =
+      existingImages.length -
+      deletedFileIds.length +
+      newFiles.length +
+      files.length;
+    if (total > 5) {
+      setErr('이미지는 최대 5장까지 등록 가능합니다.');
+      return;
+    }
+    setErr('');
+    setNewFiles((prev) => [...prev, ...files]);
+    setNewPreviews((prev) => [
+      ...prev,
+      ...files.map((f) => URL.createObjectURL(f)),
+    ]);
+    e.target.value = '';
+  };
+
+  // 새 파일 제거
+  const removeNewFile = (idx) => {
+    URL.revokeObjectURL(newPreviews[idx]);
+    setNewFiles((prev) => prev.filter((_, i) => i !== idx));
+    setNewPreviews((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  // 기존 이미지 삭제 표시 토글
+  const toggleDeleteExisting = (fileId) => {
+    setDeletedFileIds((prev) =>
+      prev.includes(fileId)
+        ? prev.filter((id) => id !== fileId)
+        : [...prev, fileId]
+    );
+  };
 
   const validate = () => {
     if (!form.prodNm.trim()) return '상품명을 입력하세요.';
@@ -271,14 +333,29 @@ function ProductFormModal({
       affiliateId: form.affiliateId ? Number(form.affiliateId) : null,
     };
     try {
+      let prodId = product?.prodId;
       if (isEdit) {
-        await adminApi.updateProduct(product.prodId, body);
+        await adminApi.updateProduct(prodId, body);
         if (statusVal !== product.prodSt) {
-          await adminApi.changeProductStatus(product.prodId, statusVal);
+          await adminApi.changeProductStatus(prodId, statusVal);
         }
       } else {
-        await adminApi.createProduct(body);
+        const res = await adminApi.createProduct(body);
+        // prodId 추출: ApiResponse 래핑 여부에 따라
+        prodId = res?.data ?? res;
       }
+
+      // 기존 이미지 삭제
+      if (deletedFileIds.length > 0 && prodId) {
+        await adminApi
+          .deleteProductImages(prodId, deletedFileIds)
+          .catch(() => {});
+      }
+      // 새 이미지 업로드
+      if (newFiles.length > 0 && prodId) {
+        await adminApi.uploadProductImages(prodId, newFiles).catch(() => {});
+      }
+
       onSaved();
     } catch (e) {
       setErr(e?.message || (isEdit ? '수정 실패' : '등록 실패'));
@@ -286,6 +363,11 @@ function ProductFormModal({
       setSaving(false);
     }
   };
+
+  const activeExisting = existingImages.filter(
+    (img) => !deletedFileIds.includes(img.fileId)
+  );
+  const totalImageCount = activeExisting.length + newFiles.length;
 
   return (
     <div
@@ -379,6 +461,7 @@ function ProductFormModal({
               </select>
             </label>
           </div>
+
           <label className={styles.formLabelFull}>
             상품 설명 <span className={styles.req}>*</span>
             <textarea
@@ -390,7 +473,103 @@ function ProductFormModal({
               maxLength={2000}
             />
           </label>
+
+          {/* ── 이미지 업로드 ── */}
+          <div className={styles.imageSection}>
+            <div className={styles.imageSectionHeader}>
+              <span className={styles.formLabelText}>
+                상품 이미지
+                <span
+                  style={{ color: '#9ca3af', fontWeight: 400, marginLeft: 6 }}
+                >
+                  ({totalImageCount}/5)
+                </span>
+              </span>
+              {totalImageCount < 5 && (
+                <button
+                  type="button"
+                  className={styles.imageAddBtn}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  + 사진 추가
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
+            </div>
+
+            {totalImageCount === 0 ? (
+              <div
+                className={styles.imageEmpty}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <span className={styles.imageEmptyIcon}>🖼️</span>
+                <span>클릭해서 이미지 추가</span>
+              </div>
+            ) : (
+              <div className={styles.imageGrid}>
+                {/* 기존 이미지 */}
+                {existingImages.map((img) => {
+                  const isDeleting = deletedFileIds.includes(img.fileId);
+                  return (
+                    <div
+                      key={img.fileId}
+                      className={`${styles.imageThumb} ${isDeleting ? styles.imageThumbDeleting : ''}`}
+                    >
+                      <img
+                        src={(() => {
+                          const u = img.adminViewUrl || img.viewUrl || '';
+                          return u.startsWith('/api') ? u : `/api${u}`;
+                        })()}
+                        alt="상품 이미지"
+                        className={styles.imageThumbImg}
+                      />
+                      <button
+                        type="button"
+                        className={styles.imageRemoveBtn}
+                        onClick={() => toggleDeleteExisting(img.fileId)}
+                        title={isDeleting ? '삭제 취소' : '삭제'}
+                      >
+                        {isDeleting ? '↩' : '✕'}
+                      </button>
+                      {isDeleting && (
+                        <div className={styles.imageDeleteOverlay}>
+                          삭제 예정
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {/* 새 이미지 */}
+                {newPreviews.map((url, idx) => (
+                  <div key={`new-${idx}`} className={styles.imageThumb}>
+                    <img
+                      src={url}
+                      alt="새 이미지"
+                      className={styles.imageThumbImg}
+                    />
+                    <button
+                      type="button"
+                      className={styles.imageRemoveBtn}
+                      onClick={() => removeNewFile(idx)}
+                      title="제거"
+                    >
+                      ✕
+                    </button>
+                    <div className={styles.imageNewBadge}>NEW</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
         <div className={styles.modalFooter}>
           <button
             type="button"

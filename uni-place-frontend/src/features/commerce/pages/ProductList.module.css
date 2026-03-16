@@ -544,3 +544,23 @@
   text-align: center;
   padding: 40px;
 }
+
+.cardImgPhoto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  z-index: 2;
+}
+
+.cardImgLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #b06050;
+  z-index: 1;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+}
