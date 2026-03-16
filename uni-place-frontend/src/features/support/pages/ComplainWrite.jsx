@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import styles from './Support.module.css';
 import {
   validateTitle,
@@ -38,7 +39,8 @@ export default function ComplainWrite() {
   const [imageFiles, setImageFiles] = useState([]); // { file, previewUrl }[]
   const [submitting, setSubmitting] = useState(false);
 
-  if (!user) return <Navigate to="/login" replace />;
+  const blocked = useRequireAuth(user, '민원 접수');
+  if (blocked) return null;
 
   const role = normalizeRole(user);
   const canCreate = role === 'admin' || role === 'tenant';

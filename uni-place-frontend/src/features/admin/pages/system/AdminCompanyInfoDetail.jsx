@@ -88,7 +88,8 @@ export default function AdminCompanyInfoDetail() {
     } catch (error) {
       applyCompany(null);
       setFetchError(
-        error?.message || '회사 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+        error?.message ||
+          '회사 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
       );
     } finally {
       setLoading(false);
@@ -153,17 +154,17 @@ export default function AdminCompanyInfoDetail() {
       };
 
       const payload = await adminApi.updateCompanyInfo(company.companyId, body);
-      const normalized =
-        normalizeCompany(payload) ?? {
-          ...company,
-          ...body,
-        };
+      const normalized = normalizeCompany(payload) ?? {
+        ...company,
+        ...body,
+      };
 
       applyCompany(normalized);
       setNotice('회사 정보가 저장되었습니다.');
     } catch (error) {
       setSaveError(
-        error?.message || '저장 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+        error?.message ||
+          '저장 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.'
       );
     } finally {
       setSaving(false);
@@ -188,14 +189,6 @@ export default function AdminCompanyInfoDetail() {
           >
             새로고침
           </button>
-          <button
-            type="submit"
-            form="admin-company-form"
-            className={styles.primaryButton}
-            disabled={!canSubmit}
-          >
-            {saving ? '저장 중...' : '저장'}
-          </button>
         </div>
       </header>
 
@@ -219,11 +212,17 @@ export default function AdminCompanyInfoDetail() {
       ) : null}
 
       {!fetchError && (
-        <form id="admin-company-form" className={styles.form} onSubmit={onSubmit}>
+        <form
+          id="admin-company-form"
+          className={styles.form}
+          onSubmit={onSubmit}
+        >
           <div className={styles.metaRow}>
             <span className={styles.metaLabel}>
               Company ID:{' '}
-              <strong>{company?.companyId ? `#${company.companyId}` : '-'}</strong>
+              <strong>
+                {company?.companyId ? `#${company.companyId}` : '-'}
+              </strong>
             </span>
             <span className={styles.metaLabel}>
               변경 상태: <strong>{isDirty ? '수정됨' : '변경 없음'}</strong>
@@ -293,7 +292,10 @@ export default function AdminCompanyInfoDetail() {
               />
             </label>
 
-            <label className={`${styles.field} ${styles.fieldWide}`} htmlFor="companyAddr">
+            <label
+              className={`${styles.field} ${styles.fieldWide}`}
+              htmlFor="companyAddr"
+            >
               <span>회사 주소</span>
               <textarea
                 id="companyAddr"
