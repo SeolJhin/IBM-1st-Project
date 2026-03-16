@@ -32,7 +32,7 @@ def make_payment_summary(req: AiRequest) -> tuple[str, dict]:
     try:
         xlsx_fname = _write_summary_xlsx(payload, user_id=req.user_id or "admin")
         payload["xlsx_file_name"] = xlsx_fname
-        payload["download_url"] = f"/ai/payment/order-form/download/{xlsx_fname}"
+        payload["download_url"] = f"/api/ai/payment/order-form/download/{xlsx_fname}"
     except Exception as _e:
         import logging
         logging.getLogger(__name__).warning("xlsx 생성 실패: %s", _e)

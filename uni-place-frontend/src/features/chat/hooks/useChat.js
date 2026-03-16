@@ -436,7 +436,7 @@ export function useChat(params) {
       if (!action || !msg || msg.role !== 'assistant') return;
       if (action.type === 'download_order_form' && action.fileName) {
         window.open(
-          '/ai/payment/order-form/download/' +
+          '/api/ai/payment/order-form/download/' +
             encodeURIComponent(action.fileName),
           '_blank'
         );

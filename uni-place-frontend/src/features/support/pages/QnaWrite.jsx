@@ -3,6 +3,10 @@ import { useNavigate, useParams, Navigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
+import {
+  validateTitle,
+  validateContent,
+} from '../../../shared/utils/validators';
 
 const QNA_CATEGORIES = [
   { code: 'QNA_CONTRACT', label: '계약 문의' },
@@ -133,8 +137,12 @@ export default function QnaWrite() {
 
   const handleSubmit = async () => {
     if (!isEdit && !form.code) return alert('문의 유형을 선택해주세요.');
-    if (!form.qnaTitle.trim()) return alert('제목을 입력해주세요.');
-    if (!form.qnaCtnt.trim()) return alert('내용을 입력해주세요.');
+    const titleErr = validateTitle(form.qnaTitle, '제목');
+    if (titleErr) return alert(titleErr);
+    const ctntErr = validateContent(form.qnaCtnt, '내용', 10);
+    if (ctntErr) return alert(ctntErr);
+    if (form.qnaCtnt.trim().length > 2000)
+      return alert('내용은 2000자 이하로 입력해주세요.');
     setSubmitting(true);
     try {
       if (isEdit) {

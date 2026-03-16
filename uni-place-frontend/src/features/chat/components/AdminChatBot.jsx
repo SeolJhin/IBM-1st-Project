@@ -518,7 +518,9 @@ function AdminActionButtons({ buttons }) {
           key={i}
           className={styles.actionBtn}
           onClick={() =>
-            btn.url?.startsWith('http') || btn.url?.startsWith('/ai/')
+            btn.url?.startsWith('http') ||
+            btn.url?.startsWith('/ai/') ||
+            btn.url?.startsWith('/api/ai/')
               ? window.open(btn.url, '_blank')
               : navigate(btn.url)
           }

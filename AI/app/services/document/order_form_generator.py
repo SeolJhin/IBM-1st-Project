@@ -119,7 +119,7 @@ LIMIT 500""".strip()
         "pay_total":    pay_total,
         "grand_total":  mc_total + pay_total,
         "file_name":    fname,
-        "download_url": f"http://localhost:8080/ai/payment/order-form/download/{fname}",
+        "download_url": f"/api/ai/payment/order-form/download/{fname}",
     }
 
 
