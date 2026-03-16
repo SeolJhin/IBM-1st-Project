@@ -14,7 +14,6 @@ import org.myweb.uniplace.global.response.PageResponse;
 import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -31,17 +30,15 @@ public class NoticeController {
     public ApiResponse<PageResponse<NoticeResponse>> search(
             @ModelAttribute NoticeSearchRequest request,
             @RequestParam(name = "page", defaultValue = "1") int page,
-            @RequestParam(name = "size", defaultValue = "10") int size,
-            @RequestParam(name = "sort", defaultValue = "noticeId") String sort,
-            @RequestParam(name = "direct", defaultValue = "DESC") String direct
+            @RequestParam(name = "size", defaultValue = "10") int size
+            // ★ sort / direct 파라미터 제거 → Pageable에 sort 안 넣음
+            //   → 쿼리 내부 ORDER BY n.notice_id DESC 만 동작
     ) {
         if (page < 1) page = 1;
         if (size < 1) size = 10;
 
-        Sort.Direction direction =
-                "ASC".equalsIgnoreCase(direct) ? Sort.Direction.ASC : Sort.Direction.DESC;
-
-        Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
+        // ★ Sort 없이 페이지/사이즈만 넘김
+        Pageable pageable = PageRequest.of(page - 1, size);
 
         return ApiResponse.ok(noticeService.search(request, pageable));
     }

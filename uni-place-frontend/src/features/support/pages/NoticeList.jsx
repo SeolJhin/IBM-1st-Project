@@ -1,10 +1,17 @@
-import React, { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useNotices } from '../hooks/useNotices';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import styles from './Support.module.css';
 import NoticeEditor from '../components/NoticeEditor';
 import { useAuth } from '../../user/hooks/useAuth';
+
+const FILTER_CHIPS = [
+  { value: '', label: '전체' },
+  { value: 'notice', label: '공지' },
+  { value: 'event', label: '이벤트' },
+  { value: 'operation', label: '운영' },
+  { value: 'policy', label: '정책' },
+];
 
 const NOTICE_STATUS_OPTIONS = [
   { value: 'notice', label: '공지' },
@@ -12,6 +19,7 @@ const NOTICE_STATUS_OPTIONS = [
   { value: 'operation', label: '운영' },
   { value: 'policy', label: '정책' },
 ];
+
 const NOTICE_ST_LABEL = {
   notice: { label: '공지', cls: 'type_notice' },
   event: { label: '이벤트', cls: 'type_event' },
@@ -32,22 +40,27 @@ function normalizeRole(user) {
     .replace('role_', '');
 }
 
-/* HTML에서 blob: URL을 서버 뷰 URL로 치환 */
-function replaceBlobUrls(html, fileResponses, apiBase) {
-  let result = html;
-  fileResponses.forEach((fr) => {
-    // data-pending 이미지의 blob src를 서버 URL로 교체 (순서 기반)
-    // 실제로는 에디터의 replaceObjectUrl을 쓰는 게 더 안전함
-  });
-  return result;
-}
-
 export default function NoticeList() {
   const { user } = useAuth();
-  const { notices, pagination, loading, error, goToPage, refetch } =
-    useNotices();
   const editorRef = useRef(null);
+  const isAdmin = normalizeRole(user) === 'admin';
 
+  // ★ URL 쿼리 파라미터 읽기 (?noticeSt=event 등)
+  const [searchParams] = useSearchParams();
+
+  // ★ URL에 noticeSt 파라미터가 있으면 초기값으로 사용
+  const [activeFilter, setActiveFilter] = useState(
+    () => searchParams.get('noticeSt') ?? ''
+  );
+  const [page, setPage] = useState(1);
+
+  // ── 데이터 상태 ────────────────────────────────────────────
+  const [notices, setNotices] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // ── 글쓰기 상태 ────────────────────────────────────────────
   const [showWriter, setShowWriter] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [writeForm, setWriteForm] = useState({
@@ -57,7 +70,45 @@ export default function NoticeList() {
     importance: 'N',
   });
 
-  const isAdmin = normalizeRole(user) === 'admin';
+  // ── API 호출: activeFilter · page 바뀌면 재실행 ───────────
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetch = async () => {
+      setLoading(true);
+      setError(null);
+
+      const params = { page, size: 10 };
+      if (activeFilter) params.noticeSt = activeFilter;
+
+      console.log('[NoticeList] API 호출:', params);
+
+      try {
+        const data = await supportApi.getNotices(params);
+        console.log('[NoticeList] 응답:', data);
+        if (cancelled) return;
+        setNotices(data?.content ?? []);
+        setTotalPages(data?.totalPages ?? 0);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err?.message || '공지사항을 불러오지 못했습니다.');
+        setNotices([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetch();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeFilter, page]);
+
+  // ── 필터 클릭 ──────────────────────────────────────────────
+  const handleFilterChange = (value) => {
+    setActiveFilter(value);
+    setPage(1);
+  };
 
   const resetEditor = () => {
     setWriteForm({
@@ -76,16 +127,12 @@ export default function NoticeList() {
     const html = editorRef.current?.getHTML() ?? '';
     if (!html.replace(/<[^>]*>/g, '').trim())
       return alert('내용을 입력해주세요.');
-
     setSubmitting(true);
     try {
-      // 1. 공지 먼저 등록 (html 그대로 저장 — blob URL 포함)
       const created = await supportApi.createNotice({
         ...writeForm,
         noticeCtnt: html,
       });
-
-      // 2. 이미지 파일 업로드
       const pendingFiles = editorRef.current?.getPendingFiles() ?? [];
       if (pendingFiles.length > 0 && created?.noticeId) {
         const uploadResult = await supportApi.uploadFiles(
@@ -93,33 +140,26 @@ export default function NoticeList() {
           created.noticeId,
           pendingFiles
         );
-        // 3. blob URL → 서버 뷰 URL 로 교체한 html 로 공지 업데이트
         let finalHtml = editorRef.current?.getHTML() ?? html;
         const uploaded = uploadResult?.files ?? [];
-        uploaded.forEach((fr) => {
-          // blob URL은 순서 기반으로 교체
-        });
-        // 업로드된 파일 URL로 교체하기 위해 내부 img src 순서 매핑
         const parser = new DOMParser();
         const doc = parser.parseFromString(finalHtml, 'text/html');
-        const pendingImgs = doc.querySelectorAll('img[data-pending]');
-        pendingImgs.forEach((img, i) => {
+        doc.querySelectorAll('img[data-pending]').forEach((img, i) => {
           if (uploaded[i]) {
             img.src = supportApi.getFileViewUrl(uploaded[i].fileId);
             img.removeAttribute('data-pending');
           }
         });
         finalHtml = doc.body.innerHTML;
-
         await supportApi.updateNotice(created.noticeId, {
           ...writeForm,
           noticeCtnt: finalHtml,
         });
       }
-
       resetEditor();
       setShowWriter(false);
-      await refetch();
+      setPage(1);
+      setActiveFilter('');
       alert('공지사항이 등록되었습니다.');
     } catch (e) {
       alert(e.message || '등록에 실패했습니다.');
@@ -128,15 +168,29 @@ export default function NoticeList() {
     }
   };
 
-  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
-  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
-
   return (
     <div className={styles.container}>
       <div className={styles.pageHead}>
         <h2 className={styles.pageTitle}>공지사항</h2>
       </div>
 
+      {/* ── 필터 칩 ─────────────────────────────────────── */}
+      <div className={styles.filterChipRow}>
+        {FILTER_CHIPS.map((chip) => (
+          <button
+            key={chip.value || 'all'}
+            type="button"
+            className={`${styles.filterChip} ${
+              activeFilter === chip.value ? styles.filterChipActive : ''
+            }`}
+            onClick={() => handleFilterChange(chip.value)}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── 관리자 글쓰기 ────────────────────────────────── */}
       {isAdmin && (
         <>
           <div className={styles.listActions}>
@@ -202,10 +256,8 @@ export default function NoticeList() {
                   </select>
                 </div>
               </div>
-
               <label className={styles.formLabel}>내용</label>
               <NoticeEditor ref={editorRef} disabled={submitting} />
-
               <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
                 <button
                   className={styles.buttonPrimary}
@@ -230,93 +282,105 @@ export default function NoticeList() {
         </>
       )}
 
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th style={{ width: 60 }}>번호</th>
-            <th style={{ width: 100 }}>유형</th>
-            <th>제목</th>
-            <th style={{ width: 100 }}>조회수</th>
-            <th style={{ width: 120 }}>날짜</th>
-          </tr>
-        </thead>
-        <tbody>
-          {notices.length === 0 ? (
-            <tr>
-              <td
-                colSpan={5}
-                style={{
-                  textAlign: 'center',
-                  padding: 32,
-                  color: 'var(--muted)',
-                }}
-              >
-                등록된 공지사항이 없습니다.
-              </td>
-            </tr>
-          ) : (
-            notices.map((n) => {
-              const st = NOTICE_ST_LABEL[n.noticeSt];
-              return (
-                <tr key={n.noticeId}>
-                  <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
-                    {n.noticeId}
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    {st && (
-                      <span className={`${styles.typeBadge} ${styles[st.cls]}`}>
-                        {st.label}
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    <div className={styles.tableTitleCell}>
-                      {n.importance === 'Y' && (
-                        <span className={styles.statusBadge}>중요</span>
-                      )}
-                      <Link
-                        to={`/support/notice/${n.noticeId}`}
-                        className={styles.tableLink}
-                      >
-                        {n.noticeTitle}
-                      </Link>
-                    </div>
-                  </td>
-                  <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
-                    {n.readCount ?? 0}
-                  </td>
-                  <td
-                    style={{
-                      textAlign: 'center',
-                      color: 'var(--muted)',
-                      fontSize: 13,
-                    }}
-                  >
-                    {n.createdAt ? n.createdAt.slice(0, 10) : '-'}
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
+      {/* ── 로딩 / 에러 ──────────────────────────────────── */}
+      {loading && <div style={{ padding: 24 }}>로딩중...</div>}
+      {!loading && error && (
+        <div style={{ padding: 24, color: 'red' }}>{error}</div>
+      )}
 
-      {pagination.totalPages > 1 && (
+      {/* ── 목록 테이블 ──────────────────────────────────── */}
+      {!loading && !error && (
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th style={{ width: 60 }}>번호</th>
+              <th style={{ width: 100 }}>유형</th>
+              <th>제목</th>
+              <th style={{ width: 100 }}>조회수</th>
+              <th style={{ width: 120 }}>날짜</th>
+            </tr>
+          </thead>
+          <tbody>
+            {notices.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  style={{
+                    textAlign: 'center',
+                    padding: 32,
+                    color: 'var(--muted)',
+                  }}
+                >
+                  등록된 공지사항이 없습니다.
+                </td>
+              </tr>
+            ) : (
+              notices.map((n) => {
+                const st = NOTICE_ST_LABEL[n.noticeSt];
+                return (
+                  <tr key={n.noticeId}>
+                    <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                      {n.noticeId}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      {st && (
+                        <span
+                          className={`${styles.typeBadge} ${styles[st.cls]}`}
+                        >
+                          {st.label}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <div className={styles.tableTitleCell}>
+                        {n.importance === 'Y' && (
+                          <span className={styles.statusBadge}>중요</span>
+                        )}
+                        <Link
+                          to={`/support/notice/${n.noticeId}`}
+                          className={styles.tableLink}
+                        >
+                          {n.noticeTitle}
+                        </Link>
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                      {n.readCount ?? 0}
+                    </td>
+                    <td
+                      style={{
+                        textAlign: 'center',
+                        color: 'var(--muted)',
+                        fontSize: 13,
+                      }}
+                    >
+                      {n.createdAt ? n.createdAt.slice(0, 10) : '-'}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      )}
+
+      {/* ── 페이지네이션 ─────────────────────────────────── */}
+      {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
             className={styles.pageBtn}
-            disabled={pagination.isFirst}
-            onClick={() => goToPage(pagination.page - 1)}
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
           >
             이전
           </button>
           <span className={styles.pageInfo}>
-            {pagination.page} / {pagination.totalPages}
+            {page} / {totalPages}
           </span>
           <button
             className={styles.pageBtn}
-            disabled={pagination.isLast}
-            onClick={() => goToPage(pagination.page + 1)}
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
           >
             다음
           </button>

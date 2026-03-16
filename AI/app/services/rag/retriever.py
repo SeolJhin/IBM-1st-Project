@@ -2,6 +2,9 @@ from app.integrations.milvus_client import search_vectors
 from app.schemas.ai_request import AiRequest
 from app.services.moderation.policy import detect_policy_matches, item_policy_text
 from app.services.rag.reranker import rerank
+import pymysql
+import os
+import re
 
 FAQ_CONTEXT: dict[str, str] = {
     "tour": "Tour reservation is available after selecting a room and entering the visit date.",
@@ -26,9 +29,14 @@ def retrieve_context(req: AiRequest) -> list[str]:
     query = _build_query(req)
     candidates: list[str] = []
     candidates.extend(_extract_slot_context(req))
-    candidates.extend(search_vectors(req))
-    candidates.extend(_lookup_static_context(req, query))
-
+    is_popular = any(word in query for word in ["인기", "조회수", "많이 본"])
+    if req.intent in {"COMMUNITY_CONTENT_SEARCH", "AI_AGENT_CHATBOT"}:
+        candidates.extend(_search_community_db(query))
+        if is_popular:
+            candidates.extend(_search_popular_posts())
+    if not is_popular:
+        candidates.extend(search_vectors(req))
+        candidates.extend(_lookup_static_context(req, query))
     unique_docs: list[str] = []
     for doc in candidates:
         normalized = str(doc).strip()
@@ -123,3 +131,107 @@ def _context_source(intent: str) -> dict[str, str]:
     if intent == "COMMUNITY_CONTENT_SEARCH":
         return COMMUNITY_CONTEXT
     return {}
+
+def _extract_keyword(query: str) -> str:
+
+    q = re.sub(r"[^\w\s가-힣]", "", query)
+
+    return q.strip()
+
+
+
+def _search_community_db(query: str) -> list[str]:
+
+    docs: list[str] = []
+
+    try:
+        conn = pymysql.connect(
+            host=os.getenv("DB_HOST"),
+            port=int(os.getenv("DB_PORT", 3306)),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            db=os.getenv("DB_NAME"),
+            charset="utf8mb4",
+            cursorclass=pymysql.cursors.DictCursor
+        )
+
+        with conn.cursor() as cur:
+
+            sql = """
+            SELECT board_title, board_ctnt, created_at
+            FROM board
+            WHERE board_title LIKE %s
+               OR board_ctnt LIKE %s
+            ORDER BY created_at DESC
+            LIMIT 5
+            """
+            keyword = _extract_keyword(query)
+
+            cur.execute(
+                sql,
+                (f"%{keyword}%", f"%{keyword}%")
+            )
+            
+            rows = cur.fetchall()
+            
+            if not rows:
+
+                cur.execute("""
+                    SELECT board_title, board_ctnt
+                    FROM board
+                    ORDER BY created_at DESC
+                    LIMIT 3
+                """)
+
+                rows = cur.fetchall()
+
+            for r in rows:
+                title = r.get("board_title", "")
+                content = r.get("board_ctnt", "")
+                docs.append(f"{title}: {content}")
+
+    except Exception as e:
+        print("community search error:", e)
+
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+    return docs
+
+def _search_popular_posts():
+
+    docs = []
+
+    conn = pymysql.connect(
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT")),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        db=os.getenv("DB_NAME"),
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+    with conn.cursor() as cur:
+
+        cur.execute("""
+        SELECT board_title, read_count
+        FROM board
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        ORDER BY read_count DESC
+        LIMIT 3
+        """)
+
+        rows = cur.fetchall()
+
+        for r in rows:
+            docs.append(
+                f"제목: {r['board_title']} (조회수 {r['read_count']})"
+            )
+
+    conn.close()
+
+    return docs
