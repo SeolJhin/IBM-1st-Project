@@ -11,6 +11,11 @@ import BuildingSlotButtons from '../components/BuildingSlotButtons';
 import TimeSlotButtons from '../components/TimeSlotButtons';
 import styles from './TourReservationCreate.module.css';
 import { toKoreanMessage } from '../../../app/http/errorMapper';
+import {
+  validatePhone,
+  validateTourName,
+  validateTourPwd,
+} from '../../../shared/utils/validators';
 
 export default function TourReservationCreate({
   inlineMode = false,
@@ -204,9 +209,22 @@ export default function TourReservationCreate({
     if (!roomId) return false;
     if (!selectedSlot) return false;
     if (!form.tourNm || !form.tourTel || !form.tourPwd) return false;
+    if (form.tourNm.trim().length < 2) return false;
+    if (!/^01[016789]\d{7,8}$/.test(form.tourTel.replace(/-/g, '')))
+      return false;
     if (!/^[0-9]{4}$/.test(form.tourPwd)) return false;
     return true;
   }, [selectedBuilding, roomId, selectedSlot, form]);
+
+  const getFormError = () => {
+    if (!form.tourNm || form.tourNm.trim().length < 2)
+      return '방문자 이름을 2자 이상 입력해주세요.';
+    const telErr = validatePhone(form.tourTel);
+    if (telErr) return telErr;
+    const pwdErr = validateTourPwd(form.tourPwd);
+    if (pwdErr) return pwdErr;
+    return '';
+  };
 
   const doCreateTourReservation = async () => {
     try {
@@ -232,6 +250,11 @@ export default function TourReservationCreate({
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!canSubmit) return;
+    const formErr = getFormError();
+    if (formErr) {
+      setSubmitError(formErr);
+      return;
+    }
     setConfirmOpen(true);
   };
 

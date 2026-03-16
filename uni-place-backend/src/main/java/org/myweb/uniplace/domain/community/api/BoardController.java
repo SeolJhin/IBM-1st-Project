@@ -32,7 +32,7 @@ public class BoardController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<PageResponse<BoardResponse>>> myBoardList(
             @RequestParam(name = "boardType", required = false) String boardType,
-            @PageableDefault(size = 10, sort = "boardId", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.ok(boardService.getMyBoards(boardType, pageable)));
@@ -45,7 +45,7 @@ public class BoardController {
             @RequestParam(name = "boardType", required = false) String boardType,
             @RequestParam(name = "searchType", defaultValue = "title") String searchType,
             @RequestParam(name = "keyword", required = false, defaultValue = "") String keyword,
-            @PageableDefault(size = 10, sort = "boardId", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.ok(boardService.searchBoards(boardType, searchType, keyword, pageable)));
@@ -55,7 +55,7 @@ public class BoardController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<BoardResponse>>> boardList(
             @RequestParam(name = "boardType", required = false) String boardType,
-            @PageableDefault(size = 10, sort = "boardId", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.ok(boardService.getBoardList(boardType, pageable)));

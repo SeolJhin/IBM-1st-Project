@@ -3,14 +3,9 @@
 주변 부동산 매물 조회 Tool.
 
 [아키텍처]
-  서버에서 직방 → 다방 → 국토부 실거래가 순으로 직접 호출.
+  국토부 실거래가 API를 사용해 주변 매물 데이터를 수집.
   오프라인 시세(가짜 데이터)는 사용하지 않음.
-  모두 실패 시 에러 메시지 반환.
-
-[수집 순서]
-  ① 직방 (geohash 방식)
-  ② 다방 (직방 5건 미만 시)
-  ③ 국토부 실거래가 API (10건 미만 시)
+  실패 시 에러 메시지 반환.
 
 [마커 포맷]
   __PRICE_REPORT__{JSON}__END_PRICE_REPORT__
@@ -19,10 +14,12 @@
 
 import json
 import logging
-import math
+import os
 import statistics
+import urllib.error
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -38,7 +35,7 @@ NEARBY_PROPERTY_TOOL_DEFINITION = {
             "UNI PLACE 방의 적정 임대료 범위·근거표·유사 매물 사진을 제공합니다. "
             "가격 추천, 시세 비교 요청 시 반드시 사용하세요. "
             "먼저 query_database로 방 정보(building_addr, room_size, rent_price, rent_type)를 조회한 뒤 호출하세요. "
-            "서버가 직방·다방·국토부 실거래가를 직접 수집하여 즉시 리포트를 반환합니다."
+            "서버가 국토부 실거래가를 직접 수집하여 즉시 리포트를 반환합니다."
         ),
         "parameters": {
             "type": "object",
@@ -177,285 +174,6 @@ def _geocode_offline(address: str):
         return 37.5665, 126.9780
     return None
 
-
-def _geohash_encode(lat: float, lon: float, precision: int = 5) -> str:
-    """순수 Python geohash 인코딩 (외부 라이브러리 불필요)."""
-    BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz"
-    bits, bit_pos = [], 0
-    min_lat, max_lat = -90.0, 90.0
-    min_lon, max_lon = -180.0, 180.0
-    for _ in range(precision * 5):
-        if bit_pos % 2 == 0:          # 경도
-            mid = (min_lon + max_lon) / 2
-            if lon >= mid: bits.append(1); min_lon = mid
-            else:          bits.append(0); max_lon = mid
-        else:                          # 위도
-            mid = (min_lat + max_lat) / 2
-            if lat >= mid: bits.append(1); min_lat = mid
-            else:          bits.append(0); max_lat = mid
-        bit_pos += 1
-    result = ""
-    for i in range(0, len(bits), 5):
-        idx = sum(b << (4 - j) for j, b in enumerate(bits[i:i+5]))
-        result += BASE32[idx]
-    return result
-
-
-def _geohash_adjacent(ghash: str, direction: str) -> str:
-    """geohash 인접 셀 계산."""
-    BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz"
-    NEIGHBOR = {
-        "right": {"even": "bc01fg45telegramhmjnqp0r2twvyx8zb", "odd": "p0r21436x8zb9dcf5h7kjnmqesgutwvy"},
-        "left":  {"even": "238967debc01fg45kmstqrwxuvhjyznp",  "odd": "14365h7k9dcfesgujnmqp0r2twvyx8zb"},
-        "top":   {"even": "p0r21436x8zb9dcf5h7kjnmqesgutwvy", "odd": "bc01fg45hmjnqp0r2twvyx8zb9dcf5h7"},
-        "bottom":{"even": "14365h7k9dcfesgujnmqp0r2twvyx8zb", "odd": "238967debc01fg45kmstqrwxuvhjyznp"},
-    }
-    BORDER = {
-        "right":  {"even": "bcfguvyz", "odd": "prxz"},
-        "left":   {"even": "0145hjnp", "odd": "028b"},
-        "top":    {"even": "prxz",     "odd": "bcfguvyz"},
-        "bottom": {"even": "028b",     "odd": "0145hjnp"},
-    }
-    ghash   = ghash.lower()
-    last    = ghash[-1]
-    typ     = "odd" if len(ghash) % 2 else "even"
-    base    = ghash[:-1]
-    if last in BORDER[direction][typ] and base:
-        base = _geohash_adjacent(base, direction)
-    neighbor_map = NEIGHBOR[direction][typ]
-    if last not in BASE32:
-        return ghash   # fallback
-    try:
-        return base + BASE32[neighbor_map.index(last)]
-    except ValueError:
-        return ghash
-
-
-def _geohash_neighbors_9(lat: float, lon: float, precision: int = 5) -> list[str]:
-    """중심 geohash + 8방향 인접 셀 (총 9개) – 약 15km × 15km 커버."""
-    center = _geohash_encode(lat, lon, precision)
-    n  = _geohash_adjacent(center, "top")
-    s  = _geohash_adjacent(center, "bottom")
-    e  = _geohash_adjacent(center, "right")
-    w  = _geohash_adjacent(center, "left")
-    ne = _geohash_adjacent(n, "right")
-    nw = _geohash_adjacent(n, "left")
-    se = _geohash_adjacent(s, "right")
-    sw = _geohash_adjacent(s, "left")
-    return list(dict.fromkeys([center, n, ne, e, se, s, sw, w, nw]))  # 중복 제거
-
-
-def _fetch_zigbang_server(lat, lon, room_type, rent_type, size_sqm, radius_km) -> list[dict]:
-    """직방 API – geohash 방식 (2020년 이후 공식 방식).
-
-    Step 1: GET /v2/items?geohash=xxxxx&... → item_id 목록
-    Step 2: POST /v2/items/list (body: JSON) → 상세 정보
-    """
-    try:
-        svc = "원룸" if room_type in ("one_room", "studio") else "오피스텔"
-        sales_type = "%EC%A0%84%EC%84%B8" if rent_type == "jeonse" else "%EC%9B%94%EC%84%B8"
-
-        headers = {
-            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                           "AppleWebKit/537.36 (KHTML, like Gecko) "
-                           "Chrome/120.0.0.0 Safari/537.36"),
-            "Referer":  "https://www.zigbang.com/",
-            "Accept":   "application/json, text/plain, */*",
-            "Origin":   "https://www.zigbang.com",
-        }
-
-        # precision=5 한 셀 ≈ 4.9km×4.9km → 9셀이면 반경 3km 충분히 커버
-        geohashes = _geohash_neighbors_9(lat, lon, precision=5)
-        item_ids: list[str] = []
-
-        for gh in geohashes:
-            svc_encoded = "%EC%9B%90%EB%A3%B8" if svc == "원룸" else "%EC%98%A4%ED%94%BC%EC%8A%A4%ED%85%94"
-            geo_url = (
-                f"https://apis.zigbang.com/v2/items"
-                f"?deposit_gteq=0&domain=zigbang&geohash={gh}"
-                f"&needHasNoFiltered=true&rent_gteq=0"
-                f"&sales_type_in={sales_type}"
-                f"&service_type_eq={svc_encoded}"
-            )
-            try:
-                req = urllib.request.Request(geo_url, headers=headers)
-                with urllib.request.urlopen(req, timeout=8) as resp:
-                    geo_data = json.loads(resp.read().decode())
-                for i in geo_data.get("items") or []:
-                    iid = str(i.get("item_id") or i.get("id") or "")
-                    if iid and iid not in item_ids:
-                        item_ids.append(iid)
-            except Exception as e:
-                logger.debug("[직방/geohash/%s] %s", gh, e)
-                continue
-
-        if not item_ids:
-            logger.info("[NearbyTool/직방] item_id 없음")
-            return []
-
-        item_ids = item_ids[:100]   # 최대 100개
-
-        # Step 2: POST /v2/items/list 로 상세 정보 수집
-        post_data = json.dumps({
-            "domain":        "zigbang",
-            "withCoalition": "true",
-            "item_ids":      item_ids,
-        }).encode("utf-8")
-        post_headers = {**headers, "Content-Type": "application/json"}
-        list_url = "https://apis.zigbang.com/v2/items/list"
-        req2 = urllib.request.Request(
-            list_url, data=post_data, headers=post_headers, method="POST"
-        )
-        with urllib.request.urlopen(req2, timeout=10) as resp2:
-            detail_data = json.loads(resp2.read().decode())
-
-        listings = []
-        for item in detail_data.get("items") or []:
-            rent    = int(item.get("rent") or item.get("rent_fee") or 0)
-            deposit = int(item.get("deposit") or 0)
-            area    = float(item.get("전용면적") or item.get("area") or item.get("공급면적") or 0)
-            if rent <= 0 and rent_type != "jeonse": continue
-            if rent_type == "jeonse" and deposit <= 0: continue
-            # 면적 필터 (±55% 허용)
-            if size_sqm and area > 0 and not (size_sqm * 0.45 <= area <= size_sqm * 1.65):
-                continue
-            # 거리 필터
-            item_lat = float(item.get("lat") or item.get("latitude") or 0)
-            item_lon = float(item.get("lng") or item.get("longitude") or 0)
-            if item_lat and item_lon:
-                dist_m = _haversine_m(lat, lon, item_lat, item_lon)
-                if dist_m > radius_km * 1000:
-                    continue
-            image_url = None
-            photos = item.get("photos") or []
-            if photos and isinstance(photos, list):
-                p0 = photos[0] if isinstance(photos[0], dict) else {}
-                image_url = p0.get("path") or p0.get("url") or (photos[0] if isinstance(photos[0], str) else None)
-            listings.append({
-                "source":           "직방",
-                "address":          item.get("address1") or item.get("address") or item.get("addr1") or "",
-                "size_sqm":         area,
-                "size_pyeong":      round(area / 3.305, 1) if area else None,
-                "floor":            str(item.get("floor") or ""),
-                "deposit_wan":      round(deposit / 10000),
-                "monthly_rent_wan": round(rent / 10000),
-                "rent_type":        "jeonse" if rent_type == "jeonse" else "monthly_rent",
-                "image_url":        image_url,
-                "listing_url":      f"https://www.zigbang.com/home/room/{item.get('item_id', '')}",
-                "building_name":    item.get("building_name") or "",
-                "is_realtime":      True,
-            })
-        logger.info("[NearbyTool/직방] 수집 %d건 (item_ids=%d)", len(listings), len(item_ids))
-        return listings
-    except Exception as e:
-        logger.info("[NearbyProp] 직방 실패: %s", e)
-        return []
-
-
-def _fetch_dabang_server(lat, lon, room_type, rent_type, size_sqm, radius_km) -> list[dict]:
-    """다방 API – /api/3/room/list/multi-room/bbox (올바른 엔드포인트).
-
-    location 파라미터: [[lng_sw, lat_sw], [lng_ne, lat_ne]] (JSON 배열)
-    filters 파라미터: JSON 문자열로 전달
-    """
-    try:
-        lat1, lat2 = lat - radius_km / 111, lat + radius_km / 111
-        lng1, lng2 = lon - radius_km / 88,  lon + radius_km / 88
-
-        # 다방 room_type: 0=원룸, 1=투룸, 2=쓰리룸+, 3=오피스텔
-        type_code_map = {"one_room": 0, "studio": 0, "two_room": 1, "three_room": 2, "officetel": 3}
-        room_code = type_code_map.get(room_type, 0)
-
-        # selling_type: 0=월세, 1=전세, 2=매매
-        selling_code = 1 if rent_type == "jeonse" else 0
-
-        filters = {
-            "multi_room_type":  [room_code],
-            "selling_type":     [selling_code],
-            "deposit_range":    [0, 99999],
-            "price_range":      [0, 99999],
-            "trade_range":      [0, 99999],
-            "maintenance_cost_range": [0, 99999],
-            "room_size":        [0, 99999],
-            "supply_space_range": [0, 99999],
-            "room_floor_multi": [1, 2, 3, 4, 5, 6, -1, 0],
-            "division":         False,
-            "duplex":           False,
-            "room_type":        [1, 2],
-        }
-
-        # location = [[lng_sw, lat_sw], [lng_ne, lat_ne]]
-        location = [[round(lng1, 6), round(lat1, 6)], [round(lng2, 6), round(lat2, 6)]]
-
-        params = urllib.parse.urlencode({
-            "api_version": "3.0.1",
-            "call_type":   "web",
-            "filters":     json.dumps(filters, ensure_ascii=False),
-            "location":    json.dumps(location),
-            "page":        1,
-            "per_page":    50,
-            "sort_type":   0,
-        })
-        url = f"https://www.dabangapp.com/api/3/room/list/multi-room/bbox?{params}"
-
-        headers = {
-            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                           "AppleWebKit/537.36 (KHTML, like Gecko) "
-                           "Chrome/120.0.0.0 Safari/537.36"),
-            "Referer":  "https://www.dabangapp.com/",
-            "Accept":   "application/json, text/plain, */*",
-            "Origin":   "https://www.dabangapp.com",
-        }
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode())
-
-        listings = []
-        rooms = data.get("rooms") or data.get("room_list") or []
-        for item in rooms:
-            rent    = int(item.get("price") or item.get("rent") or 0)
-            deposit = int(item.get("deposit") or 0)
-            area    = float(item.get("전용면적") or item.get("area") or item.get("room_size") or 0)
-            if selling_code == 0 and rent <= 0: continue
-            if selling_code == 1 and deposit <= 0: continue
-            if size_sqm and area > 0 and not (size_sqm * 0.45 <= area <= size_sqm * 1.65):
-                continue
-            # 이미지: images 배열 또는 img_url
-            imgs = item.get("images") or []
-            image_url = None
-            if imgs and isinstance(imgs, list):
-                img0 = imgs[0]
-                image_url = img0.get("url") or img0.get("path") if isinstance(img0, dict) else img0
-            image_url = image_url or item.get("img_url") or item.get("image_url")
-            listings.append({
-                "source":           "다방",
-                "address":          item.get("address") or item.get("addr") or "",
-                "size_sqm":         area,
-                "size_pyeong":      round(area / 3.305, 1) if area else None,
-                "floor":            str(item.get("floor") or ""),
-                "deposit_wan":      round(deposit / 10000),
-                "monthly_rent_wan": round(rent / 10000),
-                "rent_type":        "jeonse" if rent_type == "jeonse" else "monthly_rent",
-                "image_url":        image_url,
-                "listing_url":      f"https://www.dabangapp.com/room/{item.get('id', '')}",
-                "building_name":    item.get("building_name") or item.get("name") or "",
-                "is_realtime":      True,
-            })
-        logger.info("[NearbyTool/다방] 수집 %d건", len(listings))
-        return listings
-    except Exception as e:
-        logger.info("[NearbyProp] 다방 실패: %s", e)
-        return []
-
-
-def _haversine_m(lat1, lon1, lat2, lon2):
-    R = 6_371_000
-    d_lat = math.radians(lat2 - lat1)
-    d_lon = math.radians(lon2 - lon1)
-    a = math.sin(d_lat/2)**2 + math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(d_lon/2)**2
-    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-
-
 # ─── 국토부 실거래가 API ──────────────────────────────────────────────────────
 
 # 법정동코드 매핑 (상위 지역만 — 세부 동은 하위 코드로 자동 커버)
@@ -519,255 +237,514 @@ def _get_lawd_cd(address: str) -> str:
     return "11680"       # 강남구 기본
 
 
-def _fetch_molit(address: str, rent_type: str, size_sqm) -> list[dict]:
+def _fetch_molit(address: str, rent_type: str, size_sqm, room_type: str = "all") -> list[dict]:
     """국토부 실거래가 API (최근 3개월).
 
-    - 월세: /getRTMSDataSvcSHRent (단기임대)
-    - 전세: /getRTMSDataSvcSHRent or officetel jeonse 별도
+    엔드포인트:
+    - 오피스텔 전월세: /RTMSDataSvcOffiRent/getRTMSDataSvcOffiRent
+    - 아파트 전월세:   /RTMSDataSvcAptRent/getRTMSDataSvcAptRent
+    - 연립/다가구:     /RTMSDataSvcRHRent/getRTMSDataSvcRHRent
+
+    실제 XML 태그:
+    - 오피스텔: 보증금(만원), 월세(만원), 전용면적, 층, 법정동, 지번, 단지
+    - 아파트:   보증금액, 월세, 전용면적, 층, 법정동, 지번, 아파트
+    - 연립:     보증금액, 월세, 전용면적, 층, 법정동, 지번, 연립다세대
     """
+    import os
+    import xml.etree.ElementTree as ET
+
+    # ── API 키 로드 (settings → os.environ 순서) ─────────────────────────
+    api_key = ""
     try:
-        import xml.etree.ElementTree as ET
-        try:
-            from app.config.settings import settings
-            api_key = getattr(settings, "molit_api_key", "") or ""
-        except Exception:
-            import os
-            api_key = os.environ.get("MOLIT_API_KEY", "")
+        from app.config.settings import settings
+        api_key = getattr(settings, "molit_api_key", "") or ""
+    except Exception:
+        pass
+    if not api_key:
+        api_key = os.environ.get("MOLIT_API_KEY", "")
 
-        if not api_key:
-            logger.info("[NearbyTool/국토부] API 키 없음 — 스킵")
-            return []
+    if not api_key:
+        logger.warning("[NearbyTool/국토부] MOLIT_API_KEY 없음 — 조회 불가")
+        return []
 
-        lawd_cd = _get_lawd_cd(address)
-        now = datetime.now()
-        months = [
-            (now.year, now.month),
-            (now.year if now.month > 1 else now.year - 1, now.month - 1 if now.month > 1 else 12),
-            (now.year if now.month > 2 else now.year - 1, now.month - 2 if now.month > 2 else now.month + 10),
-        ]
+    lawd_cd = _get_lawd_cd(address)
+    logger.info("[NearbyTool/국토부] address=%s → lawd_cd=%s rent_type=%s size=%s", address, lawd_cd, rent_type, size_sqm)
+    now = datetime.now()
+    # 최근 3개월
+    months = []
+    y, m = now.year, now.month
+    for _ in range(3):
+        months.append((y, m))
+        m -= 1
+        if m == 0:
+            m = 12
+            y -= 1
 
-        listings: list[dict] = []
+    # 엔드포인트 정의
+    _EP_OFFI = {
+        "url_path": "RTMSDataSvcOffiRent/getRTMSDataSvcOffiRent",
+        "tag_deposit": "deposit", "tag_rent": "monthlyRent",
+        "tag_area": "excluUseAr", "tag_floor": "floor",
+        "tag_dong": "umdNm", "tag_jibun": "jibun",
+        "tag_name": "offiNm", "label": "오피스텔",
+    }
+    _EP_APT = {
+        "url_path": "RTMSDataSvcAptRent/getRTMSDataSvcAptRent",
+        "tag_deposit": "deposit", "tag_rent": "monthlyRent",
+        "tag_area": "excluUseAr", "tag_floor": "floor",
+        "tag_dong": "umdNm", "tag_jibun": "jibun",
+        "tag_name": "aptNm", "label": "아파트",
+    }
+    _EP_RH = {
+        "url_path": "RTMSDataSvcRHRent/getRTMSDataSvcRHRent",
+        "tag_deposit": "deposit", "tag_rent": "monthlyRent",
+        "tag_area": "excluUseAr", "tag_floor": "floor",
+        "tag_dong": "umdNm", "tag_jibun": "jibun",
+        "tag_name": "mhouseNm", "label": "연립다세대",
+    }
+
+    # room_type 기반 유사 건물 유형 선택
+    # one_room/loft → 오피스텔+연립 (소형 위주, 아파트 제외)
+    # two_room/three_room → 아파트+오피스텔
+    # share → 연립+오피스텔
+    # all → 전체
+    _room_type_ep_map = {
+        "one_room":   [_EP_OFFI, _EP_RH],
+        "loft":       [_EP_OFFI, _EP_RH],
+        "two_room":   [_EP_APT, _EP_OFFI],
+        "three_room": [_EP_APT],
+        "share":      [_EP_RH, _EP_OFFI],
+        "all":        [_EP_OFFI, _EP_APT, _EP_RH],
+    }
+    endpoints = _room_type_ep_map.get(room_type, [_EP_OFFI, _EP_APT, _EP_RH])
+    logger.info("[NearbyTool/국토부] room_type=%s → 엔드포인트: %s", room_type, [e["label"] for e in endpoints])
+
+    listings: list[dict] = []
+
+    for ep in endpoints:
         for year, month in months:
             deal_ymd = f"{year}{month:02d}"
-            # 오피스텔 월세/전세
-            if rent_type in ("monthly_rent", "all"):
-                url = (
-                    f"http://apis.data.go.kr/1613000/RTMSDataSvcOffiRent/getRTMSDataSvcOffiRent"
-                    f"?serviceKey={api_key}&LAWD_CD={lawd_cd}&DEAL_YMD={deal_ymd}&numOfRows=100&pageNo=1"
-                )
-            else:
-                url = (
-                    f"http://apis.data.go.kr/1613000/RTMSDataSvcOffiRent/getRTMSDataSvcOffiRent"
-                    f"?serviceKey={api_key}&LAWD_CD={lawd_cd}&DEAL_YMD={deal_ymd}&numOfRows=100&pageNo=1"
-                )
+            # serviceKey는 이미 인코딩된 인증키이므로 quote_plus 방지
+            # 나머지 파라미터는 일반 urlencode, serviceKey만 따로 append
+            base_url = f"http://apis.data.go.kr/1613000/{ep['url_path']}"
+            other_params = urllib.parse.urlencode({
+                "LAWD_CD":   lawd_cd,
+                "DEAL_YMD":  deal_ymd,
+                "numOfRows": "100",
+                "pageNo":    "1",
+            })
+            url = f"{base_url}?serviceKey={api_key}&{other_params}"
+
             try:
                 req = urllib.request.Request(url, headers={"User-Agent": "UniPlaceAdmin/1.0"})
-                with urllib.request.urlopen(req, timeout=8) as resp:
+                with urllib.request.urlopen(req, timeout=10) as resp:
                     xml_data = resp.read()
+
                 root = ET.fromstring(xml_data)
+
+                # API 오류 응답 체크
+                result_code = root.findtext(".//resultCode") or root.findtext(".//errMsg") or ""
+                if result_code and result_code not in ("000", "00", "0", ""):
+                    logger.warning("[국토부/%s/%s/%s] API 오류코드: %s", ep["label"], lawd_cd, deal_ymd, result_code)
+                    continue
+
                 items = root.findall(".//item")
+                logger.info("[국토부/%s/%s/%s] %d건 수신", ep["label"], lawd_cd, deal_ymd, len(items))
+                if len(items) == 0 and not listings:
+                    logger.warning("[국토부/%s/%s/%s] 0건 — XML: %s", ep["label"], lawd_cd, deal_ymd, xml_data[:400])
+
                 for item in items:
                     def g(tag): return (item.findtext(tag) or "").strip()
-                    deposit_str = g("보증금액").replace(",", "")
-                    rent_str    = g("월세금액").replace(",", "")
-                    area_str    = g("전용면적")
-                    floor_str   = g("층")
+
+                    deposit_str = g(ep["tag_deposit"]).replace(",", "").strip()
+                    rent_str    = g(ep["tag_rent"]).replace(",", "").strip()
+                    area_str    = g(ep["tag_area"]).strip()
+                    floor_str   = g(ep["tag_floor"]).strip()
+
                     try:
-                        deposit = int(deposit_str) if deposit_str else 0
-                        rent    = int(rent_str) if rent_str else 0
+                        deposit = int(float(deposit_str)) if deposit_str else 0
+                        rent    = int(float(rent_str)) if rent_str else 0
                         area    = float(area_str) if area_str else 0.0
-                    except ValueError:
+                    except (ValueError, TypeError):
                         continue
-                    if rent_type in ("monthly_rent", "all") and rent <= 0:
+
+                    # rent_type 필터
+                    if rent_type == "monthly_rent" and rent <= 0:
                         continue
-                    if rent_type == "jeonse" and deposit <= 0:
+                    if rent_type == "jeonse" and (deposit <= 0 or rent > 0):
                         continue
-                    # 면적 필터 ±55%
-                    if size_sqm and area > 0 and not (size_sqm * 0.45 <= area <= size_sqm * 1.65):
-                        continue
-                    dong  = g("법정동")
-                    jibun = g("지번")
+                    # "all" → 데이터 있으면 수집
+
+                    # 면적 필터 ±25%
+                    if size_sqm and area > 0:
+                        if not (size_sqm * 0.75 <= area <= size_sqm * 1.25):
+                            continue
+
+                    dong  = g(ep["tag_dong"])
+                    jibun = g(ep["tag_jibun"])
+                    bldg  = g(ep["tag_name"])
                     full_addr = f"{dong} {jibun}".strip() if dong else jibun
+
+                    # 전세/월세 판별
+                    actual_rent_type = "jeonse" if rent == 0 and deposit > 0 else "monthly_rent"
+
+                    build_year_str = g("buildYear").strip()
+                    try:
+                        build_year = int(build_year_str) if build_year_str else None
+                    except ValueError:
+                        build_year = None
+
                     listings.append({
-                        "source":           "국토부실거래",
+                        "source":           f"국토부실거래({ep['label']})",
                         "address":          full_addr,
                         "size_sqm":         area,
                         "size_pyeong":      round(area / 3.305, 1) if area else None,
                         "floor":            floor_str,
                         "deposit_wan":      deposit,
                         "monthly_rent_wan": rent,
-                        "rent_type":        "jeonse" if rent_type == "jeonse" else "monthly_rent",
+                        "rent_type":        actual_rent_type,
+                        "build_year":       build_year,
                         "image_url":        None,
                         "listing_url":      None,
                         "deal_month":       deal_ymd,
                         "distance_m":       None,
-                        "building_name":    g("아파트") or g("단지명") or "",
+                        "building_name":    bldg,
                         "is_realtime":      True,
                     })
+
+            except urllib.error.HTTPError as e:
+                logger.warning("[국토부/%s/%s/%s] HTTP%s: %s | url=%s", ep["label"], lawd_cd, deal_ymd, e.code, e.reason, url[:120])
+                continue
+            except urllib.error.URLError as e:
+                logger.warning("[국토부/%s/%s/%s] 연결실패(아웃바운드차단?): %s | url=%s", ep["label"], lawd_cd, deal_ymd, e.reason, url[:120])
+                continue
+            except ET.ParseError as e:
+                logger.warning("[국토부/%s/%s/%s] XML파싱오류: %s", ep["label"], lawd_cd, deal_ymd, e)
+                continue
             except Exception as e:
-                logger.debug("[국토부/%s/%s] %s", lawd_cd, deal_ymd, e)
+                logger.warning("[국토부/%s/%s/%s] 기타오류: %s", ep["label"], lawd_cd, deal_ymd, e)
                 continue
 
-        logger.info("[NearbyTool/국토부] 수집 %d건", len(listings))
-        return listings
-    except Exception as e:
-        logger.info("[NearbyProp] 국토부 실패: %s", e)
-        return []
+    logger.info("[NearbyTool/국토부] 최종 수집 %d건 (lawd_cd=%s)", len(listings), lawd_cd)
+    return listings
+
+# ════════════════════════════════════════════════════════════════════════════
+# 보정 계수
+# ════════════════════════════════════════════════════════════════════════════
+
+_JEONWOL_RATE  = 0.06   # 전월세전환율 연 6%
+
+# 공유주거 room_type별 할인율 (방법 1용)
+# UniPlace는 전체가 공유주거 플랫폼이므로 모든 room_type에 적용
+# one_room/loft: 1인 1실이지만 화장실·주방 공유 → 0.75
+# two_room/three_room: 넓은 공용공간 공유 → 0.65
+# share: 방까지 공유 → 0.50
+_ROOM_TYPE_DISCOUNT = {
+    "one_room":   0.75,
+    "loft":       0.75,
+    "two_room":   0.65,
+    "three_room": 0.65,
+    "share":      0.50,
+}
+_SHARE_AREA_COEFF = 0.80   # 공유주거 ㎡당 단가 보정 (방법 2용)
 
 
-# ─── 통계 계산 ────────────────────────────────────────────────────────────────
+def _normalize_rent(deposit_wan: int, monthly_wan: int) -> float:
+    """보증금 → 월세 환산 (전월세전환율 6%)."""
+    return monthly_wan + (deposit_wan * _JEONWOL_RATE / 12)
 
-def _compute_stats(listings: list[dict], current_wan):
-    prices = [p["monthly_rent_wan"] for p in listings if p.get("monthly_rent_wan", 0) > 0]
-    if not prices:
+
+def _floor_factor(floor_str: str) -> float:
+    """층수 보정계수: 1층 0.92 / 2층 0.97 / 10층+ 1.03 / 그 외 1.0."""
+    try:
+        f = int(str(floor_str).strip())
+        if f == 1:   return 0.92
+        if f == 2:   return 0.97
+        if f >= 10:  return 1.03
+    except (ValueError, TypeError):
+        pass
+    return 1.0
+
+
+def _age_factor(build_year, current_year: int = 2026) -> float:
+    """건축연도 보정계수: 신축(5년↓) 1.08 / 중간 1.0 / 노후(20년+) 0.93."""
+    if not build_year:
+        return 1.0
+    age = current_year - int(build_year)
+    if age <= 5:   return 1.08
+    if age <= 10:  return 1.04
+    if age <= 20:  return 1.0
+    return 0.93
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# 통계 계산
+# ════════════════════════════════════════════════════════════════════════════
+
+def _trimmed_mean(values: list[float], trim_pct: float = 0.10) -> float:
+    """상하위 trim_pct% 제거 후 평균."""
+    if not values:
+        return 0.0
+    ps = sorted(values)
+    n  = len(ps)
+    cut = max(1, int(n * trim_pct))
+    trimmed = ps[cut: n - cut] if n > cut * 2 else ps
+    return statistics.mean(trimmed)
+
+
+def _compute_stats(
+    listings: list[dict],
+    current_wan,
+    deposit_wan: int = 0,
+    target_floor: str = "",
+    room_type: str = "all",
+    room_capacity: int = 1,
+    size_sqm=None,
+) -> dict:
+    """
+    보정 환산월세 기준 통계.
+    share 타입은 방법1(할인율) + 방법2(㎡단가) 평균으로 추천가 산출.
+    그 외는 trimmed mean 기반.
+    """
+    if not listings:
         return {}
-    ps = sorted(prices)
-    n = len(ps)
+
+    # ── 보정 환산월세 목록 ────────────────────────────────────────────────
+    normalized = []
+    for p in listings:
+        raw_rent    = p.get("monthly_rent_wan", 0) or 0
+        raw_deposit = p.get("deposit_wan", 0) or 0
+        floor_f     = _floor_factor(p.get("floor", ""))
+        age_f       = _age_factor(p.get("build_year"))
+        equiv = _normalize_rent(raw_deposit, raw_rent) * floor_f * age_f
+        if equiv > 0:
+            normalized.append(round(equiv, 1))
+
+    if not normalized:
+        return {}
+
+    ps  = sorted(normalized)
+    n   = len(ps)
     avg = round(statistics.mean(ps))
     med = round(statistics.median(ps))
     mn, mx = ps[0], ps[-1]
     p25 = ps[max(0, int(n * 0.25) - 1)]
-    p75 = ps[min(n-1, int(n * 0.75))]
-    iqr = p75 - p25
-    filtered = [p for p in ps if (p25 - iqr*1.5) <= p <= (p75 + iqr*1.5)]
-    opt = round(statistics.mean(filtered)) if filtered else avg
-    rec_low  = max(mn, round(opt * 0.92))
-    rec_high = min(mx, round(opt * 1.08))
+    p75 = ps[min(n - 1, int(n * 0.75))]
+    opt_base = round(_trimmed_mean(normalized))   # 이상치 제거 기준가
 
-    mkt = {"min": mn, "max": mx, "avg": avg, "median": med, "p25": p25, "p75": p75,
-           "recommended_low": rec_low, "recommended_high": rec_high,
-           "recommended_optimal": opt, "sample_count": n}
-    rec = {"low": rec_low, "high": rec_high, "optimal": opt,
-           "confidence": "high" if n >= 20 else ("medium" if n >= 8 else "low")}
-    if current_wan and current_wan > 0:
-        gap = round((current_wan - opt) / opt * 100, 1)
-        rec["gap_pct"] = gap
-        rec["verdict"] = "underpriced" if gap < -10 else ("overpriced" if gap > 10 else "fair")
+    confidence = "high" if n >= 20 else ("medium" if n >= 8 else "low")
+    confidence_label = {"high": "높음(20건+)", "medium": "보통(8~19건)", "low": "낮음(~7건)"}[confidence]
+
+    # ── 공유주거 이중 추정 (UniPlace 전체가 공유주거 플랫폼) ──────────────
+    # 모든 room_type에 할인율 적용
+    discount = _ROOM_TYPE_DISCOUNT.get(room_type, 0.70)
+    method1_opt = method2_opt = None
+    share_detail = {}
+
+    # 방법 1: 인근 시세 × room_type별 할인율
+    method1_opt = round(opt_base * discount)
+
+    # 방법 2: ㎡당 단가 × 대상 면적 × 공유보정
+    if size_sqm:
+        area_prices = [
+            _normalize_rent(p.get("deposit_wan", 0), p.get("monthly_rent_wan", 0))
+            / p["size_sqm"]
+            for p in listings
+            if p.get("size_sqm") and p["size_sqm"] > 0
+            and p.get("monthly_rent_wan", 0) > 0
+        ]
+        if area_prices:
+            sqm_price = _trimmed_mean(area_prices)
+            method2_opt = round(sqm_price * size_sqm * _SHARE_AREA_COEFF)
+
+    if method1_opt and method2_opt:
+        opt = round((method1_opt + method2_opt) / 2)
+        share_detail = {
+            "method1_opt": method1_opt,
+            "method2_opt": method2_opt,
+            "discount_rate": discount,
+            "room_type": room_type,
+            "note": f"방법1({method1_opt}만)+방법2({method2_opt}만) 평균",
+        }
+    elif method1_opt:
+        opt = method1_opt
+        share_detail = {
+            "method1_opt": method1_opt,
+            "discount_rate": discount,
+            "room_type": room_type,
+            "note": f"방법1({method1_opt}만) 단독 적용 (면적 정보 없음)",
+        }
+
+    rec_low  = round(opt * 0.93)
+    rec_high = round(opt * 1.07)
+
+    # ── 현재가 비교 ───────────────────────────────────────────────────────
+    _tf = _floor_factor(target_floor) if target_floor else 1.0
+    current_equiv = (_normalize_rent(deposit_wan, current_wan) / _tf) if current_wan else 0
+
+    rec = {
+        "low": rec_low, "high": rec_high, "optimal": opt,
+        "confidence": confidence,
+        "confidence_label": confidence_label,
+        "is_share": True,   # UniPlace 전체가 공유주거
+        "discount_rate": discount,
+        "room_type": room_type,
+    }
+    if share_detail:
+        rec["share_detail"] = share_detail
+
+    if current_equiv > 0:
+        gap = round((current_equiv - opt) / opt * 100, 1)
+        rec["gap_pct"]          = gap
+        rec["current_equiv_wan"] = round(current_equiv, 1)
+        rec["verdict"]          = "underpriced" if gap < -10 else ("overpriced" if gap > 10 else "fair")
+        rec["verdict_label"]    = {
+            "underpriced": f"시세 대비 {abs(gap):.1f}% 저평가 (인상 여지)",
+            "overpriced":  f"시세 대비 {abs(gap):.1f}% 고평가 (인하 권고)",
+            "fair":        "시세 적정",
+        }[rec["verdict"]]
     else:
-        rec["gap_pct"] = 0
-        rec["verdict"] = "unknown"
-    return {"market": mkt, "recommendation": rec}
+        rec["gap_pct"]     = 0
+        rec["verdict"]     = "unknown"
+        rec["verdict_label"] = "현재가 미입력"
+
+    return {
+        "market": {
+            "min": mn, "max": mx, "avg": avg, "median": med,
+            "p25": p25, "p75": p75,
+            "recommended_low": rec_low, "recommended_high": rec_high,
+            "recommended_optimal": opt,
+            "sample_count": n,
+            "base_market_opt": opt_base,
+        },
+        "recommendation": rec,
+    }
 
 
-def _build_basis(listings, stats, current_wan, radius_km, room_type, rent_type):
+# ════════════════════════════════════════════════════════════════════════════
+# 분석 근거 텍스트
+# ════════════════════════════════════════════════════════════════════════════
+
+def _build_basis(listings, stats, current_wan, deposit_wan, radius_km, room_type, rent_type, room_capacity=1):
     if not stats:
         return "주변 매물 데이터 부족 — 통계 산출 불가"
     mkt, rec = stats["market"], stats["recommendation"]
     sources = {}
     for p in listings:
-        sources[p.get("source", "기타")] = sources.get(p.get("source", "기타"), 0) + 1
-    rt  = {"monthly_rent": "월세", "jeonse": "전세", "all": "임대"}.get(rent_type, "임대")
-    tp  = {"one_room": "원룸", "two_room": "투룸", "three_room": "쓰리룸",
-           "loft": "복층", "share": "셰어", "all": ""}.get(room_type, "")
+        k = p.get("source", "기타")
+        sources[k] = sources.get(k, 0) + 1
+    _TYPE_LABEL = {
+        "one_room": "원룸(1인 1실)", "loft": "복층(1인 1실)",
+        "two_room": "투룸", "three_room": "쓰리룸", "share": "쉐어(다인 1실)",
+    }
+    tp = _TYPE_LABEL.get(room_type, room_type)
+    discount = rec.get("discount_rate", 0.70)
+    sd = rec.get("share_detail", {})
+
     lines = [
-        f"반경 {radius_km}km 내 {tp} {rt} 매물 {mkt['sample_count']}건 분석",
-        f"출처: {', '.join(f'{k} {v}건' for k, v in sources.items())}",
-        f"시세 범위: {mkt['min']}~{mkt['max']}만원 / 평균 {mkt['avg']}만 / 중위 {mkt['median']}만원",
-        f"IQR(25~75%ile): {mkt['p25']}~{mkt['p75']}만원",
+        f"■ 분석 기준: 반경 {radius_km}km 내 인근 월세 실거래 {mkt['sample_count']}건",
+        f"  출처: {', '.join(f'{k} {v}건' for k, v in sources.items())}",
+        f"■ 보정 방식: 보증금→월세 환산(전환율 6%), 층수·건축연도 보정, 상하위 10% 이상치 제거",
+        f"■ 인근 시세(보정 전): {mkt['min']}~{mkt['max']}만원 / 평균 {mkt['avg']}만 / 중위 {mkt['median']}만",
+        f"  사분위(25~75%): {mkt['p25']}~{mkt['p75']}만원",
+        f"■ 공유주거 보정 ({tp}, 할인율 {int(discount*100)}%)",
     ]
+
+    if sd.get("method1_opt"):
+        lines.append(f"  방법1 (인근시세×{discount}): {sd['method1_opt']}만원")
+    if sd.get("method2_opt"):
+        lines.append(f"  방법2 (㎡단가×면적×0.80): {sd['method2_opt']}만원")
+    if sd.get("method1_opt") and sd.get("method2_opt"):
+        lines.append(f"  → 두 방법 평균: {mkt['recommended_optimal']}만원")
+    elif sd.get("method1_opt"):
+        lines.append(f"  → 방법1 적용: {mkt['recommended_optimal']}만원")
+
     if current_wan:
-        g = rec["gap_pct"]
-        v = {"underpriced": f"시세 대비 {abs(g):.1f}% 저평가",
-             "overpriced":  f"시세 대비 {abs(g):.1f}% 고평가",
-             "fair":        "시세 적정"}.get(rec["verdict"], "")
-        lines.append(f"현재가 {current_wan}만원 → {v}")
-    lines.append(f"추천: {rec['low']}~{rec['high']}만원 (최적 {rec['optimal']}만원, 신뢰도 {rec['confidence']})")
+        equiv = rec.get("current_equiv_wan", current_wan)
+        lines.append(f"■ 현재가: 월세 {current_wan}만 + 보증금 {deposit_wan}만 → 환산 {equiv}만원/월")
+        lines.append(f"  → {rec['verdict_label']}")
+
+    lines.append(f"■ 추천 임대가: {rec['low']}~{rec['high']}만원 (최적 {rec['optimal']}만원)")
+    lines.append(f"  신뢰도: {rec['confidence_label']}")
     return "\n".join(lines)
 
 
-# ─── 메인 실행 ────────────────────────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════════════════════
+# 메인 실행
+# ════════════════════════════════════════════════════════════════════════════
 
 def execute_nearby_property_search(args: dict) -> dict:
-    address       = args.get("address", "")
-    room_type     = args.get("room_type", "all")
-    rent_type     = args.get("rent_type", "all")
-    size_sqm      = args.get("room_size_sqm")
-    current_wan   = args.get("current_price_wan")
-    room_id       = args.get("room_id")
-    radius_km     = float(args.get("radius_km", 3))
+    address        = args.get("address", "")
+    room_type      = args.get("room_type", "all")
+    rent_type_raw  = args.get("rent_type", "all")
+    size_sqm       = args.get("room_size_sqm")
+    current_wan    = args.get("current_price_wan")
+    deposit_wan    = int(args.get("deposit_wan", 0) or 0)
+    room_capacity  = int(args.get("room_capacity", 1) or 1)
+    room_id        = args.get("room_id")
+    target_floor   = str(args.get("floor") or "")
+    radius_km      = float(args.get("radius_km", 3))
+
+    _rent_type_map = {
+        "stay": "monthly_rent", "monthly_rent": "monthly_rent",
+        "jeonse": "jeonse", "all": "all",
+    }
+    rent_type = _rent_type_map.get(str(rent_type_raw).lower(), "all")
 
     if not address:
         return {"__type": "error", "error": "address 필수"}
 
-    # ── 좌표 확보 ──────────────────────────────────────────────────────────────
-    coords = _geocode(address)
-    if not coords:
-        return {"__type": "error", "error": f"주소 좌표 변환 실패: {address}"}
-    lat, lon = coords
+    logger.info("[NearbyTool] 국토부 호출 시작 address=%s room_type=%s capacity=%s", address, room_type, room_capacity)
+    market_data = _fetch_molit(address, rent_type, size_sqm, room_type)
+    logger.info("[NearbyTool] 국토부 결과: %d건", len(market_data))
 
-    # ── 실시간 매물 수집: 직방 → 다방 → 국토부 ────────────────────────────────
-    # ① 직방
-    logger.info("[NearbyTool] 직방 호출 시작 (lat=%.4f, lon=%.4f)", lat, lon)
-    server_listings = _fetch_zigbang_server(lat, lon, room_type, rent_type, size_sqm, radius_km)
-    logger.info("[NearbyTool] 직방 결과: %d건", len(server_listings))
-
-    # ② 다방 (직방 5건 미만 시 추가)
-    if len(server_listings) < 5:
-        logger.info("[NearbyTool] 다방 호출 시작 (직방 %d건 부족)", len(server_listings))
-        dabang_listings = _fetch_dabang_server(lat, lon, room_type, rent_type, size_sqm, radius_km)
-        logger.info("[NearbyTool] 다방 결과: %d건", len(dabang_listings))
-        server_listings = server_listings + dabang_listings
-
-    # ③ 국토부 실거래가 (10건 미만 시 추가)
-    if len(server_listings) < 10:
-        logger.info("[NearbyTool] 국토부 호출 시작 (수집 %d건 부족)", len(server_listings))
-        molit_listings = _fetch_molit(address, rent_type, size_sqm)
-        logger.info("[NearbyTool] 국토부 결과: %d건", len(molit_listings))
-        server_listings = server_listings + molit_listings
-
-    market_data = server_listings
-    logger.info("[NearbyTool] 최종 수집: %d건", len(market_data))
-
-    # 데이터가 전혀 없으면 에러 반환 (오프라인 시세 없음)
     if not market_data:
+        logger.warning("[NearbyTool] 국토부 0건 — address=%s", address)
         return {
             "__type": "error",
-            "error": (
-                "직방·다방·국토부 모두에서 매물 데이터를 가져오지 못했습니다. "
-                "서버 아웃바운드 허용 도메인(apis.zigbang.com, www.dabangapp.com, apis.data.go.kr)과 "
-                "MOLIT_API_KEY 환경변수를 확인하세요."
-            ),
+            "error": "국토부 실거래가 데이터를 가져오지 못했습니다. MOLIT_API_KEY 환경변수와 apis.data.go.kr 아웃바운드 연결을 확인하세요.",
         }
 
     listings = []
     for item in market_data:
-        monthly = item.get("monthly_rent_wan") or item.get("rent") or item.get("monthlyRent") or 0
-        deposit = item.get("deposit_wan") or item.get("deposit") or 0
-        isize   = item.get("size_sqm") or item.get("area") or item.get("size") or 0
+        monthly = item.get("monthly_rent_wan", 0) or 0
+        dep     = item.get("deposit_wan", 0) or 0
+        isize   = item.get("size_sqm") or 0
         listings.append({
-            "source":           item.get("source", "직방"),
+            "source":           item.get("source", "국토부실거래"),
             "address":          item.get("address", ""),
             "size_sqm":         float(isize) if isize else None,
-            "size_pyeong":      round(float(isize)/3.305, 1) if isize else None,
+            "size_pyeong":      round(float(isize) / 3.305, 1) if isize else None,
             "floor":            str(item.get("floor", "")),
-            "deposit_wan":      int(deposit),
+            "deposit_wan":      int(dep),
             "monthly_rent_wan": int(monthly),
             "rent_type":        item.get("rent_type", "monthly_rent"),
-            "options":          item.get("options", []),
-            "image_url":        item.get("image_url") or item.get("imageUrl"),
-            "listing_url":      item.get("listing_url") or item.get("listingUrl"),
-            "deal_month":       item.get("deal_month", datetime.now().strftime("%Y%m")),
-            "distance_m":       item.get("distance_m"),
+            "build_year":       item.get("build_year"),
+            "deal_month":       item.get("deal_month", ""),
             "building_name":    item.get("building_name", ""),
-            "is_realtime":      item.get("is_realtime", True),
+            "is_realtime":      True,
         })
 
-    listings.sort(key=lambda x: (x["distance_m"] is None, x["distance_m"] or 0))
-
-    stats = _compute_stats(listings, current_wan)
-    basis = _build_basis(listings, stats, current_wan, radius_km, room_type, rent_type)
-
-    with_img    = [p for p in listings if p.get("image_url")][:8]
-    without_img = [p for p in listings if not p.get("image_url")][:4]
-    report_listings = (with_img + without_img)[:12]
+    stats = _compute_stats(
+        listings, current_wan, deposit_wan,
+        target_floor=target_floor,
+        room_type=room_type,
+        room_capacity=room_capacity,
+        size_sqm=size_sqm,
+    )
+    basis = _build_basis(listings, stats, current_wan, deposit_wan, radius_km, room_type, rent_type, room_capacity)
 
     return {
         "__type": "price_report",
         "target_room": {
             "room_id": room_id, "address": address,
             "size_sqm": size_sqm,
-            "size_pyeong": round(size_sqm/3.305, 1) if size_sqm else None,
-            "current_price_wan": current_wan, "rent_type": rent_type,
+            "size_pyeong": round(size_sqm / 3.305, 1) if size_sqm else None,
+            "current_price_wan": current_wan,
+            "deposit_wan": deposit_wan,
+            "rent_type": rent_type,
+            "room_type": room_type,
+            "room_capacity": room_capacity,
         },
         "market":         stats.get("market", {}),
         "recommendation": stats.get("recommendation", {}),
@@ -779,41 +756,48 @@ def execute_nearby_property_search(args: dict) -> dict:
             "deposit_wan":      p["deposit_wan"],
             "monthly_rent_wan": p["monthly_rent_wan"],
             "rent_type":        p["rent_type"],
-            "options":          p.get("options", []),
-            "image_url":        p.get("image_url"),
-            "listing_url":      p.get("listing_url"),
+            "build_year":       p.get("build_year"),
             "deal_month":       p.get("deal_month"),
-            "distance_m":       p.get("distance_m"),
             "building_name":    p.get("building_name", ""),
-            "is_realtime":      p.get("is_realtime", True),
-        } for p in report_listings],
+        } for p in listings[:12]],
         "basis_text":      basis,
         "total_collected": len(listings),
-        "search_params": {
-            "address": address, "lat": round(lat, 5), "lon": round(lon, 5),
-            "radius_km": radius_km,
-        },
+        "search_params": {"address": address, "radius_km": radius_km, "size_sqm": size_sqm},
     }
 
 
 def format_nearby_property_result(result: dict) -> str:
     """LLM tool result 텍스트 + 프론트용 마커."""
-    rtype = result.get("__type")
-
-    # 오류
-    if rtype == "error":
+    if result.get("__type") == "error":
         return f"[주변 매물 조회 오류] {result.get('error')}"
 
-    # 최종 리포트
     mkt    = result.get("market", {})
     rec    = result.get("recommendation", {})
     target = result.get("target_room", {})
-    summary = "\n".join([
-        f"[가격 리포트] 총 {result.get('total_collected', 0)}건",
-        f"기준: {target.get('address')} | {target.get('size_pyeong')}평 | 현재 {target.get('current_price_wan')}만원",
-        f"시세: 최저 {mkt.get('min')}만 / 최고 {mkt.get('max')}만 / 평균 {mkt.get('avg')}만",
-        f"추천: {rec.get('low')}~{rec.get('high')}만원 (최적 {rec.get('optimal')}만, {rec.get('verdict')}, 신뢰도 {rec.get('confidence')})",
-        result.get("basis_text", ""),
-    ])
+
+    is_share = rec.get("is_share", False)
+    sd       = rec.get("share_detail", {})
+
+    lines = [
+        f"[가격 리포트] 총 {result.get('total_collected', 0)}건 분석",
+        f"기준: {target.get('address')} | {target.get('size_pyeong')}평 | "
+        f"현재 월세 {target.get('current_price_wan')}만 / 보증금 {target.get('deposit_wan', 0)}만",
+    ]
+
+    if is_share and sd:
+        lines.append(f"공유주거 추정 ({sd.get('room_capacity', 1)}인 기준):")
+        if sd.get("method1_opt"):
+            lines.append(f"  방법1(원룸시세×할인율): {sd['method1_opt']}만원")
+        if sd.get("method2_opt"):
+            lines.append(f"  방법2(㎡단가×면적): {sd['method2_opt']}만원")
+        lines.append(f"  → 평균 추천가: {rec.get('optimal')}만원")
+    else:
+        lines.append(f"인근 시세: 최저 {mkt.get('min')}만 / 최고 {mkt.get('max')}만 / 평균 {mkt.get('avg')}만")
+        lines.append(f"추천 임대가: {rec.get('low')}~{rec.get('high')}만원 (최적 {rec.get('optimal')}만)")
+
+    lines.append(f"평가: {rec.get('verdict_label', '')} | 신뢰도: {rec.get('confidence_label', '')}")
+    lines.append(result.get("basis_text", ""))
+
+    summary = "\n".join(lines)
     report_json = json.dumps(result, ensure_ascii=False)
     return f"{summary}\n\n__PRICE_REPORT__{report_json}__END_PRICE_REPORT__"

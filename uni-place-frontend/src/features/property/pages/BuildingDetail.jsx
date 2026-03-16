@@ -628,7 +628,14 @@ export default function BuildingDetail() {
                 // 챗봇에 건물 컨텍스트 주입하여 열기
                 window.dispatchEvent(
                   new CustomEvent('open-chatbot', {
-                    detail: { buildingId, buildingNm: building.buildingNm },
+                    detail: {
+                      buildingId,
+                      buildingNm: building.buildingNm,
+                      buildingAddr: building.buildingAddr,
+                      roomCount:
+                        roomTotalCount > 0 ? roomTotalCount : rooms.length,
+                      buildingDesc: building.buildingDesc || '',
+                    },
                   })
                 );
               }}

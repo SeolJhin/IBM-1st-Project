@@ -126,6 +126,25 @@
   font-size: 10px;
   font-weight: 600;
 }
+.featureBadgeBtn {
+  display: inline-block;
+  background: rgba(99, 102, 241, 0.35);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+}
+.featureBadgeBtn:hover {
+  background: rgba(139, 92, 246, 0.55);
+  color: #ede9fe;
+  transform: translateY(-1px);
+}
 .statusDot {
   width: 8px;
   height: 8px;
@@ -438,6 +457,34 @@
   color: #334155;
   text-align: center;
   margin: 6px 0 0;
+}
+.bottomBtns {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.bottomBtn {
+  flex: 1;
+  padding: 8px 4px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.15);
+  color: #c4b5fd;
+  transition:
+    background 0.15s,
+    transform 0.1s;
+}
+.bottomBtn:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.35);
+  color: #ede9fe;
+  transform: translateY(-1px);
+}
+.bottomBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ══════════════════════════════════════════════════════════════════════

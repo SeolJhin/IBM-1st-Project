@@ -10,6 +10,12 @@ import styles from './MemberInfo.module.css';
 
 import { authApi } from '../api/authApi';
 import { useAuth } from '../hooks/useAuth';
+import {
+  validatePassword,
+  validateEmail,
+  validatePhone,
+  validateNickname,
+} from '../../../shared/utils/validators';
 
 // ── 탭 컴포넌트 import ────────────────────────────────────────
 import MyContractView from '../../contract/pages/MyContractView';
@@ -63,6 +69,12 @@ function MeTab() {
   });
   const [currentPwd, setCurrentPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
+  const [pwdChecks, setPwdChecks] = useState({
+    length: false,
+    letter: false,
+    number: false,
+    special: false,
+  });
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
@@ -169,20 +181,45 @@ function MeTab() {
     setError('');
     setMsg('');
     if (!origin) return;
+
+    // ── 새 비밀번호: 입력한 경우 무조건 형식 검사 ──────────────
+    if (newPwd.trim()) {
+      const pwdErr = validatePassword(newPwd.trim());
+      if (pwdErr) return setError(pwdErr);
+    }
+
+    // ── 전화번호: 현재 입력값 형식 검사 (변경 여부와 무관) ───────
+    if (form.userTel.trim()) {
+      const telErr = validatePhone(form.userTel.trim());
+      if (telErr) return setError(telErr);
+    }
+
+    // ── 이메일: 현재 입력값 형식 검사 ───────────────────────────
+    if (form.userEmail.trim()) {
+      const emailErr = validateEmail(form.userEmail.trim());
+      if (emailErr) return setError(emailErr);
+    }
+
+    // ── 닉네임 변경 시 중복확인 필요 ────────────────────────────
+    const nextNickname = form.userNickname?.trim() ?? '';
+    if (nextNickname !== (origin.userNickname ?? '').trim()) {
+      const nickErr = validateNickname(nextNickname);
+      if (nickErr) return setError(nickErr);
+      if (!nicknameChecked) return setError('닉네임 중복 확인을 해주세요.');
+    }
+
     const payload = buildPayload();
     if (!payload || Object.keys(payload).length === 0) {
       setMsg('변경된 내용이 없어 취소 처리되었습니다.');
       return;
     }
-    // 닉네임을 변경하려는 경우 중복확인 필요
-    if (payload.userNickname && !nicknameChecked) {
-      setError('닉네임 중복 확인을 해주세요.');
-      return;
-    }
+
+    // ── 현재 비밀번호는 항상 필요 ────────────────────────────────
     if (!currentPwd.trim()) {
       setError('수정을 위해 현재 비밀번호를 입력해주세요.');
       return;
     }
+
     try {
       setSubmitting(true);
       const passwordChanged = Boolean(payload.userPwd);
@@ -338,11 +375,50 @@ function MeTab() {
               className={styles.input}
               type="password"
               value={newPwd}
-              onChange={(e) => setNewPwd(e.target.value)}
-              placeholder="변경할 비밀번호 (선택)"
+              onChange={(e) => {
+                const v = e.target.value;
+                setNewPwd(v);
+                setPwdChecks({
+                  length: v.length >= 8,
+                  letter: /[a-zA-Z]/.test(v),
+                  number: /[0-9]/.test(v),
+                  special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(v),
+                });
+              }}
+              placeholder="영문 + 숫자 + 특수기호 포함 8자 이상 (선택)"
               autoComplete="new-password"
               disabled={submitting}
             />
+            {newPwd && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '4px 12px',
+                  marginTop: 6,
+                }}
+              >
+                {[
+                  { key: 'length', label: '8자 이상' },
+                  { key: 'letter', label: '영문자' },
+                  { key: 'number', label: '숫자' },
+                  { key: 'special', label: '특수기호' },
+                ].map(({ key, label }) => (
+                  <span
+                    key={key}
+                    style={{
+                      fontSize: 12,
+                      color: pwdChecks[key] ? '#22c55e' : '#9ca3af',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 3,
+                    }}
+                  >
+                    {pwdChecks[key] ? '✓' : '○'} {label}
+                  </span>
+                ))}
+              </div>
+            )}
           </Field>
           {error && <div className={styles.error}>{error}</div>}
           {msg && <div className={styles.msg}>{msg}</div>}
