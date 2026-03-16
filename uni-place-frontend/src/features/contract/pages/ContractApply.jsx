@@ -7,6 +7,12 @@ import { propertyApi } from '../../property/api/propertyApi';
 import { contractApi } from '../api/contractApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './ContractApply.module.css';
+import {
+  validatePhone,
+  validateName,
+  validateRrn,
+  validatePaymentDay,
+} from '../../../shared/utils/validators';
 
 /* ─── 유틸 ─── */
 const formatKRW = (v) =>
@@ -182,28 +188,64 @@ export default function ContractApply() {
     e.preventDefault();
     const pd = Number(form.paymentDay);
     const today = todayStr();
+
+    // 계약 시작일
     if (!form.contractStart || form.contractStart < today) {
       setSubmitError('계약 시작일은 오늘 이후 날짜여야 합니다.');
       return;
     }
+    // 계약 종료일
     if (!form.contractEnd || form.contractEnd < minContractEnd) {
       setSubmitError('계약 종료일은 시작일로부터 최소 7일 이후여야 합니다.');
       return;
     }
+    // 기존 계약 겹침
     if (hasOverlap(form.contractStart, form.contractEnd)) {
       setSubmitError(
         '선택한 기간이 이미 진행 중인 계약 기간과 겹칩니다. 다른 날짜를 선택해주세요.'
       );
       return;
     }
-    if (!pd || pd < 1 || pd > 31) {
-      setSubmitError('납부일은 1~31 사이의 숫자를 입력해주세요.');
+    // 납부일
+    const payDayErr = validatePaymentDay(form.paymentDay);
+    if (payDayErr) {
+      setSubmitError(payDayErr);
       return;
     }
+
+    // 임차인 성명
+    const nmErr = validateName(form.lessorNm);
+    if (nmErr) {
+      setSubmitError(nmErr);
+      return;
+    }
+
+    // 임차인 전화번호
+    const telErr = validatePhone(form.lessorTel);
+    if (telErr) {
+      setSubmitError(telErr);
+      return;
+    }
+
+    // 임차인 주소
+    if (!form.lessorAddr.trim()) {
+      setSubmitError('임차인 주소를 입력해주세요.');
+      return;
+    }
+
+    // 주민등록번호
+    const rrnErr = validateRrn(form.lessorRrn);
+    if (rrnErr) {
+      setSubmitError(rrnErr);
+      return;
+    }
+
+    // 서명 파일
     if (!signFile) {
       setSubmitError('서명 이미지를 첨부해주세요.');
       return;
     }
+
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -212,7 +254,6 @@ export default function ContractApply() {
         contractStart: form.contractStart,
         contractEnd: form.contractEnd,
         paymentDay: pd,
-        // 임차인: 사용자가 직접 입력한 값
         lessorNm: form.lessorNm,
         lessorTel: form.lessorTel,
         lessorAddr: form.lessorAddr,

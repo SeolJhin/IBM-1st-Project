@@ -1,0 +1,16 @@
+{
+  "kind": "payment_summary_document",
+  "user_id": "USR_7bd2cd449d14411cb6a76b60f1b835e4",
+  "generated_at": "2026-03-13T08:43:36.136107Z",
+  "payload": {
+    "month": "N/A",
+    "payment_id": "N/A",
+    "total_price": 0,
+    "paid_at": "unpaid",
+    "target_type": "order_request_form",
+    "supplier_name": "\u321c\uc720\ub2c8\ud50c\ub808\uc774\uc2a4",
+    "supplier_contact": "010-000-0000",
+    "source_file": "purchase_order_form.xlsx",
+    "items": []
+  }
+}
