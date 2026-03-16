@@ -18,7 +18,6 @@ from app.schemas.ai_response import AiResponse
 from app.services.orchestrator.tool_orchestrator import run_tool_orchestrator
 from app.services.orchestrator.admin_tool_orchestrator import run_admin_tool_orchestrator
 from app.services.anomaly.contract_anomaly import detect_contract_anomaly
-from app.services.classify.complain_priority import classify_complain_priority
 from app.services.document.payment_summary_doc import make_payment_summary
 from app.services.document.payment_order_suggestion import suggest_order_from_payment
 from app.services.document.order_form_generator import create_order_form_from_suggestion
@@ -120,12 +119,30 @@ def contract_anomaly(payload: Dict[str, Any] = Body(...)) -> AiResponse:
     return AiResponse(answer=msg, confidence=score)
 
 
-@router.post("/operations/complaint-priority-classification", response_model=AiResponse, responses=ERROR_RESPONSES)
-def complaint_priority(payload: Dict[str, Any] = Body(...)) -> AiResponse:
-    req = _req(payload, "COMPLAIN_PRIORITY_CLASSIFY")
-    priority, msg = classify_complain_priority(req)
-    return AiResponse(answer=msg, confidence=min(0.95, 0.45 + priority * 0.15),
-                      metadata={"priority": priority})
+@router.post("/operations/complaint-priority-classification")
+def complaint_priority(payload: Dict[str, Any] = Body(...)) -> dict:
+    try:
+        from app.services.anomaly.complain_priority_classify import classify_complain
+
+        slots   = payload.get("slots") or {}
+        title   = payload.get("comp_title") or slots.get("comp_title") or ""
+        content = payload.get("comp_ctnt")  or slots.get("comp_ctnt")  or ""
+
+        logger.info(f"[COMPLAIN_CLASSIFY] title={title[:30]!r} content={content[:30]!r}")
+
+        result = classify_complain(title, content)
+        importance = result.get("importance", "medium")
+        ai_reason  = result.get("ai_reason", "")
+
+        logger.info(f"[COMPLAIN_CLASSIFY] 결과 → importance={importance}, reason={ai_reason}")
+
+        return {
+            "importance": importance,
+            "ai_reason":  ai_reason,
+        }
+    except Exception as e:
+        logger.error(f"[COMPLAIN_CLASSIFY] 오류: {e}", exc_info=True)
+        return {"importance": "medium", "ai_reason": ""}
 
 
 @router.post("/payments/summary-documents", response_model=AiResponse, responses=ERROR_RESPONSES)
