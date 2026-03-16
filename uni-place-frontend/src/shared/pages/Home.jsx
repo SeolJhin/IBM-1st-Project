@@ -621,7 +621,11 @@ function LivingTypeSection() {
             <p className={styles.livingDesc}>
               계약부터 입주까지 필요한 절차를 단계별로 안내합니다.
             </p>
-            <button type="button" className={styles.livingBtnAlt}>
+            <button
+              type="button"
+              className={styles.livingBtnAlt}
+              onClick={() => navigate('/guide')}
+            >
               가이드 보기
             </button>
           </article>

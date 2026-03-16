@@ -23,14 +23,48 @@ public class OAuth2FailureHandler implements AuthenticationFailureHandler {
         HttpServletResponse response,
         AuthenticationException exception
     ) throws IOException, ServletException {
+        String resolvedRedirectUri = resolveRedirectUri(request);
         String reason = exception == null || exception.getMessage() == null
             ? "oauth_login_failed"
             : exception.getMessage();
 
-        String redirectUrl = redirectUri
+        String redirectUrl = resolvedRedirectUri
             + "#error=oauth_login_failed"
             + "&reason=" + URLEncoder.encode(reason, StandardCharsets.UTF_8);
 
         response.sendRedirect(redirectUrl);
+    }
+
+    private String resolveRedirectUri(HttpServletRequest request) {
+        if (!shouldUseRequestHostFallback(request)) {
+            return redirectUri;
+        }
+        String proto = firstNonBlank(request.getHeader("X-Forwarded-Proto"), request.getScheme());
+        String host = firstNonBlank(request.getHeader("X-Forwarded-Host"), request.getHeader("Host"));
+        if (!hasText(proto) || !hasText(host)) {
+            return redirectUri;
+        }
+        return proto + "://" + host + "/oauth2/success";
+    }
+
+    private boolean shouldUseRequestHostFallback(HttpServletRequest request) {
+        if (!hasText(redirectUri)) {
+            return true;
+        }
+        if (!redirectUri.contains("localhost")) {
+            return false;
+        }
+        String host = firstNonBlank(request.getHeader("X-Forwarded-Host"), request.getHeader("Host"));
+        return hasText(host)
+            && !host.startsWith("localhost")
+            && !host.startsWith("127.0.0.1");
+    }
+
+    private static String firstNonBlank(String first, String second) {
+        return hasText(first) ? first : second;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }

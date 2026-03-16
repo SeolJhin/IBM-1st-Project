@@ -62,6 +62,7 @@
   color: #fff;
   border: none;
   padding: 10px 18px;
+  border: 1px solid rgb(182, 173, 150);
   border-radius: var(--radius);
   cursor: pointer;
   font-weight: 600;
@@ -81,18 +82,17 @@
 /* ── 테이블 ── */
 .table {
   width: 100%;
-  /* collapse → separate 로 변경해야 border-radius 가 실제로 보임 */
   border-collapse: separate;
   border-spacing: 0;
   margin-top: 8px;
   border: 1.5px solid #a88e8e;
-  border-radius: 14px; /* radius 적용 */
-  overflow: hidden; /* 안쪽 셀이 모서리 밖으로 삐져나오지 않도록 */
+  border-radius: 14px;
+  overflow: hidden;
   table-layout: fixed;
 }
 
 .table th {
-  background: var(--b-5);
+  background: #f6d378;
   padding: 14px;
   text-align: center;
   font-weight: 700;
@@ -119,22 +119,19 @@
   background: var(--cream);
 }
 
-/* ── 제목 셀 내부: 뱃지 + 링크를 한 줄로 ── */
 .tableTitleCell {
   display: flex;
   align-items: center;
   gap: 8px;
-  overflow: hidden; /* flex 컨테이너에서 말줄임 동작 유지 */
+  overflow: hidden;
 }
 
-/* ── 제목 링크 말줄임 ── */
 .tableLink {
   color: var(--text);
   text-decoration: none;
   font-weight: 500;
-  /* flex 자식으로서 남은 공간 차지하며 말줄임 */
   flex: 1;
-  min-width: 0; /* flex 자식은 min-width:0 없으면 말줄임 안 됨 */
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -162,7 +159,7 @@
   margin-bottom: 12px;
 }
 
-/* ── 유형 배지 (테이블 내 분류 표시) ── */
+/* ── 유형 배지 ── */
 .typeBadge {
   display: inline-block;
   padding: 3px 10px;
@@ -190,7 +187,7 @@
   color: #ca8a04;
 }
 
-/* complain code */
+/* complain */
 .type_personal {
   background: #f5f3ff;
   color: #7c3aed;
@@ -216,7 +213,7 @@
   color: #374151;
 }
 
-/* qna code */
+/* qna */
 .type_qna_contract {
   background: #fefce8;
   color: #ca8a04;
@@ -238,7 +235,7 @@
   color: #7c3aed;
 }
 
-/* faq / 공통 */
+/* faq */
 .type_general {
   background: #f3f4f6;
   color: #374151;
@@ -247,7 +244,6 @@
   background: #eff6ff;
   color: #2563eb;
 }
-
 .type_faq_contract {
   background: #e8f4fd;
   color: #1a6fa8;
@@ -440,7 +436,6 @@
 .accordionTitle {
   flex: 1;
   color: var(--text);
-  /* 아코디언 제목도 말줄임 */
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -484,11 +479,20 @@
   white-space: pre-wrap;
 }
 
+/* ── 필터 바 (칩 + 버튼 한 줄) ── */
+.filterBarRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
 .filterChipRow {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
 }
 
 .filterChip {
@@ -511,7 +515,7 @@
 
 .filterChipActive {
   background: var(--primary);
-  border-color: var(--primary);
+  border-color: rgb(160, 144, 121);
   color: #fff;
 }
 
@@ -519,4 +523,53 @@
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+/* ── 중요 공지 토글 스위치 ── */
+.importanceToggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.importanceToggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.importanceSlider {
+  position: absolute;
+  inset: 0;
+  background: #c8bfb0;
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+.importanceSlider::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.importanceToggle input:checked + .importanceSlider {
+  background: #e11d48;
+}
+
+.importanceToggle input:checked + .importanceSlider::before {
+  transform: translateX(22px);
+}
+
+.importanceToggle input:disabled + .importanceSlider {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

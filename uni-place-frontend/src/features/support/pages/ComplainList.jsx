@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useComplains } from '../hooks/useComplains';
 import { useAuth } from '../../user/hooks/useAuth';
+import { useRequireAuth } from '../hooks/useRequireAuth';
 import styles from './Support.module.css';
 
 const STATUS_MAP = {
@@ -44,6 +45,9 @@ export default function ComplainList() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // ✅ 비회원 → 경고창 후 로그인 이동
+  const blocked = useRequireAuth(user, '민원 접수');
+
   const role = normalizeRole(user);
   const isAdmin = role === 'admin';
   const canCreate = role === 'admin' || role === 'tenant';
@@ -53,13 +57,15 @@ export default function ComplainList() {
     { isAdmin }
   );
 
-  if (loading) return <div style={{ padding: 24 }}>로딩중...</div>;
-  if (error) return <div style={{ padding: 24, color: 'red' }}>{error}</div>;
+  if (loading) return <div className={styles.loading}>로딩중...</div>;
+  if (error) return <div className={styles.errorMsg}>{error}</div>;
+  if (blocked) return null;
 
   return (
     <div className={styles.container}>
       <div className={styles.pageHead}>
         <h2 className={styles.pageTitle}>민원 접수</h2>
+        <p className={styles.pageSub}>불편사항이나 개선 요청을 남겨주세요.</p>
       </div>
 
       {canCreate && (
@@ -73,147 +79,141 @@ export default function ComplainList() {
         </div>
       )}
 
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th style={{ width: 60 }}>번호</th>
-            <th style={{ width: 110 }}>유형</th>
-            <th>제목</th>
-            {isAdmin && <th style={{ width: 150 }}>작성자 ID</th>}
-            <th style={{ width: 80 }}>중요도</th>
-            <th style={{ width: 110 }}>상태</th>
-            <th style={{ width: 120 }}>날짜</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {complains.length === 0 ? (
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
             <tr>
-              <td
-                colSpan={isAdmin ? 7 : 6}
-                style={{
-                  textAlign: 'center',
-                  padding: 32,
-                  color: 'var(--muted)',
-                }}
-              >
-                접수된 민원이 없습니다.
-              </td>
+              <th style={{ width: 60 }}>번호</th>
+              <th style={{ width: 100 }}>유형</th>
+              <th>제목</th>
+              {isAdmin && <th style={{ width: 140 }}>작성자</th>}
+              <th style={{ width: 80 }}>중요도</th>
+              <th style={{ width: 100 }}>상태</th>
+              <th style={{ width: 110 }}>날짜</th>
             </tr>
-          ) : (
-            complains.map((item) => {
-              const meta = CODE_META[item.code] ?? {
-                label: item.code ?? '-',
-                cls: 'type_etc',
-              };
-
-              const imp = IMPORTANCE_MAP[item.importance];
-              const isHigh = item.importance === 'high';
-
-              return (
-                <tr
-                  key={item.compId}
-                  style={
-                    isHigh
-                      ? {
-                          background: '#fff5f5',
-                          borderLeft: '3px solid #e55353',
-                        }
-                      : {}
-                  }
+          </thead>
+          <tbody>
+            {complains.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={isAdmin ? 7 : 6}
+                  style={{ textAlign: 'center', padding: 48, color: '#9ca3af' }}
                 >
-                  <td
-                    style={{
-                      textAlign: 'center',
-                      color: isHigh ? '#e55353' : 'var(--muted)',
-                      fontWeight: isHigh ? 700 : 400,
-                    }}
+                  접수된 민원이 없습니다.
+                </td>
+              </tr>
+            ) : (
+              complains.map((item) => {
+                const meta = CODE_META[item.code] ?? {
+                  label: item.code ?? '-',
+                  cls: 'type_etc',
+                };
+                const imp = IMPORTANCE_MAP[item.importance];
+                const isHigh = item.importance === 'high';
+
+                return (
+                  <tr
+                    key={item.compId}
+                    style={
+                      isHigh
+                        ? {
+                            background: '#fff5f5',
+                            borderLeft: '3px solid #e55353',
+                          }
+                        : {}
+                    }
                   >
-                    {item.compId}
-                  </td>
-
-                  <td style={{ textAlign: 'center' }}>
-                    <span className={`${styles.typeBadge} ${styles[meta.cls]}`}>
-                      {meta.label}
-                    </span>
-                  </td>
-
-                  <td>
-                    <Link
-                      to={`/support/complain/${item.compId}`}
-                      className={styles.tableLink}
-                      style={
-                        isHigh ? { color: '#c0392b', fontWeight: 700 } : {}
-                      }
-                    >
-                      {isHigh && '🚨 '}
-                      {item.compTitle}
-                    </Link>
-                  </td>
-
-                  {isAdmin && (
                     <td
                       style={{
                         textAlign: 'center',
-                        color: isHigh ? '#e55353' : 'var(--muted)',
+                        color: isHigh ? '#e55353' : '#9ca3af',
+                        fontWeight: isHigh ? 700 : 400,
+                        fontSize: 13,
                       }}
                     >
-                      {item.userId || '-'}
+                      {item.compId}
                     </td>
-                  )}
-
-                  <td style={{ textAlign: 'center' }}>
-                    {imp ? (
+                    <td style={{ textAlign: 'center' }}>
                       <span
+                        className={`${styles.typeBadge} ${styles[meta.cls]}`}
+                      >
+                        {meta.label}
+                      </span>
+                    </td>
+                    <td>
+                      <Link
+                        to={`/support/complain/${item.compId}`}
+                        className={styles.tableLink}
+                        style={
+                          isHigh ? { color: '#c0392b', fontWeight: 700 } : {}
+                        }
+                      >
+                        {isHigh && '🚨 '}
+                        {item.compTitle}
+                      </Link>
+                    </td>
+                    {isAdmin && (
+                      <td
                         style={{
-                          padding: '4px 10px',
-                          borderRadius: 12,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: isHigh ? '#fff' : imp.color,
-                          background: isHigh ? '#e55353' : imp.bg,
-                          boxShadow: isHigh
-                            ? '0 1px 4px rgba(229,83,83,0.4)'
-                            : 'none',
+                          textAlign: 'center',
+                          color: '#6b7280',
+                          fontSize: 13,
                         }}
                       >
-                        {imp.label}
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--muted)', fontSize: 12 }}>
-                        -
-                      </span>
+                        {item.userId || '-'}
+                      </td>
                     )}
-                  </td>
-
-                  <td style={{ textAlign: 'center' }}>
-                    <span
-                      className={styles.statusBadge}
-                      style={
-                        item.compSt === 'resolved'
-                          ? { background: 'var(--highlight)' }
-                          : {}
-                      }
+                    <td style={{ textAlign: 'center' }}>
+                      {imp ? (
+                        <span
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 12,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: isHigh ? '#fff' : imp.color,
+                            background: isHigh ? '#e55353' : imp.bg,
+                            boxShadow: isHigh
+                              ? '0 1px 4px rgba(229,83,83,0.4)'
+                              : 'none',
+                          }}
+                        >
+                          {imp.label}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#9ca3af', fontSize: 12 }}>
+                          -
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span
+                        className={styles.statusBadge}
+                        style={
+                          item.compSt === 'resolved'
+                            ? { background: '#d1fae5', color: '#065f46' }
+                            : {}
+                        }
+                      >
+                        {STATUS_MAP[item.compSt] ?? item.compSt}
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        textAlign: 'center',
+                        color: '#9ca3af',
+                        fontSize: 13,
+                      }}
                     >
-                      {STATUS_MAP[item.compSt] ?? item.compSt}
-                    </span>
-                  </td>
-
-                  <td
-                    style={{
-                      textAlign: 'center',
-                      color: isHigh ? '#e55353' : 'var(--muted)',
-                      fontSize: 13,
-                    }}
-                  >
-                    {item.createdAt ? item.createdAt.slice(0, 10) : '-'}
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
+                      {item.createdAt ? item.createdAt.slice(0, 10) : '-'}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {pagination.totalPages > 1 && (
         <div className={styles.pagination}>
@@ -224,11 +224,9 @@ export default function ComplainList() {
           >
             이전
           </button>
-
           <span className={styles.pageInfo}>
             {pagination.page} / {pagination.totalPages}
           </span>
-
           <button
             className={styles.pageBtn}
             disabled={pagination.isLast}

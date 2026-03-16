@@ -195,7 +195,11 @@ public class ContractServiceImpl implements ContractService {
         if (request.getContractStatus() != null) {
             targetStatus = request.getContractStatus();
 
-            if (targetStatus == ContractStatus.approved && c.getContractStart().isBefore(today)) {
+            // 승인 요청 시:
+            // contractStart가 오늘이거나 이미 지난 날짜 → 즉시 active
+            // contractStart가 미래 날짜 → approved 유지 (스케줄러가 당일 active로 전환)
+            if (targetStatus == ContractStatus.approved
+                    && !c.getContractStart().isAfter(today)) {
                 targetStatus = ContractStatus.active;
             }
 

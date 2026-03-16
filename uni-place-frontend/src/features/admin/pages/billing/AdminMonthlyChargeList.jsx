@@ -116,7 +116,6 @@ export default function AdminMonthlyChargeList() {
   const [error, setError] = useState('');
 
   const [statusFilter, setStatusFilter] = useState('all');
-  const [contractIdFilter, setContractIdFilter] = useState('');
   const [keyword, setKeyword] = useState('');
   const [size, setSize] = useState(20);
   const [page, setPage] = useState(1);
@@ -126,15 +125,8 @@ export default function AdminMonthlyChargeList() {
     setError('');
 
     try {
-      const contractId = contractIdFilter.trim();
-      const parsedContractId = Number(contractId);
-
       const [chargeData, paymentData, contracts, users] = await Promise.all([
-        adminApi.getMonthlyCharges(
-          contractId === '' || !Number.isFinite(parsedContractId)
-            ? undefined
-            : parsedContractId
-        ),
+        adminApi.getMonthlyCharges(undefined),
         adminApi.getPayments().catch(() => []),
         fetchAllContracts().catch(() => []),
         fetchAllUsers().catch(() => []),
@@ -187,7 +179,7 @@ export default function AdminMonthlyChargeList() {
     } finally {
       setLoading(false);
     }
-  }, [contractIdFilter]);
+  }, []);
 
   useEffect(() => {
     load();
@@ -305,19 +297,6 @@ export default function AdminMonthlyChargeList() {
         </label>
 
         <label className={styles.filterItem}>
-          <span className={styles.filterLabel}>계약 ID</span>
-          <input
-            className={styles.input}
-            value={contractIdFilter}
-            placeholder="예: 101"
-            onChange={(e) => {
-              setContractIdFilter(e.target.value);
-              setPage(1);
-            }}
-          />
-        </label>
-
-        <label className={styles.filterItem}>
           <span className={styles.filterLabel}>검색</span>
           <input
             className={styles.input}
@@ -335,7 +314,6 @@ export default function AdminMonthlyChargeList() {
           className={styles.btn}
           onClick={() => {
             setStatusFilter('all');
-            setContractIdFilter('');
             setKeyword('');
             setPage(1);
           }}

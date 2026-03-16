@@ -43,7 +43,9 @@ function fmtMoney(v) {
 
 function contractStatusKey(contractStatus) {
   const key = String(contractStatus || '').toLowerCase();
-  if (key === 'active' || key === 'approved' || key === 'requested') return 'active';
+  if (key === 'cancelled') return 'cancelled'; // 취소된 계약은 별도 분류
+  if (key === 'active' || key === 'approved' || key === 'requested')
+    return 'active';
   return 'ended';
 }
 
@@ -161,8 +163,12 @@ export default function AdminRentManagement() {
   };
 
   const filteredRows = useMemo(() => {
-    if (filters.size === 0 || filters.has('all')) return rows;
-    return rows.filter((row) => filters.has(row.contractStatusKey));
+    // 취소된 계약은 월세 관리에서 제외
+    const nonCancelled = rows.filter(
+      (row) => row.contractStatusKey !== 'cancelled'
+    );
+    if (filters.size === 0 || filters.has('all')) return nonCancelled;
+    return nonCancelled.filter((row) => filters.has(row.contractStatusKey));
   }, [rows, filters]);
 
   return (
@@ -174,7 +180,12 @@ export default function AdminRentManagement() {
             전체 계약 <strong>{filteredRows.length}</strong>건
           </p>
         </div>
-        <button type="button" className={styles.refreshBtn} onClick={load} disabled={loading}>
+        <button
+          type="button"
+          className={styles.refreshBtn}
+          onClick={load}
+          disabled={loading}
+        >
           {loading ? '로딩중...' : '새로고침'}
         </button>
       </div>
