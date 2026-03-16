@@ -1,6 +1,6 @@
 ## .\.venv\Scripts\Activate.ps1
 
-## uvicorn main:app --reload
+## uvicorn app.main:app --reload
 
 ## Runtime
 ## Python==3.10.11
