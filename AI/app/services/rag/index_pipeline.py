@@ -196,7 +196,7 @@ def _load_text_file(path: Path, base_dir: Path) -> list[dict[str, Any]]:
     for index, chunk in enumerate(chunks):
         docs.append(
             {
-                "id": f"{meta['source']}#{index}",
+                "id": index,
                 "text": chunk,
                 "title": path.stem,
                 "source": meta["source"],
@@ -253,7 +253,7 @@ def _json_rows_to_docs(rows: list[Any], path: Path, base_dir: Path) -> list[dict
         title = str(row.get("title") or path.stem)
         docs.append(
             {
-                "id": f"{source}#{index}",
+                "id": index,
                 "text": text,
                 "title": title,
                 "source": source,
@@ -329,3 +329,4 @@ def _save_manifest(data: dict[str, Any]) -> None:
     path = Path(settings.rag_manifest_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=True, indent=2), encoding="utf-8")
+
