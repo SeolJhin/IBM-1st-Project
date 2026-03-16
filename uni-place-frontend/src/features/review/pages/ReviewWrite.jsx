@@ -7,6 +7,7 @@ import { useReviewActions, useReviewDetail } from '../hooks/useReviews';
 import FileUploader from '../../file/components/FileUploader';
 import useFileUpload from '../../file/hooks/useFileUpload';
 import styles from './ReviewWrite.module.css';
+import { validateTitle } from '../../../shared/utils/validators';
 
 const MAX_TITLE = 100;
 const MAX_CTNT = 3000;
@@ -63,8 +64,23 @@ export default function ReviewWrite() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setValidErr('');
+
     if (rating === 0) {
       setValidErr('별점을 선택해 주세요.');
+      return;
+    }
+    // 제목 입력된 경우에만 길이 검사 (선택 항목)
+    if (reviewTitle && reviewTitle.trim().length > 100) {
+      setValidErr('제목은 100자 이하로 입력해주세요.');
+      return;
+    }
+    // 내용 입력된 경우 최소 5자
+    if (
+      reviewCtnt &&
+      reviewCtnt.trim().length > 0 &&
+      reviewCtnt.trim().length < 5
+    ) {
+      setValidErr('내용은 5자 이상 입력해주세요.');
       return;
     }
 

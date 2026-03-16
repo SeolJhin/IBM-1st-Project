@@ -3,6 +3,10 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
+import {
+  validateTitle,
+  validateContent,
+} from '../../../shared/utils/validators';
 
 const COMPLAIN_CATEGORIES = [
   { code: 'COMP_PERSONAL', label: '개인' },
@@ -82,8 +86,12 @@ export default function ComplainWrite() {
 
   const handleSubmit = async () => {
     if (!form.code) return alert('민원 유형을 선택해주세요.');
-    if (!form.compTitle.trim()) return alert('제목을 입력해주세요.');
-    if (!form.compCtnt.trim()) return alert('내용을 입력해주세요.');
+    const titleErr = validateTitle(form.compTitle, '제목');
+    if (titleErr) return alert(titleErr);
+    const ctntErr = validateContent(form.compCtnt, '내용', 10);
+    if (ctntErr) return alert(ctntErr);
+    if (form.compCtnt.trim().length > 2000)
+      return alert('내용은 2000자 이하로 입력해주세요.');
     setSubmitting(true);
     try {
       const created = await supportApi.createComplain(form);

@@ -4,9 +4,24 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+def _find_env_file() -> str:
+    """여러 경로에서 .env 파일 탐색."""
+    candidates = [
+        BASE_DIR / ".env",
+        BASE_DIR.parent / ".env",
+        Path.home() / ".env",
+        Path("/app/.env"),
+        Path("/home/ubuntu/app/.env"),
+        Path("/opt/app/.env"),
+    ]
+    for p in candidates:
+        if p.exists():
+            return str(p)
+    return str(BASE_DIR / ".env")  # fallback
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=_find_env_file(), env_file_encoding="utf-8", extra="ignore")
 
     # ── LLM Provider ──────────────────────────────────────────────
     llm_provider: str = "gemini"
