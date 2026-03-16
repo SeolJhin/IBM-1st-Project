@@ -334,7 +334,15 @@ export default function CommunityHome() {
       if (activeTab === 'REVIEW') {
         data = await reviewApi.getAll({ page: page - 1, size: 10 });
         const content = Array.isArray(data?.content) ? data.content : [];
-        setItems(content);
+        // 리뷰도 최신순 정렬
+        const sortedReview = [...content].sort((a, b) => {
+          const at = a?.createdAt ?? '';
+          const bt = b?.createdAt ?? '';
+          if (bt > at) return 1;
+          if (bt < at) return -1;
+          return (b?.reviewId ?? 0) - (a?.reviewId ?? 0);
+        });
+        setItems(sortedReview);
         setTotalPages(Math.max(1, Number(data?.totalPages ?? 1)));
         return;
       }
@@ -360,9 +368,16 @@ export default function CommunityHome() {
           : [];
 
       const sorted = [...content].sort((a, b) => {
+        // 1순위: 공지(importance=Y) 먼저
         const aNotice = a?.importance === 'Y' ? 0 : 1;
         const bNotice = b?.importance === 'Y' ? 0 : 1;
         if (aNotice !== bNotice) return aNotice - bNotice;
+        // 2순위: 작성일 내림차순
+        const at = a?.createdAt ?? '';
+        const bt = b?.createdAt ?? '';
+        if (bt > at) return 1;
+        if (bt < at) return -1;
+        // 3순위: boardId 내림차순 (동일 시각일 때)
         return (b?.boardId ?? 0) - (a?.boardId ?? 0);
       });
 

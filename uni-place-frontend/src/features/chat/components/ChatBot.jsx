@@ -48,7 +48,11 @@ function ActionButtons({ buttons, onModalRoute, onAction, allMessages }) {
               var normalizedUrl = btn.url.trim().replace(/\/$/, '');
               var pathOnly = normalizedUrl.split('?')[0];
 
-              if (normalizedUrl.startsWith('http')) {
+              if (
+                normalizedUrl.startsWith('http') ||
+                normalizedUrl.startsWith('/ai/') ||
+                normalizedUrl.startsWith('/api/ai/')
+              ) {
                 window.open(normalizedUrl, '_blank');
               } else if (MODAL_ROUTES[pathOnly] && onModalRoute) {
                 onModalRoute(MODAL_ROUTES[pathOnly]);
