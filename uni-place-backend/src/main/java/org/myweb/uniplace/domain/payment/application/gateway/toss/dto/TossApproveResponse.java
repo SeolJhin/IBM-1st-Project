@@ -7,17 +7,35 @@ import lombok.Getter;
 @Getter
 public class TossApproveResponse {
 
-    @JsonProperty("paymentKey")
-    private String paymentKey;
+    @JsonProperty("code")
+    private Integer code;
 
-    @JsonProperty("orderId")
-    private String orderId;
+    @JsonProperty("errorCode")
+    private String errorCode;
 
-    @JsonProperty("status")
-    private String status;
+    @JsonProperty("msg")
+    private String msg;
 
-    @JsonProperty("totalAmount")
-    private Integer totalAmount;
+    @JsonProperty("payToken")
+    private String payToken;
+
+    @JsonProperty("orderNo")
+    private String orderNo;
+
+    @JsonProperty("payMethod")
+    private String payMethod;
+
+    @JsonProperty("transactionId")
+    private String transactionId;
+
+    @JsonProperty("amount")
+    private Integer amount;
+
+    @JsonProperty("paidAmount")
+    private Integer paidAmount;
+
+    @JsonProperty("stateMsg")
+    private String stateMsg;
 
     @JsonProperty("cancels")
     private JsonNode cancels;

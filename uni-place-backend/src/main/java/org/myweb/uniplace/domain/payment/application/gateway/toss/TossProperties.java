@@ -12,7 +12,10 @@ public class TossProperties {
     // ex) https://api.tosspayments.com
     private String api_base_url;
 
-    // secret key (for Basic auth)
+    // api key (pay.toss.im v2)
+    private String api_key;
+
+    // legacy key (fallback)
     private String secret_key;
 
     // webhook secret (optional)

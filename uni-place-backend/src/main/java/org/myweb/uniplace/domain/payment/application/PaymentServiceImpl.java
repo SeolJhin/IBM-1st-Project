@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.billing.domain.entity.MonthlyCharge;
 import org.myweb.uniplace.domain.billing.repository.MonthlyChargeRepository;
+import org.myweb.uniplace.domain.commerce.application.OrderService;
+import org.myweb.uniplace.domain.commerce.application.RoomServiceOrderService;
 import org.myweb.uniplace.domain.commerce.domain.entity.Order;
+import org.myweb.uniplace.domain.commerce.repository.RoomServiceOrderRepository;
 import org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus;
 import org.myweb.uniplace.domain.commerce.repository.OrderRepository;
 import org.myweb.uniplace.domain.contract.domain.entity.Contract;
@@ -77,6 +80,9 @@ public class PaymentServiceImpl implements PaymentService {
     private final ServiceGoodsRepository serviceGoodsRepository;
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
+    private final RoomServiceOrderService roomServiceOrderService;
+    private final RoomServiceOrderRepository roomServiceOrderRepository;
+    private final OrderService orderService;
 
     @Value("${app.baseUrl:http://localhost:8080}")
     private String appBaseUrl;
@@ -362,6 +368,9 @@ public class PaymentServiceImpl implements PaymentService {
 
         payment.markCanceled();
         paymentRepository.save(payment);
+
+        // 연결된 Order/RoomServiceOrder도 취소 처리
+        cancelLinkedOrder(payment);
     }
 
     @Override
@@ -384,6 +393,9 @@ public class PaymentServiceImpl implements PaymentService {
         paymentRepository.save(payment);
         paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
         notifyPaymentFailKor(payment, trimMessage(failMessage));
+
+        // 연결된 Order/RoomServiceOrder도 취소 처리
+        cancelLinkedOrder(payment);
     }
 
     private PaymentResponse approveInternal(String requesterUserId, PaymentApproveRequest request) {
@@ -429,6 +441,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .providerRefId(intent.getProviderRefId())
                     .pgToken(request.getPgToken())
                     .paymentKey(request.getPaymentKey())
+                    .payToken(request.getPayToken())
                     .orderId(payment.getMerchantUid())
                     .amount(payment.getTotalPrice())
                     .build()
@@ -456,6 +469,20 @@ public class PaymentServiceImpl implements PaymentService {
             paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.approved);
             notifyPaymentSuccessKor(payment);
 
+            // 룸서비스 주문인 경우 결제 완료 후 Slack + 어드민 알림
+            if (TARGET_TYPE_ORDER.equals(payment.getTargetType()) && payment.getTargetId() != null) {
+                try {
+                    List<org.myweb.uniplace.domain.commerce.domain.entity.RoomServiceOrder> rsoList =
+                        roomServiceOrderRepository.findByParentOrderId(payment.getTargetId());
+                    for (org.myweb.uniplace.domain.commerce.domain.entity.RoomServiceOrder rso : rsoList) {
+                        try { roomServiceOrderService.notifyOrderPaid(rso.getOrderId()); }
+                        catch (Exception ex) { log.warn("[ORDER][NOTIFY] orderId={} reason={}", rso.getOrderId(), ex.getMessage()); }
+                    }
+                } catch (Exception e) {
+                    log.warn("[ORDER][NOTIFY] paymentId={} reason={}", payment.getPaymentId(), e.getMessage());
+                }
+            }
+
             return PaymentResponse.builder()
                 .paymentId(payment.getPaymentId())
                 .paymentSt(ST_PAID)
@@ -468,6 +495,33 @@ public class PaymentServiceImpl implements PaymentService {
             notifyPaymentFailKor(payment, trimMessage(e.getMessage()));
             throw e;
         }
+    }
+
+    @Override
+    public void abandonByUser(String userId, Integer paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        assertOwnership(userId, payment);
+
+        if (ST_PAID.equalsIgnoreCase(payment.getPaymentSt())) {
+            return; // 이미 결제 완료된 경우 무시
+        }
+        if (ST_CANCELLED.equalsIgnoreCase(payment.getPaymentSt())) {
+            // 이미 취소됐어도 Order 취소는 멱등성 보장
+            cancelLinkedOrder(payment);
+            return;
+        }
+
+        paymentIntentRepository
+            .findTopByPaymentIdOrderByPaymentIntentIdDesc(payment.getPaymentId())
+            .ifPresent(intent -> intent.markCanceled());
+
+        payment.markCanceled();
+        paymentRepository.save(payment);
+        paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
+
+        cancelLinkedOrder(payment);
     }
 
     @Override
@@ -550,6 +604,21 @@ public class PaymentServiceImpl implements PaymentService {
             charge.getPrice(),
             "monthly-rent"
         );
+    }
+
+    /** 결제 취소/실패 시 연결된 Order 취소 + 재고 복원 */
+    private void cancelLinkedOrder(Payment payment) {
+        if (!TARGET_TYPE_ORDER.equals(payment.getTargetType()) || payment.getTargetId() == null) {
+            return;
+        }
+        try {
+            String userId = payment.getUserId();
+            if (userId == null) return;
+            // OrderService.cancelOrder() 내부에서 재고 복원 + RoomServiceOrder 취소 모두 처리
+            orderService.cancelOrder(userId, payment.getTargetId());
+        } catch (Exception e) {
+            log.warn("[PAYMENT][CANCEL_ORDER] paymentId={} reason={}", payment.getPaymentId(), e.getMessage());
+        }
     }
 
     private void syncTargetPaid(Payment payment) {

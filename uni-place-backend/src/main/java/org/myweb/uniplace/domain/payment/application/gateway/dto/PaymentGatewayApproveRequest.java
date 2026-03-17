@@ -15,6 +15,7 @@ public class PaymentGatewayApproveRequest {
 
     // toss confirm
     private String paymentKey;
+    private String payToken;
     private String orderId;
     private java.math.BigDecimal amount;
 }

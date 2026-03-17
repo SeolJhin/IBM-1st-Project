@@ -15,14 +15,10 @@ import org.myweb.uniplace.domain.commerce.repository.ProductRepository;
 import org.myweb.uniplace.domain.contract.domain.entity.Contract;
 import org.myweb.uniplace.domain.contract.domain.enums.ContractStatus;
 import org.myweb.uniplace.domain.contract.repository.ContractRepository;
-import org.myweb.uniplace.domain.notification.application.NotificationService;
-import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
-import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
-import org.myweb.uniplace.global.slack.SlackNotificationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -47,8 +43,6 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final ProductService productService;
     private final ContractRepository contractRepository;
-    private final NotificationService notificationService;
-    private final SlackNotificationService slackNotificationService;
 
     @Override
     public OrderResponse createOrder(String userId, OrderCreateRequest request) {
@@ -115,38 +109,8 @@ public class OrderServiceImpl implements OrderService {
         order.getRoomServiceOrders().add(roomServiceOrder);
 
         OrderResponse saved = OrderResponse.from(orderRepository.save(order));
-        Integer roomServiceOrderId = roomServiceOrder.getOrderId();
-        String adminUrlPath = roomServiceOrderId == null
-            ? "/admin/roomservice/room_orders"
-            : "/admin/roomservice/room_orders?orderId=" + roomServiceOrderId;
 
-        try {
-            notificationService.notifyAdmins(
-                NotificationType.ORDER_NEW.name(),
-                "Room service order created. userId=" + userId
-                    + ", roomId=" + tenantContract.getRoom().getRoomId()
-                    + ", orderId=" + roomServiceOrderId,
-                userId,
-                TargetType.order,
-                roomServiceOrderId,
-                adminUrlPath
-            );
-        } catch (Exception e) {
-            log.warn("[ORDER][NOTIFY][ADMIN] reason={}", e.getMessage());
-        }
-
-        // 주문 생성 → Slack 알림
-        try {
-            slackNotificationService.sendRoomServiceOrderAlert(
-                userId,
-                tenantContract.getRoom() != null ? tenantContract.getRoom().getRoomNo() : null,
-                tenantContract.getRoom() != null ? tenantContract.getRoom().getRoomId() : null,
-                trimToNull(request.getRoomServiceDesc()),
-                saved.getOrderId()
-            );
-        } catch (Exception e) {
-            log.warn("[ORDER][SLACK] reason={}", e.getMessage());
-        }
+        // Slack/어드민 알림은 결제 완료 후 PaymentServiceImpl에서 notifyOrderPaid()로 발송됨
 
         return saved;
     }
@@ -182,6 +146,11 @@ public class OrderServiceImpl implements OrderService {
 
         if (!order.getUser().getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.ORDER_ACCESS_DENIED);
+        }
+
+        // 이미 취소된 주문이면 재고 복원 없이 그냥 반환 (중복 취소 방지)
+        if (order.getOrderSt() == OrderStatus.cancelled) {
+            return OrderResponse.from(order);
         }
 
         for (OrderItem item : order.getOrderItems()) {

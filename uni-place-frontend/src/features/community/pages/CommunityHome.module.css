@@ -10,23 +10,32 @@
   max-width: 1100px;
   margin: 0 auto;
   width: 100%;
-  padding: 40px 24px 80px;
+  padding: 28px 24px 80px;
 }
 
 /* ── 헤더 ─────────────────────────────────────────────────── */
 .head {
-  margin-bottom: 28px;
+  background-color: #fff;
+  border-bottom: 1px solid #e9ecef;
+  padding-top: 100px;
+  width: 100%;
+}
+.headInner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px 0 24px;
 }
 .title {
-  font-size: 26px;
-  font-weight: 700;
-  color: #111;
-  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 4px;
 }
 .sub {
-  font-size: 14px;
+  font-size: 13.5px;
   color: #6b7280;
-  margin: 0;
+  font-weight: 400;
+  margin: 0 0 20px;
 }
 
 /* ── 탭 + 글쓰기 버튼 ─────────────────────────────────────── */

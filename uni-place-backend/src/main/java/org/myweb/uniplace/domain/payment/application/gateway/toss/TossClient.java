@@ -2,7 +2,6 @@ package org.myweb.uniplace.domain.payment.application.gateway.toss;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.myweb.uniplace.domain.payment.application.gateway.exception.PaymentGatewayException;
@@ -10,6 +9,8 @@ import org.myweb.uniplace.domain.payment.application.gateway.toss.dto.TossApprov
 import org.myweb.uniplace.domain.payment.application.gateway.toss.dto.TossApproveResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.toss.dto.TossCancelRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.toss.dto.TossCancelResponse;
+import org.myweb.uniplace.domain.payment.application.gateway.toss.dto.TossReadyRequest;
+import org.myweb.uniplace.domain.payment.application.gateway.toss.dto.TossReadyResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -32,15 +33,47 @@ public class TossClient {
         this.restClient = RestClient.builder()
             .requestFactory(requestFactory)
             .baseUrl(props.getApi_base_url())
-            .defaultHeader(HttpHeaders.AUTHORIZATION, buildBasicAuth(props.getSecret_key()))
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .build();
+    }
+
+    public TossReadyResponse create(@NonNull TossReadyRequest request) {
+        try {
+            TossReadyResponse response = restClient.post()
+                .uri("/api/v2/payments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(request)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, (req, res) -> {
+                    String body = "";
+                    try {
+                        body = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                    } catch (IOException ignored) {
+                        body = "";
+                    }
+                    throw new PaymentGatewayException(
+                        "TOSS",
+                        String.valueOf(res.getStatusCode().value()),
+                        "toss create http error",
+                        body
+                    );
+                })
+                .body(TossReadyResponse.class);
+            if (response == null) {
+                throw new PaymentGatewayException("TOSS", "toss create empty response", null);
+            }
+            return response;
+        } catch (PaymentGatewayException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new PaymentGatewayException("TOSS", "toss create failed", e);
+        }
     }
 
     public TossApproveResponse confirm(@NonNull TossApproveRequest request) {
         try {
             TossApproveResponse response = restClient.post()
-                .uri("/v1/payments/confirm")
+                .uri("/api/v2/execute")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -106,7 +139,7 @@ public class TossClient {
     public JsonNode getByPaymentKey(@NonNull String paymentKey) {
         try {
             JsonNode response = restClient.get()
-                .uri("/v1/payments/{paymentKey}", paymentKey)
+                .uri("/api/v2/payments/{paymentKey}", paymentKey)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, res) -> {
                     String body = "";
@@ -137,7 +170,7 @@ public class TossClient {
     public JsonNode getByOrderId(@NonNull String orderId) {
         try {
             JsonNode response = restClient.get()
-                .uri("/v1/payments/orders/{orderId}", orderId)
+                .uri("/api/v2/payments/orders/{orderId}", orderId)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, res) -> {
                     String body = "";
@@ -165,8 +198,4 @@ public class TossClient {
         }
     }
 
-    private static String buildBasicAuth(String secretKey) {
-        String raw = (secretKey == null ? "" : secretKey) + ":";
-        return "Basic " + Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
-    }
 }
