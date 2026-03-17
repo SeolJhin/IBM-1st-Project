@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { adminApi } from '../../api/adminApi';
+import FileUploader from '../../../file/components/FileUploader';
+import useFileUpload from '../../../file/hooks/useFileUpload';
 import styles from './AdminCreateModal.module.css';
 
 const INITIAL = {
@@ -42,11 +44,20 @@ const SUN_DIRS = [
   { value: 'north', label: '북향' },
 ];
 
+const ROOM_TYPES = [
+  { value: '', label: '미선택' },
+  { value: 'one_room', label: '원룸형' },
+  { value: 'two_room', label: '투룸형' },
+  { value: 'three_room', label: '쓰리룸형' },
+  { value: 'loft', label: '복층' },
+  { value: 'share', label: '쉐어' },
+];
+
 export default function AdminRoomCreateModal({ onClose, onSuccess }) {
   const [form, setForm] = useState(INITIAL);
-  const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const fu = useFileUpload({ maxCount: 10 });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -82,7 +93,7 @@ export default function AdminRoomCreateModal({ onClose, onSuccess }) {
       Object.entries(form).forEach(([k, v]) => {
         if (v !== '') fd.append(k, v);
       });
-      files.forEach((f) => fd.append('files', f));
+      fu.newFiles.forEach((f) => fd.append('files', f));
       await adminApi.createRoom(fd);
       onSuccess?.();
       onClose();
@@ -273,6 +284,21 @@ export default function AdminRoomCreateModal({ onClose, onSuccess }) {
                 </select>
               </label>
               <label className={styles.field}>
+                <span className={styles.label}>방 유형</span>
+                <select
+                  className={styles.select}
+                  name="roomType"
+                  value={form.roomType}
+                  onChange={handleChange}
+                >
+                  {ROOM_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={styles.field}>
                 <span className={styles.label}>반려동물</span>
                 <select
                   className={styles.select}
@@ -310,16 +336,17 @@ export default function AdminRoomCreateModal({ onClose, onSuccess }) {
 
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>이미지 업로드</h3>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className={styles.fileInput}
-              onChange={(e) => setFiles(Array.from(e.target.files))}
+            <FileUploader
+              newFiles={fu.newFiles}
+              previews={fu.previews}
+              deleteFileIds={fu.deleteFileIds}
+              addFiles={fu.addFiles}
+              removeNewFile={fu.removeNewFile}
+              moveNewFile={fu.moveNewFile}
+              toggleDeleteExisting={fu.toggleDeleteExisting}
+              label="이미지"
+              maxCount={10}
             />
-            {files.length > 0 && (
-              <p className={styles.fileInfo}>{files.length}개 파일 선택됨</p>
-            )}
           </div>
 
           {error && <div className={styles.error}>{error}</div>}

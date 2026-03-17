@@ -1,20 +1,12 @@
 // features/file/hooks/useFileUpload.js
 import { useState, useCallback } from 'react';
 
-/**
- * 파일 업로드 상태 관리 훅
- *
- * 사용법:
- *   const fu = useFileUpload({ maxCount: 5 });
- *   <FileUploader {...fu} existingFiles={data.files} />
- *   // 폼 제출 시:
- *   fd.append('files', ...fu.newFiles)
- *   fu.deleteFileIds.forEach(id => fd.append('deleteFileIds', id))
- */
 export default function useFileUpload({ maxCount = 10 } = {}) {
-  const [newFiles, setNewFiles] = useState([]); // File 객체 배열
-  const [previews, setPreviews] = useState([]); // 미리보기 URL 배열
-  const [deleteFileIds, setDeleteFileIds] = useState([]); // 삭제할 기존 파일 ID
+  const [newFiles, setNewFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
+  const [deleteFileIds, setDeleteFileIds] = useState([]);
+  // 기존 파일 순서 변경을 위한 상태 (fileId 배열)
+  const [existingOrder, setExistingOrder] = useState(null); // null = 원본 순서
 
   const addFiles = useCallback(
     (fileList) => {
@@ -36,6 +28,17 @@ export default function useFileUpload({ maxCount = 10 } = {}) {
     });
   }, []);
 
+  // 새 파일 순서 변경 (드래그 or 버튼)
+  const moveNewFile = useCallback((fromIndex, toIndex) => {
+    setNewFiles((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      setPreviews(next.map((f) => URL.createObjectURL(f)));
+      return next;
+    });
+  }, []);
+
   const toggleDeleteExisting = useCallback((fileId) => {
     setDeleteFileIds((prev) =>
       prev.includes(fileId)
@@ -44,19 +47,39 @@ export default function useFileUpload({ maxCount = 10 } = {}) {
     );
   }, []);
 
+  // 기존 파일 순서 변경
+  const initExistingOrder = useCallback((files) => {
+    setExistingOrder(files.map((f) => f.fileId));
+  }, []);
+
+  const moveExisting = useCallback((fromIndex, toIndex) => {
+    setExistingOrder((prev) => {
+      if (!prev) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }, []);
+
   const reset = useCallback(() => {
     setNewFiles([]);
     setPreviews([]);
     setDeleteFileIds([]);
+    setExistingOrder(null);
   }, []);
 
   return {
     newFiles,
     previews,
     deleteFileIds,
+    existingOrder,
     addFiles,
     removeNewFile,
+    moveNewFile,
     toggleDeleteExisting,
+    initExistingOrder,
+    moveExisting,
     reset,
   };
 }

@@ -13,8 +13,9 @@ public interface NoticeRepository extends JpaRepository<Notice, Integer> {
         value = """
                 SELECT *
                 FROM notice n
-                WHERE (:noticeSt IS NULL OR :noticeSt = '' OR n.notice_st = :noticeSt)
-                  AND (:code     IS NULL OR :code     = '' OR n.code      = :code)
+                WHERE (:noticeSt   IS NULL OR :noticeSt   = '' OR n.notice_st = :noticeSt)
+                  AND (:code       IS NULL OR :code       = '' OR n.code      = :code)
+                  AND (:importance IS NULL OR :importance = '' OR n.importance = :importance)
                   AND (
                         :keyword IS NULL OR :keyword = ''
                         OR LOWER(n.notice_title) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -25,8 +26,9 @@ public interface NoticeRepository extends JpaRepository<Notice, Integer> {
         countQuery = """
                 SELECT COUNT(*)
                 FROM notice n
-                WHERE (:noticeSt IS NULL OR :noticeSt = '' OR n.notice_st = :noticeSt)
-                  AND (:code     IS NULL OR :code     = '' OR n.code      = :code)
+                WHERE (:noticeSt   IS NULL OR :noticeSt   = '' OR n.notice_st = :noticeSt)
+                  AND (:code       IS NULL OR :code       = '' OR n.code      = :code)
+                  AND (:importance IS NULL OR :importance = '' OR n.importance = :importance)
                   AND (
                         :keyword IS NULL OR :keyword = ''
                         OR LOWER(n.notice_title) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -36,9 +38,10 @@ public interface NoticeRepository extends JpaRepository<Notice, Integer> {
         nativeQuery = true
     )
     Page<Notice> search(
-            @Param("noticeSt") String noticeSt,
-            @Param("code")     String code,
-            @Param("keyword")  String keyword,
+            @Param("noticeSt")   String noticeSt,
+            @Param("code")       String code,
+            @Param("importance") String importance,
+            @Param("keyword")    String keyword,
             Pageable pageable
     );
 }

@@ -8,5 +8,6 @@ import lombok.Setter;
 public class NoticeSearchRequest {
     private String noticeSt;   // String으로 받아서 enum 변환 문제 방지
     private String code;
+    private String importance; // Y=중요공지만, N=일반공지만, null/''=전체
     private String keyword;
 }
