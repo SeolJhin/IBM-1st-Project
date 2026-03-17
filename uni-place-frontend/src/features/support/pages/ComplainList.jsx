@@ -65,7 +65,6 @@ export default function ComplainList() {
     <div className={styles.container}>
       <div className={styles.pageHead}>
         <h2 className={styles.pageTitle}>민원 접수</h2>
-        <p className={styles.pageSub}>불편사항이나 개선 요청을 남겨주세요.</p>
       </div>
 
       {canCreate && (
