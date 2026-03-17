@@ -8,9 +8,24 @@ import lombok.Getter;
 @Builder
 public class TossCancelRequest {
 
-    @JsonProperty("cancelReason")
-    private String cancelReason;
+    @JsonProperty("apiKey")
+    private String apiKey;
 
-    @JsonProperty("cancelAmount")
-    private Integer cancelAmount;
+    @JsonProperty("payToken")
+    private String payToken;
+
+    @JsonProperty("orderNo")
+    private String orderNo;
+
+    @JsonProperty("refundNo")
+    private String refundNo;
+
+    @JsonProperty("reason")
+    private String reason;
+
+    @JsonProperty("amount")
+    private Integer amount;
+
+    @JsonProperty("idempotent")
+    private Boolean idempotent;
 }

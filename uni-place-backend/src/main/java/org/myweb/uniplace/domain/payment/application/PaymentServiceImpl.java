@@ -92,6 +92,8 @@ public class PaymentServiceImpl implements PaymentService {
         validatePrepareRequest(request);
         PreparedTarget target = resolveTarget(userId, request);
         validateServiceGoodsMapping(request.getServiceGoodsId(), target.targetType());
+        BigDecimal taxExScopeAmount = resolveTaxExScopeAmount(request.getTaxExScopeAmount(), target.totalPrice());
+        BigDecimal taxScopeAmount = target.totalPrice().subtract(taxExScopeAmount);
         String idempotencyKey = blankToNull(request.getIdempotencyKey());
 
         Payment existingByTarget = paymentRepository
@@ -103,7 +105,7 @@ public class PaymentServiceImpl implements PaymentService {
             )
             .orElse(null);
         if (existingByTarget != null) {
-            return buildPrepareResponse(existingByTarget);
+            return reissueReadyForExisting(existingByTarget, target.itemName());
         }
 
         if (idempotencyKey != null) {
@@ -111,7 +113,10 @@ public class PaymentServiceImpl implements PaymentService {
                 .findTopByUserIdAndIdempotencyKeyOrderByPaymentIdDesc(userId, idempotencyKey)
                 .orElse(null);
             if (existing != null) {
-                return buildPrepareResponse(existing);
+                if (ST_PAID.equalsIgnoreCase(existing.getPaymentSt())) {
+                    return buildPrepareResponse(existing);
+                }
+                return reissueReadyForExisting(existing, target.itemName());
             }
         }
 
@@ -120,6 +125,9 @@ public class PaymentServiceImpl implements PaymentService {
             .serviceGoodsId(request.getServiceGoodsId())
             .currency("KRW")
             .totalPrice(target.totalPrice())
+            .taxScopePrice(taxScopeAmount)
+            .taxExScopePrice(taxExScopeAmount)
+            .taxFreePrice(taxExScopeAmount)
             .capturedPrice(BigDecimal.ZERO)
             .paymentMethodId(request.getPaymentMethodId())
             .provider(request.getProvider())
@@ -160,8 +168,8 @@ public class PaymentServiceImpl implements PaymentService {
                 .orderId(payment.getMerchantUid())
                 .itemName(target.itemName())
                 .quantity(1)
-                .totalPrice(target.totalPrice())
-                .taxFreePrice(BigDecimal.ZERO)
+                .totalPrice(payment.getTotalPrice())
+                .taxFreePrice(payment.getTaxExScopePrice() == null ? BigDecimal.ZERO : payment.getTaxExScopePrice())
                 .approvalUrl(approvalUrl)
                 .cancelUrl(cancelUrl)
                 .failUrl(failUrl)
@@ -243,12 +251,17 @@ public class PaymentServiceImpl implements PaymentService {
 
         validateServiceGoodsMapping(request.getServiceGoodsId(), TARGET_TYPE_MONTHLY_CHARGE);
         String idempotencyKey = MONTHLY_BATCH_IDEMPOTENCY_PREFIX + joinChargeIds(payableChargeIds);
+        BigDecimal taxExScopeAmount = resolveTaxExScopeAmount(request.getTaxExScopeAmount(), totalPrice);
+        BigDecimal taxScopeAmount = totalPrice.subtract(taxExScopeAmount);
 
         Payment existing = paymentRepository
             .findTopByUserIdAndIdempotencyKeyOrderByPaymentIdDesc(userId, idempotencyKey)
             .orElse(null);
         if (existing != null) {
-            return buildPrepareResponse(existing);
+            if (ST_PAID.equalsIgnoreCase(existing.getPaymentSt())) {
+                return buildPrepareResponse(existing);
+            }
+            return reissueReadyForExisting(existing, "monthly-rent-batch");
         }
 
         Payment payment = Payment.builder()
@@ -256,6 +269,9 @@ public class PaymentServiceImpl implements PaymentService {
             .serviceGoodsId(request.getServiceGoodsId())
             .currency("KRW")
             .totalPrice(totalPrice)
+            .taxScopePrice(taxScopeAmount)
+            .taxExScopePrice(taxExScopeAmount)
+            .taxFreePrice(taxExScopeAmount)
             .capturedPrice(BigDecimal.ZERO)
             .paymentMethodId(request.getPaymentMethodId())
             .provider(request.getProvider())
@@ -303,7 +319,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .itemName(itemName)
                 .quantity(1)
                 .totalPrice(payment.getTotalPrice())
-                .taxFreePrice(BigDecimal.ZERO)
+                .taxFreePrice(payment.getTaxExScopePrice() == null ? BigDecimal.ZERO : payment.getTaxExScopePrice())
                 .approvalUrl(approvalUrl)
                 .cancelUrl(cancelUrl)
                 .failUrl(failUrl)
@@ -337,6 +353,14 @@ public class PaymentServiceImpl implements PaymentService {
             .redirectMobileUrl(gwRes.getRedirectMobileUrl())
             .redirectAppUrl(gwRes.getRedirectAppUrl())
             .build();
+    }
+
+    private PaymentPrepareResponse reissueReadyForExisting(Payment payment, String itemName) {
+        if (!ST_READY.equalsIgnoreCase(payment.getPaymentSt()) && !ST_PENDING.equalsIgnoreCase(payment.getPaymentSt())) {
+            payment.markReady();
+            paymentRepository.save(payment);
+        }
+        return readyPayment(payment, itemName);
     }
 
     @Override
@@ -772,6 +796,19 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static String blankToNull(String value) {
         return hasText(value) ? value : null;
+    }
+
+    private static BigDecimal resolveTaxExScopeAmount(BigDecimal requestedTaxEx, BigDecimal totalPrice) {
+        if (totalPrice == null || totalPrice.signum() < 0) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+        if (requestedTaxEx == null) {
+            return BigDecimal.ZERO;
+        }
+        if (requestedTaxEx.signum() < 0 || requestedTaxEx.compareTo(totalPrice) > 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        return requestedTaxEx;
     }
 
     private static String firstNonBlank(String... values) {

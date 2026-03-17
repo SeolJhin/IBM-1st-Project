@@ -6,18 +6,27 @@
   background: #131313;
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
 
+  /* ✅ overflow: visible → 알림 드롭다운이 header 밖으로 나올 수 있음 */
   overflow: visible;
-
-  isolation: isolate;
 }
 
-.header::before {
+/* ✅ 빛 효과를 별도 div(.lightLayer)로 분리
+      이 div에만 overflow: hidden을 줘서 빛이 header 밖으로 못 나가게 막음 */
+.lightLayer {
+  position: absolute;
+  inset: 0; /* header 크기와 똑같이 꽉 채움 */
+  overflow: hidden; /* 빛만 여기서 잘라냄 */
+  pointer-events: none; /* 클릭 이벤트 통과 */
+  z-index: 0;
+}
+
+.lightLayer::before {
   content: '';
   position: absolute;
-  top: -100%;
+  top: -50%;
   left: -50%;
   width: 200%;
-  height: 200%;
+  height: 250%;
 
   background: radial-gradient(
     circle,
@@ -26,17 +35,14 @@
     transparent 60%
   );
 
-  animation: moveLight 14s linear infinite;
-
+  animation: moveLight 8s linear infinite;
   pointer-events: none;
-  z-index: 0;
 }
 
 @keyframes moveLight {
   0% {
     transform: translateX(-50%);
   }
-
   100% {
     transform: translateX(50%);
   }
@@ -44,7 +50,7 @@
 
 .inner {
   position: relative;
-  z-index: 2;
+  z-index: 2; /* lightLayer(z-index:0) 위에 렌더링 */
 
   max-width: 1040px;
   margin: 0 auto;
@@ -69,6 +75,7 @@
 .brand:active {
   transform: scale(0.95);
 }
+
 .logoMark {
   width: 32px;
   height: 32px;
@@ -83,11 +90,13 @@
   flex-direction: column;
   line-height: 1.1;
 }
+
 .brandName {
   font-weight: 900;
   letter-spacing: 1px;
   color: #ffffff;
 }
+
 .brandSub {
   font-size: 12px;
   color: #d7cebc;
@@ -116,12 +125,10 @@
   transform: scale(0.95);
 }
 
-/* hover 시 색 살짝 밝게 */
 .linkBtn:hover {
   color: #ffd993;
 }
 
-/* 금색 underline */
 .linkBtn::after {
   content: '';
   position: absolute;
@@ -136,15 +143,16 @@
   transition: transform 0.25s ease;
 }
 
-/* hover 시 중앙에서 퍼짐 */
 .linkBtn:hover::after {
   transform: translateX(-50%) scaleX(1);
 }
+
 .icons {
   position: relative;
   display: flex;
   gap: 8px;
 }
+
 .iconBtn {
   min-width: 34px;
   height: 34px;
@@ -163,7 +171,6 @@
 .iconBtn:hover {
   background: #d9ad5b57;
   border-color: #ac894860;
-
   transition: 0.5s;
 }
 
