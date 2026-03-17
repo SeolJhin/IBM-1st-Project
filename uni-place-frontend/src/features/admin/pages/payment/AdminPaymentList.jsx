@@ -8,7 +8,7 @@ import refundStyles from './AdminRefundModal.module.css';
 const PAYMENT_STATUS_OPTIONS = [
   { value: 'ready', label: '준비' },
   { value: 'paid', label: '결제완료' },
-  { value: 'cancelled', label: '취소' },
+  { value: 'cancelled', label: '실패' },
   { value: 'pending', label: '대기' },
   { value: 'disputed', label: '결제분쟁' },
 ];

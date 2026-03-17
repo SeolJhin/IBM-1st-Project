@@ -114,6 +114,10 @@ export const commerceApi = {
   cancelOrder: (orderId) =>
     request(`/orders/${orderId}/cancel`, { method: 'PATCH', auth: true }),
 
+  // 결제창 이탈(뒤로가기) 시 결제 포기 처리 → payment cancelled, order cancelled
+  abandonPayment: (paymentId) =>
+    request(`/payments/${paymentId}/abandon`, { method: 'POST', auth: true }),
+
   // ===== RoomServiceOrderController (/room-services) 관련 API =====
 
   createRoomServiceOrder: ({ orderId, roomId, roomServiceDesc } = {}) =>

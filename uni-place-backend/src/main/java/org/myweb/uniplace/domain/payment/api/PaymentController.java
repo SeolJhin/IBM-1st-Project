@@ -68,4 +68,16 @@ public class PaymentController {
         }
         return paymentService.retry(authUser.getUserId(), request.getPaymentId());
     }
+
+    /** 사용자가 결제창 이탈(뒤로가기) 시 결제 포기 처리 */
+    @PostMapping("/{paymentId}/abandon")
+    public void abandon(
+        @AuthenticationPrincipal AuthUser authUser,
+        @PathVariable Integer paymentId
+    ) {
+        if (authUser == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        paymentService.abandonByUser(authUser.getUserId(), paymentId);
+    }
 }

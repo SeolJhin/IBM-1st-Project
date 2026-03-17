@@ -58,4 +58,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
            "LEFT JOIN FETCH rso.room " +
            "WHERE o.orderId IN :orderIds")
     List<Order> findAllWithRoomServicesByIds(@Param("orderIds") List<Integer> orderIds);
+    // ── 결제 ID로 주문 조회 (결제 취소 시 Order 상태 변경용) ─────────────────
+    @Query("SELECT o FROM Order o WHERE o.paymentId = :paymentId OR " +
+           "(o.paymentId IS NULL AND EXISTS (SELECT p FROM org.myweb.uniplace.domain.payment.domain.entity.Payment p " +
+           "WHERE p.paymentId = :paymentId AND p.targetId = o.orderId AND p.targetType = 'order'))")
+    List<Order> findByPaymentIdOrTarget(@Param("paymentId") Integer paymentId);
 }
