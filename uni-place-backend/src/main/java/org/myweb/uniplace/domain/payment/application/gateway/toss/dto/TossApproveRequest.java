@@ -8,14 +8,11 @@ import lombok.Getter;
 @Builder
 public class TossApproveRequest {
 
-    @JsonProperty("apiKey")
-    private String apiKey;
+    @JsonProperty("paymentKey")
+    private String paymentKey;
 
-    @JsonProperty("payToken")
-    private String payToken;
-
-    @JsonProperty("orderNo")
-    private String orderNo;
+    @JsonProperty("orderId")
+    private String orderId;
 
     @JsonProperty("amount")
     private Integer amount;

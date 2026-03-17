@@ -79,4 +79,31 @@ export const billingApi = {
     }
     return payload?.data ?? payload;
   },
+
+  prepareMonthlyBatch: async (chargeIds, provider) => {
+    const normalizedProvider = String(provider || '').trim().toUpperCase();
+    if (!normalizedProvider) {
+      throw new Error('결제 수단(provider)이 올바르지 않습니다.');
+    }
+
+    try {
+      const res = await api.post('/payments/prepare/monthly-batch', {
+        serviceGoodsId: MONTHLY_SERVICE_GOODS_ID,
+        chargeIds,
+        provider: normalizedProvider,
+      });
+      const payload = res?.data;
+      if (payload?.success === false) {
+        throw new Error(payload.message || '일괄 결제 준비에 실패했습니다.');
+      }
+      return payload?.data ?? payload;
+    } catch (e) {
+      const message =
+        e?.response?.data?.message ||
+        e?.response?.data?.error?.message ||
+        e?.message ||
+        '일괄 결제 준비에 실패했습니다.';
+      throw new Error(message);
+    }
+  },
 };

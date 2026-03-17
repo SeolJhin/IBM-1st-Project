@@ -53,6 +53,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -90,6 +91,8 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public PaymentPrepareResponse prepare(String userId, PaymentPrepareRequest request) {
         validatePrepareRequest(request);
+        String requestedProvider = normalizeProvider(request.getProvider());
+        request.setProvider(requestedProvider);
         PreparedTarget target = resolveTarget(userId, request);
         validateServiceGoodsMapping(request.getServiceGoodsId(), target.targetType());
         BigDecimal taxExScopeAmount = resolveTaxExScopeAmount(request.getTaxExScopeAmount(), target.totalPrice());
@@ -104,7 +107,7 @@ public class PaymentServiceImpl implements PaymentService {
                 java.util.List.of(ST_READY, ST_PENDING)
             )
             .orElse(null);
-        if (existingByTarget != null) {
+        if (existingByTarget != null && sameProvider(existingByTarget.getProvider(), requestedProvider)) {
             return reissueReadyForExisting(existingByTarget, target.itemName());
         }
 
@@ -211,6 +214,8 @@ public class PaymentServiceImpl implements PaymentService {
         if (request == null || request.getServiceGoodsId() == null || !hasText(request.getProvider())) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
+        String requestedProvider = normalizeProvider(request.getProvider());
+        request.setProvider(requestedProvider);
 
         List<Integer> chargeIds = normalizeChargeIds(request.getChargeIds());
         if (chargeIds.isEmpty()) {
@@ -250,7 +255,10 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         validateServiceGoodsMapping(request.getServiceGoodsId(), TARGET_TYPE_MONTHLY_CHARGE);
-        String idempotencyKey = MONTHLY_BATCH_IDEMPOTENCY_PREFIX + joinChargeIds(payableChargeIds);
+        String idempotencyKey = MONTHLY_BATCH_IDEMPOTENCY_PREFIX
+            + requestedProvider
+            + ":"
+            + joinChargeIds(payableChargeIds);
         BigDecimal taxExScopeAmount = resolveTaxExScopeAmount(request.getTaxExScopeAmount(), totalPrice);
         BigDecimal taxScopeAmount = totalPrice.subtract(taxExScopeAmount);
 
@@ -798,6 +806,20 @@ public class PaymentServiceImpl implements PaymentService {
         return hasText(value) ? value : null;
     }
 
+    private static String normalizeProvider(String provider) {
+        if (!hasText(provider)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        return provider.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private static boolean sameProvider(String actualProvider, String expectedProvider) {
+        if (!hasText(actualProvider) || !hasText(expectedProvider)) {
+            return false;
+        }
+        return actualProvider.equalsIgnoreCase(expectedProvider);
+    }
+
     private static BigDecimal resolveTaxExScopeAmount(BigDecimal requestedTaxEx, BigDecimal totalPrice) {
         if (totalPrice == null || totalPrice.signum() < 0) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
@@ -841,6 +863,10 @@ public class PaymentServiceImpl implements PaymentService {
             return List.of();
         }
         String raw = idempotencyKey.substring(MONTHLY_BATCH_IDEMPOTENCY_PREFIX.length());
+        int providerSep = raw.indexOf(':');
+        if (providerSep >= 0) {
+            raw = raw.substring(providerSep + 1);
+        }
         if (!hasText(raw)) return List.of();
 
         LinkedHashSet<Integer> out = new LinkedHashSet<>();
