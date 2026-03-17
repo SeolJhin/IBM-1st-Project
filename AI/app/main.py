@@ -12,17 +12,23 @@ logging.basicConfig(
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import router as api_v1_router
+from app.config.settings import settings
 from app.services.rag.index_pipeline import ensure_rag_runtime
 from app.services.rag.reindex_daemon import start_reindex_daemon
 from app.services.monitor.stock_alert_service import start_stock_alert_daemon
 
 app = FastAPI(title="Uniplace AI Service", version="0.1.0")
+_cors_origins = [
+    origin.strip()
+    for origin in (settings.cors_allowed_origins or "").split(",")
+    if origin.strip()
+]
 
 
 # 미들웨어 먼저, 라우터 나중에
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8080"],
+    allow_origins=_cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
@@ -46,7 +52,6 @@ def _startup_rag_pipeline() -> None:
 def health_molit() -> dict:
     """국토부 API 키 로딩 상태 진단. GET /health/molit"""
     import os
-    from app.config.settings import settings
 
     settings_key = getattr(settings, "molit_api_key", "") or ""
     env_key = os.environ.get("MOLIT_API_KEY", "")

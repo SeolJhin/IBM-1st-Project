@@ -85,7 +85,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final RoomServiceOrderRepository roomServiceOrderRepository;
     private final OrderService orderService;
 
-    @Value("${app.baseUrl:http://localhost:8080}")
+    @Value("${app.baseUrl:}")
     private String appBaseUrl;
 
     @Override
@@ -158,9 +158,10 @@ public class PaymentServiceImpl implements PaymentService {
         String providerSlug = payment.getProvider() == null ? "kakao" : payment.getProvider().toLowerCase();
         String callbackQuery = "?pid=" + payment.getPaymentId()
             + "&mu=" + URLEncoder.encode(payment.getMerchantUid(), StandardCharsets.UTF_8);
-        String approvalUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/approval" + callbackQuery;
-        String cancelUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/cancel" + callbackQuery;
-        String failUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/fail" + callbackQuery;
+        String callbackBase = resolveAppBaseUrl();
+        String approvalUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/approval" + callbackQuery;
+        String cancelUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/cancel" + callbackQuery;
+        String failUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/fail" + callbackQuery;
 
         PaymentGateway gateway = paymentGatewayFactory.get(payment.getProvider());
 
@@ -314,9 +315,10 @@ public class PaymentServiceImpl implements PaymentService {
         String providerSlug = payment.getProvider() == null ? "kakao" : payment.getProvider().toLowerCase();
         String callbackQuery = "?pid=" + payment.getPaymentId()
             + "&mu=" + URLEncoder.encode(payment.getMerchantUid(), StandardCharsets.UTF_8);
-        String approvalUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/approval" + callbackQuery;
-        String cancelUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/cancel" + callbackQuery;
-        String failUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/fail" + callbackQuery;
+        String callbackBase = resolveAppBaseUrl();
+        String approvalUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/approval" + callbackQuery;
+        String cancelUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/cancel" + callbackQuery;
+        String failUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/fail" + callbackQuery;
 
         PaymentGateway gateway = paymentGatewayFactory.get(payment.getProvider());
         PaymentGatewayReadyResponse gwRes = gateway.ready(
@@ -1111,6 +1113,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private String resolveAppBaseUrl() {
+        if (!hasText(appBaseUrl)) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
+        }
+        String trimmed = appBaseUrl.trim();
+        return trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
     }
 
     private void verifyApproveResultKor(Payment payment, PaymentGatewayApproveResponse gwRes) {

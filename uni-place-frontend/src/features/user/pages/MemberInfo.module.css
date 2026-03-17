@@ -148,9 +148,39 @@
 
 .actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 12px;
   margin-top: 18px;
+}
+
+.socialActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 28px;
+}
+
+.primaryActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.socialLinkBtn {
+  min-width: 112px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: #fff;
+  color: #222;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.socialLinkBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .cancelBtn,
@@ -255,6 +285,20 @@
   .row {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .socialActions {
+    margin-right: 0;
+  }
+
+  .socialLinkBtn {
+    flex: 1;
   }
 }
 

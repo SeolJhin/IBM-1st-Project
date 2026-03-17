@@ -51,10 +51,11 @@ class Settings(BaseSettings):
     watsonx_embedding_model_id: str = "ibm/slate-125m-english-rtrvr"
 
     # ── Spring Boot (Tool Calling 역방향 호출) ────────────────────
-    spring_base_url: str = "http://localhost:8080"
+    spring_base_url: str = ""
 
     # ── Milvus (RAG 벡터DB - 유료, 기존 설정 유지) ───────────────
-    milvus_uri: str = "http://localhost:19530"
+    milvus_uri: str = ""
+    cors_allowed_origins: str = ""
     milvus_token: str = ""
     milvus_db_name: str = "default"
     milvus_collection: str = "uniplace_knowledge"

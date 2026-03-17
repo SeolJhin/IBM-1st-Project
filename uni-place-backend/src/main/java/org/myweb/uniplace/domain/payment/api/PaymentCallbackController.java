@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.billing.domain.entity.MonthlyCharge;
 import org.myweb.uniplace.domain.billing.repository.MonthlyChargeRepository;
@@ -33,11 +34,12 @@ public class PaymentCallbackController {
     private final PaymentRepository paymentRepository;
     private final MonthlyChargeRepository monthlyChargeRepository;
 
-    @Value("${app.frontend-url:http://localhost:3000}")
+    @Value("${app.frontend-url:}")
     private String frontendUrl;
 
     @GetMapping("/{provider}/approval")
     public ResponseEntity<Void> approval(
+        HttpServletRequest httpRequest,
         @PathVariable("provider") String provider,
         @RequestParam("pid") Integer paymentId,
         @RequestParam("mu") String merchantUid,
@@ -75,27 +77,29 @@ public class PaymentCallbackController {
                 response != null ? response.getPaymentId() : null,
                 response != null ? response.getPaymentSt() : null
             );
-            return redirect(resolveRedirectUrl(paymentId, "success"));
+            return redirect(resolveRedirectUrl(httpRequest, paymentId, "success"));
         } catch (Exception e) {
             log.warn("[PAYMENT_CALLBACK][APPROVAL_FAIL] provider={}, pid={}, reason={}",
                 provider, paymentId, e.getMessage());
-            return redirect(resolveRedirectUrl(paymentId, "fail"));
+            return redirect(resolveRedirectUrl(httpRequest, paymentId, "fail"));
         }
     }
 
     @GetMapping("/{provider}/cancel")
     public ResponseEntity<Void> cancel(
+        HttpServletRequest httpRequest,
         @PathVariable("provider") String provider,
         @RequestParam("pid") Integer paymentId,
         @RequestParam("mu") String merchantUid
     ) {
         log.info("[PAYMENT_CALLBACK][CANCEL] provider={}, pid={}, mu={}", provider, paymentId, merchantUid);
         paymentService.cancelFromCallback(paymentId, merchantUid);
-        return redirect(resolveRedirectUrl(paymentId, "cancel"));
+        return redirect(resolveRedirectUrl(httpRequest, paymentId, "cancel"));
     }
 
     @GetMapping("/{provider}/fail")
     public ResponseEntity<Void> fail(
+        HttpServletRequest httpRequest,
         @PathVariable("provider") String provider,
         @RequestParam("pid") Integer paymentId,
         @RequestParam("mu") String merchantUid,
@@ -103,17 +107,17 @@ public class PaymentCallbackController {
         @RequestParam(value = "resultMessage", required = false) String resultMessage
     ) {
         paymentService.failFromCallback(paymentId, merchantUid, resultCode, resultMessage);
-        return redirect(resolveRedirectUrl(paymentId, "fail"));
+        return redirect(resolveRedirectUrl(httpRequest, paymentId, "fail"));
     }
 
     private ResponseEntity<Void> redirect(String url) {
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }
 
-    private String resolveRedirectUrl(Integer paymentId, String result) {
+    private String resolveRedirectUrl(HttpServletRequest request, Integer paymentId, String result) {
         Payment payment = paymentRepository.findById(paymentId).orElse(null);
         if (payment == null) {
-            return buildFrontendUrl("/?payment=" + result);
+            return buildFrontendUrl(request, "/?payment=" + result);
         }
 
         String targetType = payment.getTargetType() == null
@@ -121,7 +125,7 @@ public class PaymentCallbackController {
             : payment.getTargetType().trim().toLowerCase();
 
         if ("order".equals(targetType)) {
-            return buildFrontendUrl("/commerce/orders?payment=" + result);
+            return buildFrontendUrl(request, "/commerce/orders?payment=" + result);
         }
 
         if ("monthly_charge".equals(targetType)) {
@@ -130,10 +134,10 @@ public class PaymentCallbackController {
                 .orElse(null);
 
             String contractQuery = contractId == null ? "" : "&contractId=" + contractId;
-            return buildFrontendUrl("/me?tab=myroom&sub=rent-payment" + contractQuery + "&payment=" + result);
+            return buildFrontendUrl(request, "/me?tab=myroom&sub=rent-payment" + contractQuery + "&payment=" + result);
         }
 
-        return buildFrontendUrl("/?payment=" + result);
+        return buildFrontendUrl(request, "/?payment=" + result);
     }
 
     private String toCallbackParamsJson(
@@ -164,9 +168,9 @@ public class PaymentCallbackController {
         }
     }
 
-    private String buildFrontendUrl(String pathWithQuery) {
+    private String buildFrontendUrl(HttpServletRequest request, String pathWithQuery) {
         String base = (frontendUrl == null || frontendUrl.isBlank())
-            ? "http://localhost:3000"
+            ? resolveRequestOrigin(request)
             : frontendUrl.trim();
         if (base.endsWith("/")) {
             base = base.substring(0, base.length() - 1);
@@ -178,5 +182,18 @@ public class PaymentCallbackController {
             return base + "/" + pathWithQuery;
         }
         return base + pathWithQuery;
+    }
+
+    private String resolveRequestOrigin(HttpServletRequest request) {
+        String proto = firstNonBlank(request.getHeader("X-Forwarded-Proto"), request.getScheme());
+        String host = firstNonBlank(request.getHeader("X-Forwarded-Host"), request.getHeader("Host"));
+        if (proto == null || proto.isBlank() || host == null || host.isBlank()) {
+            return "";
+        }
+        return proto + "://" + host;
+    }
+
+    private static String firstNonBlank(String first, String second) {
+        return (first != null && !first.isBlank()) ? first : second;
     }
 }

@@ -1,5 +1,6 @@
 package org.myweb.uniplace.global.exception;
 
+import org.myweb.uniplace.domain.ai.exception.AiServiceException;
 import org.myweb.uniplace.domain.payment.application.gateway.exception.PaymentGatewayException;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.slf4j.Logger;
@@ -60,6 +61,14 @@ public class GlobalExceptionHandler {
             .body(ApiResponse.error(ErrorCode.INTERNAL_ERROR));
     }
 
+    @ExceptionHandler(AiServiceException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAiServiceException(AiServiceException e) {
+        log.error("[AI_GATEWAY] {}", safeMessage(e.getMessage()), e);
+        return ResponseEntity
+            .status(ErrorCode.INTERNAL_ERROR.getStatus())
+            .body(ApiResponse.error(ErrorCode.INTERNAL_ERROR, safeMessage(e.getMessage())));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
         String message = firstFieldErrorMessage(e.getBindingResult().getFieldErrors());
@@ -105,7 +114,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnknown(Exception e) {    	
+    public ResponseEntity<ApiResponse<Void>> handleUnknown(Exception e) {
+        log.error("[UNHANDLED_EXCEPTION] {}", safeMessage(e.getMessage()), e);
         return ResponseEntity
                 .status(ErrorCode.INTERNAL_ERROR.getStatus())
                 .body(ApiResponse.error(ErrorCode.INTERNAL_ERROR));

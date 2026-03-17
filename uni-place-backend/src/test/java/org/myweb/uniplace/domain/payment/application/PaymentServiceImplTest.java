@@ -87,11 +87,11 @@ class PaymentServiceImplTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(paymentService, "objectMapper", new ObjectMapper());
-        ReflectionTestUtils.setField(paymentService, "appBaseUrl", "http://localhost:8080");
+        ReflectionTestUtils.setField(paymentService, "appBaseUrl", "http://dev-host:8080");
     }
 // 
     @Test
-    @DisplayName("prepare(order): payment/intent 생성 후 ready 응답")
+    @DisplayName("prepare(order): payment/intent ?앹꽦 ??ready ?묐떟")
     void prepareOrderSuccess() {
         String userId = "user-1";
         BigDecimal total = new BigDecimal("50000");
@@ -160,7 +160,7 @@ class PaymentServiceImplTest {
         assertThat(intentCaptor.getValue().getIntentSt()).isEqualTo(PaymentIntentStatus.READY_OK);
     }
     @Test
-    @DisplayName("prepare(monthly_batch): 다중 계약 청구를 함께 결제 준비할 수 있다")
+    @DisplayName("prepare(monthly_batch): ?ㅼ쨷 怨꾩빟 泥?뎄瑜??④퍡 寃곗젣 以鍮꾪븷 ???덈떎")
     void prepareMonthlyBatchAcrossContractsSuccess() {
         String userId = "user-1";
 
@@ -233,7 +233,7 @@ class PaymentServiceImplTest {
         assertThat(saved.getTotalPrice()).isEqualByComparingTo(new BigDecimal("1100000"));
     }
     @Test
-    @DisplayName("approve(order): 상태/금액 일치 시 payment paid + order paid")
+    @DisplayName("approve(order): ?곹깭/湲덉븸 ?쇱튂 ??payment paid + order paid")
     void approveOrderSuccess() {
         String userId = "user-1";
         BigDecimal total = new BigDecimal("50000");
@@ -304,7 +304,7 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    @DisplayName("approve(monthly_charge): 승인 성공 시 charge paid + payment_id 연결")
+    @DisplayName("approve(monthly_charge): ?뱀씤 ?깃났 ??charge paid + payment_id ?곌껐")
     void approveMonthlyChargeSuccess() {
         String userId = "user-1";
         BigDecimal total = new BigDecimal("800000");
@@ -370,7 +370,7 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    @DisplayName("approve(monthly_charge): overdue 청구는 결제할 수 없다")
+    @DisplayName("approve(monthly_charge): overdue 泥?뎄??寃곗젣?????녿떎")
     void approveMonthlyChargeFailsWhenOverdue() {
         String userId = "user-1";
         BigDecimal total = new BigDecimal("800000");
@@ -415,7 +415,7 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    @DisplayName("approve(monthly_charge): requested 계약은 결제할 수 없다")
+    @DisplayName("approve(monthly_charge): requested 怨꾩빟? 寃곗젣?????녿떎")
     void approveMonthlyChargeFailsWhenContractRequested() {
         String userId = "user-1";
         BigDecimal total = new BigDecimal("800000");
@@ -460,7 +460,7 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    @DisplayName("approve: 이미 paid면 멱등으로 동일 결과 반환")
+    @DisplayName("approve: ?대? paid硫?硫깅벑?쇰줈 ?숈씪 寃곌낵 諛섑솚")
     void approveIdempotentWhenAlreadyPaid() {
         LocalDateTime paidAt = LocalDateTime.now().minusMinutes(1);
         Payment payment = Payment.builder()
@@ -493,7 +493,7 @@ class PaymentServiceImplTest {
     }
 
     @Test
-    @DisplayName("approve: 금액/정합성 불일치면 PAYMENT_INVALID_TARGET")
+    @DisplayName("approve: 湲덉븸/?뺥빀??遺덉씪移섎㈃ PAYMENT_INVALID_TARGET")
     void approveFailsWhenAmountMismatch() {
         String userId = "user-1";
         BigDecimal total = new BigDecimal("50000");
@@ -577,3 +577,4 @@ class PaymentServiceImplTest {
             .build();
     }
 }
+
