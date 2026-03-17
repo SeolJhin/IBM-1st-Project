@@ -1,108 +1,114 @@
-# Voice Pipeline ?ㅼ튂 & ?⑥튂 ?뺣━
+# Voice Pipeline 설치 & 패치 정리
 
-## 理쒖쥌 援ъ꽦
-- **STT**: faster-whisper (Whisper 湲곕컲)
-- **TTS**: MeloTTS (MIT ?쇱씠?좎뒪, ?곸뾽??臾대즺)
+## 최종 구성
+- **STT**: faster-whisper (Whisper 기반)
+- **TTS**: MeloTTS (MIT 라이선스, 상업용 무료)
 - **API**: FastAPI (Swagger: http://dev-host:8000/docs)
 
 ---
 
-## ?ㅼ튂???⑦궎吏
+## 설치한 패키지
 
 ```bash
-# ?듭떖
+# 핵심
 pip install faster-whisper
 pip install git+https://github.com/myshell-ai/MeloTTS.git
 python -m unidic download
 
-# ?섏〈???쎌뒪
-pip install --upgrade librosa          # 0.9.1 ??0.9.2 (pkg_resources 踰꾧렇 ?섏젙)
-pip install --force-reinstall setuptools==69.5.1  # pkg_resources 蹂듭썝
-pip install --force-reinstall mecab-python3       # 1.0.9 ??1.0.12
-pip install python-mecab-ko            # ?쒓뎅??MeCab (C++ 鍮뚮뱶 遺덊븘??
-pip install g2pk                       # ?쒓뎅??G2P
+# 의존성 픽스
+pip install --upgrade librosa          # 0.9.1 → 0.9.2 (pkg_resources 버그 수정)
+pip install --force-reinstall setuptools==69.5.1  # pkg_resources 복원
+pip install --force-reinstall mecab-python3       # 1.0.9 → 1.0.12
+pip install python-mecab-ko            # 한국어 MeCab (C++ 빌드 불필요)
+pip install g2pk                       # 한국어 G2P
 pip install importlib-resources
 pip install soundfile fastapi uvicorn numpy requests
 ```
 
 ---
 
-## ?⑥튂 ?댁슜
+## 패치 내용
 
-### 1. MeloTTS ?쒓뎅??紐⑤뱢 ?⑥튂
-**?뚯씪**: `C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\melo\text\korean.py`  
-**諛깆뾽**: 媛숈? 寃쎈줈??`korean.py.bak`?쇰줈 ??λ맖
+### 1. MeloTTS 한국어 모듈 패치
+**파일**: `C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\melo\text\korean.py`  
+**백업**: 같은 경로에 `korean.py.bak`으로 저장됨
 
-**臾몄젣**: MeloTTS ?쒓뎅?닿? `eunjeon` ?⑦궎吏 ?꾩슂 ??Windows?먯꽌 C++ 鍮뚮뱶 ?ㅽ뙣  
-**?닿껐**: `eunjeon` ???`konlpy.Okt` + `g2pk` ?ъ슜?섎룄濡?援먯껜  
-**異붽?**: `?? ??symbols???녿뒗 ?먮え ?먮룞 ?꾪꽣留?
-?⑥튂 ?ъ쟻?⑹씠 ?꾩슂?섎㈃:
+**문제**: MeloTTS 한국어가 `eunjeon` 패키지 필요 → Windows에서 C++ 빌드 실패  
+**해결**: `eunjeon` 대신 `konlpy.Okt` + `g2pk` 사용하도록 교체  
+**추가**: `ᇂ` 등 symbols에 없는 자모 자동 필터링
+
+패치 재적용이 필요하면:
 ```bash
 python patch_korean3.py
 ```
 
 ---
 
-## ?꾨줈?앺듃 援ъ“
+## 프로젝트 구조
 
 ```
 voice-pipeline/
-?쒋?? stt/whisper_stt.py          # WhisperSTT ?대옒???쒋?? tts/melo_tts.py             # MeloTTS ?대옒??(硫붿씤)
-?쒋?? tts/kokoro_tts.py           # KokoroTTS (?곸뼱/?쇰낯??以묎뎅?댁슜, 李멸퀬??
-?쒋?? pipeline/voice_pipeline.py  # STT?뭈TS ?듯빀
-?쒋?? api/server.py               # FastAPI ?쒕쾭
-?쒋?? config/settings.py          # ?ㅼ젙
-?쒋?? tests/test_melo.py          # MeloTTS ?뚯뒪???쒋?? tests/test_pipeline.py      # STT/TTS ?⑥쐞 ?뚯뒪???쒋?? tests/test_integration.py   # ?듯빀 ?뚯뒪???붴?? patch_korean3.py            # ?쒓뎅???⑥튂 ?ㅽ겕由쏀듃
+├── stt/whisper_stt.py          # WhisperSTT 클래스
+├── tts/melo_tts.py             # MeloTTS 클래스 (메인)
+├── tts/kokoro_tts.py           # KokoroTTS (영어/일본어/중국어용, 참고용)
+├── pipeline/voice_pipeline.py  # STT→TTS 통합
+├── api/server.py               # FastAPI 서버
+├── config/settings.py          # 설정
+├── tests/test_melo.py          # MeloTTS 테스트
+├── tests/test_pipeline.py      # STT/TTS 단위 테스트
+├── tests/test_integration.py   # 통합 테스트
+└── patch_korean3.py            # 한국어 패치 스크립트
 ```
 
 ---
 
-## ?뚯뒪??紐낅졊??
+## 테스트 명령어
+
 ```bash
-# MeloTTS ?꾩껜 ?뚯뒪??(ko/en/ja/zh)
+# MeloTTS 전체 테스트 (ko/en/ja/zh)
 python tests/test_melo.py
 
-# STT留??뚯뒪??python tests/test_pipeline.py --stt-only
+# STT만 테스트
+python tests/test_pipeline.py --stt-only
 
-# TTS留??뚯뒪??(kokoro 湲곕컲)
+# TTS만 테스트 (kokoro 기반)
 python tests/test_pipeline.py --tts-only
 
-# ?쒓뎅??wav 吏곸젒 ?앹꽦
+# 한국어 wav 직접 생성
 python -c "
 import sys; sys.path.insert(0, '.')
 from tts.melo_tts import MeloTTS
 tts = MeloTTS()
-result = tts.synthesize('?덈뀞?섏꽭??, lang='ko')
+result = tts.synthesize('안녕하세요', lang='ko')
 open('output.wav', 'wb').write(result.audio_bytes)
-print('????꾨즺')
+print('저장 완료')
 "
 
-# API ?쒕쾭 ?ㅽ뻾
+# API 서버 실행
 python api/server.py
-# ??http://dev-host:8000/docs (Swagger UI)
+# → http://dev-host:8000/docs (Swagger UI)
 ```
 
 ---
 
-## 吏???몄뼱 (MeloTTS)
+## 지원 언어 (MeloTTS)
 
-| ?몄뼱 | lang 肄붾뱶 | 鍮꾧퀬 |
+| 언어 | lang 코드 | 비고 |
 |------|-----------|------|
-| ?쒓뎅??| `ko` | Okt G2P ?⑥튂 ?곸슜 |
-| ?곸뼱 (US) | `en` or `en-us` | |
-| ?곸뼱 (BR) | `en-gb` | |
-| ?쇰낯??| `ja` | |
-| 以묎뎅??| `zh` | |
-| ?ㅽ럹?몄뼱 | `es` | |
-| ?꾨옉?ㅼ뼱 | `fr` | |
+| 한국어 | `ko` | Okt G2P 패치 적용 |
+| 영어 (US) | `en` or `en-us` | |
+| 영어 (BR) | `en-gb` | |
+| 일본어 | `ja` | |
+| 중국어 | `zh` | |
+| 스페인어 | `es` | |
+| 프랑스어 | `fr` | |
 
 ---
 
-## ?뚮젮吏??댁뒋
+## 알려진 이슈
 
-| ?댁뒋 | ?곹깭 |
+| 이슈 | 상태 |
 |------|------|
-| kokoro-onnx ?쒓뎅??voice ?놁쓬 | ?좑툘 voices-v1.0.bin??kf_alpha 誘명룷??|
-| ?쒓뎅??TTS 泥섎━ ?띾룄 ?먮┝ | ?좑툘 CPU 湲곗? 臾몄옣??~10珥?(bert-kor-base 異붾줎) |
-| FutureWarning 寃쎄퀬??| ??臾댁떆 媛?? ?숈옉???곹뼢 ?놁쓬 |
-
+| kokoro-onnx 한국어 voice 없음 | ⚠️ voices-v1.0.bin에 kf_alpha 미포함 |
+| 한국어 TTS 처리 속도 느림 | ⚠️ CPU 기준 문장당 ~10초 (bert-kor-base 추론) |
+| FutureWarning 경고들 | ✅ 무시 가능, 동작에 영향 없음 |
