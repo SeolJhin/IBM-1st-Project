@@ -39,6 +39,15 @@ def health() -> dict[str, str]:
 @app.on_event("startup")
 def _startup_rag_pipeline() -> None:
     ensure_rag_runtime()
+    # ChromaDB RAG 인덱싱 (rag_docs/ 폴더의 txt/md 파일)
+    try:
+        from app.services.rag.chroma_rag import chroma_rag_index
+        result = chroma_rag_index(force=False)
+        import logging
+        logging.getLogger(__name__).info("[Startup] ChromaRAG 인덱싱 결과: %s", result)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning("[Startup] ChromaRAG 인덱싱 실패: %s", e)
     start_reindex_daemon()
     start_stock_alert_daemon()
 
