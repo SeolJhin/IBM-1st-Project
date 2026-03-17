@@ -121,7 +121,11 @@ public class PaymentReconcileService {
         ));
 
         if (requestedCount >= maxAttempts) {
-            markDisputed(payment, "MAX_RETRY_REACHED");
+            payment.markCanceled();
+            paymentRepository.save(payment);
+            cancelOrderByPayment(payment);
+            log.warn("[PAYMENT_RECONCILE] max retry reached, marking cancelled. paymentId={}",
+                payment.getPaymentId());
             return;
         }
 
@@ -209,11 +213,27 @@ public class PaymentReconcileService {
     private void handleUnresolved(Payment payment, int requestedCount, String reason) {
         paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
         if (requestedCount >= maxAttempts) {
-            markDisputed(payment, reason);
+            payment.markCanceled();
+            paymentRepository.save(payment);
+            cancelOrderByPayment(payment);
+            log.warn("[PAYMENT_RECONCILE] max retry reached, marking cancelled. paymentId={} reason={}",
+                payment.getPaymentId(), reason);
             return;
         }
         payment.markPending();
         paymentRepository.save(payment);
+    }
+
+    private void cancelOrderByPayment(Payment payment) {
+        try {
+            if (payment.getTargetId() == null || !TARGET_TYPE_ORDER.equals(payment.getTargetType())) return;
+            Order order = orderRepository.findById(payment.getTargetId()).orElse(null);
+            if (order == null || order.getOrderSt() == OrderStatus.cancelled) return;
+            order.cancel();
+            orderRepository.save(order);
+        } catch (Exception e) {
+            log.warn("[PAYMENT_RECONCILE] cancelOrderByPayment failed paymentId={} reason={}", payment.getPaymentId(), e.getMessage());
+        }
     }
 
     private void syncTargetPaid(Payment payment) {
@@ -328,7 +348,13 @@ public class PaymentReconcileService {
             || "CANCELLED".equals(normalizedStatus)
             || "PARTIAL_CANCELED".equals(normalizedStatus)
             || "ABORTED".equals(normalizedStatus)
-            || "EXPIRED".equals(normalizedStatus);
+            || "EXPIRED".equals(normalizedStatus)
+            // 카카오페이 취소 상태
+            || "CANCEL".equals(normalizedStatus)
+            || "USER_CANCEL".equals(normalizedStatus)
+            || "QUIT_PAYMENT".equals(normalizedStatus)
+            || "FAIL_PAYMENT".equals(normalizedStatus)
+            || "PART_CANCEL".equals(normalizedStatus);
     }
 
     private static String text(JsonNode node, String field) {
