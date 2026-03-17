@@ -1,0 +1,269 @@
+.skeleton {
+  width: 100%;
+  height: 480px;
+  background: linear-gradient(90deg, #f0ebe0 25%, #e8e0d0 50%, #f0ebe0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.slider {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  overflow: hidden;
+}
+.sliderClickable {
+  cursor: pointer;
+}
+
+.bg {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.5s ease;
+  opacity: 1;
+}
+.bgFading {
+  opacity: 0;
+}
+
+.bgImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.defaultBg {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.patternSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.bgOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.25) 55%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+}
+
+.content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 88px;
+  max-width: 720px;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+  opacity: 1;
+  transform: translateY(0);
+}
+.contentFading {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.sub {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 14px;
+}
+.title {
+  font-size: 46px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin: 0 0 32px;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 28px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 40px;
+  text-decoration: none;
+  width: fit-content;
+  letter-spacing: 0.04em;
+  transition: all 0.25s;
+}
+.cta:hover {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.7);
+  transform: translateY(-2px);
+}
+.ctaArrow {
+  font-size: 16px;
+  transition: transform 0.2s;
+}
+.cta:hover .ctaArrow {
+  transform: translateX(4px);
+}
+
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+.navBtn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-50%) scale(1.08);
+}
+.navPrev {
+  left: 28px;
+}
+.navNext {
+  right: 28px;
+}
+
+.dots {
+  position: absolute;
+  bottom: 32px;
+  left: 88px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s;
+}
+.dotActive {
+  width: 26px;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.counter {
+  position: absolute;
+  bottom: 28px;
+  right: 88px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  z-index: 10;
+  letter-spacing: 0.05em;
+}
+.counterCurrent {
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+}
+.counterSep {
+  margin: 0 4px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.progressBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: 10;
+}
+.progressFill {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.6);
+  animation: progress linear forwards;
+  width: 0%;
+}
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .slider {
+    height: 320px;
+  }
+  .skeleton {
+    height: 320px;
+  }
+  .content {
+    padding: 0 28px;
+    max-width: 100%;
+  }
+  .title {
+    font-size: 28px;
+  }
+  .sub {
+    font-size: 12px;
+  }
+  .navPrev {
+    left: 12px;
+  }
+  .navNext {
+    right: 12px;
+  }
+  .dots {
+    left: 28px;
+    bottom: 22px;
+  }
+  .counter {
+    right: 28px;
+    bottom: 18px;
+  }
+  .navBtn {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+}
