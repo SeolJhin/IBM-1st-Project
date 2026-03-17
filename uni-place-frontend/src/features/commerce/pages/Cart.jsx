@@ -157,17 +157,22 @@ export default function Cart({
 
   const [stockMap, setStockMap] = useState({});
   const [stockLoading, setStockLoading] = useState(false);
-  useEffect(() => {
-    if (!selectedBuildingId) return;
+
+  const loadStockMap = useCallback((buildingId) => {
+    if (!buildingId) return;
     setStockLoading(true);
     commerceApi
       .getProducts()
-      .then((data) =>
-        setStockMap(extractStockMap(data ?? [], selectedBuildingId))
-      )
+      .then((data) => setStockMap(extractStockMap(data ?? [], buildingId)))
       .catch(() => setStockMap({}))
       .finally(() => setStockLoading(false));
-  }, [selectedBuildingId]);
+  }, []);
+
+  useEffect(() => {
+    loadStockMap(selectedBuildingId);
+  }, [selectedBuildingId, loadStockMap]);
+
+  // 10초마다 자동 새로고침
 
   const [applyingId, setApplyingId] = useState(null);
 
@@ -398,4 +403,3 @@ export default function Cart({
     </div>
   );
 }
-

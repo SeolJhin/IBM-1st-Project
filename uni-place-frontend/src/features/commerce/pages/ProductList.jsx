@@ -13,6 +13,7 @@ import Header from '../../../app/layouts/components/Header';
 import { useProducts } from '../hooks/useProducts';
 import { useCart } from '../hooks/useCart';
 import { useTenantContract } from '../hooks/useTenantContract';
+import { commerceApi } from '../api/commerceApi';
 import { withApiPrefix } from '../../../app/http/apiBase';
 import styles from './ProductList.module.css';
 import layoutStyles from '../../user/pages/MemberInfo.module.css';
@@ -224,7 +225,12 @@ export default function ProductList({
     else navigate(path, state ? { state } : undefined);
   };
 
-  const { products, loading: prodLoading, error: prodError } = useProducts();
+  const {
+    products,
+    loading: prodLoading,
+    error: prodError,
+    refetch: refetchProducts,
+  } = useProducts();
   const {
     cart,
     addItem,
