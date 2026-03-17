@@ -20,7 +20,7 @@ public interface NoticeRepository extends JpaRepository<Notice, Integer> {
                         OR LOWER(n.notice_title) LIKE LOWER(CONCAT('%', :keyword, '%'))
                         OR LOWER(COALESCE(n.notice_ctnt, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                       )
-                ORDER BY n.notice_id DESC
+                ORDER BY n.importance DESC, n.notice_id DESC
                 """,
         countQuery = """
                 SELECT COUNT(*)

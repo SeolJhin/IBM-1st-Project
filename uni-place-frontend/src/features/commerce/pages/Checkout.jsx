@@ -6,6 +6,7 @@ import { useOrderCreate } from '../hooks/useOrders';
 import { useTenantContract } from '../hooks/useTenantContract';
 import { authApi } from '../../user/api/authApi';
 import { api } from '../../../app/http/axiosInstance';
+import { commerceApi } from '../api/commerceApi';
 import ConfirmModal from './components/ConfirmModal';
 import styles from './Checkout.module.css';
 import layoutStyles from '../../user/pages/MemberInfo.module.css';
@@ -206,6 +207,14 @@ export default function Checkout({
         const url = pay.redirectPcUrl || pay.redirectMobileUrl;
         if (!url) throw new Error('카카오페이 URL을 받지 못했습니다.');
         await clear();
+        // 결제창 이탈(뒤로가기) 대비 — orderId + paymentId 저장
+        sessionStorage.setItem('pending_kakao_order_id', String(order.orderId));
+        if (pay.paymentId) {
+          sessionStorage.setItem(
+            'pending_kakao_payment_id',
+            String(pay.paymentId)
+          );
+        }
         window.location.href = url;
       }
     } catch (e) {

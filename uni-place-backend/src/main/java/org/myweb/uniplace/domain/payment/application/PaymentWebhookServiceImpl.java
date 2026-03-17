@@ -3,6 +3,7 @@ package org.myweb.uniplace.domain.payment.application;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.myweb.uniplace.domain.payment.api.dto.request.PaymentApproveRequest;
 import org.myweb.uniplace.domain.payment.domain.entity.Payment;
 import org.myweb.uniplace.domain.payment.domain.entity.PaymentIntent;
 import org.myweb.uniplace.domain.payment.domain.entity.PaymentIntentStatus;
@@ -23,6 +24,7 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
     private final PaymentRepository paymentRepository;
     private final PaymentIntentRepository paymentIntentRepository;
     private final PaymentReconcileService paymentReconcileService;
+    private final PaymentService paymentService;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -46,9 +48,37 @@ public class PaymentWebhookServiceImpl implements PaymentWebhookService {
         }
 
         JsonNode data = root.path("data").isMissingNode() ? root : root.path("data");
-        String merchantUid = firstText(data, "orderId", "order_id", "merchantUid");
-        String providerRefId = firstText(data, "checkoutPaymentId", "checkout_payment_id", "providerRefId");
+        String status = firstText(data, "status");
+        String merchantUid = firstText(data, "orderNo", "orderId", "order_id", "merchantUid");
+        String providerRefId = firstText(data, "payToken", "checkoutPaymentId", "checkout_payment_id", "providerRefId");
+        attemptTossAutoApprove(status, merchantUid, providerRefId);
         ingestWebhook("TOSS", payload, merchantUid, providerRefId);
+    }
+
+    private void attemptTossAutoApprove(String status, String merchantUid, String payToken) {
+        if (!"PAY_COMPLETE".equalsIgnoreCase(blankToNull(status))) {
+            return;
+        }
+        if (!hasText(merchantUid)) {
+            return;
+        }
+        Payment payment = paymentRepository.findByMerchantUid(merchantUid).orElse(null);
+        if (payment == null || !"TOSS".equalsIgnoreCase(payment.getProvider())) {
+            return;
+        }
+        if ("paid".equalsIgnoreCase(payment.getPaymentSt())) {
+            return;
+        }
+        try {
+            PaymentApproveRequest request = new PaymentApproveRequest();
+            request.setPaymentId(payment.getPaymentId());
+            request.setMerchantUid(payment.getMerchantUid());
+            request.setPayToken(blankToNull(payToken));
+            paymentService.approveFromCallback(request);
+        } catch (Exception e) {
+            log.warn("[ALERT][WEBHOOK][TOSS_AUTO_APPROVE] failed paymentId={} reason={}",
+                payment.getPaymentId(), trimMessage(e.getMessage()));
+        }
     }
 
     private void ingestWebhook(String provider, String payload, String merchantUid, String providerRefId) {

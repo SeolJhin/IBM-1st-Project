@@ -62,10 +62,10 @@ public class PaymentWebhookController {
         @RequestHeader(value = "tosspayments-webhook-transmission-time", required = false) String transmissionTime,
         @RequestHeader(value = "tosspayments-webhook-signature", required = false) String signature
     ) {
-        // 서명 없는 요청은 신뢰할 수 없으므로 거부
+        // tosspay resultCallback(v2) payload may be sent without signature headers.
         if (signature == null || signature.isBlank()) {
-            notifyWebhookFail("TOSS webhook 검증 실패 missing signature");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("missing signature");
+            paymentWebhookService.handleTossWebhook(payload);
+            return ResponseEntity.ok("OK");
         }
 
         if (transmissionTime == null || transmissionTime.isBlank()) {

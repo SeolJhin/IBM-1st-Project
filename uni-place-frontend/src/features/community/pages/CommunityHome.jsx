@@ -645,15 +645,18 @@ export default function CommunityHome() {
   return (
     <div className={styles.page}>
       <Header />
-      <main className={styles.main}>
-        {/* 헤더 */}
-        <section className={styles.head}>
+
+      {/* 헤더 - PageHeader와 동일한 전체 너비 스타일 */}
+      <div className={styles.head}>
+        <div className={styles.headInner}>
           <h1 className={styles.title}>커뮤니티</h1>
           <p className={styles.sub}>
             전체, 자유, 질문, 후기 게시글을 조회하고 작성할 수 있습니다.
           </p>
-        </section>
+        </div>
+      </div>
 
+      <main className={styles.main}>
         {/* 탭 + 글쓰기 버튼 */}
         <div className={styles.topBar}>
           <div className={styles.tabs}>

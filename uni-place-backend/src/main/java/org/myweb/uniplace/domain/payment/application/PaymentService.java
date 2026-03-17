@@ -22,5 +22,8 @@ public interface PaymentService {
 
     void failFromCallback(Integer paymentId, String merchantUid, String failCode, String failMessage);
 
+    /** 사용자가 결제창 이탈(뒤로가기)로 결제 포기 — payment cancelled, order cancelled */
+    void abandonByUser(String userId, Integer paymentId);
+
     PaymentResponse retry(String userId, Integer paymentId);
 }
