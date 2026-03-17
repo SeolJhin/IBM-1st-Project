@@ -5,7 +5,7 @@ import styles from '../payment/AdminPaymentTable.module.css';
 const CHARGE_STATUS_OPTIONS = [
   { value: 'unpaid', label: '미납' },
   { value: 'paid', label: '납부완료' },
-  { value: 'overdue', label: '납부지연' },
+  { value: 'overdue', label: '연체' },
 ];
 
 const TARGET_LABELS = {
@@ -46,7 +46,7 @@ function ChargeStatusBadge({ status }) {
   const map = {
     paid: { label: '납부완료', className: styles.badgePaid },
     unpaid: { label: '미납', className: styles.badgeReady },
-    overdue: { label: '납부지연', className: styles.badgeOverdue },
+    overdue: { label: '연체', className: styles.badgeOverdue },
     pending: { label: '대기', className: styles.badgePending },
   };
   const { label, className } = map[key] ?? {
