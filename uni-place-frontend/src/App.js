@@ -1,5 +1,4 @@
 // App.js
-// ── 공통 ──────────────────────────────────────────────────────
 import React from 'react';
 import './app/styles/globals.css';
 
@@ -112,9 +111,31 @@ import {
   USE_BACKEND_AI,
 } from './features/chat/config/chatConfig';
 import { useAuth } from './features/user/hooks/useAuth';
+import { useEffect } from 'react';
+import { commerceApi } from './features/commerce/api/commerceApi';
 
 export default function App() {
   const { user } = useAuth();
+
+  // 어느 페이지로 돌아와도 카카오페이 이탈 처리
+  useEffect(() => {
+    const pendingPaymentId = sessionStorage.getItem('pending_kakao_payment_id');
+    const pendingOrderId = sessionStorage.getItem('pending_kakao_order_id');
+    if (!pendingPaymentId && !pendingOrderId) return;
+    sessionStorage.removeItem('pending_kakao_payment_id');
+    sessionStorage.removeItem('pending_kakao_order_id');
+    if (pendingPaymentId) {
+      commerceApi
+        .abandonPayment(Number(pendingPaymentId))
+        .catch(
+          () =>
+            pendingOrderId &&
+            commerceApi.cancelOrder(Number(pendingOrderId)).catch(() => {})
+        );
+    } else if (pendingOrderId) {
+      commerceApi.cancelOrder(Number(pendingOrderId)).catch(() => {});
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>

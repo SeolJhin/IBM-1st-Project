@@ -2,41 +2,45 @@
 
 .page {
   min-height: 100vh;
-  background: #f6eee6;
+  background: var(--b-5, #fdf7ec);
   color: var(--text);
 }
 
 /* ── 페이지 헤더 ── */
 .pageHeader {
-  background: linear-gradient(135deg, #0b0e12 0%, #362f20 100%);
-  padding: 56px 0 44px;
+  background: var(--bg, #fff);
+  border-bottom: 1px solid var(--line, #d7cebc);
+  padding-top: 100px;
+  width: 100%;
 }
 .pageHeaderInner {
-  max-width: 1320px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 32px;
+  padding: 0 24px;
 }
 .pageKicker {
-  margin: 0 0 8px;
+  margin: 0 0 4px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.2em;
-  color: #d9ad5b;
+  color: var(--primary, #d9ad5b);
 }
 .pageTitle {
-  margin: 0 0 8px;
-  font-size: 38px;
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text, #0b0e12);
+  letter-spacing: -0.01em;
 }
 .pageSub {
-  margin: 0;
-  font-size: 14px;
-  color: #9a8c70;
+  margin: 0 0 20px;
+  font-size: 13.5px;
+  color: var(--muted, #48535f);
+  font-weight: 400;
 }
 .pageSub strong {
-  color: #d9ad5b;
+  color: var(--primary, #d9ad5b);
+  font-weight: 700;
 }
 
 /* ── 레이아웃 ── */
@@ -52,10 +56,10 @@
 
 /* ── 필터 패널 ── */
 .filterPanel {
-  background: #fff;
+  background: var(--surface, #fff);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 16px rgba(11, 14, 18, 0.07);
+  box-shadow: var(--shadow, 0 4px 16px rgba(11, 14, 18, 0.07));
   position: sticky;
   top: 24px;
 }
@@ -73,7 +77,7 @@
 }
 .resetBtn {
   font-size: 12px;
-  color: #ba8037;
+  color: var(--accent, #ba8037);
   background: none;
   border: none;
   cursor: pointer;
@@ -84,7 +88,7 @@
 .filterSection {
   margin-bottom: 20px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #f0eae0;
+  border-bottom: 1px solid var(--line, #d7cebc);
 }
 .filterSection:last-child {
   margin-bottom: 0;
@@ -103,10 +107,10 @@
 .filterInput {
   width: 100%;
   padding: 8px 12px;
-  border: 1.5px solid #e8e0d4;
+  border: 1.5px solid var(--line, #d7cebc);
   border-radius: 8px;
   font-size: 13px;
-  background: #fdfaf6;
+  background: var(--b-5, #fdf7ec);
   color: var(--text);
   outline: none;
   transition: border-color 0.2s;
@@ -114,7 +118,7 @@
 }
 .filterSelect:focus,
 .filterInput:focus {
-  border-color: #d9ad5b;
+  border-color: var(--primary, #d9ad5b);
 }
 .rangeRow {
   display: flex;
@@ -147,16 +151,16 @@
 }
 .sortSelect {
   padding: 7px 14px;
-  border: 1.5px solid #e8e0d4;
+  border: 1.5px solid var(--line, #d7cebc);
   border-radius: 8px;
   font-size: 13px;
-  background: #fff;
+  background: var(--surface, #fff);
   color: var(--text);
   cursor: pointer;
   outline: none;
 }
 .sortSelect:focus {
-  border-color: #d9ad5b;
+  border-color: var(--primary, #d9ad5b);
 }
 
 /* ── 그리드 ── */
@@ -168,10 +172,10 @@
 
 /* ── 방 카드 ── */
 .card {
-  background: #fff;
+  background: var(--surface, #fff);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 14px rgba(11, 14, 18, 0.07);
+  box-shadow: var(--shadow, 0 4px 14px rgba(11, 14, 18, 0.07));
   cursor: pointer;
   transition:
     transform 0.2s,
@@ -184,7 +188,7 @@
 .cardImg {
   position: relative;
   aspect-ratio: 4/3;
-  background: #f0eae0;
+  background: var(--a-3, #d7cebc);
   overflow: hidden;
 }
 .cardImg img {
@@ -241,7 +245,7 @@
   margin: 0;
   font-size: 12px;
   font-weight: 700;
-  color: #ba8037;
+  color: var(--accent, #ba8037);
   letter-spacing: 0.02em;
 }
 .roomNo {
@@ -266,7 +270,7 @@
 }
 .priceSep {
   font-size: 12px;
-  color: #d7cebc;
+  color: var(--line, #d7cebc);
 }
 .priceRent {
   font-size: 15px;
@@ -282,7 +286,7 @@
 .cardMeta span {
   font-size: 11px;
   color: var(--muted);
-  background: #f6eee6;
+  background: var(--b-5, #fdf7ec);
   padding: 3px 8px;
   border-radius: 20px;
 }
@@ -292,7 +296,7 @@
 .addr {
   margin: 0;
   font-size: 11px;
-  color: #9a8c70;
+  color: var(--accent-soft, #9a8c70);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -305,11 +309,11 @@
   gap: 2px;
 }
 .starFilled {
-  color: #d9ad5b;
+  color: var(--primary, #d9ad5b);
   font-size: 14px;
 }
 .starEmpty {
-  color: #e8e0d4;
+  color: var(--line, #d7cebc);
   font-size: 14px;
 }
 .starValue {
@@ -325,7 +329,7 @@
 }
 .ratingLoading {
   font-size: 11px;
-  color: #9a8c70;
+  color: var(--accent-soft, #9a8c70);
 }
 
 /* ── 로딩/에러/비어있음 ── */
@@ -338,8 +342,8 @@
 .spinner {
   width: 36px;
   height: 36px;
-  border: 3px solid #e8e0d4;
-  border-top-color: #d9ad5b;
+  border: 3px solid var(--line, #d7cebc);
+  border-top-color: var(--primary, #d9ad5b);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin: 0 auto 16px;
@@ -379,7 +383,7 @@
 }
 .emptyResetBtn {
   padding: 10px 24px;
-  background: #d9ad5b;
+  background: var(--primary, #d9ad5b);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -397,9 +401,9 @@
 .pageBtn {
   width: 36px;
   height: 36px;
-  border: 1.5px solid #e8e0d4;
+  border: 1.5px solid var(--line, #d7cebc);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface, #fff);
   color: var(--text);
   font-size: 13px;
   font-weight: 600;
@@ -407,16 +411,16 @@
   transition: all 0.15s;
 }
 .pageBtn:hover:not(:disabled) {
-  border-color: #d9ad5b;
-  color: #d9ad5b;
+  border-color: var(--primary, #d9ad5b);
+  color: var(--primary, #d9ad5b);
 }
 .pageBtn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 .pageBtnActive {
-  background: #d9ad5b;
-  border-color: #d9ad5b;
+  background: var(--primary, #d9ad5b);
+  border-color: var(--primary, #d9ad5b);
   color: #fff;
 }
 
@@ -435,14 +439,14 @@
 .filterHint {
   margin: 0 0 6px;
   font-size: 10px;
-  color: #9a8c70;
+  color: var(--accent-soft, #9a8c70);
 }
 
 /* ── 탭 바 ── */
 .tabBar {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid #e8e0d4;
+  border-bottom: 2px solid var(--line, #d7cebc);
   margin-bottom: 20px;
 }
 .tabBtn {
@@ -456,16 +460,16 @@
   margin-bottom: -2px;
   font-size: 14px;
   font-weight: 600;
-  color: #9a8c70;
+  color: var(--accent-soft, #9a8c70);
   cursor: pointer;
   transition: all 0.15s;
 }
 .tabBtn:hover {
-  color: #ba8037;
+  color: var(--accent, #ba8037);
 }
 .tabBtnActive {
-  color: #ba8037;
-  border-bottom-color: #d9ad5b;
+  color: var(--accent, #ba8037);
+  border-bottom-color: var(--primary, #d9ad5b);
 }
 .tabIcon {
   font-size: 16px;
@@ -477,15 +481,15 @@
 .tabCount {
   font-size: 12px;
   font-weight: 700;
-  background: #f0e8d8;
-  color: #ba8037;
+  background: var(--a-4, #ffe0b9);
+  color: var(--accent, #ba8037);
   padding: 1px 7px;
   border-radius: 20px;
   min-width: 20px;
   text-align: center;
 }
 .tabBtnActive .tabCount {
-  background: #d9ad5b;
+  background: var(--primary, #d9ad5b);
   color: #fff;
 }
 
@@ -502,8 +506,8 @@
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
-  background: #f0e8d8;
-  color: #7a5c2e;
-  border: 1px solid #e0cc9f;
+  background: var(--a-4, #ffe0b9);
+  color: var(--ink-soft, #362f20);
+  border: 1px solid var(--highlight, #ffcd8e);
   letter-spacing: 0.02em;
 }
