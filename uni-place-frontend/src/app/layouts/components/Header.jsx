@@ -23,7 +23,6 @@ export default function Header() {
     }
   }, [logout, navigate]);
 
-  // 🔥 역할 판별 함수 (추가)
   function normalizeRole(user) {
     const raw =
       user?.userRole ??
@@ -43,6 +42,12 @@ export default function Header() {
 
   return (
     <header className={styles.header}>
+      {/* ✅ 빛 효과 전용 레이어
+            - position: absolute로 header에 꽉 차게 깔림
+            - 이 div 안에서만 overflow: hidden → 빛이 header 밖으로 못 나감
+            - header 자체는 overflow: visible → 알림 드롭다운이 아래로 나올 수 있음 */}
+      <div className={styles.lightLayer} aria-hidden="true" />
+
       <div className={styles.inner}>
         <div
           className={styles.brand}
@@ -97,7 +102,6 @@ export default function Header() {
         </nav>
 
         <div className={styles.icons}>
-          {/* 로그인 상태에 따라 변경 */}
           {loading ? null : user ? (
             <>
               <button
@@ -128,7 +132,6 @@ export default function Header() {
             </button>
           )}
 
-          {/* 알림 - 로그인 시에만 표시, 로그인 오른쪽 */}
           {!loading && user && <NotificationBell />}
         </div>
       </div>
