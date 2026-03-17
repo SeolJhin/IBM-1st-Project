@@ -101,31 +101,48 @@ public class RoomServiceOrderServiceImpl implements RoomServiceOrderService {
             ? "/admin/roomservice/room_orders"
             : "/admin/roomservice/room_orders?orderId=" + roomServiceOrderId;
 
-        // 주문 접수 → 어드민 알림
+        // 주문 접수 시점에는 알림 없음 - 결제 완료 후 notifyOrderPaid()가 호출됨
+
+        return toResponse(roomServiceOrder);
+    }
+
+    /**
+     * 결제 완료 후 호출 - Slack 및 어드민 알림 발송
+     */
+    @Override
+    public void notifyOrderPaid(Integer orderId) {
+        RoomServiceOrder roomServiceOrder = roomServiceOrderRepository.findById(orderId)
+            .orElse(null);
+        if (roomServiceOrder == null) return;
+
+        User user = roomServiceOrder.getUser();
+        Room tenantRoom = roomServiceOrder.getRoom();
+        String userId = user != null ? user.getUserId() : "unknown";
+        Integer roomId = tenantRoom != null ? tenantRoom.getRoomId() : null;
+        Integer roomNo = tenantRoom != null ? tenantRoom.getRoomNo() : null;
+        String adminUrlPath = "/admin/roomservice/room_orders?orderId=" + orderId;
+
         try {
             notificationService.notifyAdmins(
                 NotificationType.ORDER_NEW.name(),
-                "룸서비스 주문이 접수되었습니다. userId=" + userId + ", roomId=" + tenantRoom.getRoomId(),
-                userId, TargetType.order, roomServiceOrderId, adminUrlPath
+                "룸서비스 주문이 결제 완료되었습니다. userId=" + userId + ", roomId=" + roomId,
+                userId, TargetType.order, orderId, adminUrlPath
             );
         } catch (Exception e) {
             log.warn("[ORDER][NOTIFY][ADMIN] reason={}", e.getMessage());
         }
 
-        // 주문 접수 → Slack 알림
         try {
             slackNotificationService.sendRoomServiceOrderAlert(
                 userId,
-                tenantRoom.getRoomNo(),
-                tenantRoom.getRoomId(),
-                trimToNull(request.getRoomServiceDesc()),
-                roomServiceOrder.getOrderId()
+                roomNo,
+                roomId,
+                roomServiceOrder.getRoomServiceDesc(),
+                orderId
             );
         } catch (Exception e) {
             log.warn("[ORDER][SLACK] reason={}", e.getMessage());
         }
-
-        return toResponse(roomServiceOrder);
     }
 
     @Override

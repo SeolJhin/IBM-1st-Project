@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import { useAdminRoomServiceOrders } from '../../hooks/useAdminRoomServiceOrders';
@@ -76,8 +82,27 @@ function getDisplayStatus(order) {
   const raw = String(order?.orderSt ?? '')
     .trim()
     .toLowerCase();
-  if (raw === 'delivered' || raw === 'cancelled') return raw;
-  return isPaymentCompleted(order) ? 'paid' : 'requested';
+  const paymentSt = String(order?.paymentSt ?? '')
+    .trim()
+    .toLowerCase();
+
+  if (raw === 'cancelled') return 'cancelled';
+  if (raw === 'delivered') return 'delivered';
+
+  // 결제 완료
+  if (isPaymentCompleted(order)) return 'paid';
+
+  // 결제 취소/실패/미완료(QR 뜨고 결제 안 함) → 모두 취소됨
+  if (
+    paymentSt === 'cancelled' ||
+    paymentSt === 'failed' ||
+    paymentSt === 'pending' ||
+    paymentSt === 'ready'
+  )
+    return 'cancelled';
+
+  // 카드(현장) 결제 등 결제 수단 없이 요청됨
+  return 'requested';
 }
 
 function windowedPages(currentPage, totalPages, radius = 2) {
@@ -115,7 +140,9 @@ function StatusBadge({ status }) {
         ? styles.badgePaid
         : key === 'cancelled'
           ? styles.badgeCancelled
-          : styles.badgeRequested;
+          : key === 'payment_pending'
+            ? styles.badgePaymentPending
+            : styles.badgeRequested;
 
   return (
     <span className={`${styles.badge} ${className}`}>
@@ -227,6 +254,18 @@ export default function AdminRoomServiceOrderList() {
     loadRoomLabels();
   }, [loadRoomLabels]);
 
+  // 10초마다 자동 새로고침 — useRef로 최신 refetch 추적 (클로저 문제 방지)
+  const refetchRef = useRef(refetch);
+  useEffect(() => {
+    refetchRef.current = refetch;
+  }, [refetch]);
+  useEffect(() => {
+    const id = setInterval(() => {
+      refetchRef.current();
+    }, 10000);
+    return () => clearInterval(id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const sourceOrders = useMemo(
     () => (focusedOrder ? [focusedOrder] : orders),
     [focusedOrder, orders]
@@ -245,8 +284,12 @@ export default function AdminRoomServiceOrderList() {
 
     const query = keyword.trim().toLowerCase();
     return sourceOrders.filter((order) => {
-      if (statusFilter !== 'all' && order.orderSt !== statusFilter)
-        return false;
+      // displayStatus 기반 필터
+      if (statusFilter !== 'all') {
+        const ds = getDisplayStatus(order);
+        if (ds !== statusFilter) return false;
+      }
+
       if (!query) return true;
 
       const haystack = [
