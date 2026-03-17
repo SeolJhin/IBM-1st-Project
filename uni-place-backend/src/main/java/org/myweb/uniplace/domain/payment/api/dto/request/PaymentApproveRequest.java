@@ -16,6 +16,7 @@ public class PaymentApproveRequest {
 
     // toss confirm
     private String paymentKey;
+    private String payToken;
 
     private BigDecimal capturedPrice;
 }

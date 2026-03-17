@@ -44,12 +44,13 @@ public class PaymentCallbackController {
         @RequestParam(value = "pg_token", required = false) String pgToken,
         @RequestParam(value = "paymentId", required = false) String naverPaymentId,
         @RequestParam(value = "paymentKey", required = false) String paymentKey,
+        @RequestParam(value = "payToken", required = false) String payToken,
         @RequestParam(value = "orderId", required = false) String orderId,
         @RequestParam(value = "amount", required = false) BigDecimal amount
     ) {
         log.info("[PAYMENT_CALLBACK][APPROVAL] provider={}, pid={}, mu={}", provider, paymentId, merchantUid);
         paymentService.recordReturnedParams(paymentId, toCallbackParamsJson(
-            provider, paymentId, merchantUid, pgToken, naverPaymentId, paymentKey, orderId, amount
+            provider, paymentId, merchantUid, pgToken, naverPaymentId, paymentKey, payToken, orderId, amount
         ));
 
         PaymentApproveRequest req = new PaymentApproveRequest();
@@ -64,6 +65,7 @@ public class PaymentCallbackController {
 
         if ("toss".equalsIgnoreCase(provider)) {
             req.setPaymentKey(paymentKey);
+            req.setPayToken((payToken == null || payToken.isBlank()) ? pgToken : payToken);
         }
 
         try {
@@ -141,6 +143,7 @@ public class PaymentCallbackController {
         String pgToken,
         String naverPaymentId,
         String paymentKey,
+        String payToken,
         String orderId,
         BigDecimal amount
     ) {
@@ -152,6 +155,7 @@ public class PaymentCallbackController {
             params.put("pgToken", pgToken);
             params.put("naverPaymentId", naverPaymentId);
             params.put("paymentKey", paymentKey);
+            params.put("payToken", payToken);
             params.put("orderId", orderId);
             params.put("amount", amount);
             return objectMapper.writeValueAsString(params);
