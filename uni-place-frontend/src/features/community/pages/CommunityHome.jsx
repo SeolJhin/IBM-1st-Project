@@ -31,6 +31,20 @@ const TABS = [
   { key: 'REVIEW', label: '후기' },
 ];
 
+const TITLE_MAP = {
+  ALL: '커뮤니티',
+  FREE: '자유 게시판',
+  QUESTION: '질문 게시판',
+  REVIEW: '후기 게시판',
+};
+
+const SUBTITLE_MAP = {
+  ALL: '자유롭게 소통하고 정보를 나눠보세요.',
+  FREE: '자유롭게 이야기를 나눠보세요.',
+  QUESTION: '궁금한 점을 질문하고 답변을 받아보세요.',
+  REVIEW: '입주 후기를 공유하고 참고해보세요.',
+};
+
 function formatDate(value) {
   if (!value) return '-';
   const d = new Date(value);
@@ -248,7 +262,6 @@ export default function CommunityHome() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
 
-  // ── URL에서 초기값 읽기 ──────────────────────────────────────
   const [activeTab, setActiveTab] = useState(() =>
     normalizeTab(searchParams.get('tab'))
   );
@@ -275,8 +288,8 @@ export default function CommunityHome() {
   const isBanned = String(user?.userSt ?? '').toLowerCase() === 'banned';
 
   const [userStatusModalId, setUserStatusModalId] = useState(null);
+  const [hoveredTab, setHoveredTab] = useState(null);
 
-  // ── 검색 상태: URL params 에서 초기값 읽기 ──────────────────
   const [searchType, setSearchType] = useState(
     () => searchParams.get('searchType') || 'title'
   );
@@ -289,9 +302,6 @@ export default function CommunityHome() {
     return kw ? { type: st, keyword: kw } : { type: '', keyword: '' };
   });
 
-  // ── 브라우저 뒤로가기/앞으로가기 시 URL → 상태 동기화 ───────
-  // 주의: setSearchParams 호출로 인한 searchParams 변경에는 반응하지 않도록
-  // "popstate" 이벤트만 감지
   useEffect(() => {
     const onPop = () => {
       const params = new URLSearchParams(window.location.search);
@@ -310,7 +320,6 @@ export default function CommunityHome() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  // ── 글 작성시 코드값 ─────────────────────────────────────────
   const effectiveCode = (() => {
     if (activeTab === 'FREE') return 'FREE';
     if (activeTab === 'QUESTION') return 'QUESTION';
@@ -334,7 +343,6 @@ export default function CommunityHome() {
       if (activeTab === 'REVIEW') {
         data = await reviewApi.getAll({ page: page - 1, size: 10 });
         const content = Array.isArray(data?.content) ? data.content : [];
-        // 리뷰도 최신순 정렬
         const sortedReview = [...content].sort((a, b) => {
           const at = a?.createdAt ?? '';
           const bt = b?.createdAt ?? '';
@@ -366,21 +374,16 @@ export default function CommunityHome() {
         : Array.isArray(data)
           ? data
           : [];
-
       const sorted = [...content].sort((a, b) => {
-        // 1순위: 공지(importance=Y) 먼저
         const aNotice = a?.importance === 'Y' ? 0 : 1;
         const bNotice = b?.importance === 'Y' ? 0 : 1;
         if (aNotice !== bNotice) return aNotice - bNotice;
-        // 2순위: 작성일 내림차순
         const at = a?.createdAt ?? '';
         const bt = b?.createdAt ?? '';
         if (bt > at) return 1;
         if (bt < at) return -1;
-        // 3순위: boardId 내림차순 (동일 시각일 때)
         return (b?.boardId ?? 0) - (a?.boardId ?? 0);
       });
-
       setItems(sorted);
       setTotalPages(Math.max(1, Number(data?.totalPages ?? 1)));
     } catch (e) {
@@ -395,12 +398,10 @@ export default function CommunityHome() {
   useEffect(() => {
     load();
   }, [load]);
-
   useEffect(() => {
     if (!canOpenWriter) setShowWriter(false);
   }, [canOpenWriter]);
 
-  // ── 탭 클릭: 검색 초기화 + URL 업데이트 ─────────────────────
   const handleTabChange = (tabKey) => {
     setActiveTab(tabKey);
     setShowWriter(false);
@@ -413,7 +414,6 @@ export default function CommunityHome() {
     setSearchParams(next, { replace: true });
   };
 
-  // ── 검색 실행 ────────────────────────────────────────────────
   const handleSearch = () => {
     setPage(1);
     setActiveSearch({ type: searchType, keyword: searchKeyword });
@@ -426,7 +426,6 @@ export default function CommunityHome() {
     setSearchParams(next, { replace: true });
   };
 
-  // ── 검색 초기화 ──────────────────────────────────────────────
   const handleSearchReset = () => {
     setSearchKeyword('');
     setActiveSearch({ type: '', keyword: '' });
@@ -529,7 +528,6 @@ export default function CommunityHome() {
     e.stopPropagation();
     if (!isLoggedIn) return;
     if (likePendingIds.has(itemId)) return;
-
     setLikePendingIds((prev) => new Set([...prev, itemId]));
 
     if (activeTab === 'REVIEW') {
@@ -543,7 +541,6 @@ export default function CommunityHome() {
         return;
       }
       const wasLiked = item.likedByMe;
-      // 낙관적 업데이트
       setItems((prev) =>
         prev.map((i) =>
           i.reviewId === itemId
@@ -560,7 +557,6 @@ export default function CommunityHome() {
         else await reviewApi.likeReview(itemId);
       } catch (err) {
         console.warn('review like error:', err?.message);
-        // 실패 시 롤백
         setItems((prev) =>
           prev.map((i) =>
             i.reviewId === itemId
@@ -592,7 +588,6 @@ export default function CommunityHome() {
       return;
     }
     const wasLiked = item.likedByMe;
-    // 낙관적 업데이트
     setItems((prev) =>
       prev.map((i) =>
         (i.boardId ?? i.id) === itemId
@@ -609,7 +604,6 @@ export default function CommunityHome() {
       else await communityApi.likeBoard(itemId);
     } catch (err) {
       console.warn('board like error:', err?.message);
-      // 실패 시 롤백
       setItems((prev) =>
         prev.map((i) =>
           (i.boardId ?? i.id) === itemId
@@ -630,7 +624,6 @@ export default function CommunityHome() {
     }
   };
 
-  // ── 글 클릭: 현재 URL params(tab + 검색) 보존해서 이동 ──────
   const handleBoardClick = (boardId) => {
     const qs = searchParams.toString();
     const item = items.find((i) => (i.boardId ?? i.id) === boardId);
@@ -646,33 +639,50 @@ export default function CommunityHome() {
     <div className={styles.page}>
       <Header />
 
-      {/* 헤더 - PageHeader와 동일한 전체 너비 스타일 */}
-      <div className={styles.head}>
-        <div className={styles.headInner}>
-          <h1 className={styles.title}>커뮤니티</h1>
-          <p className={styles.sub}>
-            전체, 자유, 질문, 후기 게시글을 조회하고 작성할 수 있습니다.
-          </p>
+      {/* PageHeader 스타일 헤더 */}
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderInner}>
+          <h1 className={styles.pageHeaderTitle}>{TITLE_MAP[activeTab]}</h1>
+          <p className={styles.pageHeaderSubtitle}>{SUBTITLE_MAP[activeTab]}</p>
+          <div className={styles.pageHeaderTabs}>
+            {TABS.map((tab) => {
+              const isActive = activeTab === tab.key;
+              const isHovered = hoveredTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  className={[
+                    styles.pageHeaderTabBase,
+                    isActive
+                      ? styles.pageHeaderTabActive
+                      : styles.pageHeaderTabDefault,
+                    isHovered && !isActive ? styles.pageHeaderTabHover : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={() => handleTabChange(tab.key)}
+                  onMouseEnter={() => setHoveredTab(tab.key)}
+                  onMouseLeave={() => setHoveredTab(null)}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       <main className={styles.main}>
-        {/* 탭 + 글쓰기 버튼 */}
-        <div className={styles.topBar}>
-          <div className={styles.tabs}>
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                className={`${styles.tabBtn} ${activeTab === tab.key ? styles.tabBtnActive : ''}`}
-                onClick={() => handleTabChange(tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        {/* 가운데 정렬 제목 */}
+        <div className={styles.pageHead}>
+          <h2 className={styles.pageTitle}>{TITLE_MAP[activeTab]}</h2>
+        </div>
 
-          {canOpenWriter && (
+        {/* 글쓰기 버튼 */}
+        {canOpenWriter && (
+          <div className={styles.topBar}>
             <button
               type="button"
               className={styles.writeToggleBtn}
@@ -680,77 +690,39 @@ export default function CommunityHome() {
             >
               {showWriter ? '✕ 닫기' : '✏ 글쓰기'}
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* 검색 바 */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            margin: '12px 0',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}
-        >
+        <div className={styles.searchBar}>
           <select
+            className={styles.searchSelect}
             value={searchType}
             onChange={(e) => setSearchType(e.target.value)}
-            style={{
-              padding: '8px 10px',
-              borderRadius: 8,
-              border: '1px solid #ddd',
-              fontSize: 14,
-              cursor: 'pointer',
-            }}
           >
             <option value="title">제목</option>
             <option value="nickname">닉네임</option>
           </select>
           <input
+            className={styles.searchInput}
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="검색어 입력"
-            style={{
-              padding: '8px 12px',
-              borderRadius: 8,
-              border: '1px solid #ddd',
-              fontSize: 14,
-              minWidth: 200,
-              flex: 1,
-            }}
+            placeholder="검색어를 입력하세요"
           />
           <button
             type="button"
+            className={styles.searchBtn}
             onClick={handleSearch}
-            style={{
-              padding: '8px 16px',
-              borderRadius: 8,
-              background: '#111',
-              color: '#fff',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 14,
-              fontWeight: 600,
-            }}
           >
             검색
           </button>
           {activeSearch.keyword && (
             <button
               type="button"
+              className={styles.searchResetBtn}
               onClick={handleSearchReset}
-              style={{
-                padding: '8px 14px',
-                borderRadius: 8,
-                background: '#f3f4f6',
-                color: '#444',
-                border: '1px solid #ddd',
-                cursor: 'pointer',
-                fontSize: 14,
-              }}
             >
               초기화
             </button>
@@ -833,7 +805,6 @@ export default function CommunityHome() {
             정지(banned) 상태의 계정은 커뮤니티 글을 작성할 수 없습니다.
           </div>
         )}
-
         {!showWriter && error && <div className={styles.error}>{error}</div>}
 
         {/* 목록 */}

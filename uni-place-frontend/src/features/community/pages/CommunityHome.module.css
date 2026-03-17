@@ -13,72 +13,179 @@
   padding: 28px 24px 80px;
 }
 
-/* ── 헤더 ─────────────────────────────────────────────────── */
-.head {
+/* ── PageHeader 스타일 헤더 ──────────────────────────────── */
+.pageHeader {
   background-color: #fff;
   border-bottom: 1px solid #e9ecef;
-  padding-top: 100px;
-  width: 100%;
+  padding-top: 70px;
 }
-.headInner {
+
+.pageHeaderInner {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 24px 0 24px;
+  padding: 0 24px;
 }
-.title {
+
+.pageHeaderTitle {
   font-size: 22px;
   font-weight: 800;
   color: #111827;
   margin: 0 0 4px;
 }
-.sub {
+
+.pageHeaderSubtitle {
   font-size: 13.5px;
   color: #6b7280;
   font-weight: 400;
   margin: 0 0 20px;
 }
 
-/* ── 탭 + 글쓰기 버튼 ─────────────────────────────────────── */
-.topBar {
+.pageHeaderTabs {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  gap: 12px;
+  gap: 0;
 }
 
-.tabs {
+.pageHeaderTabBase {
+  padding: 10px 20px;
+  font-size: 13.5px;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.pageHeaderTabDefault {
+  color: #6b7280;
+}
+
+.pageHeaderTabActive {
+  color: #1a4fd6;
+  border-bottom-color: #1a4fd6;
+}
+
+.pageHeaderTabHover {
+  color: #1a4fd6;
+}
+
+/* ── 글쓰기 버튼 영역 ─────────────────────────────────────── */
+.pageHead {
+  margin-bottom: 20px;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  text-align: center;
+  margin-top: 25px;
+}
+
+.topBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+/* ── 검색 바 ──────────────────────────────────────────────── */
+.searchBar {
   display: flex;
   gap: 8px;
+  align-items: center;
+  margin: 0 0 20px;
   flex-wrap: wrap;
 }
 
-.tabBtn {
-  padding: 8px 20px;
-  border-radius: 20px;
-  border: 1.5px solid #d1d5db;
-  background: #fff;
-  color: #374151;
+.searchSelect {
+  height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid #c8bfb0;
+  border-radius: 8px;
   font-size: 14px;
-  font-weight: 500;
+  font-family: inherit;
+  background: #fff;
+  color: var(--muted);
   cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2348535F' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+.searchSelect:focus {
+  border-color: var(--primary);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+  height: 40px;
+  padding: 0 14px;
+  border: 1.5px solid #c8bfb0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  background: #fff;
+  color: var(--text);
+}
+.searchInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(217, 173, 91, 0.15);
+}
+.searchInput::placeholder {
+  color: #aaa;
+}
+
+.searchBtn {
+  height: 40px;
+  padding: 0 20px;
+  background: var(--primary);
+  color: #fff;
+  border: 1px solid rgb(160, 144, 121);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s;
+}
+.searchBtn:hover {
+  background: var(--accent);
+}
+
+.searchResetBtn {
+  height: 40px;
+  padding: 0 16px;
+  background: var(--surface);
+  color: var(--muted);
+  border: 1.5px solid #c8bfb0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
   transition: all 0.18s;
 }
-.tabBtn:hover {
-  border-color: #111;
-  color: #111;
-}
-.tabBtnActive {
-  background: #111 !important;
-  color: #fff !important;
-  border-color: #111 !important;
+.searchResetBtn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .writeToggleBtn {
   padding: 9px 22px;
-  background: #111;
+  background: var(--primary);
   color: #fff;
-  border: none;
+  border: 1px solid rgb(160, 144, 121);
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
@@ -88,7 +195,7 @@
   flex-shrink: 0;
 }
 .writeToggleBtn:hover {
-  background: #333;
+  background: var(--accent);
 }
 
 /* ── 글쓰기 폼 ────────────────────────────────────────────── */
