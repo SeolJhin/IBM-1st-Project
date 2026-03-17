@@ -602,7 +602,11 @@ function ComplainInline() {
   if (loading) return <div className={styles.loading}>불러오는 중…</div>;
   if (error) return <div className={styles.error}>{error}</div>;
 
-  const STATUS_MAP = { in_progress: '처리중', resolved: '처리완료' };
+  const STATUS_MAP = {
+    received: '접수됨',
+    in_progress: '처리중',
+    resolved: '처리완료',
+  };
 
   return (
     <div>
