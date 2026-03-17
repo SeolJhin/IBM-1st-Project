@@ -250,12 +250,12 @@ VALUES
 INSERT INTO refresh_tokens
 (refresh_token_id, user_id, token_hash, device_id, user_agent, ip, issued_at, expires_at, revoked, revoked_at, last_used_at)
 VALUES
-('rtk-0001-0001-0001-000000000001','jinung2','hash_a1','WEB-admin-1','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
-('rtk-0001-0001-0001-000000000002','hyunji2','hash_a2','WEB-admin-2','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
-('rtk-0001-0001-0001-000000000003','user1','hash_u1','WEB-user-1','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
-('rtk-0001-0001-0001-000000000004','user2','hash_u2','WEB-user-2','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
-('rtk-0001-0001-0001-000000000005','user3','hash_u3','WEB-user-3','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
-('rtk-0001-0001-0001-000000000006','user10','hash_u10','WEB-user-10','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),1,NOW(),NOW());
+('rtk-0001-0001-0001-000000000001','jinung2','hash_a1','WEB-admin-1','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
+('rtk-0001-0001-0001-000000000002','hyunji2','hash_a2','WEB-admin-2','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
+('rtk-0001-0001-0001-000000000003','user1','hash_u1','WEB-user-1','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
+('rtk-0001-0001-0001-000000000004','user2','hash_u2','WEB-user-2','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
+('rtk-0001-0001-0001-000000000005','user3','hash_u3','WEB-user-3','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
+('rtk-0001-0001-0001-000000000006','user10','hash_u10','WEB-user-10','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),1,NOW(),NOW());
 
 INSERT INTO social_accounts (social_account_id, user_id, provider, provider_user_id, provider_email)
 VALUES
@@ -267,9 +267,9 @@ VALUES
 -- 4) property/system/file (buildings 1~8)
 -- =========================================================
 INSERT INTO building (building_id, building_nm, building_addr, building_desc, land_category, build_size, building_usage, exist_elv, parking_capacity, building_lessor_nm, building_lessor_tel, building_lessor_addr, building_lessor_rrn, delete_yn) VALUES
-(1, 'Uniplace A', 'Seoul A-ro 101', 'Main building A', 'commercial', 123.45, 'residence', 'Y', 45, '源嫄대Ъ', '010-9000-0001', '?쒖슱??媛뺣궓援??뚰뿤?濡?101', '650101-1234567', 'N'),
-(2, 'Uniplace B', 'Seoul B-ro 202', 'Main building B', 'commercial',  98.10, 'residence', 'Y', 20, '?대??숈궛', '010-9000-0002', '?쒖슱???쒖큹援??쒖큹?濡?202', '670202-1234567', 'N'),
-(3, 'Uniplace C', 'Seoul C-ro 303', 'Main building C', 'commercial',  88.80, 'mixed',     'N', 12, '諛뺤엫?', '010-9000-0003', '?쒖슱??留덊룷援?留덊룷?濡?303', '690303-1234567', 'N');
+(1, 'Uniplace A', 'Seoul A-ro 101', 'Main building A', 'commercial', 123.45, 'residence', 'Y', 45, '김건물', '010-9000-0001', '서울시 강남구 테헤란로 101', '650101-1234567', 'N'),
+(2, 'Uniplace B', 'Seoul B-ro 202', 'Main building B', 'commercial',  98.10, 'residence', 'Y', 20, '이부동산', '010-9000-0002', '서울시 서초구 서초대로 202', '670202-1234567', 'N'),
+(3, 'Uniplace C', 'Seoul C-ro 303', 'Main building C', 'commercial',  88.80, 'mixed',     'N', 12, '박임대', '010-9000-0003', '서울시 마포구 마포대로 303', '690303-1234567', 'N');
 
 /* base rooms (keep original 6) */
 INSERT INTO rooms
@@ -369,7 +369,7 @@ INSERT INTO product (prod_id, prod_nm, prod_price, prod_stock, code, prod_desc, 
 (4, 'Room Cleaning',  30000,   50, 'PROD_CLEAN', 'One-time cleaning', 'on_sale', 2),
 (5, 'Laundry Service',20000,   40, 'PROD_CLEAN', 'Laundry package',   'sold_out',2);
 
-/* V2: building蹂??ш퀬 (base) */
+/* V2: building별 재고 (base) */
 INSERT INTO product_building_stock (prod_id, building_id, stock) VALUES
 (1, 1, 50), (1, 2, 30),
 (2, 1, 20), (2, 2, 15),
@@ -466,7 +466,7 @@ INSERT INTO complain (comp_id, comp_title, user_id, comp_ctnt, comp_st, code, fi
 (1, 'Noise at night',     'user16', 'Please check 3rd floor noise.',   'in_progress', 'SUP_GENERAL', 'N', 'N'),
 (2, 'Billing duplicated', 'user3',  'I think payment was duplicated.', 'resolved',    'SUP_BILLING', 'N', 'N');
 
-/* reviews (湲곕낯 3媛? */
+/* reviews (기본 3개) */
 INSERT INTO reviews
 (review_id, user_id, room_id, rating, review_title, review_ctnt, code, file_ck, reply_ck)
 VALUES
@@ -483,7 +483,7 @@ VALUES
 (4, 'user11', 'NOTI_NOTICE', 'jinung2', 'Your reply got a like.',             'N', 1,    'reply',  '/community/boards/1');
 
 -- =========================================================
--- 9) cart (V2: building_id ?ы븿)
+-- 9) cart (V2: building_id 포함)
 -- =========================================================
 INSERT INTO cart (cart_id, user_id) VALUES
 (1, 'user13'),
@@ -521,7 +521,7 @@ INSERT INTO charge_status (status_cd, `description`, is_terminal, display_order,
 ('overdue', 'overdue',  0, 3, 1);
 
 -- =========================================================
--- 11) payments/orders (V2: order_items.building_id ?ы븿)
+-- 11) payments/orders (V2: order_items.building_id 포함)
 -- =========================================================
 INSERT INTO payment
 (payment_id, user_id, service_goods_id, target_type, target_id, currency, total_price, captured_price, payment_method_id, provider, provider_payment_id, merchant_uid, idempotency_key, tax_scope_price, tax_ex_scope_price, tax_free_price, payment_st, paid_at)
@@ -542,7 +542,7 @@ INSERT INTO orders (order_id, user_id, order_st, total_price, payment_id, order_
 (4, 'user7', 'paid',      21000, 7, NOW()),
 (5, 'user8', 'paid',      15000, 8, NOW());
 
-/* V2: order_items building_id ?ы븿 */
+/* V2: order_items building_id 포함 */
 INSERT INTO order_items (order_item_id, order_id, prod_id, building_id, order_quantity, order_price) VALUES
 (1, 1, 1, 1, 2,  4500),
 (2, 1, 4, 1, 1, 30000),
@@ -593,41 +593,41 @@ VALUES
 (8, 8, 'tosspay', 'APPROVE_OK',   'pref_008', 'uniplace://pay', 'https://example.com/return/8', JSON_OBJECT('state','returned'), JSON_OBJECT('ready',true),  JSON_OBJECT('approved',true),  NULL,        NULL);
 
 -- =========================================================
--- PART B. 異붽? ?곹뭹 + 由щ럭 移댄뀒怨좊━/由щ럭 ?섑뵆 (V2 ?명솚)
+-- PART B. 추가 상품 + 리뷰 카테고리/리뷰 샘플 (V2 호환)
 -- =========================================================
 
-/* B-1. PRODUCT_CATEGORY 怨듯넻肄붾뱶 異붽? */
+/* B-1. PRODUCT_CATEGORY 공통코드 추가 */
 INSERT INTO common_code (group_code, code, code_value, description, display_order, is_active) VALUES
-('PRODUCT_CATEGORY', 'PROD_DAILY',  '?앺솢?⑺뭹',  '?앺솢?⑺뭹 移댄뀒怨좊━',     3, 1),
-('PRODUCT_CATEGORY', 'PROD_ELEC',   '?꾩옄/媛??, '?뚰삎媛??移댄뀒怨좊━',     4, 1),
-('PRODUCT_CATEGORY', 'PROD_HEALTH', '嫄닿컯/?꾩깮', '嫄닿컯쨌?꾩깮?⑺뭹 移댄뀒怨좊━',5, 1);
+('PRODUCT_CATEGORY', 'PROD_DAILY',  '생활용품',  '생활용품 카테고리',     3, 1),
+('PRODUCT_CATEGORY', 'PROD_ELEC',   '전자/가전', '소형가전 카테고리',     4, 1),
+('PRODUCT_CATEGORY', 'PROD_HEALTH', '건강/위생', '건강·위생용품 카테고리',5, 1);
 
-/* B-2. 由щ럭 移댄뀒怨좊━ 洹몃９/肄붾뱶 異붽? */
+/* B-2. 리뷰 카테고리 그룹/코드 추가 */
 INSERT INTO group_common_code (group_code, group_code_name, description, is_active)
 VALUES ('REVIEW_CATEGORY', 'Review Category', 'Review classification', 1);
 
 INSERT INTO common_code (group_code, code, code_value, description, display_order, is_active) VALUES
-('REVIEW_CATEGORY', 'REV_ROOM',     '諛??곹깭',     '諛?而⑤뵒?샕룹껌寃곕룄 由щ럭', 1, 1),
-('REVIEW_CATEGORY', 'REV_FACILITY', '?쒖꽕 ?몄쓽',   '怨듭슜?쒖꽕쨌?몄쓽?쒖꽕 由щ럭', 2, 1),
-('REVIEW_CATEGORY', 'REV_MGMT',     '愿由??쒕퉬??, '愿由ъ궗臾댁냼쨌?쒕퉬??由щ럭', 3, 1),
-('REVIEW_CATEGORY', 'REV_LOCATION', '?낆?/援먰넻',   '?꾩튂쨌援먰넻 ?몄쓽??由щ럭',  4, 1);
+('REVIEW_CATEGORY', 'REV_ROOM',     '방 상태',     '방 컨디션·청결도 리뷰', 1, 1),
+('REVIEW_CATEGORY', 'REV_FACILITY', '시설 편의',   '공용시설·편의시설 리뷰', 2, 1),
+('REVIEW_CATEGORY', 'REV_MGMT',     '관리 서비스', '관리사무소·서비스 리뷰', 3, 1),
+('REVIEW_CATEGORY', 'REV_LOCATION', '입지/교통',   '위치·교통 편의성 리뷰',  4, 1);
 
-/* B-3. ?좉퇋 ?곹뭹 (prod_id 6~17 怨좎젙 ?쎌엯: AUTO_INCREMENT 瑗ъ엫 諛⑹?) */
+/* B-3. 신규 상품 (prod_id 6~17 고정 삽입: AUTO_INCREMENT 꼬임 방지) */
 INSERT INTO product (prod_id, prod_nm, prod_price, prod_stock, code, prod_desc, prod_st, affiliate_id) VALUES
-(6,  '利됱꽍 而듬씪硫?(?좊씪硫?', 1500, 200, 'PROD_FOOD',  '?띿떖 ?좊씪硫?而?65g. ?먯랬???꾩닔 媛꾪렪??', 'on_sale', 1),
-(7,  '?앹닔 2L 6???명듃',     4900, 100, 'PROD_FOOD',  '?쒖＜ ?쇰떎??2L x 6蹂?臾띠쓬.',             'on_sale', 1),
-(8,  '媛꾪렪 ?꾩떆??(鍮꾨퉼諛?', 4500,  80, 'PROD_FOOD',  'CJ ?뉖컲 而듬컲 鍮꾨퉼諛?280g.',              'on_sale', 1),
-(9,  '?명긽?몄젣 (由ы걧 1L)',   7900,  60, 'PROD_DAILY', '由ы걧 ?뚯썙?щ┛ ?쒕읆/?쇰컲寃몄슜 1L.',         'on_sale', 2),
-(10, '?붿옣吏 30濡?臾띠쓬',    12000,  50, 'PROD_DAILY', '源⑤걮?쒕굹???쒖닔 3寃?30濡?',              'on_sale', 2),
-(11, '二쇰갑?몄젣 (?곹릟 500ml)', 3500, 120, 'PROD_DAILY', 'LG?앷굔 ?곹릟 ?뚮윭??500ml.',             'on_sale', 1),
-(12, '臾쇨구??泥?냼??50留?,   5500,  70, 'PROD_CLEAN', '?щ┛??臾쇨구??泥?냼?????50留?',         'on_sale', 2),
-(13, '?뺤떎 泥?냼 ?곗뒋 40留?,  4200,  90, 'PROD_CLEAN', '?뺤떎쨌?붿옣???꾩슜 ??퇏 泥?냼?곗뒋 40留?',    'on_sale', 2),
-(14, '硫?고꺆 4援?(1.5m)',    9900,  40, 'PROD_ELEC',  '媛쒕퀎 ?ㅼ쐞移?4援?硫?고꺆 1.5m.',           'on_sale', 1),
-(15, '留덉뒪??KF80 50留?,    15000, 150, 'PROD_HEALTH','KF80 蹂닿굔??留덉뒪??50留?媛쒕퀎?ъ옣.',        'on_sale', NULL),
-(16, '?먯냼?낆젣 500ml',       5900, 110, 'PROD_HEALTH','?먰깂??62% ?먯냼?낆젣 500ml ?뚰봽??',       'on_sale', NULL),
-(17, '鍮꾪?誘퍬 1000mg 60??, 12800,  55, 'PROD_HEALTH','怨좏븿??鍮꾪?誘퍬 1000mg 60?? 2媛쒖썡遺?',   'on_sale', NULL);
+(6,  '즉석 컵라면 (신라면)', 1500, 200, 'PROD_FOOD',  '농심 신라면 컵 65g. 자취생 필수 간편식.', 'on_sale', 1),
+(7,  '생수 2L 6입 세트',     4900, 100, 'PROD_FOOD',  '제주 삼다수 2L x 6병 묶음.',             'on_sale', 1),
+(8,  '간편 도시락 (비빔밥)', 4500,  80, 'PROD_FOOD',  'CJ 햇반 컵반 비빔밥 280g.',              'on_sale', 1),
+(9,  '세탁세제 (리큐 1L)',   7900,  60, 'PROD_DAILY', '리큐 파워크린 드럼/일반겸용 1L.',         'on_sale', 2),
+(10, '화장지 30롤 묶음',    12000,  50, 'PROD_DAILY', '깨끗한나라 순수 3겹 30롤.',              'on_sale', 2),
+(11, '주방세제 (퐁퐁 500ml)', 3500, 120, 'PROD_DAILY', 'LG생건 퐁퐁 플러스 500ml.',             'on_sale', 1),
+(12, '물걸레 청소포 50매',   5500,  70, 'PROD_CLEAN', '크린랩 물걸레 청소포 대형 50매.',         'on_sale', 2),
+(13, '욕실 청소 티슈 40매',  4200,  90, 'PROD_CLEAN', '욕실·화장실 전용 항균 청소티슈 40매.',    'on_sale', 2),
+(14, '멀티탭 4구 (1.5m)',    9900,  40, 'PROD_ELEC',  '개별 스위치 4구 멀티탭 1.5m.',           'on_sale', 1),
+(15, '마스크 KF80 50매',    15000, 150, 'PROD_HEALTH','KF80 보건용 마스크 50매 개별포장.',        'on_sale', NULL),
+(16, '손소독제 500ml',       5900, 110, 'PROD_HEALTH','에탄올 62% 손소독제 500ml 펌프형.',       'on_sale', NULL),
+(17, '비타민C 1000mg 60정', 12800,  55, 'PROD_HEALTH','고함량 비타민C 1000mg 60정. 2개월분.',   'on_sale', NULL);
 
-/* B-4. ?좉퇋 ?곹뭹 鍮뚮뵫蹂??ш퀬 (1~2 鍮뚮뵫 湲곗?) */
+/* B-4. 신규 상품 빌딩별 재고 (1~2 빌딩 기준) */
 INSERT INTO product_building_stock (prod_id, building_id, stock) VALUES
 (6,  1, 80), (6,  2, 70),
 (7,  1, 40), (7,  2, 35),
@@ -642,16 +642,16 @@ INSERT INTO product_building_stock (prod_id, building_id, stock) VALUES
 (16, 1, 45), (16, 2, 42),
 (17, 1, 22), (17, 2, 20);
 
-/* B-5. 異붽? 由щ럭 (REV_* ?ъ슜) */
+/* B-5. 추가 리뷰 (REV_* 사용) */
 INSERT INTO reviews (user_id, room_id, rating, review_title, review_ctnt, code, file_ck, reply_ck) VALUES
-('user5',  1, 5, '源붾걫?섍퀬 梨꾧킅 理쒓퀬?덉슂',         '1痢듭씤??李쎈Ц???ш퀬 ?⑦뼢?대씪 ?뉖튆?????ㅼ뼱??',     'REV_ROOM',     'N', 'N'),
-('user6',  2, 4, '?꾩튂 ?명븯怨?諛??곹깭 醫뗭븘??,      '二쇰? 留쏆쭛??留롪퀬 諛⑸룄 泥?껐?섍쾶 ?좎??⑸땲??',         'REV_LOCATION', 'N', 'N'),
-('user7',  3, 5, '怨듭슜?쒖꽕???덈Т ?몃━?댁슂',        '?쇱슫吏? 誘명똿猷몄씠 ??媛뽰떠???ы깮洹쇰Т?섍린 理쒓퀬?덉슂.', 'REV_FACILITY', 'N', 'N'),
-('user8',  4, 3, '?④린 ?숇컯?쇰줈 ?섏걯吏 ?딆븘??,     '?ㅽ뀒????낆쑝濡??④린??愿쒖갖?쇰굹 ?섎궔??遺議깊빐??',   'REV_MGMT',     'N', 'N'),
-('user9',  5, 4, '?볤퀬 苡뚯쟻??諛⑹씠?먯슂',            '2?몄떎?대씪 怨듦컙???ъ쑀濡?퀬 ?뺤떎??源⑤걮?댁슂.',         'REV_ROOM',     'N', 'N'),
-('user10', 1, 4, '泥섏쓬 ?먯랬?섍린????醫뗭? ?섍꼍',    '愿由ъ궗臾댁냼媛 移쒖젅?섍퀬 二쇰????몄쓽?먮룄 媛源뚯썙??',    'REV_LOCATION', 'N', 'N'),
-('user11', 2, 5, '?ш퀎??寃곗젙?덉뒿?덈떎',             '1??嫄곗＜?섎㈃??遺덊렪???먯씠 嫄곗쓽 ?놁뿀?댁슂.',           'REV_FACILITY', 'N', 'N'),
-('user12', 3, 4, '媛寃??鍮?留뚯”?ㅻ윭???좏깮',       '愿由щ퉬???명꽣?룹씠 ?ы븿?섏뼱 留ㅼ슦 寃쎌젣?곸씠?먯슂.',       'REV_MGMT',     'N', 'N');
+('user5',  1, 5, '깔끔하고 채광 최고예요',         '1층인데 창문이 크고 남향이라 햇빛이 잘 들어요.',     'REV_ROOM',     'N', 'N'),
+('user6',  2, 4, '위치 편하고 방 상태 좋아요',      '주변 맛집도 많고 방도 청결하게 유지됩니다.',         'REV_LOCATION', 'N', 'N'),
+('user7',  3, 5, '공용시설이 너무 편리해요',        '라운지와 미팅룸이 잘 갖춰져 재택근무하기 최고예요.', 'REV_FACILITY', 'N', 'N'),
+('user8',  4, 3, '단기 숙박으로 나쁘지 않아요',     '스테이 타입으로 단기엔 괜찮으나 수납이 부족해요.',   'REV_MGMT',     'N', 'N'),
+('user9',  5, 4, '넓고 쾌적한 방이에요',            '2인실이라 공간이 여유롭고 욕실도 깨끗해요.',         'REV_ROOM',     'N', 'N'),
+('user10', 1, 4, '처음 자취하기에 딱 좋은 환경',    '관리사무소가 친절하고 주변에 편의점도 가까워요.',    'REV_LOCATION', 'N', 'N'),
+('user11', 2, 5, '재계약 결정했습니다',             '1년 거주하면서 불편한 점이 거의 없었어요.',           'REV_FACILITY', 'N', 'N'),
+('user12', 3, 4, '가격 대비 만족스러운 선택',       '관리비에 인터넷이 포함되어 매우 경제적이에요.',       'REV_MGMT',     'N', 'N');
 
 
 INSERT IGNORE INTO group_common_code (group_code, group_code_name, description, is_active) VALUES
@@ -659,20 +659,20 @@ INSERT IGNORE INTO group_common_code (group_code, group_code_name, description, 
 ('QNA_CATEGORY',      'QnA Category',      'QnA type category',      1);
 
 INSERT IGNORE INTO common_code (group_code, code, code_value, description, display_order, is_active) VALUES
-('COMPLAIN_CATEGORY', 'COMP_PERSONAL',  '媛쒖씤',      'Personal complain',  1, 1),
-('COMPLAIN_CATEGORY', 'COMP_FACILITY',  '?쒖꽕',      'Facility complain',  2, 1),
-('COMPLAIN_CATEGORY', 'COMP_NOISE',     '?뚯쓬',      'Noise complain',     3, 1),
-('COMPLAIN_CATEGORY', 'COMP_CONTRACT',  '?낆＜/怨꾩빟', 'Contract complain',  4, 1),
-('COMPLAIN_CATEGORY', 'COMP_SAFETY',    '?덉쟾',      'Safety complain',    5, 1),
-('COMPLAIN_CATEGORY', 'COMP_ETC',       '湲고?',      'Other complain',     6, 1);
+('COMPLAIN_CATEGORY', 'COMP_PERSONAL',  '개인',      'Personal complain',  1, 1),
+('COMPLAIN_CATEGORY', 'COMP_FACILITY',  '시설',      'Facility complain',  2, 1),
+('COMPLAIN_CATEGORY', 'COMP_NOISE',     '소음',      'Noise complain',     3, 1),
+('COMPLAIN_CATEGORY', 'COMP_CONTRACT',  '입주/계약', 'Contract complain',  4, 1),
+('COMPLAIN_CATEGORY', 'COMP_SAFETY',    '안전',      'Safety complain',    5, 1),
+('COMPLAIN_CATEGORY', 'COMP_ETC',       '기타',      'Other complain',     6, 1);
 
 INSERT IGNORE INTO common_code (group_code, code, code_value, description, display_order, is_active) VALUES
-('QNA_CATEGORY', 'QNA_CONTRACT',    '怨꾩빟 臾몄쓽', 'Contract QnA',     1, 1),
-('QNA_CATEGORY', 'QNA_PAYMENT',     '寃곗젣/?섎텋', 'Payment QnA',      2, 1),
-('QNA_CATEGORY', 'QNA_FACILITY',    '?쒖꽕 ?댁슜', 'Facility QnA',     3, 1),
-('QNA_CATEGORY', 'QNA_ROOMSERVICE', '猷몄꽌鍮꾩뒪',  'Room service QnA', 4, 1),
-('QNA_CATEGORY', 'QNA_MOVEINOUT',   '?낆＜/?댁떎', 'Move in/out QnA',  5, 1),
-('QNA_CATEGORY', 'QNA_ETC',         '湲고?',      'Other QnA',        6, 1);
+('QNA_CATEGORY', 'QNA_CONTRACT',    '계약 문의', 'Contract QnA',     1, 1),
+('QNA_CATEGORY', 'QNA_PAYMENT',     '결제/환불', 'Payment QnA',      2, 1),
+('QNA_CATEGORY', 'QNA_FACILITY',    '시설 이용', 'Facility QnA',     3, 1),
+('QNA_CATEGORY', 'QNA_ROOMSERVICE', '룸서비스',  'Room service QnA', 4, 1),
+('QNA_CATEGORY', 'QNA_MOVEINOUT',   '입주/퇴실', 'Move in/out QnA',  5, 1),
+('QNA_CATEGORY', 'QNA_ETC',         '기타',      'Other QnA',        6, 1);
 
 
 -- =========================================================
@@ -680,7 +680,6 @@ INSERT IGNORE INTO common_code (group_code, code, code_value, description, displ
 -- =========================================================
 SET FOREIGN_KEY_CHECKS = 1;
 SET SQL_SAFE_UPDATES = 1;
-
 
 
 
