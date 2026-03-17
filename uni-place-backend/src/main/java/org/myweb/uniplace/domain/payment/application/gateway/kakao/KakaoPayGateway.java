@@ -77,6 +77,17 @@ public class KakaoPayGateway implements PaymentGateway {
             .build();
 
         KakaoApproveResponse kakaoRes = client.approve(kakaoReq);
+        if (!hasText(kakaoRes.getTid())) {
+            throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
+        }
+        if (!hasText(kakaoRes.getPartner_order_id()) || !kakaoRes.getPartner_order_id().equals(request.getOrderId())) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+        if (hasText(request.getUserId())
+            && hasText(kakaoRes.getPartner_user_id())
+            && !kakaoRes.getPartner_user_id().equals(request.getUserId())) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
 
         return PaymentGatewayApproveResponse.builder()
             .providerPaymentId(kakaoRes.getTid())
@@ -90,8 +101,11 @@ public class KakaoPayGateway implements PaymentGateway {
 
     @Override
     public PaymentGatewayRefundResponse refund(PaymentGatewayRefundRequest request) {
+        if (!hasText(request.getProviderPaymentId())) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
         int cancelAmount = toIntExact(request.getRefundPrice(), "refundPrice");
-        int cancelTaxFreeAmount = 0;
+        int cancelTaxFreeAmount = resolveCancelTaxFreeAmount(request, cancelAmount);
 
         KakaoCancelResponse kakaoRes = client.cancel(
             KakaoCancelRequest.builder()
@@ -135,5 +149,43 @@ public class KakaoPayGateway implements PaymentGateway {
         } catch (ArithmeticException e) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
+    }
+
+    private static Integer toNullableInt(BigDecimal v) {
+        if (v == null) {
+            return null;
+        }
+        try {
+            return v.intValueExact();
+        } catch (ArithmeticException e) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+    }
+
+    private static int resolveCancelTaxFreeAmount(PaymentGatewayRefundRequest request, int cancelAmount) {
+        Integer originalTaxExRaw = toNullableInt(request.getOriginalTaxExScopePrice());
+        if (originalTaxExRaw == null || originalTaxExRaw <= 0) {
+            return 0;
+        }
+
+        Integer originalTotalRaw = toNullableInt(request.getOriginalTotalPrice());
+        if (originalTotalRaw == null || originalTotalRaw <= 0 || cancelAmount >= originalTotalRaw) {
+            return clamp(originalTaxExRaw, 0, cancelAmount);
+        }
+
+        long multiplied = (long) originalTaxExRaw * (long) cancelAmount;
+        int proportional = (int) (multiplied / originalTotalRaw);
+        return clamp(proportional, 0, cancelAmount);
+    }
+
+    private static int clamp(int value, int min, int max) {
+        if (value < min) {
+            return min;
+        }
+        return Math.min(value, max);
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 }
