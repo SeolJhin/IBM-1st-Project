@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../app/layouts/components/Header';
 import Footer from '../../app/layouts/components/Footer';
+import BannerSlider from '../components/BannerSlider/BannerSlider';
 import { propertyApi } from '../../features/property/api/propertyApi';
 import styles from './Home.module.css';
 
@@ -615,11 +616,7 @@ function LivingTypeSection() {
             <p className={styles.livingDesc}>
               계약부터 입주까지 필요한 절차를 단계별로 안내합니다.
             </p>
-            <button
-              type="button"
-              className={styles.livingBtnAlt}
-              onClick={() => navigate('/guide')}
-            >
+            <button type="button" className={styles.livingBtnAlt}>
               가이드 보기
             </button>
           </article>
@@ -822,17 +819,7 @@ export default function Home() {
       <EventSection />
       <LivingTypeSection />
 
-      <section className={styles.recoSection}>
-        <div className={styles.contentWide}>
-          <h2 className={styles.recoHeading}>
-            <span>당신이</span> 좋아할 만한 추천 하우스
-          </h2>
-          <div className={styles.recoBanner}>
-            취향과 조건에 맞는 주거 공간을 추천해드립니다.
-          </div>
-          <RecommendCarousel />
-        </div>
-      </section>
+      <BannerSlider intervalMs={5000} />
 
       <NoticeSection />
 

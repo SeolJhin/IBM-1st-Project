@@ -15,6 +15,10 @@ def search_vectors(req: AiRequest) -> list[str]:
     if not query:
         return []
 
+    # rag_engine이 chroma면 Milvus 검색 스킵
+    if getattr(settings, "rag_engine", "chroma").lower() == "chroma":
+        return []
+
     if not settings.milvus_uri or not settings.milvus_collection:
         return []
 
