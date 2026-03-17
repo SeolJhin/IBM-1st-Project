@@ -9,11 +9,11 @@ Use this when running backend with IDE `Spring Boot App` configuration.
 - Environment variables:
   - `SERVER_PORT=8080`
   - `SERVER_SERVLET_CONTEXT_PATH=/api`
-  - `APP_CORS_ALLOWED_ORIGINS=http://localhost:3000`
+  - `APP_CORS_ALLOWED_ORIGINS=http://dev-host:3000`
 
 ## Frontend .env (recommended)
 
-- `FRONTEND_PROXY_TARGET=http://localhost:8080`
+- `FRONTEND_PROXY_TARGET=http://dev-host:8080`
 - `REACT_APP_BACKEND_BASE_URL=/api`
 
 ## Required IDE settings
@@ -25,9 +25,9 @@ Use this when running backend with IDE `Spring Boot App` configuration.
 ## Quick smoke checks
 
 ```powershell
-curl.exe -i "http://localhost:8080/api/auth/check-nickname?nickname=test"
-curl.exe -i "http://localhost:3000/api/auth/check-nickname?nickname=test"
-curl.exe -i "http://localhost:3000/api/rooms"
+curl.exe -i "http://dev-host:8080/api/auth/check-nickname?nickname=test"
+curl.exe -i "http://dev-host:3000/api/auth/check-nickname?nickname=test"
+curl.exe -i "http://dev-host:3000/api/rooms"
 ```
 
 Expected:
@@ -35,3 +35,4 @@ Expected:
 - No Tomcat `404` HTML for valid API paths.
 - `check-nickname` should return JSON `200`.
 - `rooms` should return JSON `200`.
+

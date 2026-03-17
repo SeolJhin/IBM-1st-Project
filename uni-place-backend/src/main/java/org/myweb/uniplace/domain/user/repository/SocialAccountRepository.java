@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.user.repository;
 
 import java.util.Optional;
+import java.util.List;
 import org.myweb.uniplace.domain.user.domain.entity.SocialAccount;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,4 +24,8 @@ public interface SocialAccountRepository extends JpaRepository<SocialAccount, In
     boolean existsByProviderAndProviderUserId(String provider, String providerUserId);
 
     boolean existsByUser_UserId(String userId);
+
+    List<SocialAccount> findAllByUser_UserId(String userId);
+
+    Optional<SocialAccount> findByUser_UserIdAndProvider(String userId, String provider);
 }

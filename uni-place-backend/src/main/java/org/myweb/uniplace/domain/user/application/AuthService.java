@@ -1,6 +1,7 @@
 package org.myweb.uniplace.domain.user.application;
 
 import org.myweb.uniplace.domain.user.api.dto.request.*;
+import org.myweb.uniplace.domain.user.api.dto.response.SocialLinkStartResponse;
 import org.myweb.uniplace.domain.user.api.dto.response.UserTokenResponse;
 
 public interface AuthService {
@@ -12,6 +13,7 @@ public interface AuthService {
 
     UserTokenResponse kakaoComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
     UserTokenResponse googleComplete(KakaoSignupCompleteRequest req, String userAgent, String ip);
+    SocialLinkStartResponse startSocialLink(String userId, SocialLinkStartRequest req);
 
     // ===== 이메일 인증 =====
     /** 인증코드 6자리 생성 후 이메일 발송 */
