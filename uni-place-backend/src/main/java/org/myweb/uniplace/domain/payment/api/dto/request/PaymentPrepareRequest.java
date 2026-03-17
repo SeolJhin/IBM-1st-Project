@@ -1,5 +1,7 @@
 package org.myweb.uniplace.domain.payment.api.dto.request;
 
+import java.math.BigDecimal;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,4 +18,7 @@ public class PaymentPrepareRequest {
     private String provider; // KAKAO
     private Integer paymentMethodId;
     private String idempotencyKey;
+
+    // optional: tax-exempt amount (KRW)
+    private BigDecimal taxExScopeAmount;
 }

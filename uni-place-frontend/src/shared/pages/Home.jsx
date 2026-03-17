@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../app/layouts/components/Header';
 import Footer from '../../app/layouts/components/Footer';
+import BannerSlider from '../components/BannerSlider/BannerSlider';
 import { propertyApi } from '../../features/property/api/propertyApi';
 import styles from './Home.module.css';
 
@@ -21,9 +22,9 @@ function IntroActionSection() {
           <button
             type="button"
             className={styles.introBtn}
-            onClick={() => navigate('/rooms')}
+            onClick={() => navigate('/company_info')}
           >
-            방 둘러보기
+            UNI-PLACE 알아보기
           </button>
         </div>
       </div>
@@ -293,7 +294,6 @@ function RecommendCarousel() {
   );
 }
 
-// ✅ 신규: AI 추천 Top3 섹션 (기존 HouseLineup 교체)
 const ROOM_TYPE_LABEL = {
   one_room: '원룸형',
   two_room: '투룸형',
@@ -303,7 +303,7 @@ const ROOM_TYPE_LABEL = {
 };
 
 const RANK_LABEL = ['🥇 1위', '🥈 2위', '🥉 3위'];
-const RANK_COLOR = ['#f59e0b', '#9ca3af', '#cd7c2f']; // 금·은·동
+const RANK_COLOR = ['#f59e0b', '#9ca3af', '#cd7c2f'];
 
 function AiTop3Section() {
   const navigate = useNavigate();
@@ -357,7 +357,6 @@ function AiTop3Section() {
                     e.key === 'Enter' && navigate(`/rooms/${item.roomId}`)
                   }
                 >
-                  {/* 순위 뱃지 */}
                   <div
                     className={styles.aiTop3RankBadge}
                     style={{ color: RANK_COLOR[rankIdx] ?? '#374151' }}
@@ -365,7 +364,6 @@ function AiTop3Section() {
                     {RANK_LABEL[rankIdx] ?? `${item.rankNo}위`}
                   </div>
 
-                  {/* 썸네일 placeholder */}
                   <div className={styles.aiTop3ImgWrap}>
                     {item.thumbnailUrl ? (
                       <img
@@ -380,7 +378,6 @@ function AiTop3Section() {
                     )}
                   </div>
 
-                  {/* 정보 */}
                   <div className={styles.aiTop3Body}>
                     <p className={styles.aiTop3Building}>{item.buildingNm}</p>
                     <p className={styles.aiTop3Addr}>{item.buildingAddr}</p>
@@ -396,7 +393,6 @@ function AiTop3Section() {
                       월 {Number(item.rentPrice ?? 0).toLocaleString()}원
                     </p>
 
-                    {/* AI 추천 이유 */}
                     <div className={styles.aiTop3Reason}>
                       <span className={styles.aiTop3ReasonIcon}>🤖</span>
                       <span className={styles.aiTop3ReasonText}>
@@ -404,7 +400,6 @@ function AiTop3Section() {
                       </span>
                     </div>
 
-                    {/* 통계 */}
                     <div className={styles.aiTop3Stats}>
                       <span>⭐ {Number(item.avgRating ?? 0).toFixed(1)}</span>
                       <span>리뷰 {item.reviewCount ?? 0}건</span>
@@ -621,11 +616,7 @@ function LivingTypeSection() {
             <p className={styles.livingDesc}>
               계약부터 입주까지 필요한 절차를 단계별로 안내합니다.
             </p>
-            <button
-              type="button"
-              className={styles.livingBtnAlt}
-              onClick={() => navigate('/guide')}
-            >
+            <button type="button" className={styles.livingBtnAlt}>
               가이드 보기
             </button>
           </article>
@@ -823,23 +814,12 @@ export default function Home() {
 
       <IntroActionSection />
 
-      {/* ✅ HouseLineup → AI 추천 Top3 로 교체 */}
       <AiTop3Section />
 
       <EventSection />
       <LivingTypeSection />
 
-      <section className={styles.recoSection}>
-        <div className={styles.contentWide}>
-          <h2 className={styles.recoHeading}>
-            <span>당신이</span> 좋아할 만한 추천 하우스
-          </h2>
-          <div className={styles.recoBanner}>
-            취향과 조건에 맞는 주거 공간을 추천해드립니다.
-          </div>
-          <RecommendCarousel />
-        </div>
-      </section>
+      <BannerSlider intervalMs={5000} />
 
       <NoticeSection />
 
