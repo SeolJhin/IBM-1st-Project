@@ -2,6 +2,8 @@ package org.myweb.uniplace.global.exception;
 
 import org.myweb.uniplace.domain.payment.application.gateway.exception.PaymentGatewayException;
 import org.myweb.uniplace.global.response.ApiResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e) {
@@ -24,9 +27,23 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PaymentGatewayException.class)
     public ResponseEntity<ApiResponse<Void>> handlePaymentGateway(PaymentGatewayException e) {
+        log.error(
+            "[PAYMENT_GATEWAY] provider={} gatewayCode={} message={} rawBody={}",
+            e.getProvider(),
+            e.getGateway_error_code(),
+            safeMessage(e.getMessage()),
+            safeMessage(e.getRaw_body())
+        );
+
+        String detail = String.format(
+            "PG[%s/%s] %s",
+            safeMessage(e.getProvider()),
+            safeMessage(e.getGateway_error_code()),
+            safeMessage(e.getMessage())
+        );
         return ResponseEntity
             .status(ErrorCode.PAYMENT_GATEWAY_ERROR.getStatus())
-            .body(ApiResponse.error(ErrorCode.PAYMENT_GATEWAY_ERROR));
+            .body(ApiResponse.error(ErrorCode.PAYMENT_GATEWAY_ERROR, detail));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

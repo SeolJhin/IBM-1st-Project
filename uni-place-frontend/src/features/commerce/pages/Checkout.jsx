@@ -11,6 +11,7 @@ import ConfirmModal from './components/ConfirmModal';
 import styles from './Checkout.module.css';
 import layoutStyles from '../../user/pages/MemberInfo.module.css';
 import Modal from '../../../shared/components/Modal/Modal';
+import PaymentOptionPanel from '../../payment/components/PaymentOptionPanel';
 import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
 import TourReservationList from '../../reservation/pages/TourReservationList';
 
@@ -19,18 +20,61 @@ function fmt(price) {
 }
 
 const ORDER_SERVICE_GOODS_ID = 1;
+const PAYMENT_OPTIONS = [
+  {
+    id: 'card',
+    label: '카드결제',
+    description: '일반 카드 결제창으로 이동',
+    icon: '💳',
+    tone: 'card',
+    available: true,
+  },
+  {
+    id: 'kakao',
+    label: '카카오페이',
+    description: '카카오페이 결제창으로 이동',
+    icon: '🟡',
+    tone: 'kakao',
+    available: true,
+  },
+  {
+    id: 'toss',
+    label: '토스페이',
+    description: '토스페이 연동 준비 중',
+    icon: '🔵',
+    tone: 'toss',
+    available: true,
+  },
+  {
+    id: 'naver',
+    label: '네이버페이',
+    description: '네이버페이 연동 준비 중',
+    icon: '🟢',
+    tone: 'naver',
+    available: true,
+  },
+];
 
-async function prepareKakaoPay(orderId) {
-  const res = await api.post('/payments/prepare', {
+async function prepareEasyPay(orderId, provider) {
+  try {
+    const res = await api.post('/payments/prepare', {
     serviceGoodsId: ORDER_SERVICE_GOODS_ID,
     orderId,
-    provider: 'KAKAO',
+    provider,
   });
   const body = res?.data;
   if (body?.success === false) {
     throw new Error(body.message || '결제 준비에 실패했습니다.');
   }
-  return body?.data ?? body;
+    return body?.data ?? body;
+  } catch (e) {
+    const message =
+      e?.response?.data?.message ||
+      e?.response?.data?.error?.message ||
+      e?.message ||
+      '결제 준비에 실패했습니다.';
+    throw new Error(message);
+  }
 }
 
 export default function Checkout({
@@ -92,6 +136,8 @@ export default function Checkout({
   const [payMethod, setPayMethod] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [methodModalOpen, setMethodModalOpen] = useState(false);
+  const [methodModalError, setMethodModalError] = useState('');
   const [confirmModal, setConfirmModal] = useState(false);
 
   useEffect(() => {
@@ -137,7 +183,7 @@ export default function Checkout({
     }));
   };
 
-  const validate = () => {
+  const validate = ({ requirePayMethod = true } = {}) => {
     if (tenantLoading) return '입주 계약 정보를 확인 중입니다.';
     if (!tenantContracts.length) {
       return (
@@ -159,7 +205,7 @@ export default function Checkout({
     if (!form.phone.trim()) {
       return '전화번호를 입력해주세요.';
     }
-    if (!payMethod) {
+    if (requirePayMethod && !payMethod) {
       return '결제 수단을 선택해주세요.';
     }
     return null;
@@ -167,13 +213,17 @@ export default function Checkout({
 
   const handleClickPay = () => {
     setError('');
-    const err = validate();
+    const err = validate({ requirePayMethod: false });
     if (err) {
       setError(err);
       return;
     }
-    setConfirmModal(true);
+    setMethodModalError('');
+    setMethodModalOpen(true);
   };
+
+  const selectedPayLabel =
+    PAYMENT_OPTIONS.find((opt) => opt.id === payMethod)?.label || '선택 안됨';
 
   const handleConfirmPay = async () => {
     setSubmitting(true);
@@ -196,16 +246,24 @@ export default function Checkout({
         go('/commerce/orders', {
           toastMsg: '주문이 완료되었습니다. 곧 배달해드릴게요.',
         });
-      } else if (payMethod === 'kakao') {
+      } else if (['kakao', 'naver', 'toss'].includes(payMethod)) {
         const order = await createOrder({
           buildingId: selectedBuildingId,
           roomId: selectedRoomId,
           items: orderItems,
           roomServiceDesc: desc,
         });
-        const pay = await prepareKakaoPay(order.orderId);
-        const url = pay.redirectPcUrl || pay.redirectMobileUrl;
-        if (!url) throw new Error('카카오페이 URL을 받지 못했습니다.');
+        const providerMap = {
+          kakao: 'KAKAO',
+          naver: 'NAVER',
+          toss: 'TOSS',
+        };
+        const provider = providerMap[payMethod];
+        if (!provider) throw new Error('지원하지 않는 결제 수단입니다.');
+        const pay = await prepareEasyPay(order.orderId, provider);
+        sessionStorage.setItem('pending_kakao_order_id', String(order.orderId));
+        const url = pay.redirectPcUrl || pay.redirectMobileUrl || pay.redirectAppUrl;
+        if (!url) throw new Error('선택한 결제수단의 결제 URL을 받지 못했습니다.');
         await clear();
         // 결제창 이탈(뒤로가기) 대비 — orderId + paymentId 저장
         sessionStorage.setItem('pending_kakao_order_id', String(order.orderId));
@@ -374,37 +432,19 @@ export default function Checkout({
           </h2>
           <div className={styles.payMethods}>
             <button
-              className={`${styles.payCard} ${payMethod === 'card' ? styles.payCardOn : ''}`}
-              onClick={() => setPayMethod('card')}
+              className={styles.payCard}
+              onClick={() => {
+                setMethodModalError('');
+                setMethodModalOpen(true);
+              }}
               disabled={submitting}
               type="button"
             >
-              <span className={styles.payEmoji}>💳</span>
+              <span className={styles.payEmoji}>🎛️</span>
               <div className={styles.payText}>
-                <span className={styles.payName}>카드결제</span>
-                <span className={styles.paySubtitle}>카드 결제창으로 이동</span>
+                <span className={styles.payName}>결제 옵션 선택창</span>
+                <span className={styles.paySubtitle}>현재 선택: {selectedPayLabel}</span>
               </div>
-              <div
-                className={`${styles.radio} ${payMethod === 'card' ? styles.radioOn : ''}`}
-              />
-            </button>
-
-            <button
-              className={`${styles.payCard} ${styles.payCardKakao} ${payMethod === 'kakao' ? styles.payCardKakaoOn : ''}`}
-              onClick={() => setPayMethod('kakao')}
-              disabled={submitting}
-              type="button"
-            >
-              <span className={styles.payEmoji}>🟡</span>
-              <div className={styles.payText}>
-                <span className={styles.payName}>카카오페이</span>
-                <span className={styles.paySubtitle}>
-                  카카오페이 결제창으로 이동
-                </span>
-              </div>
-              <div
-                className={`${styles.radio} ${styles.radioKakao} ${payMethod === 'kakao' ? styles.radioKakaoOn : ''}`}
-              />
             </button>
           </div>
         </section>
@@ -457,6 +497,36 @@ export default function Checkout({
           onCancel={() => setConfirmModal(false)}
         />
       )}
+
+      <Modal
+        open={methodModalOpen}
+        onClose={() => setMethodModalOpen(false)}
+        title="결제 옵션 선택"
+        size="md"
+      >
+        <PaymentOptionPanel
+          options={PAYMENT_OPTIONS}
+          selectedOption={payMethod}
+          amountText={`${fmt(total)}원`}
+          subtitle={`${selectedBuildingNm} · ${form.roomNo || '-'}호 · ${form.name || '-'}`}
+          error={methodModalError}
+          onSelect={(method) => {
+            setPayMethod(method);
+            setMethodModalError('');
+          }}
+          onCancel={() => setMethodModalOpen(false)}
+          onConfirm={() => {
+            const err = validate({ requirePayMethod: true });
+            if (err) {
+              setMethodModalError(err);
+              return;
+            }
+            setMethodModalOpen(false);
+            setConfirmModal(true);
+          }}
+          confirmLabel="이 수단으로 계속"
+        />
+      </Modal>
 
       <Modal
         open={tourCreateOpen}
