@@ -20,6 +20,7 @@ import org.myweb.uniplace.domain.payment.application.gateway.kakao.KakaoPayPrope
 import org.myweb.uniplace.domain.payment.application.gateway.toss.TossProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +38,9 @@ public class PaymentWebhookController {
     private final TossProperties tossProperties;
     private final PaymentWebhookService paymentWebhookService;
     private final NotificationService notificationService;
+
+    @Value("${payment.toss.webhook.allow-unsigned:false}")
+    private boolean allowUnsignedTossWebhook;
 
     @PostMapping("/kakao")
     public ResponseEntity<String> kakaoWebhook(
@@ -62,8 +66,12 @@ public class PaymentWebhookController {
         @RequestHeader(value = "tosspayments-webhook-transmission-time", required = false) String transmissionTime,
         @RequestHeader(value = "tosspayments-webhook-signature", required = false) String signature
     ) {
-        // tosspay resultCallback(v2) payload may be sent without signature headers.
         if (signature == null || signature.isBlank()) {
+            if (!allowUnsignedTossWebhook) {
+                notifyWebhookFail("TOSS webhook 검증 실패 missing signature");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("missing signature");
+            }
+            log.warn("[SECURITY][ALERT][WEBHOOK] toss unsigned webhook accepted by config");
             paymentWebhookService.handleTossWebhook(payload);
             return ResponseEntity.ok("OK");
         }

@@ -1,10 +1,12 @@
 package org.myweb.uniplace.domain.payment.application.gateway.naver.dto;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
-public class NaverApproveResponse {
+public class NaverHistoryResponse {
 
     @JsonProperty("code")
     private String code;
@@ -18,26 +20,26 @@ public class NaverApproveResponse {
     @Getter
     public static class Body {
 
-        @JsonProperty("paymentId")
-        private String paymentId;
-
-        @JsonProperty("detail")
-        private Detail detail;
+        @JsonProperty("list")
+        private List<HistoryItem> list;
     }
 
     @Getter
-    public static class Detail {
+    public static class HistoryItem {
 
         @JsonProperty("paymentId")
         private String paymentId;
-
-        @JsonProperty("merchantPayKey")
-        private String merchantPayKey;
 
         @JsonProperty("admissionState")
         private String admissionState;
 
+        @JsonProperty("admissionTypeCode")
+        private String admissionTypeCode;
+
         @JsonProperty("totalPayAmount")
         private Integer totalPayAmount;
+
+        @JsonProperty("merchantPayKey")
+        private String merchantPayKey;
     }
 }
