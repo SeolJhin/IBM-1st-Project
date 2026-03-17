@@ -321,9 +321,13 @@ export default function AdminBannerList() {
     }
   };
 
-  const imageUrl =
-    detail?.imageUrl ||
-    (detail?.files?.[0]?.fileId ? `/files/${detail.files[0].fileId}/view` : '');
+  const imageUrl = detail?.imageUrl
+    ? detail.imageUrl.startsWith('/api')
+      ? detail.imageUrl
+      : `/api${detail.imageUrl}`
+    : detail?.files?.[0]?.fileId
+      ? `/api/files/${detail.files[0].fileId}/view`
+      : '';
 
   return (
     <div className={styles.mainInner}>

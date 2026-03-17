@@ -9,6 +9,8 @@ import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverAppr
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverApproveResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverCancelRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverCancelResponse;
+import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverHistoryByPaymentRequest;
+import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverHistoryResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverReadyRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.naver.dto.NaverReadyResponse;
 import org.springframework.http.MediaType;
@@ -191,6 +193,42 @@ public class NaverPayClient {
             throw e;
         } catch (Exception e) {
             throw new PaymentGatewayException("NAVER", "naver cancel failed", e);
+        }
+    }
+
+    public NaverHistoryResponse getHistoryByPaymentId(
+        @NonNull String paymentId,
+        @NonNull NaverHistoryByPaymentRequest request
+    ) {
+        try {
+            NaverHistoryResponse response = restClient.post()
+                .uri("/list/history/{paymentId}", paymentId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(request)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, (req, res) -> {
+                    String body = "";
+                    try {
+                        body = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                    } catch (IOException ignored) {
+                        body = "";
+                    }
+                    throw new PaymentGatewayException(
+                        "NAVER",
+                        String.valueOf(res.getStatusCode().value()),
+                        "naver history-by-payment-id http error",
+                        body
+                    );
+                })
+                .body(NaverHistoryResponse.class);
+            if (response == null) {
+                throw new PaymentGatewayException("NAVER", "naver history-by-payment-id empty response", null);
+            }
+            return response;
+        } catch (PaymentGatewayException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new PaymentGatewayException("NAVER", "naver history-by-payment-id failed", e);
         }
     }
 

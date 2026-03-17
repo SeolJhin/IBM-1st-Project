@@ -1,7 +1,9 @@
 package org.myweb.uniplace.domain.payment.application.gateway.toss;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.payment.application.gateway.PaymentGateway;
@@ -104,7 +106,7 @@ public class TossGateway implements PaymentGateway {
         Integer captured = tossRes.getPaidAmount() != null ? tossRes.getPaidAmount() : tossRes.getAmount();
 
         return PaymentGatewayApproveResponse.builder()
-            .providerPaymentId(firstNonBlank(tossRes.getTransactionId(), tossRes.getPayToken()))
+            .providerPaymentId(firstNonBlank(tossRes.getPayToken(), tossRes.getTransactionId()))
             .gatewayStatus("PAID")
             .merchantUid(tossRes.getOrderNo())
             .currency("KRW")
@@ -115,21 +117,37 @@ public class TossGateway implements PaymentGateway {
 
     @Override
     public PaymentGatewayRefundResponse refund(PaymentGatewayRefundRequest request) {
-        String paymentKey = request.getProviderPaymentId();
-        if (paymentKey == null || paymentKey.isBlank()) {
+        String apiKey = resolveApiKey();
+        String orderNo = request.getOrderNo();
+        if (!hasText(apiKey) || !hasText(orderNo)) {
+            throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
+        }
+
+        JsonNode status = client.getByOrderId(orderNo);
+        if (!isApiSuccess(status)) {
+            throw new PaymentGatewayException("TOSS", "TOSS_STATUS_FAILED", "toss status failed", status == null ? null : status.toString());
+        }
+        String payToken = firstNonBlank(text(status, "payToken"), request.getProviderPaymentId());
+        if (!hasText(payToken)) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
 
         TossCancelRequest cancelReq = TossCancelRequest.builder()
-            .cancelReason(nvl(request.getRefundReason(), "cancel"))
-            .cancelAmount(toNullableInt(request.getRefundPrice()))
+            .apiKey(apiKey)
+            .payToken(payToken)
+            .orderNo(orderNo)
+            .refundNo("REFUND-" + UUID.randomUUID())
+            .reason(nvl(request.getRefundReason(), "refund"))
+            .amount(toNullableInt(request.getRefundPrice()))
+            .idempotent(true)
             .build();
 
-        TossCancelResponse tossRes = client.cancel(paymentKey, cancelReq);
+        TossCancelResponse tossRes = client.cancel(cancelReq);
 
-        boolean success = tossRes.getStatus() != null
-            && ("CANCELED".equalsIgnoreCase(tossRes.getStatus())
-                || "PARTIAL_CANCELED".equalsIgnoreCase(tossRes.getStatus()));
+        boolean success = tossRes.getCode() != null
+            && tossRes.getCode() == 0
+            && hasText(tossRes.getPayStatus())
+            && tossRes.getPayStatus().toUpperCase().startsWith("REFUND");
 
         return PaymentGatewayRefundResponse.builder()
             .success(success)
@@ -209,5 +227,25 @@ public class TossGateway implements PaymentGateway {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private static boolean isApiSuccess(JsonNode node) {
+        if (node == null || node.isNull()) {
+            return false;
+        }
+        JsonNode code = node.get("code");
+        return code != null && code.isInt() && code.intValue() == 0;
+    }
+
+    private static String text(JsonNode node, String field) {
+        if (node == null || field == null) {
+            return null;
+        }
+        JsonNode value = node.get(field);
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        String out = value.asText();
+        return hasText(out) ? out : null;
     }
 }

@@ -299,8 +299,13 @@ public class AdminRefundController {
                             .paymentId(payment.getPaymentId())
                             .userId(payment.getUserId())
                             .providerPaymentId(payment.getProviderPaymentId())
+                            .orderNo(payment.getMerchantUid())
                             .refundPrice(refundPrice)
                             .refundReason(reason)
+                            .originalTotalPrice(payment.getCapturedPrice() != null ? payment.getCapturedPrice() : payment.getTotalPrice())
+                            .originalTaxScopePrice(payment.getTaxScopePrice())
+                            .originalTaxExScopePrice(payment.getTaxExScopePrice())
+                            .originalEnvironmentDepositAmount(BigDecimal.ZERO)
                             .build()
             );
             if (!gwRes.isSuccess()) {
@@ -330,7 +335,16 @@ public class AdminRefundController {
         }
         BigDecimal paidAmount = payment.getCapturedPrice() != null
                 ? payment.getCapturedPrice() : payment.getTotalPrice();
-        if (paidAmount != null && refundPrice.compareTo(paidAmount) > 0) {
+        if (paidAmount == null) {
+            throw new BusinessException(ErrorCode.PAYMENT_REFUND_INVALID_AMOUNT);
+        }
+
+        BigDecimal refundedAmount = paymentRefundRepository.sumRefundPriceByPaymentIdAndRefundSt(
+                payment.getPaymentId(),
+                PaymentRefund.RefundSt.done
+        );
+        BigDecimal refundableAmount = paidAmount.subtract(refundedAmount == null ? BigDecimal.ZERO : refundedAmount);
+        if (refundableAmount.signum() <= 0 || refundPrice.compareTo(refundableAmount) > 0) {
             throw new BusinessException(ErrorCode.PAYMENT_REFUND_INVALID_AMOUNT);
         }
     }

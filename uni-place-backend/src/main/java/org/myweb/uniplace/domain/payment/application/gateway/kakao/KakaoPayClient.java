@@ -7,6 +7,8 @@ import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoAppr
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoApproveResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoCancelRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoCancelResponse;
+import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoOrderRequest;
+import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoOrderResponse;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoReadyRequest;
 import org.myweb.uniplace.domain.payment.application.gateway.kakao.dto.KakaoReadyResponse;
 import org.springframework.http.HttpHeaders;
@@ -125,6 +127,38 @@ public class KakaoPayClient {
             throw e;
         } catch (Exception e) {
             throw new PaymentGatewayException("KAKAO", "kakao cancel failed", e);
+        }
+    }
+
+    public KakaoOrderResponse order(@NonNull KakaoOrderRequest request) {
+        try {
+            KakaoOrderResponse response = restClient.post()
+                .uri("/online/v1/payment/order")
+                .body(request)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, (req, res) -> {
+                    String body = "";
+                    try {
+                        body = new String(res.getBody().readAllBytes(), StandardCharsets.UTF_8);
+                    } catch (IOException ignored) {
+                        body = "";
+                    }
+                    throw new PaymentGatewayException(
+                        "KAKAO",
+                        String.valueOf(res.getStatusCode().value()),
+                        "kakao order http error",
+                        body
+                    );
+                })
+                .body(KakaoOrderResponse.class);
+            if (response == null) {
+                throw new PaymentGatewayException("KAKAO", "kakao order empty response", null);
+            }
+            return response;
+        } catch (PaymentGatewayException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new PaymentGatewayException("KAKAO", "kakao order failed", e);
         }
     }
 }
