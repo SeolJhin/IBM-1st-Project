@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import { useOrders } from '../hooks/useOrders';
+import { commerceApi } from '../api/commerceApi';
 import styles from './OrderList.module.css';
 import layoutStyles from '../../user/pages/MemberInfo.module.css';
 import Modal from '../../../shared/components/Modal/Modal';
@@ -75,6 +76,15 @@ export default function OrderList({
   useEffect(() => {
     const msg = resolvePaymentToast(location.search);
     if (msg) setToast(msg);
+  }, [location.search]);
+
+  // 결제 성공 시 pending 제거 (abandon은 App.js에서 처리)
+  useEffect(() => {
+    const payment = new URLSearchParams(location.search).get('payment');
+    if (payment === 'success') {
+      sessionStorage.removeItem('pending_kakao_order_id');
+      sessionStorage.removeItem('pending_kakao_payment_id');
+    }
   }, [location.search]);
 
   const inner = (

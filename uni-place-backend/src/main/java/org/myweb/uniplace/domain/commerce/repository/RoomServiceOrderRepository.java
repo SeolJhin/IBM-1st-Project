@@ -19,6 +19,10 @@ public interface RoomServiceOrderRepository extends JpaRepository<RoomServiceOrd
            "ORDER BY r.createdAt DESC")
     List<RoomServiceOrder> findAllByUserIdWithRoom(@Param("userId") String userId);
 
+    // 결제 취소 시 parentOrder ID로 RoomServiceOrder 목록 조회
+    @Query("SELECT r FROM RoomServiceOrder r WHERE r.parentOrder.orderId = :orderId")
+    List<RoomServiceOrder> findByParentOrderId(@Param("orderId") Integer orderId);
+
     @Query(value = "SELECT r FROM RoomServiceOrder r " +
                    "JOIN FETCH r.user " +
                    "JOIN FETCH r.room",
