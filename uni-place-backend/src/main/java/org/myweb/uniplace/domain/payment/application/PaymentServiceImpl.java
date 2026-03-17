@@ -429,6 +429,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .providerRefId(intent.getProviderRefId())
                     .pgToken(request.getPgToken())
                     .paymentKey(request.getPaymentKey())
+                    .payToken(request.getPayToken())
                     .orderId(payment.getMerchantUid())
                     .amount(payment.getTotalPrice())
                     .build()
