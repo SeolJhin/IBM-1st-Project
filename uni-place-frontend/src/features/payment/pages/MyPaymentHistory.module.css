@@ -1,0 +1,377 @@
+.wrap {
+  padding: 8px 0 40px;
+}
+
+.heading {
+  margin: 0 0 20px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0b0e12;
+}
+
+/* ── 필터 ── */
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.filterGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #d7cebc;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a4520;
+  cursor: pointer;
+  transition: all 200ms;
+}
+
+.chip:hover {
+  background: #fdf7ec;
+  border-color: #c8a96e;
+}
+
+.chipActive {
+  background: #201812;
+  border-color: #201812;
+  color: #fff;
+}
+
+/* ── 월 네비게이터 ── */
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.monthSelectors {
+  display: flex;
+  gap: 4px;
+}
+
+.monthSelect {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #d7cebc;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #201812;
+  cursor: pointer;
+}
+
+.navBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #d7cebc;
+  background: #fff;
+  font-size: 18px;
+  color: #5a4520;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 200ms;
+}
+
+.navBtn:hover:not(:disabled) {
+  background: #fdf7ec;
+  border-color: #c8a96e;
+}
+
+.navBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* ── 요약 ── */
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fdf7ec;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.summaryMonth {
+  font-size: 15px;
+  font-weight: 800;
+  color: #201812;
+}
+
+.summaryCount {
+  font-size: 13px;
+  color: #9a8c70;
+}
+
+.summaryAmount {
+  margin-left: auto;
+  font-size: 15px;
+  font-weight: 700;
+  color: #c87941;
+}
+
+/* ── 목록 ── */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border: 1px solid #e8e0d4;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 200ms;
+}
+
+.item:hover {
+  background: #fdf7ec;
+  border-color: #c8a96e;
+  box-shadow: 0 4px 12px rgba(11, 14, 18, 0.06);
+  transform: translateY(-1px);
+}
+
+.itemLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.itemType {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0b0e12;
+}
+
+.itemDate {
+  font-size: 12px;
+  color: #9a8c70;
+}
+
+.itemRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.itemAmount {
+  font-size: 16px;
+  font-weight: 800;
+  color: #201812;
+}
+
+.itemStatus {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.itemArrow {
+  font-size: 18px;
+  color: #c8b99a;
+}
+
+/* ── 상태 박스 ── */
+.stateBox {
+  text-align: center;
+  padding: 48px 0;
+  color: #9a8c70;
+  font-size: 14px;
+}
+
+/* ── 페이지네이션 ── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 24px;
+}
+
+.pageBtn {
+  min-width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #d7cebc;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a4520;
+  cursor: pointer;
+  transition: all 200ms;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: #fdf7ec;
+  border-color: #c8a96e;
+}
+
+.pageBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.pageBtnActive {
+  background: #201812 !important;
+  border-color: #201812 !important;
+  color: #fff !important;
+}
+
+/* ── 모달 ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 20px;
+  width: min(480px, 92vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f0ebe3;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0b0e12;
+}
+
+.modalClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #f5f0ea;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalBody {
+  padding: 20px 24px 24px;
+}
+
+.detailBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.detailTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.detailTable th,
+.detailTable td {
+  padding: 10px 8px;
+  font-size: 14px;
+  border-bottom: 1px solid #f0ebe3;
+  text-align: left;
+}
+
+.detailTable th {
+  width: 38%;
+  color: #9a8c70;
+  font-weight: 600;
+}
+
+.detailTable td {
+  color: #0b0e12;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+/* ── 룸서비스 주문 상품 ── */
+.orderItemsWrap {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f0ebe3;
+}
+
+.orderItemsTitle {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #9a8c70;
+}
+
+.orderItemsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orderItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fdf7ec;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.orderItemName {
+  flex: 1;
+  font-weight: 600;
+  color: #0b0e12;
+}
+
+.orderItemQty {
+  color: #9a8c70;
+  font-size: 13px;
+}
+
+.orderItemPrice {
+  font-weight: 700;
+  color: #c87941;
+}

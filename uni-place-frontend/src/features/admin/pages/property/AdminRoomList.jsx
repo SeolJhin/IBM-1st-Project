@@ -3,6 +3,14 @@ import { adminApi } from '../../api/adminApi';
 import AdminPropertyListTable from './AdminPropertyListTable';
 import AdminRoomModal from './AdminRoomModal';
 
+const ROOM_ST_LABEL = {
+  available: '입주가능',
+  reserved: '예약중',
+  contracted: '계약중',
+  repair: '수리중',
+  cleaning: '청소중',
+};
+
 export default function AdminRoomList() {
   const [createModal, setCreateModal] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -15,21 +23,26 @@ export default function AdminRoomList() {
         size: q.size,
         sort: q.sort,
         direct: q.direct,
-        buildingId: q.buildingId || undefined,
+        buildingNm: q.buildingNm || undefined,
+        roomNo: q.roomNo || undefined,
         roomSt: q.roomSt || undefined,
       }),
     []
   );
 
   const columns = [
-    { key: 'roomId', label: '방 ID' },
+    { key: 'roomNo', label: '방번호' },
     { key: 'buildingNm', label: '건물명' },
     {
-      key: 'roomNo',
+      key: 'floorInfo',
       label: '호수/층',
       render: (row) => `${row?.roomNo ?? '-'}호 / ${row?.floor ?? '-'}층`,
     },
-    { key: 'roomSt', label: '상태' },
+    {
+      key: 'roomSt',
+      label: '상태',
+      render: (row) => ROOM_ST_LABEL[row?.roomSt] ?? row?.roomSt ?? '-',
+    },
     {
       key: 'price',
       label: '보증금/월세',
@@ -65,10 +78,16 @@ export default function AdminRoomList() {
 
   const filters = [
     {
-      key: 'buildingId',
-      label: '건물 ID',
+      key: 'buildingNm',
+      label: '건물 이름',
+      type: 'text',
+      placeholder: '예: Uniplace A',
+    },
+    {
+      key: 'roomNo',
+      label: '방번호',
       type: 'number',
-      placeholder: '예: 1',
+      placeholder: '예: 101',
       parse: (v) => (v === '' ? '' : Number(v)),
     },
     {
@@ -77,11 +96,11 @@ export default function AdminRoomList() {
       type: 'select',
       options: [
         { value: '', label: '전체' },
-        { value: 'available', label: 'available' },
-        { value: 'reserved', label: 'reserved' },
-        { value: 'contracted', label: 'contracted' },
-        { value: 'repair', label: 'repair' },
-        { value: 'cleaning', label: 'cleaning' },
+        { value: 'available', label: '입주가능' },
+        { value: 'reserved', label: '예약중' },
+        { value: 'contracted', label: '계약중' },
+        { value: 'repair', label: '수리중' },
+        { value: 'cleaning', label: '청소중' },
       ],
     },
   ];
@@ -110,7 +129,8 @@ export default function AdminRoomList() {
           size: 10,
           sort: 'roomId',
           direct: 'DESC',
-          buildingId: '',
+          buildingNm: '',
+          roomNo: '',
           roomSt: '',
         }}
         filters={filters}
