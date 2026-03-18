@@ -208,6 +208,7 @@ export default function ReviewWrite() {
             deleteFileIds={fu.deleteFileIds}
             addFiles={fu.addFiles}
             removeNewFile={fu.removeNewFile}
+            moveNewFile={fu.moveNewFile}
             toggleDeleteExisting={fu.toggleDeleteExisting}
             maxCount={5}
             label="사진"

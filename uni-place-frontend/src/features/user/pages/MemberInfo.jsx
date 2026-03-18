@@ -28,6 +28,7 @@ import Cart from '../../commerce/pages/Cart';
 import Checkout from '../../commerce/pages/Checkout';
 import OrderList from '../../commerce/pages/OrderList';
 import OrderDetail from '../../commerce/pages/OrderDetail';
+import MyPaymentHistory from '../../payment/pages/MyPaymentHistory';
 
 import Modal from '../../../shared/components/Modal/Modal';
 import SpaceReservationCreate from '../../reservation/pages/SpaceReservationCreate';
@@ -43,15 +44,17 @@ const TAB = {
   SPACE: 'space',
   TOUR: 'tour',
   ROOMSERVICE: 'roomservice',
+  PAYMENT: 'payment',
 };
 
 const SIDE_ITEMS = [
-  { key: TAB.ME, label: '\uB0B4 \uC815\uBCF4' },
-  { key: TAB.MYROOM, label: '\uB0B4 \uACC4\uC57D' },
-  { key: TAB.POSTS, label: '\uC791\uC131 \uBAA9\uB85D' },
-  { key: TAB.SPACE, label: '\uACF5\uC6A9 \uC2DC\uC124' },
-  { key: TAB.TOUR, label: '\uC0AC\uC804 \uBC29\uBB38' },
-  { key: TAB.ROOMSERVICE, label: '\uB8F8\uC11C\uBE44\uC2A4' },
+  { key: TAB.ME, label: '내 정보' },
+  { key: TAB.MYROOM, label: '내 계약' },
+  { key: TAB.POSTS, label: '작성 목록' },
+  { key: TAB.SPACE, label: '공용 시설' },
+  { key: TAB.TOUR, label: '사전 방문' },
+  { key: TAB.ROOMSERVICE, label: '룸서비스' },
+  { key: TAB.PAYMENT, label: '결제 내역' },
 ];
 
 const SOCIAL_PROVIDER_ORDER = ['kakao', 'google'];
@@ -754,7 +757,11 @@ function ComplainInline() {
   if (loading) return <div className={styles.loading}>불러오는 중…</div>;
   if (error) return <div className={styles.error}>{error}</div>;
 
-  const STATUS_MAP = { in_progress: '처리중', resolved: '처리완료' };
+  const STATUS_MAP = {
+    received: '접수됨',
+    in_progress: '처리중',
+    resolved: '처리완료',
+  };
 
   return (
     <div>
@@ -1231,6 +1238,12 @@ export default function MemberInfo() {
           {activeTab === TAB.ROOMSERVICE && (
             <div className={styles.card}>
               <RoomServiceTab />
+            </div>
+          )}
+
+          {activeTab === TAB.PAYMENT && (
+            <div className={styles.card}>
+              <MyPaymentHistory />
             </div>
           )}
         </section>

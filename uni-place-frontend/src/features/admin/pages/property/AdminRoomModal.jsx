@@ -43,6 +43,15 @@ const SUN_DIRS = [
   { value: 'n', label: '북향' },
 ];
 
+const ROOM_TYPES = [
+  { value: '', label: '미선택' },
+  { value: 'one_room', label: '원룸형' },
+  { value: 'two_room', label: '투룸형' },
+  { value: 'three_room', label: '쓰리룸형' },
+  { value: 'loft', label: '복층' },
+  { value: 'share', label: '쉐어' },
+];
+
 export default function AdminRoomModal({ roomId, onClose, onSuccess }) {
   const isEdit = !!roomId;
   const { buildings, loading: bldgLoading } = useBuildingOptions();
@@ -78,6 +87,7 @@ export default function AdminRoomModal({ roomId, onClose, onSuccess }) {
           roomDesc: data.roomDesc || '',
         });
         setExistingFiles(data.files || []);
+        fu.initExistingOrder(data.files || []);
       })
       .catch((e) => setError(e?.message || '불러오기 실패'))
       .finally(() => setFetchLoading(false));
@@ -333,6 +343,21 @@ export default function AdminRoomModal({ roomId, onClose, onSuccess }) {
                   </select>
                 </label>
                 <label className={styles.field}>
+                  <span className={styles.label}>방 유형</span>
+                  <select
+                    className={styles.select}
+                    name="roomType"
+                    value={form.roomType}
+                    onChange={handleChange}
+                  >
+                    {ROOM_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={styles.field}>
                   <span className={styles.label}>반려동물</span>
                   <select
                     className={styles.select}
@@ -373,9 +398,12 @@ export default function AdminRoomModal({ roomId, onClose, onSuccess }) {
                 newFiles={fu.newFiles}
                 previews={fu.previews}
                 deleteFileIds={fu.deleteFileIds}
+                existingOrder={fu.existingOrder}
                 addFiles={fu.addFiles}
                 removeNewFile={fu.removeNewFile}
+                moveNewFile={fu.moveNewFile}
                 toggleDeleteExisting={fu.toggleDeleteExisting}
+                moveExisting={fu.moveExisting}
                 label="방 이미지"
               />
             </div>
