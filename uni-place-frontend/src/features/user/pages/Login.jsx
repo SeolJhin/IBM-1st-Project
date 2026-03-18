@@ -4,12 +4,14 @@ import styles from './Login.module.css';
 import { useAuth } from '../hooks/useAuth';
 import Header from '../../../app/layouts/components/Header';
 import { toKoreanMessage } from '../../../app/http/errorMapper';
+import FaceLoginModal from '../components/FaceLoginModal';
 
 export default function Login() {
-  const { login, loading } = useAuth();
+  const { login, loading, refresh } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [faceModal, setFaceModal] = useState(false); // 얼굴 인식 모달
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,8 +55,7 @@ export default function Login() {
     }
   };
 
-  const backendBaseUrl =
-    process.env.REACT_APP_BACKEND_BASE_URL || '/api';
+  const backendBaseUrl = process.env.REACT_APP_BACKEND_BASE_URL || '/api';
 
   // ✅ 버튼만 존재(기능 없음) / 나중에 연결
   const goSignup = () => navigate('/signup');
@@ -66,6 +67,19 @@ export default function Login() {
   const goGoogle = () => {
     localStorage.removeItem('oauth_return_to');
     window.location.href = `${backendBaseUrl}/oauth2/authorization/google`;
+  };
+
+  // 얼굴 인식 성공 → FaceLoginModal이 이미 localStorage에 JWT 저장
+  // → refresh(bootstrap)으로 user 상태 갱신 후 리다이렉트
+  const onFaceSuccess = async () => {
+    setFaceModal(false);
+    try {
+      await refresh();
+      const from = location.state?.from || '/';
+      navigate(from, { replace: true });
+    } catch {
+      navigate('/', { replace: true });
+    }
   };
 
   return (
@@ -163,9 +177,31 @@ export default function Login() {
             >
               Google 계정으로 로그인
             </button>
+
+            <div className={styles.divider}>
+              <span>또는</span>
+            </div>
+
+            <button
+              className={`${styles.socialBtn} ${styles.faceBtn}`}
+              type="button"
+              onClick={() => setFaceModal(true)}
+              disabled={loading || submitting}
+            >
+              <span className={styles.faceBtnIcon}>👤</span>
+              얼굴 인식으로 로그인
+            </button>
           </form>
         </section>
       </main>
+
+      {faceModal && (
+        <FaceLoginModal
+          mode="login"
+          onSuccess={onFaceSuccess}
+          onClose={() => setFaceModal(false)}
+        />
+      )}
     </div>
   );
 }
