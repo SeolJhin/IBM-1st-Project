@@ -20,9 +20,6 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
-          volumeMounts:
-            - name: chroma-storage
-              mountPath: /app/chroma_db
           envFrom:
             - configMapRef:
                 name: ai-config
@@ -51,7 +48,3 @@ spec:
             limits:
               cpu: "1000m"
               memory: "3Gi"
-      volumes:
-        - name: chroma-storage
-          persistentVolumeClaim:
-            claimName: ai-chroma-pvc

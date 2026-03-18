@@ -25,9 +25,23 @@ kubectl apply -n argocd -f deploy/argocd/frontend-application.yaml
 - Backend probe is TCP based (port `8080`) to avoid actuator dependency.
 - AI probe uses `GET /health` on port `8000`.
 - Frontend probe uses `GET /` on port `80`.
-- AI `chroma_db` persistence uses PVC `ai-chroma-pvc` (`storageClassName: gp2`, `5Gi`).
-- If `ai-chroma-pvc` is `Pending` after changing StorageClass, delete and recreate it:
+- AI RAG engine is expected to run with Milvus (`RAG_ENGINE=milvus`).
+- `MILVUS_URI` must point to a reachable k8s Service (example: `http://milvus-service.uniplace.svc.cluster.local:19530`).
+- Deploy Milvus stack first:
 ```bash
-kubectl -n uniplace delete pvc ai-chroma-pvc
-kubectl apply -k deploy/k8s/ai
+kubectl -n uniplace apply -k deploy/k8s/milvus
+kubectl -n uniplace rollout status deployment/milvus-etcd
+kubectl -n uniplace rollout status deployment/milvus-minio
+kubectl -n uniplace rollout status deployment/milvus
+```
+- If migrating from Chroma, remove old PVC:
+```bash
+kubectl -n uniplace delete pvc ai-chroma-pvc --ignore-not-found=true
+```
+- Apply AI secret changes and restart deployment:
+```bash
+kubectl -n uniplace create secret generic ai-secrets --from-env-file=AI/aws.env --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n uniplace apply -k deploy/k8s/ai
+kubectl -n uniplace rollout restart deployment/ai
+kubectl -n uniplace rollout status deployment/ai
 ```

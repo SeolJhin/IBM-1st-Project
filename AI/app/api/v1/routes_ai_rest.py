@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 from pathlib import Path
 import tempfile
 
-from fastapi import APIRouter, Body, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Body, File, Form, UploadFile, HTTPException, Header
 from fastapi.responses import JSONResponse, Response, FileResponse
 from pydantic import BaseModel
 
@@ -16,11 +16,21 @@ from app.api.v1.executor import ERROR_RESPONSES, execute_ai_request, parse_ai_re
 from app.schemas.ai_request import AiRequest
 from app.schemas.ai_response import AiResponse
 from app.services.orchestrator.admin_tool_orchestrator import run_admin_tool_orchestrator
+from app.services.rag.index_pipeline import get_rag_status, reindex_rag
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/ai", tags=["ai"])
 
 _voice_pipeline = None
+
+
+def _verify_admin_api_key(x_ai_admin_key: str | None) -> None:
+    expected = (settings.ai_admin_api_key or "").strip()
+    # If no key configured, keep endpoint open for backward compatibility.
+    if not expected:
+        return
+    if (x_ai_admin_key or "").strip() != expected:
+        raise HTTPException(status_code=401, detail="Invalid admin API key")
 
 def get_voice_pipeline():
     global _voice_pipeline
@@ -179,6 +189,21 @@ def get_stock_alerts(adminId: str = "") -> dict:
     except Exception as exc:
         logger.warning("[stock-alerts] 오류: %s", exc)
         return {"alert": None}
+
+
+@router.get("/admin/rag/status")
+def admin_rag_status(x_ai_admin_key: Optional[str] = Header(default=None)) -> dict:
+    _verify_admin_api_key(x_ai_admin_key)
+    return get_rag_status()
+
+
+@router.post("/admin/rag/reindex-if-changed")
+def admin_rag_reindex_if_changed(
+    x_ai_admin_key: Optional[str] = Header(default=None),
+    force: bool = False,
+) -> dict:
+    _verify_admin_api_key(x_ai_admin_key)
+    return reindex_rag(force=force)
 
 # ── operations ────────────────────────────────────────────────────────────────
 @router.post("/operations/roomservice-stock-monitoring", response_model=AiResponse, responses=ERROR_RESPONSES)
