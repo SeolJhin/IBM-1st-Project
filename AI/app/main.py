@@ -58,8 +58,12 @@ def _run_startup_chroma_index() -> None:
 @app.on_event("startup")
 def _startup_rag_pipeline() -> None:
     ensure_rag_runtime()
-    # Run initial indexing in background so health probes are not blocked.
-    threading.Thread(target=_run_startup_chroma_index, daemon=True).start()
+    # In production, skip eager startup indexing by default to avoid memory spikes.
+    startup_index_enabled = os.environ.get("RAG_STARTUP_INDEX_ENABLED", "false").lower() == "true"
+    if startup_index_enabled:
+        threading.Thread(target=_run_startup_chroma_index, daemon=True).start()
+    else:
+        logger.info("[Startup] Skip ChromaRAG startup indexing (RAG_STARTUP_INDEX_ENABLED=false)")
     start_reindex_daemon()
     start_stock_alert_daemon()
 
