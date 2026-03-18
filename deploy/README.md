@@ -25,3 +25,9 @@ kubectl apply -n argocd -f deploy/argocd/frontend-application.yaml
 - Backend probe is TCP based (port `8080`) to avoid actuator dependency.
 - AI probe uses `GET /health` on port `8000`.
 - Frontend probe uses `GET /` on port `80`.
+- AI `chroma_db` persistence uses PVC `ai-chroma-pvc` (`storageClassName: gp2`, `5Gi`).
+- If `ai-chroma-pvc` is `Pending` after changing StorageClass, delete and recreate it:
+```bash
+kubectl -n uniplace delete pvc ai-chroma-pvc
+kubectl apply -k deploy/k8s/ai
+```

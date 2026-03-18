@@ -15,6 +15,7 @@ from app.config.settings import settings
 from app.api.v1.executor import ERROR_RESPONSES, execute_ai_request, parse_ai_request
 from app.schemas.ai_request import AiRequest
 from app.schemas.ai_response import AiResponse
+from app.services.orchestrator.admin_tool_orchestrator import run_admin_tool_orchestrator
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/ai", tags=["ai"])
@@ -62,6 +63,15 @@ def agent_chatbot(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONRespo
                 payload.get("userId", "MISSING"),
                 list((payload.get("slots") or {}).keys()))
     return _run(payload)
+
+
+@router.post("/chat/admin-chatbot", response_model=AiResponse, responses=ERROR_RESPONSES)
+def admin_chatbot(payload: Dict[str, Any] = Body(...)) -> AiResponse:
+    # Keep parity with legacy route: admin path uses admin_tool_orchestrator.
+    if not payload.get("intent"):
+        payload["intent"] = "AI_AGENT_CHATBOT"
+    req = AiRequest.model_validate(payload)
+    return run_admin_tool_orchestrator(req)
 
 # ── chat/voice-assistant ──────────────────────────────────────────────────────
 @router.post("/chat/voice-assistant", response_model=AiResponse, responses=ERROR_RESPONSES)
@@ -211,7 +221,7 @@ def complaint_priority(payload: Dict[str, Any] = Body(...)):
 @router.post("/operations/room-recommendation")
 def room_recommendation(payload: Dict[str, Any] = Body(...)):
     try:
-        from app.ai.room_recommend import recommend_rooms
+        from app.ai.room_recommend_top3 import recommend_rooms
         import asyncio
 
         rooms = payload.get("rooms") or []

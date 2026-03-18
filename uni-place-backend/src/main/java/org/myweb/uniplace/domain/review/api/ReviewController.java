@@ -58,7 +58,7 @@ public class ReviewController {
         );
     }
 
- // [GET] /reviews/{reviewId}?increaseReadCount=true(default)
+    // [GET] /reviews/{reviewId}?increaseReadCount=true(default)
     @GetMapping("/{reviewId}")
     public ResponseEntity<ApiResponse<ReviewResponse>> reviewDetail(
             @PathVariable("reviewId") int reviewId,
@@ -67,6 +67,15 @@ public class ReviewController {
         return ResponseEntity.ok(
                 ApiResponse.ok(reviewService.getReviewDetail(reviewId, increaseReadCount))
         );
+    }
+
+    // [POST] /reviews/{reviewId}/read-count
+    @PostMapping("/{reviewId}/read-count")
+    public ResponseEntity<ApiResponse<Void>> incrementReadCount(
+            @PathVariable("reviewId") int reviewId
+    ) {
+        reviewService.getReviewDetail(reviewId, true);
+        return ResponseEntity.ok(ApiResponse.ok());
     }
 
     // [GET] /reviews/rooms/{roomId}/summary
