@@ -6,3 +6,6 @@ AI/volumes/
 AI/chroma_db/
 AI/rag_docs/.manifest.json
 AI/.env
+*.sqlite3
+*.bin
+AI/output_docs/
