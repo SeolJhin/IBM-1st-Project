@@ -1,32 +1,34 @@
 import logging
+import os
 import sys
 from contextlib import asynccontextmanager
 
-# ── 로깅 설정 (uvicorn 시작과 동시에 적용) ────────────────────────────────────
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.v1.router import router as api_v1_router
+from app.config.settings import settings
+from app.services.monitor.stock_alert_service import start_stock_alert_daemon
+from app.services.rag.index_pipeline import ensure_rag_runtime
+from app.services.rag.reindex_daemon import start_reindex_daemon
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
     force=True,
 )
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1.router import router as api_v1_router
-from app.config.settings import settings
-from app.services.rag.index_pipeline import ensure_rag_runtime
-from app.services.rag.reindex_daemon import start_reindex_daemon
-from app.services.monitor.stock_alert_service import start_stock_alert_daemon
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ── 서버 시작 ──
+    # 서버 시작
     ensure_rag_runtime()
     start_reindex_daemon()
     start_stock_alert_daemon()
     yield
-    # ── 서버 종료 (필요 시 정리 로직 추가) ──
+    # 서버 종료
 
 
 app = FastAPI(title="Uniplace AI Service", version="0.1.0", lifespan=lifespan)
@@ -37,7 +39,6 @@ _cors_origins = [
     if origin.strip()
 ]
 
-# 미들웨어 먼저, 라우터 나중에
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
@@ -56,23 +57,22 @@ def health() -> dict[str, str]:
 
 @app.get("/health/molit")
 def health_molit() -> dict:
-    """국토부 API 키 로딩 상태 진단. GET /health/molit"""
-    import os
-
     settings_key = getattr(settings, "molit_api_key", "") or ""
     env_key = os.environ.get("MOLIT_API_KEY", "")
     final_key = settings_key or env_key
 
-    def preview(k):
-        if not k:
-            return "❌ 없음"
-        return k[:4] + "****" + k[-4:] if len(k) > 8 else "설정됨(짧음)"
+    def preview(key: str) -> str:
+        if not key:
+            return "not_set"
+        if len(key) <= 8:
+            return "set"
+        return f"{key[:4]}****{key[-4:]}"
 
     return {
         "molit_key_loaded": bool(final_key),
         "molit_key_preview": preview(final_key),
-        "source": "settings/.env" if settings_key else ("os.environ" if env_key else "없음"),
-        "env_file": str(settings.model_config.get("env_file", "알수없음")),
+        "source": "settings/.env" if settings_key else ("os.environ" if env_key else "none"),
+        "env_file": str(settings.model_config.get("env_file", "unknown")),
         "kakao_key_loaded": bool(getattr(settings, "kakao_map_api_key", "")),
         "tip": ".env 파일에 MOLIT_API_KEY=발급키 추가 후 uvicorn 재시작 필요",
     }

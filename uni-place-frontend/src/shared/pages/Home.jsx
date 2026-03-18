@@ -6,6 +6,7 @@ import BannerSlider from '../components/BannerSlider/BannerSlider';
 import { propertyApi } from '../../features/property/api/propertyApi';
 import { noticeApi } from '../../app/http/noticeApi';
 import { communityApi } from '../../features/community/api/communityApi';
+import { AiTop3Section } from './AiTop3Section';
 import styles from './Home.module.css';
 
 function IntroActionSection() {
@@ -372,128 +373,6 @@ function RecommendCarousel() {
         </div>
       </div>
     </div>
-  );
-}
-
-const ROOM_TYPE_LABEL = {
-  one_room: '원룸형',
-  two_room: '투룸형',
-  three_room: '쓰리룸형',
-  loft: '복층',
-  share: '쉐어',
-};
-
-const RANK_LABEL = ['🥇 1위', '🥈 2위', '🥉 3위'];
-const RANK_COLOR = ['#f59e0b', '#9ca3af', '#cd7c2f'];
-
-function AiTop3Section() {
-  const navigate = useNavigate();
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    propertyApi
-      .getRecommendations()
-      .then((data) => setItems(Array.isArray(data) ? data : []))
-      .catch((e) => setError(e?.message || '추천 정보를 불러오지 못했습니다.'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  return (
-    <section className={styles.sectionWhite}>
-      <div className={styles.contentWide}>
-        <div className={styles.sectionHeadCenter}>
-          <p className={styles.sectionEyebrow}>AI PICK · 데이터 기반 선정</p>
-          <h2 className={styles.sectionTitle}>이달의 추천 하우스 Top 3</h2>
-          <button
-            className={styles.primaryPill}
-            type="button"
-            onClick={() => navigate('/rooms')}
-          >
-            전체 보기
-          </button>
-        </div>
-
-        {loading && (
-          <p className={styles.typeHint}>AI 추천 방을 불러오는 중입니다…</p>
-        )}
-        {!loading && error && <p className={styles.typeHintError}>{error}</p>}
-        {!loading && !error && items.length === 0 && (
-          <p className={styles.typeHint}>아직 추천 데이터가 없습니다.</p>
-        )}
-
-        {!loading && !error && items.length > 0 && (
-          <div className={styles.aiTop3Grid}>
-            {items.map((item) => {
-              const rankIdx = (item.rankNo ?? 1) - 1;
-              return (
-                <article
-                  key={item.roomId}
-                  className={styles.aiTop3Card}
-                  onClick={() => navigate(`/rooms/${item.roomId}`)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) =>
-                    e.key === 'Enter' && navigate(`/rooms/${item.roomId}`)
-                  }
-                >
-                  <div
-                    className={styles.aiTop3RankBadge}
-                    style={{ color: RANK_COLOR[rankIdx] ?? '#374151' }}
-                  >
-                    {RANK_LABEL[rankIdx] ?? `${item.rankNo}위`}
-                  </div>
-
-                  <div className={styles.aiTop3ImgWrap}>
-                    {item.thumbnailUrl ? (
-                      <img
-                        src={item.thumbnailUrl}
-                        alt={item.buildingNm}
-                        className={styles.aiTop3Img}
-                      />
-                    ) : (
-                      <div className={styles.aiTop3ImgPlaceholder}>
-                        <span>🏠</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className={styles.aiTop3Body}>
-                    <p className={styles.aiTop3Building}>{item.buildingNm}</p>
-                    <p className={styles.aiTop3Addr}>{item.buildingAddr}</p>
-
-                    <div className={styles.aiTop3Tags}>
-                      <span className={styles.aiTop3Tag}>
-                        {ROOM_TYPE_LABEL[item.roomType] ?? item.roomType}
-                      </span>
-                      <span className={styles.aiTop3Tag}>{item.floor}층</span>
-                    </div>
-
-                    <p className={styles.aiTop3Price}>
-                      월 {Number(item.rentPrice ?? 0).toLocaleString()}원
-                    </p>
-
-                    <div className={styles.aiTop3Reason}>
-                      <span className={styles.aiTop3ReasonIcon}>🤖</span>
-                      <span className={styles.aiTop3ReasonText}>
-                        {item.aiReason}
-                      </span>
-                    </div>
-
-                    <div className={styles.aiTop3Stats}>
-                      <span>⭐ {Number(item.avgRating ?? 0).toFixed(1)}</span>
-                      <span>리뷰 {item.reviewCount ?? 0}건</span>
-                      <span>계약 {item.contractCount ?? 0}건</span>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </section>
   );
 }
 
@@ -866,7 +745,8 @@ export default function Home() {
       video.removeEventListener('timeupdate', updateProgress);
       video.removeEventListener('ended', handleEnded);
     };
-  }, [activeSlot, vidIndex, heroVideos.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSlot, vidIndex]);
 
   const togglePlay = () => {
     const video = activeRef.current;
@@ -952,7 +832,10 @@ export default function Home() {
       <AiTop3Section />
 
       <NoticeAndPopularSection />
+
       <LivingTypeSection />
+
+      <RecommendCarousel />
 
       <BannerSlider intervalMs={5000} />
 
