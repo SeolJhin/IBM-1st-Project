@@ -221,7 +221,7 @@ def complaint_priority(payload: Dict[str, Any] = Body(...)):
 @router.post("/operations/room-recommendation")
 def room_recommendation(payload: Dict[str, Any] = Body(...)):
     try:
-        from app.ai.room_recommend import recommend_rooms
+        from app.ai.room_recommend_top3 import recommend_rooms
         import asyncio
 
         rooms = payload.get("rooms") or []
