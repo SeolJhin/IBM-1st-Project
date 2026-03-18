@@ -130,6 +130,7 @@ public class CommunityContentUseCase extends AbstractForwardUseCase {
         List<Notice> notices = noticeRepository.search(
             null,
             null,
+            null,   // importance 필터 없음 (전체)
             keyword,
             PageRequest.of(0, 8, Sort.by(Sort.Direction.DESC, "updatedAt"))
         ).getContent();

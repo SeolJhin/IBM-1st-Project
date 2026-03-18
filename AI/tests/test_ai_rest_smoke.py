@@ -4,6 +4,7 @@ import unittest
 from fastapi.testclient import TestClient
 
 os.environ.setdefault("AI_ADMIN_API_KEY", "test-admin-key")
+os.environ.setdefault("LEGACY_EXECUTE_ENABLED", "false")
 
 from app.main import app
 
@@ -32,7 +33,14 @@ class AiRestSmokeTest(unittest.TestCase):
                 "/api/v1/ai/payments/order-suggestions",
                 {"userId": "u1", "items": [{"buildingId": 1, "prodNm": "Detergent", "prodStock": 2, "paidAmount": 120000}]},
             ),
-            ("post", "/api/v1/ai/operations/roomservice-stock-monitoring", {"userId": "u1", "prodStock": 3, "prodNm": "Detergent"}),
+            (
+                "post",
+                "/api/v1/ai/operations/roomservice-stock-monitoring",
+                {
+                    "userId": "u1",
+                    "items": [{"building_id": 1, "prod_nm": "Detergent", "prod_stock": 3, "affiliate_id": 1}],
+                },
+            ),
             ("post", "/api/v1/ai/operations/complaint-priority-classification", {"userId": "u1"}),
         ]
 
@@ -40,15 +48,14 @@ class AiRestSmokeTest(unittest.TestCase):
             with self.subTest(path=path):
                 response = self._request(method, path, payload)
                 self.assertEqual(200, response.status_code, msg=f"{path} -> {response.status_code} {response.text}")
-                if path in {
-                    "/api/v1/ai/payments/summary-documents",
-                    "/api/v1/ai/payments/status-summaries",
-                    "/api/v1/ai/payments/order-suggestions",
-                    "/api/v1/ai/operations/roomservice-stock-monitoring",
-                }:
-                    body = response.json()
-                    self.assertIn("metadata", body, msg=f"{path} metadata missing")
-                    self.assertIn("draft_path", body["metadata"], msg=f"{path} draft_path missing")
+                if path == "/api/v1/ai/payments/summary-documents":
+                    self._assert_draft_path(response, path)
+                if path == "/api/v1/ai/payments/status-summaries":
+                    self._assert_draft_path(response, path)
+                if path == "/api/v1/ai/payments/order-suggestions":
+                    self._assert_draft_path(response, path)
+                if path == "/api/v1/ai/operations/roomservice-stock-monitoring":
+                    self._assert_draft_path(response, path)
 
     def test_rag_admin_endpoints(self) -> None:
         headers = {"X-AI-Admin-Key": "test-admin-key"}
@@ -68,6 +75,11 @@ class AiRestSmokeTest(unittest.TestCase):
         if method == "get":
             return self.client.get(path, params=payload)
         raise AssertionError(f"Unsupported method: {method}")
+
+    def _assert_draft_path(self, response: object, path: str) -> None:
+        body = response.json()
+        self.assertIn("metadata", body, msg=f"{path} metadata missing")
+        self.assertIn("draft_path", body["metadata"], msg=f"{path} draft_path missing")
 
 
 if __name__ == "__main__":

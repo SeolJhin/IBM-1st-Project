@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: milvus
+  labels:
+    app: milvus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: milvus
+  template:
+    metadata:
+      labels:
+        app: milvus
+    spec:
+      containers:
+        - name: milvus
+          image: milvusdb/milvus:v2.4.4
+          imagePullPolicy: IfNotPresent
+          command:
+            - milvus
+            - run
+            - standalone
+          env:
+            - name: ETCD_ENDPOINTS
+              value: milvus-etcd:2379
+            - name: MINIO_ADDRESS
+              value: milvus-minio:9000
+          ports:
+            - containerPort: 19530
+            - containerPort: 9091
+          readinessProbe:
+            tcpSocket:
+              port: 19530
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 12
+          livenessProbe:
+            tcpSocket:
+              port: 19530
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+          volumeMounts:
+            - name: milvus-data
+              mountPath: /var/lib/milvus
+      volumes:
+        - name: milvus-data
+          persistentVolumeClaim:
+            claimName: milvus-data-pvc

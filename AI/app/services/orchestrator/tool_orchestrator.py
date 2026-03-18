@@ -26,7 +26,15 @@ from app.services.tools.db_schema import DB_SCHEMA
 from app.services.tools.tool_definitions import TOOL_DEFINITIONS, AUTH_REQUIRED_TOOLS
 from app.services.tools.tool_executor import execute_tool
 from app.services.tools.tool_result_formatter import format_tool_result
-from app.services.rag.chroma_rag import execute_rag_search
+from app.integrations.milvus_client import search_vectors as _milvus_search
+
+def execute_rag_search(query: str) -> dict:
+    from app.schemas.ai_request import AiRequest
+    req = AiRequest(prompt=query, intent="RAG_SEARCH", user_id=None)
+    results = _milvus_search(req)
+    if not results:
+        return {"found": False, "message": "관련 문서를 찾지 못했습니다.", "results": []}
+    return {"found": True, "count": len(results), "results": [{"content": r} for r in results]}
 
 # 페이지 라우트 맵 — AI가 링크 버튼을 생성할 때 참고
 PAGE_ROUTES = {
@@ -545,6 +553,16 @@ def _force_popular_goods_query(user_id: str) -> "AiResponse":
         metadata={"action_buttons": [{"label": "🛒 룸서비스 바로가기", "url": "/me?tab=roomservice", "icon": "🛒"}]},
     )
 
+def _is_community_list_query(prompt: str) -> bool:
+    keywords = ["게시글", "글 보여", "목록", "리스트", "찾아줘", "검색"]
+    return any(k in prompt for k in keywords)
+
+
+def _is_rag_query(prompt: str) -> bool:
+    rag_keywords = [
+        "꿀팁", "후기", "리뷰", "추천", "어때", "경험", "정보", "알려줘"
+    ]
+    return any(k in prompt for k in rag_keywords)
 
 def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -> AiResponse:
     client = _get_client(provider)
@@ -575,7 +593,39 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
         "택배", "방문객", "세탁", "청소", "인터넷", "wifi", "에어컨", "냉난방",
     ]
     _needs_tool = any(kw in prompt for kw in _db_required_keywords)
-    _tool_choice = "required" if _needs_tool else "auto"
+    
+    if _is_rag_query(prompt):
+        _tool_choice = "required"
+        forced_tool = "rag_search"
+    else:
+        _tool_choice = "required" if _needs_tool else "auto"
+        forced_tool = None
+        
+    rag_context = []
+    
+    if forced_tool == "rag_search":
+        _tool_choice = "none"
+        logger.info("[ToolOrchestrator] RAG 강제 실행")
+
+        rag_result = execute_rag_search(prompt)
+        rag_context = rag_result.get("results", [])
+        
+    if rag_context:
+        texts = []
+
+        for item in rag_context[:5]:
+            if isinstance(item, dict):
+                texts.append(item.get("text", ""))
+            else:
+                texts.append(str(item))
+
+        context_text = "\n".join(texts)
+
+        messages.append({
+            "role": "system",
+            "content": f"다음 정보를 참고해서 답변하세요:\n{context_text}"
+        })
+    
     logger.info("[ToolOrchestrator] tool_choice=%s (needs_tool=%s)", _tool_choice, _needs_tool)
 
     resp1, used_model = _call_with_fallback(

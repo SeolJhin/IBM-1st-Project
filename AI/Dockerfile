@@ -20,6 +20,9 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY app ./app
 COPY data ./data
+COPY rag_docs ./rag_docs
+
+RUN mkdir -p /app/chroma_db
 
 EXPOSE 8000
 

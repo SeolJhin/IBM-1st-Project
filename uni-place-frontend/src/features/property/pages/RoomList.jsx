@@ -18,6 +18,9 @@ const INIT_QUERY = {
   direct: 'DESC',
   rentType: undefined,
   roomSt: undefined,
+  roomType: undefined,
+  roomNo: undefined,
+  floor: undefined,
   sunDirection: undefined,
   petAllowedYn: undefined,
   minRentPrice: undefined,
@@ -220,6 +223,44 @@ function SpaceCard({ space, onClick }) {
   );
 }
 
+// ─── 주소 → 지점명 변환 ───────────────────────────────────────
+// 예) '서울특별시 강남구 테헤란로 427'  → '강남점'
+//     '경기도 수원시 영통구 광교중앙로 145' → '수원점'
+//     '경기도 성남시 분당구 판교역로 235' → '판교점'
+function getBranchLabel(building) {
+  const addr = building.buildingAddr || '';
+
+  // 1) 서울: 구 단위 추출  (강남구 → 강남점)
+  if (addr.includes('서울')) {
+    const m = addr.match(/([가-힣]+)구/);
+    if (m) return `${m[1]}점`;
+  }
+
+  // 2) 도로명에 '역'이 포함된 경우  (판교역로 → 판교점)
+  const roadM = addr.match(/([가-힣]+)역/);
+  if (roadM) return `${roadM[1]}점`;
+
+  // 3) 시 단위 추출  (수원시 → 수원점)
+  //    특별시·광역시·특별자치시는 제외
+  const siM = addr.match(/([가-힣]{2,5})시/);
+  const METRO = [
+    '서울특별',
+    '부산광역',
+    '인천광역',
+    '대구광역',
+    '광주광역',
+    '대전광역',
+    '울산광역',
+    '세종특별자치',
+  ];
+  if (siM && !METRO.some((ex) => siM[1].includes(ex))) {
+    return `${siM[1]}점`;
+  }
+
+  // 4) fallback: 건물명 그대로
+  return building.buildingNm;
+}
+
 // ─── 방 필터 패널 ─────────────────────────────────────────────
 function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
   const [local, setLocal] = useState({
@@ -229,6 +270,8 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
     maxDeposit: '',
     minRoomCapacity: '',
     maxRoomCapacity: '',
+    roomNo: '',
+    floor: '',
   });
   useEffect(() => {
     setLocal({
@@ -238,6 +281,8 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
       maxDeposit: query.maxDeposit ?? '',
       minRoomCapacity: query.minRoomCapacity ?? '',
       maxRoomCapacity: query.maxRoomCapacity ?? '',
+      roomNo: query.roomNo ?? '',
+      floor: query.floor ?? '',
     });
   }, [
     query.minRentPrice,
@@ -246,6 +291,8 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
     query.maxDeposit,
     query.minRoomCapacity,
     query.maxRoomCapacity,
+    query.roomNo,
+    query.floor,
   ]);
 
   const sel = (key) => (e) =>
@@ -278,18 +325,130 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
           초기화
         </button>
       </div>
+
+      {/* ── 1. 건물 ── */}
       <section className={styles.filterSection}>
-        <h3 className={styles.filterLabel}>임대 유형</h3>
-        <select
-          className={styles.filterSelect}
-          value={query.rentType || ''}
-          onChange={sel('rentType')}
-        >
-          <option value="">전체</option>
-          <option value="monthly_rent">월세</option>
-          <option value="stay">단기</option>
-        </select>
+        <h3 className={styles.filterLabel}>건물</h3>
+        {buildingLoading ? (
+          <p style={{ fontSize: 12, color: '#9a8c70', margin: 0 }}>
+            건물 목록 로딩 중...
+          </p>
+        ) : (
+          <select
+            className={styles.filterSelect}
+            value={query.buildingNm || ''}
+            onChange={(e) => {
+              dispatch({
+                type: 'SET_FILTER',
+                payload: { buildingNm: e.target.value || undefined },
+              });
+            }}
+          >
+            <option value="">전체 건물</option>
+            {buildings.map((b) => (
+              <option key={b.buildingId} value={b.buildingNm}>
+                {getBranchLabel(b)}
+              </option>
+            ))}
+          </select>
+        )}
       </section>
+
+      {/* ── 2. 방 유형 ── */}
+      <section className={styles.filterSection}>
+        <h3 className={styles.filterLabel}>방 유형</h3>
+        <div className={styles.roomTypeGrid}>
+          {[
+            { value: '', label: '전체', icon: '🏠' },
+            { value: 'one_room', label: '원룸', icon: '🛏' },
+            { value: 'two_room', label: '투룸', icon: '🛏🛏' },
+            { value: 'three_room', label: '쓰리룸', icon: '🛏🛏🛏' },
+            { value: 'share', label: '쉐어', icon: '👥' },
+            { value: 'loft', label: '로프트', icon: '🏗' },
+          ].map(({ value, label, icon }) => (
+            <button
+              key={value}
+              type="button"
+              className={`${styles.roomTypeBtn} ${(query.roomType ?? '') === value ? styles.roomTypeBtnActive : ''}`}
+              onClick={() =>
+                dispatch({
+                  type: 'SET_FILTER',
+                  payload: { roomType: value || undefined },
+                })
+              }
+            >
+              <span className={styles.roomTypeIcon}>{icon}</span>
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* ── 3. 호실 / 층 검색 ── */}
+      <section className={styles.filterSection}>
+        <h3 className={styles.filterLabel}>호실 / 층 검색</h3>
+        <p className={styles.filterHint}>입력 후 Enter 또는 클릭 시 적용</p>
+        <div className={styles.searchRow}>
+          <div className={styles.searchField}>
+            <span className={styles.searchFieldLabel}>호실</span>
+            <input
+              className={styles.filterInput}
+              type="text"
+              placeholder="예) 101"
+              value={local.roomNo}
+              onChange={(e) =>
+                setLocal((p) => ({ ...p, roomNo: e.target.value }))
+              }
+              onBlur={() =>
+                dispatch({
+                  type: 'SET_FILTER',
+                  payload: { roomNo: local.roomNo.trim() || undefined },
+                })
+              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter')
+                  dispatch({
+                    type: 'SET_FILTER',
+                    payload: { roomNo: local.roomNo.trim() || undefined },
+                  });
+              }}
+            />
+          </div>
+          <div className={styles.searchField}>
+            <span className={styles.searchFieldLabel}>층</span>
+            <input
+              className={styles.filterInput}
+              type="number"
+              placeholder="예) 3"
+              min={1}
+              value={local.floor}
+              onChange={(e) =>
+                setLocal((p) => ({ ...p, floor: e.target.value }))
+              }
+              onBlur={() =>
+                dispatch({
+                  type: 'SET_FILTER',
+                  payload: {
+                    floor: local.floor === '' ? undefined : Number(local.floor),
+                  },
+                })
+              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter')
+                  dispatch({
+                    type: 'SET_FILTER',
+                    payload: {
+                      floor:
+                        local.floor === '' ? undefined : Number(local.floor),
+                    },
+                  });
+              }}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4. 입주 상태 ── */}
       <section className={styles.filterSection}>
         <h3 className={styles.filterLabel}>입주 상태</h3>
         <select
@@ -305,6 +464,22 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
           <option value="cleaning">청소중</option>
         </select>
       </section>
+
+      {/* ── 5. 임대 유형 ── */}
+      <section className={styles.filterSection}>
+        <h3 className={styles.filterLabel}>임대 유형</h3>
+        <select
+          className={styles.filterSelect}
+          value={query.rentType || ''}
+          onChange={sel('rentType')}
+        >
+          <option value="">전체</option>
+          <option value="monthly_rent">월세</option>
+          <option value="stay">단기</option>
+        </select>
+      </section>
+
+      {/* ── 6. 월세 범위 ── */}
       <section className={styles.filterSection}>
         <h3 className={styles.filterLabel}>월세 범위 (원)</h3>
         <p className={styles.filterHint}>
@@ -332,6 +507,8 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
           />
         </div>
       </section>
+
+      {/* ── 7. 보증금 범위 ── */}
       <section className={styles.filterSection}>
         <h3 className={styles.filterLabel}>보증금 범위 (원)</h3>
         <p className={styles.filterHint}>
@@ -359,6 +536,8 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
           />
         </div>
       </section>
+
+      {/* ── 8. 수용 인원 ── */}
       <section className={styles.filterSection}>
         <h3 className={styles.filterLabel}>수용 인원</h3>
         <div className={styles.rangeRow}>
@@ -385,6 +564,8 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
           />
         </div>
       </section>
+
+      {/* ── 9. 채광 ── */}
       <section className={styles.filterSection}>
         <h3 className={styles.filterLabel}>채광</h3>
         <select
@@ -399,6 +580,8 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
           <option value="w">서향</option>
         </select>
       </section>
+
+      {/* ── 10. 반려동물 ── */}
       <section className={styles.filterSection}>
         <h3 className={styles.filterLabel}>반려동물</h3>
         <select
@@ -410,32 +593,6 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
           <option value="Y">허용</option>
           <option value="N">불가</option>
         </select>
-      </section>
-      <section className={styles.filterSection}>
-        <h3 className={styles.filterLabel}>건물명</h3>
-        {buildingLoading ? (
-          <p style={{ fontSize: 12, color: '#9a8c70', margin: 0 }}>
-            건물 목록 로딩 중...
-          </p>
-        ) : (
-          <select
-            className={styles.filterSelect}
-            value={query.buildingNm || ''}
-            onChange={(e) => {
-              dispatch({
-                type: 'SET_FILTER',
-                payload: { buildingNm: e.target.value || undefined },
-              });
-            }}
-          >
-            <option value="">전체 건물</option>
-            {buildings.map((b) => (
-              <option key={b.buildingId} value={b.buildingNm}>
-                {b.buildingNm}
-              </option>
-            ))}
-          </select>
-        )}
       </section>
     </aside>
   );
@@ -489,7 +646,7 @@ function SpaceFilterPanel({ query, dispatch, buildings, buildingLoading }) {
             <option value="">전체 건물</option>
             {buildings.map((b) => (
               <option key={b.buildingId} value={b.buildingId}>
-                {b.buildingNm}
+                {getBranchLabel(b)}
               </option>
             ))}
           </select>
@@ -534,6 +691,9 @@ export default function RoomList() {
       direct: p('direct') ?? 'DESC',
       rentType: p('rentType'),
       roomSt: p('roomSt'),
+      roomType: p('roomType'),
+      roomNo: p('roomNo'),
+      floor: n('floor'),
       sunDirection: p('sunDirection'),
       petAllowedYn: p('petAllowedYn'),
       minRentPrice: n('minRentPrice'),
@@ -576,7 +736,9 @@ export default function RoomList() {
     setRL(true);
     setRE(null);
     try {
-      const data = await propertyApi.getRoomsAll(q);
+      // _rating은 클라이언트 정렬이므로 API에는 기본값으로 전달
+      const apiQ = q.sort === '_rating' ? { ...q, sort: 'roomId' } : q;
+      const data = await propertyApi.getRoomsAll(apiQ);
       const content = data?.content ?? [];
       const enriched = await Promise.all(
         content.map(async (room) => {
@@ -595,7 +757,11 @@ export default function RoomList() {
           }
         })
       );
-      setRooms(enriched);
+      const sorted =
+        query.sort === '_rating'
+          ? [...enriched].sort((a, b) => (b._rating ?? 0) - (a._rating ?? 0))
+          : enriched;
+      setRooms(sorted);
       setRP({
         page: data?.page ?? 1,
         totalPages: data?.totalPages ?? 1,
@@ -862,6 +1028,7 @@ export default function RoomList() {
                     <option value="rentPrice">월세 낮은순</option>
                     <option value="deposit">보증금 낮은순</option>
                     <option value="roomSize">면적순</option>
+                    <option value="_rating">별점순</option>
                   </select>
                 </div>
               </div>

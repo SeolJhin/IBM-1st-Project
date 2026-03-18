@@ -7,6 +7,7 @@ import org.myweb.uniplace.domain.support.api.dto.request.ComplainReplyRequest;
 import org.myweb.uniplace.domain.support.api.dto.request.ComplainSearchRequest;
 import org.myweb.uniplace.domain.support.api.dto.request.ComplainUpdateRequest;
 import org.myweb.uniplace.domain.support.api.dto.response.ComplainResponse;
+import org.myweb.uniplace.domain.ai.application.moderation.BannedWordService;
 import org.myweb.uniplace.domain.commoncode.repository.CommonCodeRepository;
 import org.myweb.uniplace.domain.notification.application.NotificationService;
 import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
@@ -33,6 +34,7 @@ public class ComplainServiceImpl implements ComplainService {
     private final CommonCodeRepository   commonCodeRepository;
     private final NotificationService    notificationService;
     private final ComplainAiAsyncService complainAiAsyncService;
+    private final BannedWordService bannedWordService;
 
     // -------------------------------------------------------
     // 조회
@@ -76,11 +78,14 @@ public class ComplainServiceImpl implements ComplainService {
     @Override
     public ComplainResponse create(String userId, ComplainCreateRequest request) {
 
+    	String filteredTitle = bannedWordService.filter(request.getCompTitle());
+    	String filteredContent = bannedWordService.filter(request.getCompCtnt());
+    	
         // 1. 민원 저장
         Complain complain = Complain.builder()
-                .compTitle(request.getCompTitle())
+                .compTitle(filteredTitle)
                 .userId(userId)
-                .compCtnt(request.getCompCtnt())
+                .compCtnt(filteredContent)
                 .code(normalizeSupportCodeForWrite(request.getCode()))
                 .build();
         Complain saved = complainRepository.save(complain);
@@ -102,7 +107,9 @@ public class ComplainServiceImpl implements ComplainService {
     public ComplainResponse update(Integer compId, ComplainUpdateRequest request) {
         Complain complain = complainRepository.findById(compId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPLAIN_NOT_FOUND));
-        complain.update(request.getCompTitle(), request.getCompCtnt());
+        String filteredTitle = bannedWordService.filter(request.getCompTitle());
+    	String filteredContent = bannedWordService.filter(request.getCompCtnt());
+        complain.update(filteredTitle, filteredContent);
         return ComplainResponse.from(complain);
     }
 

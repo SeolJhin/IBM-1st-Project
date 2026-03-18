@@ -44,6 +44,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.client.RestClient;
 
 @RestController
 @RequiredArgsConstructor
@@ -53,6 +55,8 @@ public class AiController {
     private final AiOrchestratorService aiOrchestratorService;
     private final ObjectMapper objectMapper;
     private final AiOrderFormDownloadProxy aiOrderFormDownloadProxy;
+    @Qualifier("aiRestClient")
+    private final RestClient aiRestClient;
 
     @PostMapping("/chat")
     public ApiResponse<AiChatResponse> chat(@Valid @RequestBody AiChatRequest request) {
@@ -123,6 +127,26 @@ public class AiController {
         // Python /api/v1/ai/chat/admin-chatbot 으로 포워딩
         AiGatewayResponse response = aiOrchestratorService.handle(gatewayReq);
         return ApiResponse.ok(AiChatResponse.from(response));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/stock-alerts")
+    public ApiResponse<Map<String, Object>> adminStockAlerts(@RequestParam(required = false) String adminId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String resolvedAdminId = (adminId != null && !adminId.isBlank())
+            ? adminId
+            : (auth != null ? auth.getName() : "");
+
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = aiRestClient.get()
+                .uri("/api/v1/ai/admin/stock-alerts?adminId={adminId}", resolvedAdminId)
+                .retrieve()
+                .body(Map.class);
+            return ApiResponse.ok(response != null ? response : Map.of("alert", null));
+        } catch (Exception e) {
+            return ApiResponse.ok(Map.of("alert", null));
+        }
     }
 
     @PostMapping("/chat/voice")
