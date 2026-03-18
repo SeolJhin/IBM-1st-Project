@@ -9,12 +9,17 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Python AI 서버 — 방 추천 Top3 요청 클라이언트
- * RestTemplate 대신 RestClient(@Qualifier("aiRestClient")) 사용
+ *
+ * ✅ 변경사항:
+ *   requestTop3(rooms, userQuery) 시그니처 추가
+ *   - userQuery 없음(null) → 기본 종합 추천 (기존 동작)
+ *   - userQuery 있음       → payload에 "user_query" 포함 → Python이 개인화 추천
  */
 @Slf4j
 @Component
@@ -31,12 +36,24 @@ public class RoomRecommendationAiClient {
     /**
      * Python AI 서버에 후보 방 목록을 전송하고 Top3 결과를 받습니다.
      *
-     * @param rooms fetchRoomStats() 가 반환한 방 통계 목록 (room_id, building_nm, ...)
+     * @param rooms     fetchRoomStats() 가 반환한 방 통계 목록
+     * @param userQuery 사용자 자연어 쿼리 (null 또는 빈 문자열이면 기본 추천)
      * @return Top3 결과 Map 리스트 (room_id, rank, reason, score)
      */
-    public List<Map<String, Object>> requestTop3(List<Map<String, Object>> rooms) {
+    public List<Map<String, Object>> requestTop3(
+            List<Map<String, Object>> rooms,
+            String userQuery
+    ) {
         try {
-            Map<String, Object> requestBody = Map.of("rooms", rooms);
+            // payload 구성
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("rooms", rooms);
+
+            // userQuery가 있으면 추가 (Python room_recommend.py의 "user_query" 키와 일치)
+            if (userQuery != null && !userQuery.isBlank()) {
+                requestBody.put("user_query", userQuery);
+                log.info("[RoomRecommendAiClient] 개인화 요청: query='{}'", userQuery);
+            }
 
             String responseBody = aiRestClient.post()
                     .uri(ENDPOINT)
