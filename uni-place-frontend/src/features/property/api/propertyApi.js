@@ -140,7 +140,10 @@ export const propertyApi = {
    *   aiReason, avgRating, reviewCount, contractCount,
    *   thumbnailUrl, generatedAt
    */
-  getRecommendations: () => request('/rooms/recommendations'),
+  getRecommendations: (params = {}) => {
+    const query = buildQuery(params);
+    return request(`/rooms/recommendations${query}`);
+  },
 
   // ===== SpaceController (/spaces) =====
 

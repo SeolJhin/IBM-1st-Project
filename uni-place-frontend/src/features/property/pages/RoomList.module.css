@@ -442,6 +442,70 @@
   color: var(--accent-soft, #9a8c70);
 }
 
+/* ── 호실·층 나란히 검색 ── */
+.searchRow {
+  display: flex;
+  gap: 8px;
+}
+.searchField {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.searchFieldLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted, #48535f);
+  letter-spacing: 0.04em;
+}
+.searchField .filterInput {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── 방 유형 버튼 그리드 ── */
+.roomTypeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.roomTypeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: 1.5px solid var(--line, #d7cebc);
+  border-radius: 10px;
+  background: var(--b-5, #fdf7ec);
+  color: var(--muted, #48535f);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.2;
+}
+.roomTypeBtn:hover {
+  border-color: var(--primary, #d9ad5b);
+  color: var(--accent, #ba8037);
+  background: #fff;
+}
+.roomTypeBtnActive {
+  border-color: var(--primary, #d9ad5b);
+  background: var(--primary, #d9ad5b);
+  color: #fff;
+}
+.roomTypeBtnActive:hover {
+  background: var(--accent, #ba8037);
+  border-color: var(--accent, #ba8037);
+  color: #fff;
+}
+.roomTypeIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
 /* ── 탭 바 ── */
 .tabBar {
   display: flex;
