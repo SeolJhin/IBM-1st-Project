@@ -3,7 +3,7 @@
 ## 최종 구성
 - **STT**: faster-whisper (Whisper 기반)
 - **TTS**: MeloTTS (MIT 라이선스, 상업용 무료)
-- **API**: FastAPI (Swagger: http://localhost:8000/docs)
+- **API**: FastAPI (Swagger: http://dev-host:8000/docs)
 
 ---
 
@@ -86,7 +86,7 @@ print('저장 완료')
 
 # API 서버 실행
 python api/server.py
-# → http://localhost:8000/docs (Swagger UI)
+# → http://dev-host:8000/docs (Swagger UI)
 ```
 
 ---

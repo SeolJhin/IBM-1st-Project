@@ -1051,7 +1051,7 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
                     "file_name":    fname,
                     "download_url": dl_url,
                     "buttons": [
-                        {"label": "📥 엑셀 다운로드", "url": "http://localhost:8080/ai/payment/order-form/download/" + fname, "icon": "📥"},
+                        {"label": "📥 엑셀 다운로드", "url": (dl_url or ("/ai/payment/order-form/download/" + fname)), "icon": "📥"},
                         {"label": "결제 내역 관리",   "url": "/admin/pay/payments", "icon": "💳"},
                     ],
                 },
@@ -1086,7 +1086,7 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
 
             buttons = [{{"label": "결제 내역 관리", "url": "/admin/pay/payments", "icon": "💳"}}]
             if xlsx_fname:
-                buttons.append({{"label": "📥 엑셀 다운로드", "url": f"http://localhost:8080/ai/payment/order-form/download/{xlsx_fname}", "icon": "📥"}})
+                buttons.append({{"label": "📥 엑셀 다운로드", "url": (dl_url or f"/ai/payment/order-form/download/{xlsx_fname}"), "icon": "📥"}})
 
             return AiResponse(
                 answer=f"✅ 결제 문서가 자동 생성되었습니다.\n{answer}{dl_text}",

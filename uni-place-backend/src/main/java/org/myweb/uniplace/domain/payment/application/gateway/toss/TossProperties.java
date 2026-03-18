@@ -18,6 +18,9 @@ public class TossProperties {
     // legacy key (fallback)
     private String secret_key;
 
+    // API version header (e.g. 2024-06-01)
+    private String api_version;
+
     // webhook secret (optional)
     private String webhook_secret;
 }
