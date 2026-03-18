@@ -3,9 +3,10 @@ from typing import Any
 
 from app.config.settings import settings
 from app.schemas.ai_request import AiRequest
-from sentence_transformers import SentenceTransformer
 
-_embedding_model = SentenceTransformer("BAAI/bge-m3")
+# Chroma 모드에서는 Milvus 임베딩이 필요 없을 수 있으므로
+# 앱 시작 시점이 아니라 실제 사용 시점에 모델을 로딩한다.
+_embedding_model = None
 
 logger = logging.getLogger(__name__)
 
@@ -13,10 +14,6 @@ logger = logging.getLogger(__name__)
 def search_vectors(req: AiRequest) -> list[str]:
     query = _build_query(req)
     if not query:
-        return []
-
-    # rag_engine이 chroma면 Milvus 검색 스킵
-    if getattr(settings, "rag_engine", "chroma").lower() == "chroma":
         return []
 
     if not settings.milvus_uri or not settings.milvus_collection:
@@ -63,8 +60,19 @@ def _build_query(req: AiRequest) -> str:
 
 
 def _embed_query(text: str) -> list[float]:
+    global _embedding_model
+    if _embedding_model is None:
+        try:
+            # 지연 로딩: Milvus 임베딩 경로를 사용할 때만 로딩
+            from sentence_transformers import SentenceTransformer  # type: ignore
+
+            _embedding_model = SentenceTransformer("BAAI/bge-m3")
+        except Exception as exc:
+            logger.warning("SentenceTransformer load failed: %s", exc.__class__.__name__)
+            return []
+
     vec = _embedding_model.encode(text)
-    return vec.tolist()
+    return vec.tolist() if hasattr(vec, "tolist") else list(vec)
 
 
 def _embed_with_openai(text: str) -> list[float]:

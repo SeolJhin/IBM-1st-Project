@@ -39,6 +39,7 @@ export default function AdminSpaceModal({ spaceId, onClose, onSuccess }) {
           spaceDesc: data.spaceDesc || '',
         });
         setExistingFiles(data.files || []);
+        fu.initExistingOrder(data.files || []);
       })
       .catch((e) => setError(e?.message || '불러오기 실패'))
       .finally(() => setFetchLoading(false));
@@ -200,9 +201,12 @@ export default function AdminSpaceModal({ spaceId, onClose, onSuccess }) {
                 newFiles={fu.newFiles}
                 previews={fu.previews}
                 deleteFileIds={fu.deleteFileIds}
+                existingOrder={fu.existingOrder}
                 addFiles={fu.addFiles}
                 removeNewFile={fu.removeNewFile}
+                moveNewFile={fu.moveNewFile}
                 toggleDeleteExisting={fu.toggleDeleteExisting}
+                moveExisting={fu.moveExisting}
                 label="공용공간 이미지"
               />
             </div>
