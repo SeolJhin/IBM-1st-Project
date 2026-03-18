@@ -20,6 +20,8 @@ const SAMPLES = 40;
 /* ── 모델 초기화 ── */
 async function initModels() {
   if (initModels._done) return;
+  // TensorFlow.js 백엔드 초기화 먼저
+  await faceapi.tf.ready();
   await Promise.all([
     faceapi.nets.tinyFaceDetector.loadFromUri(MODELS_URL),
     faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODELS_URL),
