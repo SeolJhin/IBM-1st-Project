@@ -53,6 +53,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -84,12 +85,14 @@ public class PaymentServiceImpl implements PaymentService {
     private final RoomServiceOrderRepository roomServiceOrderRepository;
     private final OrderService orderService;
 
-    @Value("${app.baseUrl:http://localhost:8080}")
+    @Value("${app.baseUrl:}")
     private String appBaseUrl;
 
     @Override
     public PaymentPrepareResponse prepare(String userId, PaymentPrepareRequest request) {
         validatePrepareRequest(request);
+        String requestedProvider = normalizeProvider(request.getProvider());
+        request.setProvider(requestedProvider);
         PreparedTarget target = resolveTarget(userId, request);
         validateServiceGoodsMapping(request.getServiceGoodsId(), target.targetType());
         BigDecimal taxExScopeAmount = resolveTaxExScopeAmount(request.getTaxExScopeAmount(), target.totalPrice());
@@ -104,7 +107,7 @@ public class PaymentServiceImpl implements PaymentService {
                 java.util.List.of(ST_READY, ST_PENDING)
             )
             .orElse(null);
-        if (existingByTarget != null) {
+        if (existingByTarget != null && sameProvider(existingByTarget.getProvider(), requestedProvider)) {
             return reissueReadyForExisting(existingByTarget, target.itemName());
         }
 
@@ -155,9 +158,10 @@ public class PaymentServiceImpl implements PaymentService {
         String providerSlug = payment.getProvider() == null ? "kakao" : payment.getProvider().toLowerCase();
         String callbackQuery = "?pid=" + payment.getPaymentId()
             + "&mu=" + URLEncoder.encode(payment.getMerchantUid(), StandardCharsets.UTF_8);
-        String approvalUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/approval" + callbackQuery;
-        String cancelUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/cancel" + callbackQuery;
-        String failUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/fail" + callbackQuery;
+        String callbackBase = resolveAppBaseUrl();
+        String approvalUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/approval" + callbackQuery;
+        String cancelUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/cancel" + callbackQuery;
+        String failUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/fail" + callbackQuery;
 
         PaymentGateway gateway = paymentGatewayFactory.get(payment.getProvider());
 
@@ -211,6 +215,8 @@ public class PaymentServiceImpl implements PaymentService {
         if (request == null || request.getServiceGoodsId() == null || !hasText(request.getProvider())) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
+        String requestedProvider = normalizeProvider(request.getProvider());
+        request.setProvider(requestedProvider);
 
         List<Integer> chargeIds = normalizeChargeIds(request.getChargeIds());
         if (chargeIds.isEmpty()) {
@@ -250,7 +256,10 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         validateServiceGoodsMapping(request.getServiceGoodsId(), TARGET_TYPE_MONTHLY_CHARGE);
-        String idempotencyKey = MONTHLY_BATCH_IDEMPOTENCY_PREFIX + joinChargeIds(payableChargeIds);
+        String idempotencyKey = MONTHLY_BATCH_IDEMPOTENCY_PREFIX
+            + requestedProvider
+            + ":"
+            + joinChargeIds(payableChargeIds);
         BigDecimal taxExScopeAmount = resolveTaxExScopeAmount(request.getTaxExScopeAmount(), totalPrice);
         BigDecimal taxScopeAmount = totalPrice.subtract(taxExScopeAmount);
 
@@ -306,9 +315,10 @@ public class PaymentServiceImpl implements PaymentService {
         String providerSlug = payment.getProvider() == null ? "kakao" : payment.getProvider().toLowerCase();
         String callbackQuery = "?pid=" + payment.getPaymentId()
             + "&mu=" + URLEncoder.encode(payment.getMerchantUid(), StandardCharsets.UTF_8);
-        String approvalUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/approval" + callbackQuery;
-        String cancelUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/cancel" + callbackQuery;
-        String failUrl = appBaseUrl + "/api/payments/callback/" + providerSlug + "/fail" + callbackQuery;
+        String callbackBase = resolveAppBaseUrl();
+        String approvalUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/approval" + callbackQuery;
+        String cancelUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/cancel" + callbackQuery;
+        String failUrl = callbackBase + "/api/payments/callback/" + providerSlug + "/fail" + callbackQuery;
 
         PaymentGateway gateway = paymentGatewayFactory.get(payment.getProvider());
         PaymentGatewayReadyResponse gwRes = gateway.ready(
@@ -798,6 +808,20 @@ public class PaymentServiceImpl implements PaymentService {
         return hasText(value) ? value : null;
     }
 
+    private static String normalizeProvider(String provider) {
+        if (!hasText(provider)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        return provider.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private static boolean sameProvider(String actualProvider, String expectedProvider) {
+        if (!hasText(actualProvider) || !hasText(expectedProvider)) {
+            return false;
+        }
+        return actualProvider.equalsIgnoreCase(expectedProvider);
+    }
+
     private static BigDecimal resolveTaxExScopeAmount(BigDecimal requestedTaxEx, BigDecimal totalPrice) {
         if (totalPrice == null || totalPrice.signum() < 0) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
@@ -841,6 +865,10 @@ public class PaymentServiceImpl implements PaymentService {
             return List.of();
         }
         String raw = idempotencyKey.substring(MONTHLY_BATCH_IDEMPOTENCY_PREFIX.length());
+        int providerSep = raw.indexOf(':');
+        if (providerSep >= 0) {
+            raw = raw.substring(providerSep + 1);
+        }
         if (!hasText(raw)) return List.of();
 
         LinkedHashSet<Integer> out = new LinkedHashSet<>();
@@ -1085,6 +1113,14 @@ public class PaymentServiceImpl implements PaymentService {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private String resolveAppBaseUrl() {
+        if (!hasText(appBaseUrl)) {
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR);
+        }
+        String trimmed = appBaseUrl.trim();
+        return trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
     }
 
     private void verifyApproveResultKor(Payment payment, PaymentGatewayApproveResponse gwRes) {

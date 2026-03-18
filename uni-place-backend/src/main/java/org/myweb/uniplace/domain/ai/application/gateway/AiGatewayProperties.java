@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "ai.fastapi")
 public class AiGatewayProperties {
 
-    private String baseUrl = "http://localhost:8000";
+    private String baseUrl = "";
     private String executePath = "/api/v1/ai/execute";
     private String generalQaPath = "/api/v1/ai/chat/general-qa";
     private String aiAgentChatbotPath = "/api/v1/ai/chat/agent-chatbot";

@@ -9,8 +9,10 @@ import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.user.api.dto.request.KakaoSignupCompleteRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.LogoutRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.RefreshTokenRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.SocialLinkStartRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.UserLoginRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.UserSignupRequest;
+import org.myweb.uniplace.domain.user.api.dto.response.SocialLinkStartResponse;
 import org.myweb.uniplace.domain.user.api.dto.response.UserTokenResponse;
 import org.myweb.uniplace.domain.user.domain.entity.RefreshToken;
 import org.myweb.uniplace.domain.user.domain.entity.User;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.net.URLEncoder;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
@@ -73,6 +76,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Value("${jwt.refresh-exp:86400000}")
     private long refreshExpMillis;
+    @Value("${server.servlet.context-path:/api}")
+    private String serverContextPath;
 
     @Override
     @Transactional
@@ -83,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
         String userEmail = normalizeEmail(req.getUserEmail());
         String userTel = req.getUserTel() == null ? null : req.getUserTel().trim();
 
-        // ✅ 이메일 인증 완료 여부 확인
+        //  이메일 인증 완료 여부 확인
         if (!emailVerificationStore.isVerified(userEmail)) {
             throw new BusinessException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
@@ -340,6 +345,33 @@ public class AuthServiceImpl implements AuthService {
         return oAuthCompleteService.googleComplete(req, userAgent, ip);
     }
 
+    @Override
+    public SocialLinkStartResponse startSocialLink(String userId, SocialLinkStartRequest req) {
+        if (req == null || userId == null || userId.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        String provider = normalizeProvider(req.getProvider());
+        String returnTo = sanitizeReturnPath(req.getReturnTo());
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        if (!user.canLogin()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (!passwordEncoder.matches(req.getCurrentUserPwd(), user.getUserPwd())) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        String linkToken = jwtProvider.createOauthLinkToken(user.getUserId(), provider);
+        String authorizationUrl = buildAuthorizationPath(provider, linkToken, returnTo);
+
+        return SocialLinkStartResponse.builder()
+            .authorizationUrl(authorizationUrl)
+            .build();
+    }
+
     private String sha256Hex(String raw) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -355,6 +387,49 @@ public class AuthServiceImpl implements AuthService {
             return null;
         }
         return email.trim().toLowerCase();
+    }
+
+    private static String normalizeProvider(String provider) {
+        if (provider == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        String normalized = provider.trim().toLowerCase();
+        if (!"kakao".equals(normalized) && !"google".equals(normalized)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        return normalized;
+    }
+
+    private static String sanitizeReturnPath(String returnTo) {
+        if (returnTo == null || returnTo.isBlank()) {
+            return "/me?tab=me";
+        }
+        String trimmed = returnTo.trim();
+        if (!trimmed.startsWith("/")) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        return trimmed;
+    }
+
+    private String buildAuthorizationPath(String provider, String linkToken, String returnTo) {
+        String contextPath = serverContextPath == null ? "/api" : serverContextPath.trim();
+        if (contextPath.isBlank()) {
+            contextPath = "/api";
+        }
+        if (!contextPath.startsWith("/")) {
+            contextPath = "/" + contextPath;
+        }
+
+        return contextPath
+            + "/oauth2/authorization/"
+            + provider
+            + "?mode=link"
+            + "&linkToken=" + enc(linkToken)
+            + "&returnTo=" + enc(returnTo);
+    }
+
+    private static String enc(String value) {
+        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
     }
 
     private static String requireRoleName(User user) {

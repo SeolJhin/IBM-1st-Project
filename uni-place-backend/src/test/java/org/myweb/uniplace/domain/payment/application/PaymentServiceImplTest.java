@@ -87,7 +87,7 @@ class PaymentServiceImplTest {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(paymentService, "objectMapper", new ObjectMapper());
-        ReflectionTestUtils.setField(paymentService, "appBaseUrl", "http://localhost:8080");
+        ReflectionTestUtils.setField(paymentService, "appBaseUrl", "http://dev-host:8080");
     }
 // 
     @Test

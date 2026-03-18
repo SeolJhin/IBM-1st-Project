@@ -8,33 +8,21 @@ import lombok.Getter;
 @Builder
 public class TossReadyRequest {
 
-    @JsonProperty("apiKey")
-    private String apiKey;
+    @JsonProperty("orderId")
+    private String orderId;
 
-    @JsonProperty("orderNo")
-    private String orderNo;
+    @JsonProperty("orderName")
+    private String orderName;
 
-    @JsonProperty("productDesc")
-    private String productDesc;
-
-    @JsonProperty("retUrl")
-    private String retUrl;
-
-    @JsonProperty("retCancelUrl")
-    private String retCancelUrl;
+    @JsonProperty("method")
+    private String method;
 
     @JsonProperty("amount")
     private Integer amount;
 
-    @JsonProperty("amountTaxFree")
-    private Integer amountTaxFree;
+    @JsonProperty("successUrl")
+    private String successUrl;
 
-    @JsonProperty("resultCallback")
-    private String resultCallback;
-
-    @JsonProperty("autoExecute")
-    private Boolean autoExecute;
-
-    @JsonProperty("callbackVersion")
-    private String callbackVersion;
+    @JsonProperty("failUrl")
+    private String failUrl;
 }

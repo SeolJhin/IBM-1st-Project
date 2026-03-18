@@ -7,10 +7,14 @@ import org.myweb.uniplace.domain.notification.domain.enums.NotificationType;
 import org.myweb.uniplace.domain.notification.domain.enums.TargetType;
 import org.myweb.uniplace.domain.user.api.admin.dto.request.AdminUserRoleUpdateRequest;
 import org.myweb.uniplace.domain.user.api.admin.dto.request.AdminUserStatusUpdateRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.SocialLinkUnlinkRequest;
+import org.myweb.uniplace.domain.user.api.dto.response.SocialAccountResponse;
 import org.myweb.uniplace.domain.user.api.dto.request.UserUpdateRequest;
 import org.myweb.uniplace.domain.user.api.dto.response.UserResponse;
+import org.myweb.uniplace.domain.user.domain.entity.SocialAccount;
 import org.myweb.uniplace.domain.user.domain.entity.User;
 import org.myweb.uniplace.domain.user.domain.enums.UserRole;
+import org.myweb.uniplace.domain.user.repository.SocialAccountRepository;
 import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
@@ -26,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,6 +46,7 @@ public class UserServiceImpl implements UserService {
 
 
     private final UserRepository userRepository;
+    private final SocialAccountRepository socialAccountRepository;
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
 
@@ -50,6 +56,44 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         return UserResponse.from(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SocialAccountResponse> mySocialAccounts(String userId) {
+        userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        return socialAccountRepository.findAllByUser_UserId(userId).stream()
+            .map(SocialAccountResponse::from)
+            .toList();
+    }
+
+    @Override
+    public void unlinkSocialAccount(String userId, SocialLinkUnlinkRequest req) {
+        if (req == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        String provider = normalizeProvider(req.getProvider());
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (!hasText(req.getCurrentUserPwd()) || !passwordEncoder.matches(req.getCurrentUserPwd(), user.getUserPwd())) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        SocialAccount socialAccount = socialAccountRepository
+            .findByUser_UserIdAndProvider(userId, provider)
+            .orElseThrow(() -> new BusinessException(ErrorCode.BAD_REQUEST));
+
+        socialAccountRepository.delete(socialAccount);
+
+        safeNotify(
+            user.getUserId(),
+            NotificationType.SEC_SOCIAL_LINK.name(),
+            "소셜 계정 연동이 해제되었습니다. (provider=" + provider + ")"
+        );
     }
 
     @Override
@@ -214,6 +258,17 @@ public class UserServiceImpl implements UserService {
             return null;
         }
         return tel.trim();
+    }
+
+    private static String normalizeProvider(String provider) {
+        if (!hasText(provider)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        String normalized = provider.trim().toUpperCase();
+        if (!"KAKAO".equals(normalized) && !"GOOGLE".equals(normalized)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        return normalized;
     }
 
     private void notifyIfChanged(User user, boolean emailChanged, boolean telChanged, boolean pwdChanged) {
