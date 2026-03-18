@@ -385,3 +385,29 @@ def inspection_image_compare(req: InspectionImageRequest):
     except Exception as e:
         logger.error(f"[INSPECTION] 예상치 못한 오류: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="이미지 분석 중 서버 오류가 발생했습니다.")
+
+
+# ── RAG 재인덱싱 ──────────────────────────────────────────────────────────────
+@router.post("/rag/reindex")
+def rag_reindex(force: bool = False) -> dict:
+    """
+    rag_docs/ 폴더의 txt/md 파일을 Milvus에 인덱싱.
+    force=true 이면 기존 데이터 무시하고 전체 재인덱싱.
+    """
+    try:
+        from app.services.rag.index_pipeline import reindex_rag
+        result = reindex_rag(force=force)
+        return result
+    except Exception as e:
+        logger.error("[RAG_REINDEX] 오류: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/rag/status")
+def rag_status() -> dict:
+    """RAG 인덱싱 상태 확인."""
+    try:
+        from app.services.rag.index_pipeline import get_rag_status
+        return get_rag_status()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
