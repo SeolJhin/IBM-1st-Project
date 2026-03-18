@@ -9,25 +9,16 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import styles from './FaceLoginModal.module.css';
 
-const MODELS_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+import * as faceapi from '@vladmandic/face-api';
+
+// 모델은 node_modules에서 직접 로드 (public 폴더 불필요)
+const MODELS_URL = '/node_modules/@vladmandic/face-api/model';
 const API_BASE = '/api';
 const SCAN_MS = 300;
-const SAMPLES = 40; // 샘플 수 증가 (품질 향상)
+const SAMPLES = 40;
 
-/* ── face-api 로드 ── */
-async function loadFaceApi() {
-  if (window.faceapi) return window.faceapi;
-  await new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src =
-      'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
-    s.onload = res;
-    s.onerror = rej;
-    document.head.appendChild(s);
-  });
-  return window.faceapi;
-}
-async function initModels(faceapi) {
+/* ── 모델 초기화 ── */
+async function initModels() {
   if (initModels._done) return;
   await Promise.all([
     faceapi.nets.tinyFaceDetector.loadFromUri(MODELS_URL),
@@ -118,10 +109,8 @@ export default function FaceLoginModal({ mode = 'login', onSuccess, onClose }) {
     let cancelled = false;
     (async () => {
       try {
-        const faceapi = await loadFaceApi();
-        if (cancelled) return;
         setMsg('모델 로딩 중… (최초 실행 시 약 10~20초 소요)');
-        await initModels(faceapi);
+        await initModels();
         if (cancelled) return;
         faceApiRef.current = faceapi;
         const stream = await navigator.mediaDevices.getUserMedia({
