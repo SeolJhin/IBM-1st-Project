@@ -129,6 +129,12 @@ public class SecurityConfig {
                 .requestMatchers("/auth/reset-password/request").permitAll()
                 .requestMatchers("/auth/reset-password/verify").permitAll()
                 .requestMatchers("/auth/reset-password/confirm").permitAll()
+                .requestMatchers("/auth/face/login").permitAll()     // 얼굴 로그인 (하위호환)
+                .requestMatchers("/auth/face/match").permitAll()     // 1단계: 얼굴 매칭
+                .requestMatchers("/auth/face/select").permitAll()    // 2단계: 계정 선택
+                .requestMatchers("/auth/face/register").authenticated()
+                .requestMatchers("/auth/face/count").authenticated()
+                .requestMatchers("/auth/face").authenticated()
                 .requestMatchers("/v1/ai/**").permitAll()
                 .requestMatchers("/auth/email/send-code").permitAll()
                 .requestMatchers("/auth/email/verify-code").permitAll()

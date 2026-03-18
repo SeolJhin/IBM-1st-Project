@@ -26,7 +26,15 @@ from app.services.tools.db_schema import DB_SCHEMA
 from app.services.tools.tool_definitions import TOOL_DEFINITIONS, AUTH_REQUIRED_TOOLS
 from app.services.tools.tool_executor import execute_tool
 from app.services.tools.tool_result_formatter import format_tool_result
-from app.services.rag.chroma_rag import execute_rag_search
+from app.integrations.milvus_client import search_vectors as _milvus_search
+
+def execute_rag_search(query: str) -> dict:
+    from app.schemas.ai_request import AiRequest
+    req = AiRequest(prompt=query, intent="RAG_SEARCH", user_id=None)
+    results = _milvus_search(req)
+    if not results:
+        return {"found": False, "message": "관련 문서를 찾지 못했습니다.", "results": []}
+    return {"found": True, "count": len(results), "results": [{"content": r} for r in results]}
 
 # 페이지 라우트 맵 — AI가 링크 버튼을 생성할 때 참고
 PAGE_ROUTES = {
