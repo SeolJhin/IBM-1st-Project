@@ -1,5 +1,6 @@
 import logging
 import sys
+from contextlib import asynccontextmanager
 
 # ── 로깅 설정 (uvicorn 시작과 동시에 적용) ────────────────────────────────────
 logging.basicConfig(
@@ -17,13 +18,24 @@ from app.services.rag.index_pipeline import ensure_rag_runtime
 from app.services.rag.reindex_daemon import start_reindex_daemon
 from app.services.monitor.stock_alert_service import start_stock_alert_daemon
 
-app = FastAPI(title="Uniplace AI Service", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ── 서버 시작 ──
+    ensure_rag_runtime()
+    start_reindex_daemon()
+    start_stock_alert_daemon()
+    yield
+    # ── 서버 종료 (필요 시 정리 로직 추가) ──
+
+
+app = FastAPI(title="Uniplace AI Service", version="0.1.0", lifespan=lifespan)
+
 _cors_origins = [
     origin.strip()
     for origin in (settings.cors_allowed_origins or "").split(",")
     if origin.strip()
 ]
-
 
 # 미들웨어 먼저, 라우터 나중에
 app.add_middleware(
@@ -41,12 +53,6 @@ app.include_router(api_v1_router)
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
-
-@app.on_event("startup")
-def _startup_rag_pipeline() -> None:
-    ensure_rag_runtime()
-    start_reindex_daemon()
-    start_stock_alert_daemon()
 
 @app.get("/health/molit")
 def health_molit() -> dict:
