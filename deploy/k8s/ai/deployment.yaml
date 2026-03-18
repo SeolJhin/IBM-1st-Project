@@ -5,7 +5,7 @@ metadata:
   labels:
     app: ai
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: ai
@@ -20,6 +20,9 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
+          volumeMounts:
+            - name: chroma-storage
+              mountPath: /app/chroma_db
           envFrom:
             - configMapRef:
                 name: ai-config
@@ -48,3 +51,7 @@ spec:
             limits:
               cpu: "1000m"
               memory: "1024Mi"
+      volumes:
+        - name: chroma-storage
+          persistentVolumeClaim:
+            claimName: ai-chroma-pvc
