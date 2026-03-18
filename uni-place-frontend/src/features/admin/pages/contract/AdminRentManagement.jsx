@@ -3,7 +3,6 @@ import { adminApi } from '../../api/adminApi';
 import styles from './AdminRentManagement.module.css';
 
 const CONTRACT_FILTERS = [
-  { key: 'all', label: '전체' },
   { key: 'active', label: '계약중' },
   { key: 'ended', label: '종료 내역' },
 ];
