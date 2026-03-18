@@ -105,7 +105,6 @@ import AdminOpenTickets from './features/admin/pages/inspection/AdminOpenTickets
 // ── 챗봇 ──────────────────────────────────────────────────────
 import ChatBot from './features/chat/components/ChatBot';
 import AdminChatBot from './features/chat/components/AdminChatBot';
-import GestureControl from './features/chat/components/GestureControl';
 
 import {
   GEMINI_API_KEY,
@@ -304,9 +303,6 @@ export default function App() {
         {/* ── 나머지 ── */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-
-      {/* 손동작 AI 제어 — 모든 사용자 공용 */}
-      <GestureControl />
 
       {/* 챗봇 — 어드민이면 AdminChatBot만, 일반 유저면 ChatBot만 */}
       {user?.userRole === 'ADMIN' ||

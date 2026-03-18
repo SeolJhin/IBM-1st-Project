@@ -132,6 +132,11 @@ public enum ErrorCode {
     INSPECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "INSPECTION_404", "점검 기록을 찾을 수 없습니다."),
     TICKET_NOT_FOUND(HttpStatus.NOT_FOUND, "TICKET_404", "유지보수 티켓을 찾을 수 없습니다."),
 
+    // ===== Face Login =====
+    FACE_NOT_REGISTERED(HttpStatus.NOT_FOUND,   "FACE_404",   "등록된 얼굴 정보가 없습니다. 마이페이지에서 먼저 얼굴을 등록해 주세요."),
+    FACE_NOT_RECOGNIZED(HttpStatus.UNAUTHORIZED, "FACE_401",   "얼굴을 인식하지 못했습니다. 카메라 정면을 바라보고 다시 시도해 주세요."),
+    FACE_ACCOUNT_LOCKED( HttpStatus.TOO_MANY_REQUESTS, "FACE_429", "인식 실패가 반복되어 10분간 잠금되었습니다. 잠시 후 다시 시도해 주세요."),
+
     // ===== Admin / Tour Reservation =====
     TOUR_STATUS_NOT_FOUND(HttpStatus.NOT_FOUND, "TOUR_ST_404", "해당 투어 예약 상태를 찾을 수 없습니다."),
 

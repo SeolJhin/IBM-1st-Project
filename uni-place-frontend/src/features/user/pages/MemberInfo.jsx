@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import styles from './MemberInfo.module.css';
+import FaceLoginModal from '../components/FaceLoginModal';
 
 import { authApi } from '../api/authApi';
 import { useAuth } from '../hooks/useAuth';
@@ -89,6 +90,10 @@ function MeTab() {
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
   const [nicknameStatus, setNicknameStatus] = useState('');
+  const [faceRegModal, setFaceRegModal] = useState(false);
+  const [faceMenu, setFaceMenu] = useState(false);
+  const [faceDeleting, setFaceDeleting] = useState(false);
+  const [faceCount, setFaceCount] = useState(null); // null=미조회, 0=미등록, 1~5=등록수
   const [nicknameChecked, setNicknameChecked] = useState(false);
   const [originalNickname, setOriginalNickname] = useState('');
   const [socialLoading, setSocialLoading] = useState(true);
@@ -130,8 +135,12 @@ function MeTab() {
       setSocialLinks(nextSocialLinks);
 
       const currentUrl = new URL(window.location.href);
-      const linkedProvider = String(currentUrl.searchParams.get('linked') || '').toLowerCase();
-      const linkError = String(currentUrl.searchParams.get('linkError') || '').toLowerCase();
+      const linkedProvider = String(
+        currentUrl.searchParams.get('linked') || ''
+      ).toLowerCase();
+      const linkError = String(
+        currentUrl.searchParams.get('linkError') || ''
+      ).toLowerCase();
       if (linkedProvider) {
         const label = SOCIAL_PROVIDER_LABEL[linkedProvider] || linkedProvider;
         if (nextSocialLinks[linkedProvider]) {
@@ -170,6 +179,16 @@ function MeTab() {
   useEffect(() => {
     if (!loading && user) loadMe();
   }, [loading, user, loadMe]);
+
+  // 드롭다운 바깥 클릭 시 닫기
+  useEffect(() => {
+    if (!faceMenu) return;
+    const close = (e) => {
+      if (!e.target.closest('[data-face-menu]')) setFaceMenu(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [faceMenu]);
 
   const onChange = (e) => {
     const { name, value } = e.target;
@@ -333,7 +352,9 @@ function MeTab() {
     if (!SOCIAL_PROVIDER_ORDER.includes(normalized)) return;
 
     if (socialLinks[normalized]) {
-      setMsg(`${SOCIAL_PROVIDER_LABEL[normalized]} 연동이 이미 완료되어 있습니다.`);
+      setMsg(
+        `${SOCIAL_PROVIDER_LABEL[normalized]} 연동이 이미 완료되어 있습니다.`
+      );
       return;
     }
     if (!currentPwd.trim()) {
@@ -356,7 +377,9 @@ function MeTab() {
       }
       window.location.href = result.authorizationUrl;
     } catch (e) {
-      setError(e?.koreanMessage || e?.message || '소셜 연동 시작에 실패했습니다.');
+      setError(
+        e?.koreanMessage || e?.message || '소셜 연동 시작에 실패했습니다.'
+      );
     } finally {
       setLinkSubmitting(false);
     }
@@ -366,14 +389,20 @@ function MeTab() {
     const normalized = String(provider || '').toLowerCase();
     if (!SOCIAL_PROVIDER_ORDER.includes(normalized)) return;
     if (!socialLinks[normalized]) {
-      setError(`${SOCIAL_PROVIDER_LABEL[normalized]}은(는) 아직 연동되지 않았습니다.`);
+      setError(
+        `${SOCIAL_PROVIDER_LABEL[normalized]}은(는) 아직 연동되지 않았습니다.`
+      );
       return;
     }
     if (!currentPwd.trim()) {
       setError('소셜 연동 해제를 위해 현재 비밀번호를 입력해주세요.');
       return;
     }
-    if (!window.confirm(`${SOCIAL_PROVIDER_LABEL[normalized]} 연동을 해제하시겠습니까?`)) {
+    if (
+      !window.confirm(
+        `${SOCIAL_PROVIDER_LABEL[normalized]} 연동을 해제하시겠습니까?`
+      )
+    ) {
       return;
     }
 
@@ -388,7 +417,9 @@ function MeTab() {
       await loadMe();
       setMsg(`${SOCIAL_PROVIDER_LABEL[normalized]} 연동이 해제되었습니다.`);
     } catch (e) {
-      setError(e?.koreanMessage || e?.message || '소셜 연동 해제에 실패했습니다.');
+      setError(
+        e?.koreanMessage || e?.message || '소셜 연동 해제에 실패했습니다.'
+      );
     } finally {
       setLinkSubmitting(false);
     }
@@ -565,13 +596,11 @@ function MeTab() {
                         : startSocialLink(provider)
                     }
                     disabled={
-                      submitting ||
-                      linkSubmitting ||
-                      meLoading ||
-                      socialLoading
+                      submitting || linkSubmitting || meLoading || socialLoading
                     }
                   >
-                    {SOCIAL_PROVIDER_LABEL[provider]} {linked ? '연동 해제' : '연동'}
+                    {SOCIAL_PROVIDER_LABEL[provider]}{' '}
+                    {linked ? '연동 해제' : '연동'}
                   </button>
                 );
               })}
@@ -584,6 +613,95 @@ function MeTab() {
               >
                 {submitting ? '수정 중…' : '수정'}
               </button>
+              <div className={styles.faceMenuWrap} data-face-menu="true">
+                <button
+                  type="button"
+                  className={`${styles.faceRegBtn} ${faceMenu ? styles.faceRegBtnOn : ''}`}
+                  onClick={async () => {
+                    const next = !faceMenu;
+                    setFaceMenu(next);
+                    if (next && faceCount === null) {
+                      try {
+                        const token =
+                          localStorage.getItem('access_token') ||
+                          localStorage.getItem('accessToken') ||
+                          '';
+                        const res = await fetch('/api/auth/face/count', {
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                        const data = await res.json();
+                        setFaceCount(data?.data ?? 0);
+                      } catch {
+                        setFaceCount(0);
+                      }
+                    }
+                  }}
+                  disabled={submitting || meLoading}
+                >
+                  👤 페이스로그인 ▾
+                </button>
+                {faceMenu && (
+                  <div className={styles.faceDropdown}>
+                    <div className={styles.faceDropHeader}>
+                      등록된 얼굴&nbsp;
+                      <strong>
+                        {faceCount === null ? '…' : `${faceCount} / 5`}
+                      </strong>
+                    </div>
+                    <button
+                      className={styles.faceDropItem}
+                      disabled={faceCount >= 5}
+                      onClick={() => {
+                        setFaceMenu(false);
+                        setFaceRegModal(true);
+                      }}
+                    >
+                      ✏️ 얼굴 등록
+                      <span className={styles.faceDropSub}>
+                        {faceCount >= 5
+                          ? '최대 등록 수 도달 (삭제 후 재등록)'
+                          : '화장·안경 등 다양한 상태로 등록'}
+                      </span>
+                    </button>
+                    <button
+                      className={`${styles.faceDropItem} ${styles.faceDropDel}`}
+                      disabled={faceDeleting || faceCount === 0}
+                      onClick={async () => {
+                        setFaceMenu(false);
+                        if (
+                          !window.confirm('등록된 얼굴 정보를 모두 삭제할까요?')
+                        )
+                          return;
+                        try {
+                          setFaceDeleting(true);
+                          const token =
+                            localStorage.getItem('access_token') ||
+                            localStorage.getItem('accessToken') ||
+                            '';
+                          const res = await fetch('/api/auth/face', {
+                            method: 'DELETE',
+                            headers: { Authorization: `Bearer ${token}` },
+                          });
+                          if (!res.ok) throw new Error();
+                          setFaceCount(0);
+                          setMsg('얼굴 정보가 삭제되었습니다.');
+                        } catch {
+                          setError('얼굴 정보 삭제에 실패했습니다.');
+                        } finally {
+                          setFaceDeleting(false);
+                        }
+                      }}
+                    >
+                      🗑️ {faceDeleting ? '삭제 중…' : '얼굴 삭제'}
+                      <span className={styles.faceDropSub}>
+                        {faceCount === 0
+                          ? '등록된 얼굴 없음'
+                          : '등록 데이터 전체 제거'}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 className={styles.withdrawBtn}
@@ -596,6 +714,21 @@ function MeTab() {
           </div>
         </div>
       </form>
+
+      {faceRegModal && (
+        <FaceLoginModal
+          mode="register"
+          email={user?.userEmail || user?.email || ''}
+          onSuccess={() => {
+            setFaceRegModal(false);
+            setFaceCount((c) => (c ?? 0) + 1);
+            setMsg(
+              '얼굴 등록이 완료되었습니다. 다음 로그인부터 얼굴 인식을 사용할 수 있습니다.'
+            );
+          }}
+          onClose={() => setFaceRegModal(false)}
+        />
+      )}
     </div>
   );
 }
@@ -757,11 +890,7 @@ function ComplainInline() {
   if (loading) return <div className={styles.loading}>불러오는 중…</div>;
   if (error) return <div className={styles.error}>{error}</div>;
 
-  const STATUS_MAP = {
-    received: '접수됨',
-    in_progress: '처리중',
-    resolved: '처리완료',
-  };
+  const STATUS_MAP = { in_progress: '처리중', resolved: '처리완료' };
 
   return (
     <div>
