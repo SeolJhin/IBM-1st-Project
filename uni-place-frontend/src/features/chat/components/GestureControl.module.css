@@ -1,0 +1,298 @@
+/* src/features/chat/components/GestureControl.module.css */
+
+/* ══════════════════════════════════════════════════════════
+   플로팅 버튼 — 챗봇 FAB 바로 위에 위치
+   ChatBot.module.css 의 .fab 은 bottom:28px, height:58px
+   → 28 + 58 + 12(gap) = 98px
+══════════════════════════════════════════════════════════ */
+.gestureFab {
+  position: fixed;
+  bottom: 98px;
+  right: 28px;
+  z-index: 1000;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #4a90d9 0%, #2563aa 100%);
+  box-shadow:
+    0 4px 18px rgba(37, 99, 170, 0.4),
+    0 2px 6px rgba(11, 14, 18, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s,
+    background 0.25s;
+  color: #fff;
+}
+.gestureFab:hover {
+  transform: translateY(-2px) scale(1.07);
+  box-shadow: 0 8px 26px rgba(37, 99, 170, 0.52);
+}
+.gestureFab:active {
+  transform: scale(0.94);
+}
+
+/* 활성화 상태 — 빨간 계열로 변환 + 맥박 */
+.gestureFabActive {
+  background: linear-gradient(135deg, #e05c5c 0%, #b83232 100%);
+  box-shadow:
+    0 4px 18px rgba(184, 50, 50, 0.45),
+    0 2px 6px rgba(11, 14, 18, 0.15);
+  animation: fabPulse 2s infinite;
+}
+@keyframes fabPulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 18px rgba(184, 50, 50, 0.45);
+  }
+  50% {
+    box-shadow: 0 4px 30px rgba(184, 50, 50, 0.75);
+  }
+}
+
+.fabIcon {
+  width: 22px;
+  height: 22px;
+}
+
+/* 제스처 인식 중 초록 점 */
+.gestureDot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 9px;
+  height: 9px;
+  background: #3ecf8e;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  animation: dotBlink 1s infinite;
+}
+@keyframes dotBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   카메라 패널
+══════════════════════════════════════════════════════════ */
+.cameraPanel {
+  position: fixed;
+  bottom: 158px;
+  right: 28px;
+  z-index: 999;
+  width: 340px;
+  background: rgba(14, 18, 26, 0.97);
+  border: 1px solid rgba(74, 144, 217, 0.3);
+  border-radius: 18px;
+  box-shadow:
+    0 22px 54px rgba(0, 0, 0, 0.48),
+    0 4px 16px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+  animation: slideUp 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom right;
+  color: #e8edf5;
+}
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 패널 헤더 */
+.cameraPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(74, 144, 217, 0.1);
+  border-bottom: 1px solid rgba(74, 144, 217, 0.18);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.closeBtn {
+  background: none;
+  border: none;
+  color: #7a90a8;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.closeBtn:hover {
+  color: #e8edf5;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 카메라 뷰 */
+.cameraWrap {
+  position: relative;
+  background: #07090f;
+}
+.hiddenVideo {
+  display: none;
+}
+.canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 로딩 / 에러 오버레이 */
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(7, 9, 15, 0.88);
+  font-size: 13px;
+  color: #7a90a8;
+}
+.overlay button {
+  margin-top: 4px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(74, 144, 217, 0.5);
+  background: rgba(74, 144, 217, 0.14);
+  color: #4a90d9;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+.overlay button:hover {
+  background: rgba(74, 144, 217, 0.28);
+}
+
+/* 스피너 */
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(74, 144, 217, 0.22);
+  border-top-color: #4a90d9;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  display: inline-block;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 토스트 배지 */
+.toast {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(217, 173, 91, 0.94);
+  color: #1a1200;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 16px;
+  border-radius: 20px;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: toastIn 0.18s ease;
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   제스처 상태 줄
+══════════════════════════════════════════════════════════ */
+.gestureStatus {
+  padding: 8px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+}
+.gestureOff {
+  font-size: 12px;
+  color: #485868;
+}
+.gestureOn {
+  font-size: 13px;
+  font-weight: 600;
+  color: #d9ad5b;
+  animation: gestureFlash 0.25s ease;
+}
+@keyframes gestureFlash {
+  0% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   가이드
+══════════════════════════════════════════════════════════ */
+.guide {
+  margin: 0;
+  padding: 8px 14px 13px;
+  list-style: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+}
+.guide li {
+  font-size: 11px;
+  color: #596878;
+  line-height: 1.6;
+}
+.guide b {
+  color: #7a8fa6;
+}
+/* 마지막 항목 (홀수) → 전체 너비 */
+.guide li:last-child:nth-child(odd) {
+  grid-column: span 2;
+}
+
+/* ══════════════════════════════════════════════════════════
+   반응형
+══════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .gestureFab {
+    right: 16px;
+    bottom: 90px;
+  }
+  .cameraPanel {
+    right: 10px;
+    left: 10px;
+    width: auto;
+    bottom: 148px;
+  }
+}

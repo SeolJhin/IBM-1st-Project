@@ -96,6 +96,7 @@ public class GeneralQaUseCase extends AbstractForwardUseCase {
         List<Notice> notices = noticeRepository.search(
             null,
             null,
+            null,   // importance 필터 없음 (전체)
             normalizeKeyword(query),
             PageRequest.of(0, 8, Sort.by(Sort.Direction.DESC, "updatedAt"))
         ).getContent();
