@@ -39,76 +39,72 @@ public class TossGateway implements PaymentGateway {
 
     @Override
     public PaymentGatewayReadyResponse ready(PaymentGatewayReadyRequest request) {
-        String apiKey = resolveApiKey();
-        if (apiKey == null || apiKey.isBlank()) {
+        String secretKey = resolveSecretKey();
+        if (secretKey == null || secretKey.isBlank()) {
             throw new BusinessException(ErrorCode.PAYMENT_GATEWAY_ERROR);
         }
 
         TossReadyResponse tossRes = client.create(
             TossReadyRequest.builder()
-                .apiKey(apiKey)
-                .orderNo(request.getOrderId())
-                .productDesc(nvl(request.getItemName(), "order"))
-                .retUrl(request.getApprovalUrl())
-                .retCancelUrl(request.getCancelUrl())
+                .orderId(request.getOrderId())
+                .orderName(nvl(request.getItemName(), "order"))
+                .method("CARD")
                 .amount(toIntExact(request.getTotalPrice(), "amount"))
-                .amountTaxFree(toNullableInt(request.getTaxFreePrice(), 0))
-                .resultCallback(resolveResultCallback(request.getApprovalUrl()))
-                .autoExecute(false)
-                .callbackVersion("V2")
+                .successUrl(request.getApprovalUrl())
+                .failUrl(request.getFailUrl())
                 .build()
         );
 
-        if (tossRes.getCode() == null || tossRes.getCode() != 0 || !hasText(tossRes.getPayToken())) {
-            throw new PaymentGatewayException("TOSS", "TOSS_READY_FAILED", nvl(tossRes.getMsg(), "toss ready failed"), null);
+        String checkoutUrl = tossRes.getCheckout() == null ? null : tossRes.getCheckout().getUrl();
+        if (!hasText(checkoutUrl)) {
+            throw new PaymentGatewayException("TOSS", "TOSS_READY_FAILED", "toss ready failed", null);
         }
 
         return PaymentGatewayReadyResponse.builder()
             .paymentId(request.getPaymentId())
-            .providerRefId(tossRes.getPayToken())
-            .redirectPcUrl(tossRes.getCheckoutPage())
-            .redirectMobileUrl(tossRes.getCheckoutPage())
-            .redirectAppUrl(tossRes.getCheckoutPage())
+            .providerRefId(firstNonBlank(tossRes.getPaymentKey(), request.getOrderId()))
+            .redirectPcUrl(checkoutUrl)
+            .redirectMobileUrl(checkoutUrl)
+            .redirectAppUrl(checkoutUrl)
             .pgReadyJson(toJson(tossRes))
             .build();
     }
 
     @Override
     public PaymentGatewayApproveResponse approve(PaymentGatewayApproveRequest request) {
-        String payToken = firstNonBlank(request.getPayToken(), request.getProviderRefId(), request.getPaymentKey());
-        String orderNo = request.getOrderId();
+        String paymentKey = firstNonBlank(request.getPaymentKey(), request.getProviderRefId(), request.getPayToken());
+        String orderId = request.getOrderId();
         int amount = toIntExact(request.getAmount(), "amount");
-        String apiKey = resolveApiKey();
+        String secretKey = resolveSecretKey();
 
-        if (payToken == null || payToken.isBlank()) {
+        if (paymentKey == null || paymentKey.isBlank()) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
-        if (orderNo == null || orderNo.isBlank()) {
+        if (orderId == null || orderId.isBlank()) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
-        if (apiKey == null || apiKey.isBlank()) {
+        if (secretKey == null || secretKey.isBlank()) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
 
         TossApproveResponse tossRes = client.confirm(
             TossApproveRequest.builder()
-                .apiKey(apiKey)
-                .payToken(payToken)
-                .orderNo(orderNo)
+                .paymentKey(paymentKey)
+                .orderId(orderId)
                 .amount(amount)
                 .build()
         );
-        boolean approved = tossRes.getCode() != null && tossRes.getCode() == 0;
+        boolean approved = "DONE".equalsIgnoreCase(tossRes.getStatus());
         if (!approved) {
-            throw new PaymentGatewayException("TOSS", "TOSS_EXECUTE_FAILED", nvl(tossRes.getMsg(), "toss execute failed"), null);
+            throw new PaymentGatewayException("TOSS", "TOSS_EXECUTE_FAILED", "toss execute failed", null);
         }
 
-        Integer captured = tossRes.getPaidAmount() != null ? tossRes.getPaidAmount() : tossRes.getAmount();
+        Integer captured = tossRes.getTotalAmount();
 
         return PaymentGatewayApproveResponse.builder()
-            .providerPaymentId(firstNonBlank(tossRes.getPayToken(), tossRes.getTransactionId()))
+            .providerPaymentId(firstNonBlank(tossRes.getPaymentKey(), paymentKey))
             .gatewayStatus("PAID")
-            .merchantUid(tossRes.getOrderNo())
+            .merchantUid(tossRes.getOrderId())
             .currency("KRW")
             .capturedPrice(captured == null ? null : BigDecimal.valueOf(captured))
             .pgApproveJson(toJson(tossRes))
@@ -117,9 +113,9 @@ public class TossGateway implements PaymentGateway {
 
     @Override
     public PaymentGatewayRefundResponse refund(PaymentGatewayRefundRequest request) {
-        String apiKey = resolveApiKey();
+        String secretKey = resolveSecretKey();
         String orderNo = request.getOrderNo();
-        if (!hasText(apiKey) || !hasText(orderNo)) {
+        if (!hasText(secretKey) || !hasText(orderNo)) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
 
@@ -127,27 +123,20 @@ public class TossGateway implements PaymentGateway {
         if (!isApiSuccess(status)) {
             throw new PaymentGatewayException("TOSS", "TOSS_STATUS_FAILED", "toss status failed", status == null ? null : status.toString());
         }
-        String payToken = firstNonBlank(text(status, "payToken"), request.getProviderPaymentId());
-        if (!hasText(payToken)) {
+        String paymentKey = firstNonBlank(text(status, "paymentKey"), request.getProviderPaymentId());
+        if (!hasText(paymentKey)) {
             throw new BusinessException(ErrorCode.PAYMENT_INVALID_TARGET);
         }
 
         TossCancelRequest cancelReq = TossCancelRequest.builder()
-            .apiKey(apiKey)
-            .payToken(payToken)
-            .orderNo(orderNo)
-            .refundNo("REFUND-" + UUID.randomUUID())
-            .reason(nvl(request.getRefundReason(), "refund"))
-            .amount(toNullableInt(request.getRefundPrice()))
-            .idempotent(true)
+            .cancelReason(nvl(request.getRefundReason(), "refund"))
+            .cancelAmount(toNullableInt(request.getRefundPrice()))
             .build();
 
-        TossCancelResponse tossRes = client.cancel(cancelReq);
+        TossCancelResponse tossRes = client.cancel(paymentKey, cancelReq);
 
-        boolean success = tossRes.getCode() != null
-            && tossRes.getCode() == 0
-            && hasText(tossRes.getPayStatus())
-            && tossRes.getPayStatus().toUpperCase().startsWith("REFUND");
+        boolean success = hasText(tossRes.getStatus())
+            && tossRes.getStatus().toUpperCase().startsWith("CANCELED");
 
         return PaymentGatewayRefundResponse.builder()
             .success(success)
@@ -167,12 +156,12 @@ public class TossGateway implements PaymentGateway {
         return v == null ? def : v;
     }
 
-    private String resolveApiKey() {
-        String apiKey = props.getApi_key();
-        if (hasText(apiKey)) {
-            return apiKey;
+    private String resolveSecretKey() {
+        String secretKey = props.getSecret_key();
+        if (hasText(secretKey)) {
+            return secretKey;
         }
-        return props.getSecret_key();
+        return props.getApi_key();
     }
 
     private static String resolveResultCallback(String approvalUrl) {
@@ -234,7 +223,10 @@ public class TossGateway implements PaymentGateway {
             return false;
         }
         JsonNode code = node.get("code");
-        return code != null && code.isInt() && code.intValue() == 0;
+        if (code != null && code.isInt() && code.intValue() == 0) {
+            return true;
+        }
+        return hasText(text(node, "paymentKey")) || hasText(text(node, "status"));
     }
 
     private static String text(JsonNode node, String field) {

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 @Component
@@ -25,6 +26,10 @@ public class AiGatewayImpl implements AiGateway {
 
     @Override
     public AiGatewayResponse execute(AiGatewayRequest request) {
+        if (!StringUtils.hasText(properties.getBaseUrl())) {
+            throw new AiServiceException("AI_FASTAPI_BASE_URL is not configured");
+        }
+
         String path = resolvePath(request);
         try {
             AiGatewayResponse response = restClient.post()

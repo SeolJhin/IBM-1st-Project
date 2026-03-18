@@ -57,6 +57,12 @@ const SIDE_ITEMS = [
   { key: TAB.PAYMENT, label: '결제 내역' },
 ];
 
+const SOCIAL_PROVIDER_ORDER = ['kakao', 'google'];
+const SOCIAL_PROVIDER_LABEL = {
+  kakao: '카카오',
+  google: '구글',
+};
+
 // ── 내 정보 탭 (로컬) ─────────────────────────────────────────
 function MeTab() {
   const navigate = useNavigate();
@@ -79,18 +85,28 @@ function MeTab() {
     special: false,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [linkSubmitting, setLinkSubmitting] = useState(false);
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
   const [nicknameStatus, setNicknameStatus] = useState('');
   const [nicknameChecked, setNicknameChecked] = useState(false);
   const [originalNickname, setOriginalNickname] = useState('');
+  const [socialLoading, setSocialLoading] = useState(true);
+  const [socialLinks, setSocialLinks] = useState({
+    kakao: false,
+    google: false,
+  });
 
   const loadMe = React.useCallback(async () => {
     setError('');
     setMsg('');
     setMeLoading(true);
+    setSocialLoading(true);
     try {
-      const me = await authApi.me();
+      const [me, socialAccounts] = await Promise.all([
+        authApi.me(),
+        authApi.meSocialAccounts().catch(() => []),
+      ]);
       setOrigin(me ?? null);
       setForm({
         userNm: me?.userNm ?? '',
@@ -100,11 +116,54 @@ function MeTab() {
         userNickname: me?.userNickname ?? '',
       });
       setOriginalNickname(me?.userNickname ?? '');
-      setNicknameChecked(true); // 기존 닉네임은 이미 사용 중이므로 변경 없으면 체크 불필요
+      setNicknameChecked(true);
+
+      const linkedProviderSet = new Set(
+        (socialAccounts || [])
+          .map((item) => String(item?.provider || '').toLowerCase())
+          .filter(Boolean)
+      );
+      const nextSocialLinks = {
+        kakao: linkedProviderSet.has('kakao'),
+        google: linkedProviderSet.has('google'),
+      };
+      setSocialLinks(nextSocialLinks);
+
+      const currentUrl = new URL(window.location.href);
+      const linkedProvider = String(currentUrl.searchParams.get('linked') || '').toLowerCase();
+      const linkError = String(currentUrl.searchParams.get('linkError') || '').toLowerCase();
+      if (linkedProvider) {
+        const label = SOCIAL_PROVIDER_LABEL[linkedProvider] || linkedProvider;
+        if (nextSocialLinks[linkedProvider]) {
+          setMsg(`${label} 연동이 완료되었습니다.`);
+        } else {
+          setError(
+            `${label} 연동을 확인하지 못했습니다. 동일 이메일 계정인지 확인 후 다시 시도해주세요.`
+          );
+        }
+        currentUrl.searchParams.delete('linked');
+        window.history.replaceState(
+          {},
+          '',
+          `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`
+        );
+      }
+      if (linkError) {
+        setError(
+          '소셜 계정 연동에 실패했습니다. 현재 비밀번호를 다시 확인하고, 이미 다른 계정에 연동된 소셜인지 확인해주세요.'
+        );
+        currentUrl.searchParams.delete('linkError');
+        window.history.replaceState(
+          {},
+          '',
+          `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`
+        );
+      }
     } catch (e) {
       setError(e?.message || '내 정보 조회에 실패했습니다.');
     } finally {
       setMeLoading(false);
+      setSocialLoading(false);
     }
   }, []);
 
@@ -269,6 +328,72 @@ function MeTab() {
     }
   };
 
+  const startSocialLink = async (provider) => {
+    const normalized = String(provider || '').toLowerCase();
+    if (!SOCIAL_PROVIDER_ORDER.includes(normalized)) return;
+
+    if (socialLinks[normalized]) {
+      setMsg(`${SOCIAL_PROVIDER_LABEL[normalized]} 연동이 이미 완료되어 있습니다.`);
+      return;
+    }
+    if (!currentPwd.trim()) {
+      setError('소셜 연동을 위해 현재 비밀번호를 입력해주세요.');
+      return;
+    }
+
+    setError('');
+    setMsg('');
+    try {
+      setLinkSubmitting(true);
+      const result = await authApi.startSocialLink({
+        provider: normalized,
+        currentUserPwd: currentPwd.trim(),
+        returnTo: `/me?tab=me&linked=${normalized}`,
+      });
+      if (!result?.authorizationUrl) {
+        setError('소셜 연동 시작 URL을 가져오지 못했습니다.');
+        return;
+      }
+      window.location.href = result.authorizationUrl;
+    } catch (e) {
+      setError(e?.koreanMessage || e?.message || '소셜 연동 시작에 실패했습니다.');
+    } finally {
+      setLinkSubmitting(false);
+    }
+  };
+
+  const unlinkSocialAccount = async (provider) => {
+    const normalized = String(provider || '').toLowerCase();
+    if (!SOCIAL_PROVIDER_ORDER.includes(normalized)) return;
+    if (!socialLinks[normalized]) {
+      setError(`${SOCIAL_PROVIDER_LABEL[normalized]}은(는) 아직 연동되지 않았습니다.`);
+      return;
+    }
+    if (!currentPwd.trim()) {
+      setError('소셜 연동 해제를 위해 현재 비밀번호를 입력해주세요.');
+      return;
+    }
+    if (!window.confirm(`${SOCIAL_PROVIDER_LABEL[normalized]} 연동을 해제하시겠습니까?`)) {
+      return;
+    }
+
+    setError('');
+    setMsg('');
+    try {
+      setLinkSubmitting(true);
+      await authApi.unlinkSocialAccount({
+        provider: normalized,
+        currentUserPwd: currentPwd.trim(),
+      });
+      await loadMe();
+      setMsg(`${SOCIAL_PROVIDER_LABEL[normalized]} 연동이 해제되었습니다.`);
+    } catch (e) {
+      setError(e?.koreanMessage || e?.message || '소셜 연동 해제에 실패했습니다.');
+    } finally {
+      setLinkSubmitting(false);
+    }
+  };
+
   if (meLoading) return <div className={styles.loading}>불러오는 중…</div>;
 
   return (
@@ -426,21 +551,48 @@ function MeTab() {
           {error && <div className={styles.error}>{error}</div>}
           {msg && <div className={styles.msg}>{msg}</div>}
           <div className={styles.actions}>
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={submitting || meLoading}
-            >
-              {submitting ? '수정 중…' : '수정'}
-            </button>
-            <button
-              type="button"
-              className={styles.withdrawBtn}
-              onClick={onWithdraw}
-              disabled={submitting || meLoading}
-            >
-              탈퇴
-            </button>
+            <div className={styles.socialActions}>
+              {SOCIAL_PROVIDER_ORDER.map((provider) => {
+                const linked = Boolean(socialLinks[provider]);
+                return (
+                  <button
+                    key={provider}
+                    type="button"
+                    className={styles.socialLinkBtn}
+                    onClick={() =>
+                      linked
+                        ? unlinkSocialAccount(provider)
+                        : startSocialLink(provider)
+                    }
+                    disabled={
+                      submitting ||
+                      linkSubmitting ||
+                      meLoading ||
+                      socialLoading
+                    }
+                  >
+                    {SOCIAL_PROVIDER_LABEL[provider]} {linked ? '연동 해제' : '연동'}
+                  </button>
+                );
+              })}
+            </div>
+            <div className={styles.primaryActions}>
+              <button
+                type="submit"
+                className={styles.submitBtn}
+                disabled={submitting || meLoading}
+              >
+                {submitting ? '수정 중…' : '수정'}
+              </button>
+              <button
+                type="button"
+                className={styles.withdrawBtn}
+                onClick={onWithdraw}
+                disabled={submitting || meLoading}
+              >
+                탈퇴
+              </button>
+            </div>
           </div>
         </div>
       </form>

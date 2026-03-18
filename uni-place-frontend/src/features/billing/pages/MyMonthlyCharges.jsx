@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Modal from '../../../shared/components/Modal/Modal';
+import PaymentOptionPanel from '../../payment/components/PaymentOptionPanel';
 import { contractApi } from '../../contract/api/contractApi';
 import { billingApi } from '../api/billingApi';
 import styles from './MyMonthlyCharges.module.css';
@@ -12,6 +13,41 @@ const CONTRACT_FILTERS = [
 const BILLING_FILTERS = [  { key: 'unpaid', label: '미납내역' },
   { key: 'paid', label: '결제 완료' },
   { key: 'overdue', label: '연체 내역' },
+];
+
+const PAYMENT_OPTIONS = [
+  {
+    id: 'kakao',
+    label: 'KakaoPay',
+    description: 'Redirect to KakaoPay checkout',
+    icon: 'K',
+    tone: 'kakao',
+    available: true,
+  },
+  {
+    id: 'card',
+    label: 'Card',
+    description: 'Coming soon',
+    icon: 'C',
+    tone: 'card',
+    available: false,
+  },
+  {
+    id: 'toss',
+    label: 'Toss Pay',
+    description: 'Redirect to Toss Pay checkout',
+    icon: 'T',
+    tone: 'toss',
+    available: true,
+  },
+  {
+    id: 'naver',
+    label: 'Naver Pay',
+    description: 'Redirect to Naver Pay checkout',
+    icon: 'N',
+    tone: 'naver',
+    available: true,
+  },
 ];
 
 function hasText(value) {
@@ -158,6 +194,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
   const [payOpen, setPayOpen] = useState(false);
   const [payLoading, setPayLoading] = useState(false);
   const [payError, setPayError] = useState('');
+  const [payMethod, setPayMethod] = useState('kakao');
   const [qrItems, setQrItems] = useState([]);
 
   const loadData = useCallback(async () => {
@@ -293,10 +330,22 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
     }
     setPayError('');
     setQrItems([]);
+    setPayMethod((prev) => prev || 'kakao');
     setPayOpen(true);
   };
 
-  const handleKakao = async () => {
+  const handleProviderPayment = async (provider) => {
+    const providerMap = {
+      kakao: 'KAKAO',
+      naver: 'NAVER',
+      toss: 'TOSS',
+    };
+    const providerCode = providerMap[String(provider || '').toLowerCase()];
+    if (!providerCode) {
+      setPayError('Selected method is not ready yet.');
+      return;
+    }
+
     setPayLoading(true);
     setPayError('');
     setQrItems([]);
@@ -323,11 +372,11 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
         }
       }
 
-      const pay = await billingApi.prepareKakaoBatch(selectedChargeIds);
+      const pay = await billingApi.prepareMonthlyBatch(selectedChargeIds, providerCode);
       const openUrl =
         pay?.redirectPcUrl || pay?.redirectMobileUrl || pay?.redirectAppUrl;
       if (!hasText(openUrl)) {
-        throw new Error('카카오페이 결제 URL을 가져오지 못했습니다.');
+        throw new Error('선택한 결제수단의 결제 URL을 가져오지 못했습니다.');
       }
       window.location.href = openUrl;
     } catch (e) {
@@ -467,19 +516,37 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
             결제 예정 금액: <strong>{formatMoney(totalAmount)}</strong>
           </div>
 
+          {false && (
           <button
             type="button"
             className={styles.kakaoBtn}
-            onClick={handleKakao}
+            onClick={() => handleProviderPayment('kakao')}
             disabled={payLoading}
           >
             {payLoading ? 'QR 생성 중..' : '카카오페이'}
           </button>
+          )}
+          <PaymentOptionPanel
+            options={PAYMENT_OPTIONS}
+            selectedOption={payMethod}
+            amountText={formatMoney(totalAmount)}
+            subtitle={`${selectedRows.length} contracts selected`}
+            loading={payLoading}
+            error={payError}
+            onSelect={(method) => {
+              setPayMethod(method);
+              setPayError('');
+            }}
+            onCancel={() => setPayOpen(false)}
+            onConfirm={() => {
+              handleProviderPayment(payMethod);
+            }}
+            confirmLabel="Continue with selected method"
+          />
+
           <button type="button" className={styles.refreshMiniBtn} onClick={loadData}>
             결제 상태 새로고침
           </button>
-
-          {payError && <div className={styles.errorBox}>{payError}</div>}
 
           {qrItems.length > 0 && (
             <div className={styles.qrList}>

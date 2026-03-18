@@ -6,18 +6,18 @@ import lombok.Getter;
 @Getter
 public class TossReadyResponse {
 
-    @JsonProperty("code")
-    private Integer code;
+    @JsonProperty("paymentKey")
+    private String paymentKey;
 
-    @JsonProperty("errorCode")
-    private String errorCode;
+    @JsonProperty("orderId")
+    private String orderId;
 
-    @JsonProperty("msg")
-    private String msg;
+    @JsonProperty("checkout")
+    private Checkout checkout;
 
-    @JsonProperty("payToken")
-    private String payToken;
-
-    @JsonProperty("checkoutPage")
-    private String checkoutPage;
+    @Getter
+    public static class Checkout {
+        @JsonProperty("url")
+        private String url;
+    }
 }
