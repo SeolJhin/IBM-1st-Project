@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
   refresh: 'refresh_token',
   device: 'device_id',
 };
+const OAUTH_RETURN_TO_KEY = 'oauth_return_to';
 
 function parseHash() {
   const hash = window.location.hash?.startsWith('#')
@@ -30,6 +31,15 @@ function setTokens({ accessToken, refreshToken, deviceId }) {
   if (accessToken) localStorage.setItem(STORAGE_KEYS.access, accessToken);
   if (refreshToken) localStorage.setItem(STORAGE_KEYS.refresh, refreshToken);
   if (deviceId) localStorage.setItem(STORAGE_KEYS.device, deviceId);
+}
+
+function consumeOAuthReturnTo() {
+  const target = localStorage.getItem(OAUTH_RETURN_TO_KEY) || '';
+  localStorage.removeItem(OAUTH_RETURN_TO_KEY);
+  if (!target.startsWith('/')) {
+    return '/';
+  }
+  return target;
 }
 
 function getProviderMeta(provider) {
@@ -58,6 +68,7 @@ export default function OAuth2Success() {
   const [nicknameChecked, setNicknameChecked] = useState(false);
 
   if (payload.error) {
+    localStorage.removeItem(OAUTH_RETURN_TO_KEY);
     return (
       <div className={styles.page}>
         <Header />
@@ -81,8 +92,9 @@ export default function OAuth2Success() {
 
   if (payload.accessToken && payload.refreshToken) {
     setTokens(payload);
+    const nextPath = consumeOAuthReturnTo();
     window.location.hash = '';
-    window.location.replace('/');
+    window.location.replace(nextPath);
     return null;
   }
 
@@ -151,8 +163,9 @@ export default function OAuth2Success() {
           : await authApi.kakaoComplete(req);
 
       setTokens(tokens || {});
+      const nextPath = consumeOAuthReturnTo();
       window.location.hash = '';
-      window.location.replace('/');
+      window.location.replace(nextPath);
     } catch (err) {
       setError(
         toKoreanMessage(

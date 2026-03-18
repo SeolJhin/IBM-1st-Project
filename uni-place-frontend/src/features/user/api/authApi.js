@@ -124,7 +124,23 @@ export const authApi = {
       body: { signupToken, userNm, userBirth, userTel, userNickname, userPwd },
     }),
 
+  startSocialLink: ({ provider, currentUserPwd, returnTo }) =>
+    request('/auth/oauth2/link/start', {
+      method: 'POST',
+      body: { provider, currentUserPwd, returnTo },
+      auth: true,
+    }),
+
   me: () => request('/users/me', { auth: true }),
+
+  meSocialAccounts: () => request('/users/me/social-accounts', { auth: true }),
+
+  unlinkSocialAccount: ({ provider, currentUserPwd }) =>
+    request('/users/me/social-accounts/unlink', {
+      method: 'POST',
+      body: { provider, currentUserPwd },
+      auth: true,
+    }),
 
   updateMe: (patch) =>
     request('/users/me', { method: 'PATCH', body: patch, auth: true }),
