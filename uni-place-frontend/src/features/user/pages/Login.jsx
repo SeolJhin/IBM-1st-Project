@@ -60,9 +60,11 @@ export default function Login() {
   const goSignup = () => navigate('/signup');
   const goFind = () => navigate('/find-account');
   const goKakao = () => {
+    localStorage.removeItem('oauth_return_to');
     window.location.href = `${backendBaseUrl}/oauth2/authorization/kakao`;
   };
   const goGoogle = () => {
+    localStorage.removeItem('oauth_return_to');
     window.location.href = `${backendBaseUrl}/oauth2/authorization/google`;
   };
 

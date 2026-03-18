@@ -180,4 +180,35 @@ public class JwtProvider {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
     }
+
+    public String createOauthLinkToken(String userId, String provider) {
+        Instant now = Instant.now();
+
+        return Jwts.builder()
+            .claim("userId", userId)
+            .claim("provider", provider)
+            .claim("typ", "oauth-link")
+            .issuedAt(Date.from(now))
+            .expiration(Date.from(now.plusMillis(10 * 60 * 1000)))
+            .signWith(key, Jwts.SIG.HS256)
+            .compact();
+    }
+
+    public Claims validateOauthLinkToken(String token) {
+        try {
+            Claims claims = parseClaims(token);
+
+            String typ = String.valueOf(claims.get("typ"));
+            if (!"oauth-link".equals(typ)) {
+                throw new BusinessException(ErrorCode.TOKEN_TYPE_INVALID);
+            }
+
+            return claims;
+
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            throw new BusinessException(ErrorCode.TOKEN_EXPIRED);
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+    }
 }

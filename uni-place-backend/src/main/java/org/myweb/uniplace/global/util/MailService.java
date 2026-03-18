@@ -20,7 +20,7 @@ public class MailService {
     @Value("${spring.mail.username}")
     private String fromAddress;
 
-    @Value("${app.frontend-url:http://localhost:3000}")
+    @Value("${app.frontend-url:}")
     private String frontendUrl;
 
     
@@ -80,7 +80,8 @@ public class MailService {
     @Async
     public void sendPasswordResetMail(String toEmail, String token) {
         try {
-            String resetLink = frontendUrl + "/reset-password?token=" + token;
+            String baseUrl = normalizeBaseUrl(frontendUrl);
+            String resetLink = baseUrl + "/reset-password?token=" + token;
 
             String html = """
                     <div style="font-family: 'Apple SD Gothic Neo', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
@@ -119,5 +120,16 @@ public class MailService {
         } catch (Exception e) {
             log.error("[MAIL] 비밀번호 재설정 메일 발송 실패: {} | reason={}", toEmail, e.getMessage());
         }
+    }
+
+    private static String normalizeBaseUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return "";
+        }
+        String trimmed = url.trim();
+        if (trimmed.endsWith("/")) {
+            return trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed;
     }
 }

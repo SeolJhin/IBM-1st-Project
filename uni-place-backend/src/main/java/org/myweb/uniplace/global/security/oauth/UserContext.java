@@ -39,14 +39,32 @@ public class UserContext implements OAuth2User {
     }
 
     public static UserContext registered(User user, Map<String, Object> attributes) {
-        return new UserContext(
+        return registered(
             user,
             attributes,
-            false,
             null,
             null,
             user != null ? user.getUserEmail() : null,
             user != null ? user.getUserNm() : null
+        );
+    }
+
+    public static UserContext registered(
+        User user,
+        Map<String, Object> attributes,
+        String provider,
+        String providerId,
+        String email,
+        String nickname
+    ) {
+        return new UserContext(
+            user,
+            attributes,
+            false,
+            provider,
+            providerId,
+            email,
+            nickname
         );
     }
 
