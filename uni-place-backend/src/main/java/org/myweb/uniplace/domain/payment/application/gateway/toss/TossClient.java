@@ -2,8 +2,7 @@ package org.myweb.uniplace.domain.payment.application.gateway.toss;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Base64;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.myweb.uniplace.domain.payment.application.gateway.exception.PaymentGatewayException;
@@ -38,13 +37,15 @@ public class TossClient {
             .requestFactory(requestFactory)
             .baseUrl(props.getApi_base_url())
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .defaultHeader("TossPayments-Version", nvl(props.getApi_version(), "2024-06-01"))
             .build();
     }
 
     public TossReadyResponse create(@NonNull TossReadyRequest request) {
         try {
             TossReadyResponse response = restClient.post()
-                .uri("/api/v2/payments")
+                .uri("/v1/payments")
+                .header(HttpHeaders.AUTHORIZATION, basicAuthHeader())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -77,7 +78,8 @@ public class TossClient {
     public TossApproveResponse confirm(@NonNull TossApproveRequest request) {
         try {
             TossApproveResponse response = restClient.post()
-                .uri("/api/v2/execute")
+                .uri("/v1/payments/confirm")
+                .header(HttpHeaders.AUTHORIZATION, basicAuthHeader())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -107,10 +109,11 @@ public class TossClient {
         }
     }
 
-    public TossCancelResponse cancel(@NonNull TossCancelRequest request) {
+    public TossCancelResponse cancel(@NonNull String paymentKey, @NonNull TossCancelRequest request) {
         try {
             TossCancelResponse response = restClient.post()
-                .uri("/api/v2/refunds")
+                .uri("/v1/payments/{paymentKey}/cancel", paymentKey)
+                .header(HttpHeaders.AUTHORIZATION, basicAuthHeader())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
                 .retrieve()
@@ -142,10 +145,9 @@ public class TossClient {
 
     public JsonNode getByPaymentKey(@NonNull String paymentKey) {
         try {
-            JsonNode response = restClient.post()
-                .uri("/api/v2/status")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(statusBody(paymentKey, null))
+            JsonNode response = restClient.get()
+                .uri("/v1/payments/{paymentKey}", paymentKey)
+                .header(HttpHeaders.AUTHORIZATION, basicAuthHeader())
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, res) -> {
                     String body = "";
@@ -175,10 +177,9 @@ public class TossClient {
 
     public JsonNode getByOrderId(@NonNull String orderId) {
         try {
-            JsonNode response = restClient.post()
-                .uri("/api/v2/status")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(statusBody(null, orderId))
+            JsonNode response = restClient.get()
+                .uri("/v1/payments/orders/{orderId}", orderId)
+                .header(HttpHeaders.AUTHORIZATION, basicAuthHeader())
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (req, res) -> {
                     String body = "";
@@ -206,26 +207,27 @@ public class TossClient {
         }
     }
 
-    private Map<String, Object> statusBody(String payToken, String orderNo) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        String apiKey = resolveApiKey();
-        if (apiKey != null && !apiKey.isBlank()) {
-            body.put("apiKey", apiKey);
+    private String basicAuthHeader() {
+        String secretKey = resolveSecretKey();
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new PaymentGatewayException("TOSS", "MISSING_SECRET_KEY", "missing toss secret key", null);
         }
-        if (payToken != null && !payToken.isBlank()) {
-            body.put("payToken", payToken);
-        }
-        if (orderNo != null && !orderNo.isBlank()) {
-            body.put("orderNo", orderNo);
-        }
-        return body;
+        String token = Base64.getEncoder().encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
+        return "Basic " + token;
     }
 
-    private String resolveApiKey() {
-        String apiKey = props.getApi_key();
-        if (apiKey != null && !apiKey.isBlank()) {
-            return apiKey;
+    private String resolveSecretKey() {
+        String secretKey = props.getSecret_key();
+        if (secretKey != null && !secretKey.isBlank()) {
+            return secretKey;
         }
-        return props.getSecret_key();
+        return props.getApi_key();
+    }
+
+    private static String nvl(String value, String defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return value;
     }
 }

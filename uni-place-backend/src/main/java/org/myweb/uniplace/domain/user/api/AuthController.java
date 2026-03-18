@@ -6,8 +6,10 @@ import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.user.api.dto.request.KakaoSignupCompleteRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.LogoutRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.RefreshTokenRequest;
+import org.myweb.uniplace.domain.user.api.dto.request.SocialLinkStartRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.UserLoginRequest;
 import org.myweb.uniplace.domain.user.api.dto.request.UserSignupRequest;
+import org.myweb.uniplace.domain.user.api.dto.response.SocialLinkStartResponse;
 import org.myweb.uniplace.domain.user.api.dto.response.UserTokenResponse;
 import org.myweb.uniplace.domain.user.application.AuthService;
 import org.myweb.uniplace.global.exception.BusinessException;
@@ -102,6 +104,17 @@ public class AuthController {
         @Valid @RequestBody KakaoSignupCompleteRequest req
     ) {
         return ApiResponse.ok(authService.googleComplete(req, http.getHeader("User-Agent"), extractIp(http)));
+    }
+
+    @PostMapping("/oauth2/link/start")
+    public ApiResponse<SocialLinkStartResponse> startSocialLink(
+        @AuthenticationPrincipal AuthUser me,
+        @Valid @RequestBody SocialLinkStartRequest req
+    ) {
+        if (me == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return ApiResponse.ok(authService.startSocialLink(me.getUserId(), req));
     }
 
     private String extractIp(HttpServletRequest request) {

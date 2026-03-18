@@ -23,7 +23,7 @@ npm ci
 npm run dev
 ```
 
-App URL: `http://localhost:3000`
+App URL: `http://dev-host:3000`
 
 ## Build (production)
 
@@ -48,7 +48,8 @@ npm run lint
 ## API Proxy (local)
 
 - Proxy config is in `vite.config.js`
-- Default: `/api -> http://localhost:8080`
+- Default: `/api -> http://dev-host:8080`
 - Override with `.env`:
-  - `FRONTEND_PROXY_TARGET=http://localhost:8080`
+  - `FRONTEND_PROXY_TARGET=http://dev-host:8080`
   - `VITE_BACKEND_BASE_URL=/api`
+
