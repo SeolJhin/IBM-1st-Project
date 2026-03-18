@@ -27,7 +27,12 @@ def execute_tool(tool_name: str, tool_args: dict, user_id: str | None = None) ->
     }
 
     base_url = settings.spring_base_url
+    internal_token = (settings.ai_internal_token or "").strip()
     url = f"{base_url}/api/v1/ai/tools/execute"
+
+    if not internal_token:
+        logger.error("[ToolExecutor] missing AI internal token")
+        return {"success": False, "error": "INTERNAL_AUTH_MISCONFIGURED"}
 
     try:
         import json as _json
@@ -38,7 +43,10 @@ def execute_tool(tool_name: str, tool_args: dict, user_id: str | None = None) ->
             resp = client.post(
                 url,
                 content=payload_bytes,
-                headers={"Content-Type": "application/json; charset=utf-8"},
+                headers={
+                    "Content-Type": "application/json; charset=utf-8",
+                    "X-Internal-Token": internal_token,
+                },
             )
 
             if resp.status_code == 401:

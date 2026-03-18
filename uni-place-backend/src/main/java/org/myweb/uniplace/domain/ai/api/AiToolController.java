@@ -5,8 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.myweb.uniplace.domain.ai.application.tool.AiToolExecutor;
 import org.myweb.uniplace.domain.ai.application.tool.AiToolRequest;
 import org.myweb.uniplace.domain.ai.application.tool.AiToolResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * AI Tool 실행 컨트롤러 — 내부 서버 간 통신 전용.
@@ -23,9 +27,21 @@ import org.springframework.web.bind.annotation.*;
 public class AiToolController {
 
     private final AiToolExecutor toolExecutor;
+    @Value("${ai.internal.token:}")
+    private String internalToken;
 
     @PostMapping("/execute")
-    public ResponseEntity<AiToolResponse> execute(@RequestBody AiToolRequest request) {
+    public ResponseEntity<AiToolResponse> execute(
+        @RequestHeader(value = "X-Internal-Token", required = false) String callerToken,
+        @RequestBody AiToolRequest request
+    ) {
+        if (!StringUtils.hasText(internalToken)) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AI internal token is not configured");
+        }
+        if (!internalToken.equals(callerToken)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized internal caller");
+        }
+
         log.info("[AiToolController] tool={} userId={}", request.getTool(), request.getUserId());
 
         AiToolResponse response = toolExecutor.execute(request);

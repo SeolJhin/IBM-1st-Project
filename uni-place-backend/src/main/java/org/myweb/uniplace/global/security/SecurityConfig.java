@@ -135,7 +135,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/face/register").authenticated()
                 .requestMatchers("/auth/face/count").authenticated()
                 .requestMatchers("/auth/face").authenticated()
-                .requestMatchers("/v1/ai/**").permitAll()
+                .requestMatchers("/v1/ai/tools/execute").permitAll()
                 .requestMatchers("/auth/email/send-code").permitAll()
                 .requestMatchers("/auth/email/verify-code").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/files").permitAll()

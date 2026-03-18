@@ -52,6 +52,7 @@ class Settings(BaseSettings):
 
     # ── Spring Boot (Tool Calling 역방향 호출) ────────────────────
     spring_base_url: str = ""
+    ai_internal_token: str = ""
 
     # ── Milvus (RAG 벡터DB) ───────────────────────────────────────
     milvus_uri: str = ""
