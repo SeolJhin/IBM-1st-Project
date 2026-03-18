@@ -49,6 +49,7 @@ export default function AdminBuildingModal({ buildingId, onClose, onSuccess }) {
           buildingLessorRrn: data.buildingLessorRrn || '',
         });
         setExistingFiles(data.files || []);
+        fu.initExistingOrder(data.files || []);
       })
       .catch((e) => setError(e?.message || '불러오기 실패'))
       .finally(() => setFetchLoading(false));
@@ -249,9 +250,12 @@ export default function AdminBuildingModal({ buildingId, onClose, onSuccess }) {
                 newFiles={fu.newFiles}
                 previews={fu.previews}
                 deleteFileIds={fu.deleteFileIds}
+                existingOrder={fu.existingOrder}
                 addFiles={fu.addFiles}
                 removeNewFile={fu.removeNewFile}
+                moveNewFile={fu.moveNewFile}
                 toggleDeleteExisting={fu.toggleDeleteExisting}
+                moveExisting={fu.moveExisting}
                 label="건물 이미지"
               />
             </div>

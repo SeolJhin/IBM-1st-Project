@@ -576,7 +576,9 @@ export default function RoomList() {
     setRL(true);
     setRE(null);
     try {
-      const data = await propertyApi.getRoomsAll(q);
+      // _rating은 클라이언트 정렬이므로 API에는 기본값으로 전달
+      const apiQ = q.sort === '_rating' ? { ...q, sort: 'roomId' } : q;
+      const data = await propertyApi.getRoomsAll(apiQ);
       const content = data?.content ?? [];
       const enriched = await Promise.all(
         content.map(async (room) => {
@@ -595,7 +597,11 @@ export default function RoomList() {
           }
         })
       );
-      setRooms(enriched);
+      const sorted =
+        query.sort === '_rating'
+          ? [...enriched].sort((a, b) => (b._rating ?? 0) - (a._rating ?? 0))
+          : enriched;
+      setRooms(sorted);
       setRP({
         page: data?.page ?? 1,
         totalPages: data?.totalPages ?? 1,
@@ -862,6 +868,7 @@ export default function RoomList() {
                     <option value="rentPrice">월세 낮은순</option>
                     <option value="deposit">보증금 낮은순</option>
                     <option value="roomSize">면적순</option>
+                    <option value="_rating">별점순</option>
                   </select>
                 </div>
               </div>

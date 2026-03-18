@@ -4,6 +4,8 @@ import Header from '../../app/layouts/components/Header';
 import Footer from '../../app/layouts/components/Footer';
 import BannerSlider from '../components/BannerSlider/BannerSlider';
 import { propertyApi } from '../../features/property/api/propertyApi';
+import { noticeApi } from '../../app/http/noticeApi';
+import { communityApi } from '../../features/community/api/communityApi';
 import styles from './Home.module.css';
 
 function IntroActionSection() {
@@ -32,131 +34,210 @@ function IntroActionSection() {
   );
 }
 
-function EventCard({ event, isHovered, onHover, onLeave }) {
-  return (
-    <div
-      className={styles.eventCardWrap}
-      onMouseEnter={onHover}
-      onMouseLeave={onLeave}
-    >
-      <div
-        className={`${styles.eventCard} ${isHovered ? styles.eventCardHover : ''}`}
-      >
-        <div className={styles.eventCardBody}>
-          <h3 className={styles.eventTitle}>{event.title}</h3>
-          <p className={styles.eventMeta}>{event.time}</p>
-          <p className={styles.eventMeta}>{event.location}</p>
-          <div
-            className={`${styles.eventActionArea} ${isHovered ? styles.eventActionVisible : ''}`}
-          >
-            <button className={styles.eventActionBtn} type="button">
-              자세히 보기
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function EventSection() {
+function NoticeAndPopularSection() {
   const navigate = useNavigate();
-  const [hoveredCard, setHoveredCard] = useState(null);
+  const [notices, setNotices] = useState([]);
+  const [popular, setPopular] = useState([]);
+  const [noticeLoading, setNoticeLoading] = useState(true);
+  const [popularLoading, setPopularLoading] = useState(true);
 
-  const events = {
-    left: {
-      date: '2026.03.12(목)',
-      items: [
-        {
-          title: '입주 설명회 & 하우스 투어',
-          time: '08:00 ~ 17:10',
-          location: '강남 코리빙 라운지',
-        },
-        {
-          title: '공용공간 이용정책 안내',
-          time: '09:00 ~ 11:30',
-          location: '강남 코리빙 라운지',
-        },
-        {
-          title: '신규 입주민 스타트 세션',
-          time: '10:00 ~ 16:00',
-          location: '강남 코리빙 라운지',
-        },
-      ],
-    },
-    right: {
-      date: '2026.03.13(금)',
-      items: [
-        {
-          title: '커뮤니티 매니저 Q&A',
-          time: '08:00 ~ 17:10',
-          location: '성수 코리빙 허브',
-        },
-        {
-          title: '룸메이트 매칭 오리엔테이션',
-          time: '09:00 ~ 11:30',
-          location: '성수 코리빙 허브',
-        },
-        {
-          title: '입주 가이드 토크',
-          time: '10:00 ~ 16:00',
-          location: '성수 코리빙 허브',
-        },
-      ],
-    },
+  useEffect(() => {
+    // 중요 공지 최신순 3개
+    noticeApi
+      .getList({ page: 1, size: 3, sort: 'noticeId,desc', importance: 'Y' })
+      .then((res) => {
+        // axios: res.data = ApiResponse { success, data: PageResponse }
+        // PageResponse: { content, ... }
+        const content =
+          res?.data?.data?.content ?? res?.data?.content ?? res?.content ?? [];
+        setNotices(content.slice(0, 3));
+      })
+      .catch(() => setNotices([]))
+      .finally(() => setNoticeLoading(false));
+
+    // 인기 게시글: likeCount 내림차순 상위 3개
+    communityApi
+      .getBoards({ page: 1, size: 20, auth: false })
+      .then((res) => {
+        const content = res?.content ?? [];
+        const sorted = [...content].sort(
+          (a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0)
+        );
+        setPopular(sorted.slice(0, 3));
+      })
+      .catch(() => setPopular([]))
+      .finally(() => setPopularLoading(false));
+  }, []);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    return String(dateStr).slice(0, 10).replace(/-/g, '.');
   };
 
   return (
     <section className={styles.sectionSoft}>
       <div className={styles.contentWide}>
         <div className={styles.sectionHeadCenter}>
-          <p className={styles.sectionEyebrow}>2026 UNI-PLACE 프로그램 안내</p>
-          <h2 className={styles.sectionTitle}>
-            현재 진행 중인 공유주거 프로그램
-          </h2>
-          <button
-            className={styles.primaryPill}
-            type="button"
-            onClick={() => navigate('/support/notice?noticeSt=event')}
-          >
-            자세히 보기
-          </button>
+          <p className={styles.sectionEyebrow}>UNI-PLACE 커뮤니티</p>
+          <h2 className={styles.sectionTitle}>공지사항 &amp; 인기 게시글</h2>
         </div>
 
         <div className={styles.eventGrid}>
+          {/* ── 왼쪽: 중요 공지 최신순 3개 ── */}
+          {/* ── 왼쪽: 중요 공지 최신순 3개 ── */}
           <div className={styles.eventCol}>
             <div className={`${styles.eventDate} ${styles.eventDateLeft}`}>
-              {events.left.date}
+              📢 중요 공지사항
             </div>
             <div className={styles.eventList}>
-              {events.left.items.map((event, idx) => (
-                <EventCard
-                  key={`left-${idx}`}
-                  event={event}
-                  isHovered={hoveredCard === `left-${idx}`}
-                  onHover={() => setHoveredCard(`left-${idx}`)}
-                  onLeave={() => setHoveredCard(null)}
-                />
-              ))}
+              {[0, 1, 2].map((i) => {
+                const n = notices[i];
+                if (noticeLoading) {
+                  return (
+                    <div
+                      key={i}
+                      className={styles.eventCard}
+                      style={{ opacity: 0.35 }}
+                    >
+                      <div className={styles.noticeCardBody}>
+                        <div
+                          className={styles.skeletonBar}
+                          style={{ width: '65%' }}
+                        />
+                        <div
+                          className={styles.skeletonBar}
+                          style={{ width: '35%', marginTop: 8 }}
+                        />
+                      </div>
+                    </div>
+                  );
+                }
+                if (!n) {
+                  return (
+                    <div
+                      key={i}
+                      className={`${styles.eventCard} ${styles.emptyCard}`}
+                    >
+                      <div className={styles.noticeCardBody}>
+                        {i === 0 && (
+                          <span className={styles.emptyMsg}>
+                            등록된 중요 공지가 없습니다.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    key={n.noticeId}
+                    className={`${styles.eventCard} ${styles.noticeCard}`}
+                    onClick={() => navigate(`/support/notice/${n.noticeId}`)}
+                  >
+                    <div className={styles.noticeCardBody}>
+                      <span className={styles.noticeBadge}>공지</span>
+                      <p className={styles.noticeCardTitle}>{n.noticeTitle}</p>
+                      <div className={styles.noticeCardMeta}>
+                        <span>{formatDate(n.createdAt)}</span>
+                        <span>조회 {n.readCount ?? 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <button
+                className={styles.primaryPill}
+                style={{ marginTop: '0.5rem' }}
+                type="button"
+                onClick={() => navigate('/support/notice')}
+              >
+                공지 전체보기
+              </button>
             </div>
           </div>
 
           <div className={styles.eventDivider} aria-hidden="true" />
 
+          {/* ── 오른쪽: 인기 게시글 3개 ── */}
           <div className={styles.eventCol}>
             <div className={`${styles.eventDate} ${styles.eventDateRight}`}>
-              {events.right.date}
+              🔥 인기 게시글
             </div>
             <div className={styles.eventList}>
-              {events.right.items.map((event, idx) => (
-                <EventCard
-                  key={`right-${idx}`}
-                  event={event}
-                  isHovered={hoveredCard === `right-${idx}`}
-                  onHover={() => setHoveredCard(`right-${idx}`)}
-                  onLeave={() => setHoveredCard(null)}
-                />
-              ))}
+              {[0, 1, 2].map((i) => {
+                const b = popular[i];
+                if (popularLoading) {
+                  return (
+                    <div
+                      key={i}
+                      className={styles.eventCard}
+                      style={{ opacity: 0.35 }}
+                    >
+                      <div className={styles.popularCardBody}>
+                        <div
+                          className={styles.skeletonBar}
+                          style={{ width: '55%' }}
+                        />
+                        <div
+                          className={styles.skeletonBar}
+                          style={{ width: '30%', marginTop: 8 }}
+                        />
+                      </div>
+                    </div>
+                  );
+                }
+                if (!b) {
+                  return (
+                    <div
+                      key={i}
+                      className={`${styles.eventCard} ${styles.emptyCard}`}
+                    >
+                      <div className={styles.popularCardBody}>
+                        {i === 0 && (
+                          <span className={styles.emptyMsg}>
+                            등록된 게시글이 없습니다.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    key={b.boardId}
+                    className={`${styles.eventCard} ${styles.popularCard}`}
+                    onClick={() => navigate(`/community/${b.boardId}`)}
+                  >
+                    <div className={styles.popularCardBody}>
+                      <div className={styles.popularRank}>
+                        {i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}
+                      </div>
+                      <div className={styles.popularContent}>
+                        <p className={styles.popularTitle}>{b.boardTitle}</p>
+                        <div className={styles.popularMeta}>
+                          <span className={styles.popularLike}>
+                            ❤️ {b.likeCount ?? 0}
+                          </span>
+                          <span className={styles.popularDot}>·</span>
+                          <span>조회 {b.readCount ?? 0}</span>
+                          <span className={styles.popularDot}>·</span>
+                          <span className={styles.popularAuthor}>
+                            {b.userId}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <button
+                className={styles.primaryPill}
+                style={{ marginTop: '0.5rem' }}
+                type="button"
+                onClick={() => navigate('/community')}
+              >
+                커뮤니티 전체보기
+              </button>
             </div>
           </div>
         </div>
@@ -418,13 +499,18 @@ function AiTop3Section() {
 
 function NoticeSection() {
   const navigate = useNavigate();
+  const [notices, setNotices] = useState([]);
 
-  const notices = [
-    '신규 하우스 오픈 일정 안내',
-    '3월 입주 프로모션 사전 공지',
-    '커뮤니티 라운지 운영시간 변경',
-    '서비스 점검 및 배포 안내',
-  ];
+  useEffect(() => {
+    noticeApi
+      .getList({ page: 1, size: 5, sort: 'noticeId,desc' })
+      .then((res) => {
+        const content =
+          res?.data?.data?.content ?? res?.data?.content ?? res?.content ?? [];
+        setNotices(content.slice(0, 5));
+      })
+      .catch(() => setNotices([]));
+  }, []);
 
   const faqs = [
     {
@@ -459,15 +545,21 @@ function NoticeSection() {
           </div>
 
           <ul className={styles.nfNoticeList}>
-            {notices.map((t, i) => (
-              <li
-                key={i}
-                className={styles.nfNoticeItem}
-                onClick={() => navigate('/support/notice')}
-              >
-                {t}
+            {notices.length === 0 ? (
+              <li className={styles.nfNoticeItem} style={{ opacity: 0.5 }}>
+                등록된 공지가 없습니다.
               </li>
-            ))}
+            ) : (
+              notices.map((n) => (
+                <li
+                  key={n.noticeId}
+                  className={styles.nfNoticeItem}
+                  onClick={() => navigate(`/support/notice/${n.noticeId}`)}
+                >
+                  {n.noticeTitle}
+                </li>
+              ))
+            )}
           </ul>
 
           <button
@@ -602,12 +694,17 @@ function LivingTypeSection() {
       <div className={styles.contentWide}>
         <div className={styles.livingGrid}>
           <article className={styles.livingPanel}>
-            <h3 className={styles.livingTitle}>커뮤니티 프로그램</h3>
+            <h3 className={styles.livingTitle}>최근 소식</h3>
             <p className={styles.livingDesc}>
-              입주민 네트워킹, 취미 모임, 지역 이벤트 정보를 확인해보세요.
+              신규 하우스 오픈, 서비스 업데이트 등 UNI-PLACE의 새로운 소식을
+              확인해보세요.
             </p>
-            <button type="button" className={styles.livingBtn}>
-              프로그램 보기
+            <button
+              type="button"
+              className={styles.livingBtn}
+              onClick={() => navigate('/news')}
+            >
+              뉴스 보기
             </button>
           </article>
 
@@ -713,14 +810,23 @@ export default function Home() {
     'videos/room.mp4',
   ];
 
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [fade, setFade] = useState(true);
+  // videos[0], videos[1] 두 슬롯을 번갈아 사용 — 항상 겹쳐있음
+  const [slotA, setSlotA] = useState({ src: heroVideos[0], visible: true });
+  const [slotB, setSlotB] = useState({ src: heroVideos[1], visible: false });
+  const [activeSlot, setActiveSlot] = useState('A'); // 현재 재생 중인 슬롯
+  const [vidIndex, setVidIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
-  const videoRef = useRef(null);
 
+  const refA = useRef(null);
+  const refB = useRef(null);
+
+  const activeRef = activeSlot === 'A' ? refA : refB;
+  const standbyRef = activeSlot === 'A' ? refB : refA;
+
+  // 재생 중인 영상의 진행률 업데이트
   useEffect(() => {
-    const video = videoRef.current;
+    const video = activeRef.current;
     if (!video) return undefined;
 
     const updateProgress = () => {
@@ -729,34 +835,44 @@ export default function Home() {
     };
 
     const handleEnded = () => {
-      setFade(false);
-      setProgress(0);
+      const nextIdx = vidIndex === heroVideos.length - 1 ? 0 : vidIndex + 1;
+      const nextSrc = heroVideos[nextIdx];
 
-      setTimeout(() => {
-        setCurrentVideoIndex((prev) =>
-          prev === heroVideos.length - 1 ? 0 : prev + 1
-        );
-        setFade(true);
-      }, 450);
+      // 대기 슬롯에 다음 영상 세팅 후 페이드인
+      if (activeSlot === 'A') {
+        setSlotB({ src: nextSrc, visible: true });
+        if (standbyRef.current) {
+          standbyRef.current.load();
+          standbyRef.current.play().catch(() => {});
+        }
+        setSlotA((prev) => ({ ...prev, visible: false }));
+        setActiveSlot('B');
+      } else {
+        setSlotA({ src: nextSrc, visible: true });
+        if (standbyRef.current) {
+          standbyRef.current.load();
+          standbyRef.current.play().catch(() => {});
+        }
+        setSlotB((prev) => ({ ...prev, visible: false }));
+        setActiveSlot('A');
+      }
+      setVidIndex(nextIdx);
+      setProgress(0);
     };
 
     video.addEventListener('timeupdate', updateProgress);
     video.addEventListener('ended', handleEnded);
-
     return () => {
       video.removeEventListener('timeupdate', updateProgress);
       video.removeEventListener('ended', handleEnded);
     };
-  }, [currentVideoIndex, heroVideos.length]);
+  }, [activeSlot, vidIndex, heroVideos.length]);
 
   const togglePlay = () => {
-    const video = videoRef.current;
+    const video = activeRef.current;
     if (!video) return;
-    if (isPlaying) {
-      video.pause();
-    } else {
-      video.play();
-    }
+    if (isPlaying) video.pause();
+    else video.play();
     setIsPlaying(!isPlaying);
   };
 
@@ -765,18 +881,37 @@ export default function Home() {
       <Header />
 
       <section className={styles.heroSection}>
+        {/* 슬롯 A — 항상 마운트, opacity로 페이드 */}
         <video
-          ref={videoRef}
-          key={currentVideoIndex}
-          src={heroVideos[currentVideoIndex]}
-          autoPlay
+          ref={refA}
+          src={slotA.src}
+          autoPlay={activeSlot === 'A'}
           muted
           playsInline
-          className={`${styles.heroVideo} ${fade ? styles.heroVideoVisible : styles.heroVideoHidden}`}
+          className={styles.heroVideo}
+          style={{
+            opacity: slotA.visible ? 1 : 0,
+            transition: 'opacity 1200ms ease',
+            zIndex: slotA.visible ? 2 : 1,
+          }}
         />
-        <div className={styles.heroOverlay} />
+        {/* 슬롯 B — 항상 마운트, opacity로 페이드 */}
+        <video
+          ref={refB}
+          src={slotB.src}
+          autoPlay={activeSlot === 'B'}
+          muted
+          playsInline
+          className={styles.heroVideo}
+          style={{
+            opacity: slotB.visible ? 1 : 0,
+            transition: 'opacity 1200ms ease',
+            zIndex: slotB.visible ? 2 : 1,
+          }}
+        />
+        <div className={styles.heroOverlay} style={{ zIndex: 3 }} />
 
-        <div className={styles.heroContentWrap}>
+        <div className={styles.heroContentWrap} style={{ zIndex: 4 }}>
           <div className={styles.heroInner}>
             <h1 className={styles.heroMainTitle}>
               생활하는 공유주거를
@@ -788,7 +923,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className={styles.heroControlWrap}>
+        <div className={styles.heroControlWrap} style={{ zIndex: 4 }}>
           <div className={styles.heroProgressRail}>
             <div
               className={styles.heroProgressFill}
@@ -798,7 +933,7 @@ export default function Home() {
 
           <div className={styles.heroControlRow}>
             <span>
-              {String(currentVideoIndex + 1).padStart(2, '0')} /{' '}
+              {String(vidIndex + 1).padStart(2, '0')} /{' '}
               {String(heroVideos.length).padStart(2, '0')}
             </span>
             <button
@@ -816,7 +951,7 @@ export default function Home() {
 
       <AiTop3Section />
 
-      <EventSection />
+      <NoticeAndPopularSection />
       <LivingTypeSection />
 
       <BannerSlider intervalMs={5000} />

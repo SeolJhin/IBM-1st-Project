@@ -28,6 +28,7 @@ public class NoticeServiceImpl implements NoticeService {
         Page<Notice> page = noticeRepository.search(
                 request.getNoticeSt(),
                 request.getCode(),
+                request.getImportance(),
                 request.getKeyword(),
                 pageable
         );

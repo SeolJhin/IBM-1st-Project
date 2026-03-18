@@ -1,11 +1,11 @@
 /* =========================================================
-* Uni-Place ?섑뵆 ?곗씠??(?ㅼ뼇???쒕굹由ъ삤??珥덇린 ?곗씠?? - V2
-* - 嫄대Ъ(buildings) 1~3 ?앹꽦
-* - 痢?floors) 1~15, 媛?痢듬쭏??諛?20媛??먮룞 ?앹꽦 (?녿뒗 寃쎌슦留??앹꽦)
-* - V2 蹂寃쎌궗?? product_building_stock + cart_items.building_id + order_items.building_id 異붽?
-* - 異붽? ?댁슜: REVIEW_CATEGORY + 異붽? ?곹뭹(6~17踰? + 異붽? 由щ럭 ?곗씠??
-* - ?앹꽦???ъ슜??怨꾩젙??鍮꾨?踰덊샇: 12345678
-* - BCrypt ?댁떆媛? $2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze
+* Uni-Place 샘플 데이터 (다양한 시나리오용 초기 데이터) - V2
+* - 건물(buildings) 1~3 생성
+* - 층(floors) 1~15, 각 층마다 방 20개 자동 생성 (없는 경우만 생성)
+* - V2 변경사항: product_building_stock + cart_items.building_id + order_items.building_id 추가
+* - 추가 내용: REVIEW_CATEGORY + 추가 상품(6~17번) + 추가 리뷰 데이터
+* - 생성된 사용자 계정의 비밀번호: 12345678
+* - BCrypt 해시값: $2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze
 * ========================================================= */
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -69,17 +69,17 @@ DELETE FROM common_code;
 DELETE FROM group_common_code;
 
 /* =========================================================
-* Uni-Place ?섑뵆 ?곗씠??(?ㅼ뼇???쒕굹由ъ삤??珥덇린 ?곗씠?? - V2
-* - buildings ?뚯씠釉붿뿉 1~8踰?嫄대Ъ ?곗씠???앹꽦
-* - floors 1~15痢? 媛?痢듬떦 諛?20媛??먮룞 ?앹꽦 (?녿뒗 寃쎌슦?먮쭔 ?앹꽦)
-* - V2 蹂寃쎌궗?? product_building_stock ?뚯씠釉?異붽?,
+* Uni-Place 샘플 데이터 (다양한 시나리오용 초기 데이터) - V2
+* - buildings 테이블에 1~8번 건물 데이터 생성
+* - floors 1~15층, 각 층당 방 20개 자동 생성 (없는 경우에만 생성)
+* - V2 변경사항: product_building_stock 테이블 추가,
 * cart_items.building_id,
-* order_items.building_id 而щ읆 ?ъ슜
-* - 異붽?: REVIEW_CATEGORY,
-* 異붽? ?곹뭹(6~17踰?,
-* 異붽? 由щ럭 ?곗씠??
-* - ?앹꽦?섎뒗 ?ъ슜??怨꾩젙 鍮꾨?踰덊샇: 12345678
-* - BCrypt ?댁떆媛?
+* order_items.building_id 컬럼 사용
+* - 추가: REVIEW_CATEGORY,
+* 추가 상품(6~17번),
+* 추가 리뷰 데이터
+* - 생성되는 사용자 계정 비밀번호: 12345678
+* - BCrypt 해시값:
 * $2a$10$nxe1a6fq5oK/h/MgRys/EO0KOwv87wpc.ETAYS40Zx5eHNZOX0oze
 * ========================================================= */
 
@@ -106,9 +106,9 @@ INSERT INTO common_code (group_code, code, code_value, description, display_orde
 ('SUPPORT_CATEGORY', 'SUP_BILLING','Billing',     'Billing support', 2, 1),
 ('PRODUCT_CATEGORY', 'PROD_FOOD',  'Food',        'Food product', 1, 1),
 ('PRODUCT_CATEGORY', 'PROD_CLEAN', 'Cleaning',    'Cleaning product', 2, 1),
-('PRODUCT_CATEGORY', 'PROD_DAILY',  '?앺솢?⑺뭹',  '?앺솢?⑺뭹 移댄뀒怨좊━',     3, 1),
-('PRODUCT_CATEGORY', 'PROD_ELEC',   '?꾩옄/媛??, '?뚰삎媛??移댄뀒怨좊━',     4, 1),
-('PRODUCT_CATEGORY', 'PROD_HEALTH', '嫄닿컯/?꾩깮', '嫄닿컯쨌?꾩깮?⑺뭹 移댄뀒怨좊━',5, 1),
+('PRODUCT_CATEGORY', 'PROD_DAILY',  '생활용품',  '생활용품 카테고리',     3, 1),
+('PRODUCT_CATEGORY', 'PROD_ELEC',   '전자/가전', '소형가전 카테고리',     4, 1),
+('PRODUCT_CATEGORY', 'PROD_HEALTH', '건강/위생', '건강·위생용품 카테고리',5, 1),
 ('AFFILIATE_CATEGORY', 'AFF_FOOD', 'Food partner','Food affiliate', 1, 1),
 ('AFFILIATE_CATEGORY', 'AFF_CLEAN','Clean partner','Clean affiliate', 2, 1),
 ('AFFILIATE_CATEGORY', 'AFF_FURN','Furniture partner','Furniture affiliate', 3, 1),
@@ -117,25 +117,25 @@ INSERT INTO common_code (group_code, code, code_value, description, display_orde
 ('AFFILIATE_CATEGORY', 'AFF_PET','Pet partner','Pet affiliate', 6, 1),
 ('NOTIFICATION', 'NOTI_PAY',       'Payment',     'Payment notification', 1, 1),
 ('NOTIFICATION', 'NOTI_NOTICE',    'Notice',      'Notice notification', 2, 1),
-('REVIEW_CATEGORY', 'REV_ROOM',     '諛??곹깭',     '諛?而⑤뵒?샕룹껌寃곕룄 由щ럭', 1, 1),
-('REVIEW_CATEGORY', 'REV_FACILITY', '?쒖꽕 ?몄쓽',   '怨듭슜?쒖꽕쨌?몄쓽?쒖꽕 由щ럭', 2, 1),
-('REVIEW_CATEGORY', 'REV_MGMT',     '愿由??쒕퉬??, '愿由ъ궗臾댁냼쨌?쒕퉬??由щ럭', 3, 1),
-('REVIEW_CATEGORY', 'REV_LOCATION', '?낆?/援먰넻',   '?꾩튂쨌援먰넻 ?몄쓽??由щ럭',  4, 1),
-('COMPLAIN_CATEGORY', 'COMP_PERSONAL',  '媛쒖씤',      'Personal complain',  1, 1),
-('COMPLAIN_CATEGORY', 'COMP_FACILITY',  '?쒖꽕',      'Facility complain',  2, 1),
-('COMPLAIN_CATEGORY', 'COMP_NOISE',     '?뚯쓬',      'Noise complain',     3, 1),
-('COMPLAIN_CATEGORY', 'COMP_CONTRACT',  '?낆＜/怨꾩빟', 'Contract complain',  4, 1),
-('COMPLAIN_CATEGORY', 'COMP_SAFETY',    '?덉쟾',      'Safety complain',    5, 1),
-('COMPLAIN_CATEGORY', 'COMP_ETC',       '湲고?',      'Other complain',     6, 1),
-('QNA_CATEGORY', 'QNA_CONTRACT',    '怨꾩빟 臾몄쓽', 'Contract QnA',     1, 1),
-('QNA_CATEGORY', 'QNA_PAYMENT',     '寃곗젣/?섎텋', 'Payment QnA',      2, 1),
-('QNA_CATEGORY', 'QNA_FACILITY',    '?쒖꽕 ?댁슜', 'Facility QnA',     3, 1),
-('QNA_CATEGORY', 'QNA_ROOMSERVICE', '猷몄꽌鍮꾩뒪',  'Room service QnA', 4, 1),
-('QNA_CATEGORY', 'QNA_MOVEINOUT',   '?낆＜/?댁떎', 'Move in/out QnA',  5, 1),
-('QNA_CATEGORY', 'QNA_ETC',         '湲고?',      'Other QnA',        6, 1);
+('REVIEW_CATEGORY', 'REV_ROOM',     '방 상태',     '방 컨디션·청결도 리뷰', 1, 1),
+('REVIEW_CATEGORY', 'REV_FACILITY', '시설 편의',   '공용시설·편의시설 리뷰', 2, 1),
+('REVIEW_CATEGORY', 'REV_MGMT',     '관리 서비스', '관리사무소·서비스 리뷰', 3, 1),
+('REVIEW_CATEGORY', 'REV_LOCATION', '입지/교통',   '위치·교통 편의성 리뷰',  4, 1),
+('COMPLAIN_CATEGORY', 'COMP_PERSONAL',  '개인',      'Personal complain',  1, 1),
+('COMPLAIN_CATEGORY', 'COMP_FACILITY',  '시설',      'Facility complain',  2, 1),
+('COMPLAIN_CATEGORY', 'COMP_NOISE',     '소음',      'Noise complain',     3, 1),
+('COMPLAIN_CATEGORY', 'COMP_CONTRACT',  '입주/계약', 'Contract complain',  4, 1),
+('COMPLAIN_CATEGORY', 'COMP_SAFETY',    '안전',      'Safety complain',    5, 1),
+('COMPLAIN_CATEGORY', 'COMP_ETC',       '기타',      'Other complain',     6, 1),
+('QNA_CATEGORY', 'QNA_CONTRACT',    '계약 문의', 'Contract QnA',     1, 1),
+('QNA_CATEGORY', 'QNA_PAYMENT',     '결제/환불', 'Payment QnA',      2, 1),
+('QNA_CATEGORY', 'QNA_FACILITY',    '시설 이용', 'Facility QnA',     3, 1),
+('QNA_CATEGORY', 'QNA_ROOMSERVICE', '룸서비스',  'Room service QnA', 4, 1),
+('QNA_CATEGORY', 'QNA_MOVEINOUT',   '입주/퇴실', 'Move in/out QnA',  5, 1),
+('QNA_CATEGORY', 'QNA_ETC',         '기타',      'Other QnA',        6, 1);
 
--- 而ㅻ??덊떚 諛?吏??湲곕뒫???꾩슂??怨듯넻 肄붾뱶 洹몃９怨?肄붾뱶媛 議댁옱?섎뒗吏 ?뺤씤?섍퀬, ?놁쑝硫??앹꽦
--- ?щ윭 踰??ㅽ뻾?대룄 臾몄젣?놁쓬
+-- 커뮤니티 및 지원 기능에 필요한 공통 코드 그룹과 코드가 존재하는지 확인하고, 없으면 생성
+-- 여러 번 실행해도 문제없음
 
 -- 1) Required groups
 INSERT INTO group_common_code (group_code, group_code_name, description, is_active)
@@ -278,12 +278,12 @@ VALUES
 INSERT INTO refresh_tokens
 (refresh_token_id, user_id, token_hash, device_id, user_agent, ip, issued_at, expires_at, revoked, revoked_at, last_used_at)
 VALUES
-('rtk-0001-0001-0001-000000000001','jinung2','hash_a1','WEB-admin-1','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
-('rtk-0001-0001-0001-000000000002','hyunji2','hash_a2','WEB-admin-2','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
-('rtk-0001-0001-0001-000000000003','user1','hash_u1','WEB-user-1','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
-('rtk-0001-0001-0001-000000000004','user2','hash_u2','WEB-user-2','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
-('rtk-0001-0001-0001-000000000005','user3','hash_u3','WEB-user-3','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
-('rtk-0001-0001-0001-000000000006','user10','hash_u10','WEB-user-10','Chrome/134','127.0.0.2',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),1,NOW(),NOW());
+('rtk-0001-0001-0001-000000000001','jinung2','hash_a1','WEB-admin-1','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
+('rtk-0001-0001-0001-000000000002','hyunji2','hash_a2','WEB-admin-2','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
+('rtk-0001-0001-0001-000000000003','user1','hash_u1','WEB-user-1','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
+('rtk-0001-0001-0001-000000000004','user2','hash_u2','WEB-user-2','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
+('rtk-0001-0001-0001-000000000005','user3','hash_u3','WEB-user-3','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),0,NULL,NOW()),
+('rtk-0001-0001-0001-000000000006','user10','hash_u10','WEB-user-10','Chrome/134','127.0.0.1',NOW(),DATE_ADD(NOW(), INTERVAL 30 DAY),1,NOW(),NOW());
 
 INSERT INTO social_accounts (social_account_id, user_id, provider, provider_user_id, provider_email)
 VALUES
@@ -295,9 +295,9 @@ VALUES
 -- 4) property/system/file (buildings 1~8)
 -- =========================================================
 INSERT INTO building (building_id, building_nm, building_addr, building_desc, land_category, build_size, building_usage, exist_elv, parking_capacity, building_lessor_nm, building_lessor_tel, building_lessor_addr, building_lessor_rrn, delete_yn) VALUES
-(1, 'Uniplace A', 'Seoul A-ro 101', 'Main building A', 'commercial', 123.45, 'residence', 'Y', 45, '源嫄대Ъ', '010-9000-0001', '?쒖슱??媛뺣궓援??뚰뿤?濡?101', '650101-1234567', 'N'),
-(2, 'Uniplace B', 'Seoul B-ro 202', 'Main building B', 'commercial',  98.10, 'residence', 'Y', 20, '?대??숈궛', '010-9000-0002', '?쒖슱???쒖큹援??쒖큹?濡?202', '670202-1234567', 'N'),
-(3, 'Uniplace C', 'Seoul C-ro 303', 'Main building C', 'commercial',  88.80, 'mixed',     'N', 12, '諛뺤엫?', '010-9000-0003', '?쒖슱??留덊룷援?留덊룷?濡?303', '690303-1234567', 'N');
+(1, 'Uniplace A', 'Seoul A-ro 101', 'Main building A', 'commercial', 123.45, 'residence', 'Y', 45, '김건물', '010-9000-0001', '서울시 강남구 테헤란로 101', '650101-1234567', 'N'),
+(2, 'Uniplace B', 'Seoul B-ro 202', 'Main building B', 'commercial',  98.10, 'residence', 'Y', 20, '이부동산', '010-9000-0002', '서울시 서초구 서초대로 202', '670202-1234567', 'N'),
+(3, 'Uniplace C', 'Seoul C-ro 303', 'Main building C', 'commercial',  88.80, 'mixed',     'N', 12, '박임대', '010-9000-0003', '서울시 마포구 마포대로 303', '690303-1234567', 'N');
 
 /* base rooms (keep original 6) */
 INSERT INTO rooms
@@ -385,11 +385,11 @@ VALUES
 (1, 'Uniplace Inc', 'CEO Kim', '123-45-67890', '02-111-2222', 'help@uniplace.com', 'Seoul HQ 1');
 
 INSERT INTO banner (ban_id, start_at, end_at, ban_title, ban_url, ban_order, ban_st) VALUES
-(1, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), '遊??쒖쫵 ?대깽??,  'https://example.com/banner1', 1, 'active'),
-(2, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), '?댁궗 ?꾨줈紐⑥뀡', 'https://example.com/banner2', 2, 'active'),
-(3, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), '異붿쿇???대깽??, 'https://example.com/banner3', 3, 'active'),
-(4, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), '遺??吏??嫄댁꽕 ?뺤젙', 'https://example.com/banner4', 4, 'active'),
-(5, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), '寃⑥슱 ?쒖쫵 ?대깽??, 'https://example.com/banner5', 5, 'inactive');
+(1, NOW(), DATE_ADD(NOW(), INTERVAL 30 DAY), '봄 시즌 이벤트',  'https://example.com/banner1', 1, 'active'),
+(2, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), '이사 프로모션', 'https://example.com/banner2', 2, 'active'),
+(3, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), '추천인 이벤트', 'https://example.com/banner3', 3, 'active'),
+(4, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), '부산 지점 건설 확정', 'https://example.com/banner4', 4, 'active'),
+(5, NOW(), DATE_ADD(NOW(), INTERVAL 15 DAY), '겨울 시즌 이벤트', 'https://example.com/banner5', 5, 'inactive');
 
 INSERT INTO affiliate
 (affiliate_id, building_id, affiliate_nm, affiliate_ceo, affiliate_tel, business_no, affiliate_fax, affiliate_email, affiliate_addr, affiliate_start_at, affiliate_end_at, code, affiliate_desc, affiliate_st)
@@ -417,25 +417,25 @@ VALUES
 -- =========================================================
 /* base product 1~5 */
 INSERT INTO product (prod_id, prod_nm, prod_price, prod_stock, code, prod_desc, prod_st, affiliate_id) VALUES
-(1, '?꾨찓由ъ뭅??,       4500,  100, 'PROD_FOOD',  'Coffee',            'on_sale', 1),
-(2, '?쇰뼹',           5500,   80, 'PROD_FOOD',  'Milk coffee',       'on_sale', 1),
-(3, '?뚮뱶?꾩튂',        7000,   60, 'PROD_FOOD',  '湲곕낯 ?뚮뱶?꾩튂',   'on_sale', 1),
-(4, '猷??대━??,  30000,   50, 'PROD_CLEAN', 'One-time cleaning', 'on_sale', 2),
-(5, '?명긽 ?쒕퉬??,20000,   40, 'PROD_CLEAN', 'Laundry package',   'sold_out',2),
-(6,  '利됱꽍 而듬씪硫?(?좊씪硫?', 1500, 200, 'PROD_FOOD',  '?띿떖 ?좊씪硫?而?65g. ?먯랬???꾩닔 媛꾪렪??', 'on_sale', 1),
-(7,  '?앹닔 2L 6???명듃',     4900, 100, 'PROD_FOOD',  '?쒖＜ ?쇰떎??2L x 6蹂?臾띠쓬.',             'on_sale', 1),
-(8,  '媛꾪렪 ?꾩떆??(鍮꾨퉼諛?', 4500,  80, 'PROD_FOOD',  'CJ ?뉖컲 而듬컲 鍮꾨퉼諛?280g.',              'on_sale', 1),
-(9,  '?명긽?몄젣 (由ы걧 1L)',   7900,  60, 'PROD_DAILY', '由ы걧 ?뚯썙?щ┛ ?쒕읆/?쇰컲寃몄슜 1L.',         'on_sale', 2),
-(10, '?붿옣吏 30濡?臾띠쓬',    12000,  50, 'PROD_DAILY', '源⑤걮?쒕굹???쒖닔 3寃?30濡?',              'on_sale', 2),
-(11, '二쇰갑?몄젣 (?곹릟 500ml)', 3500, 120, 'PROD_DAILY', 'LG?앷굔 ?곹릟 ?뚮윭??500ml.',             'on_sale', 1),
-(12, '臾쇨구??泥?냼??50留?,   5500,  70, 'PROD_CLEAN', '?щ┛??臾쇨구??泥?냼?????50留?',         'on_sale', 2),
-(13, '?뺤떎 泥?냼 ?곗뒋 40留?,  4200,  90, 'PROD_CLEAN', '?뺤떎쨌?붿옣???꾩슜 ??퇏 泥?냼?곗뒋 40留?',    'on_sale', 2),
-(14, '硫?고꺆 4援?(1.5m)',    9900,  40, 'PROD_ELEC',  '媛쒕퀎 ?ㅼ쐞移?4援?硫?고꺆 1.5m.',           'on_sale', 1),
-(15, '留덉뒪??KF80 50留?,    15000, 150, 'PROD_HEALTH','KF80 蹂닿굔??留덉뒪??50留?媛쒕퀎?ъ옣.',        'on_sale', NULL),
-(16, '?먯냼?낆젣 500ml',       5900, 110, 'PROD_HEALTH','?먰깂??62% ?먯냼?낆젣 500ml ?뚰봽??',       'on_sale', NULL),
-(17, '鍮꾪?誘퍬 1000mg 60??, 12800,  55, 'PROD_HEALTH','怨좏븿??鍮꾪?誘퍬 1000mg 60?? 2媛쒖썡遺?',   'on_sale', NULL);
+(1, '아메리카노',       4500,  100, 'PROD_FOOD',  'Coffee',            'on_sale', 1),
+(2, '라떼',           5500,   80, 'PROD_FOOD',  'Milk coffee',       'on_sale', 1),
+(3, '샌드위치',        7000,   60, 'PROD_FOOD',  '기본 샌드위치',   'on_sale', 1),
+(4, '룸 클리닝',  30000,   50, 'PROD_CLEAN', 'One-time cleaning', 'on_sale', 2),
+(5, '세탁 서비스',20000,   40, 'PROD_CLEAN', 'Laundry package',   'sold_out',2),
+(6,  '즉석 컵라면 (신라면)', 1500, 200, 'PROD_FOOD',  '농심 신라면 컵 65g. 자취생 필수 간편식.', 'on_sale', 1),
+(7,  '생수 2L 6입 세트',     4900, 100, 'PROD_FOOD',  '제주 삼다수 2L x 6병 묶음.',             'on_sale', 1),
+(8,  '간편 도시락 (비빔밥)', 4500,  80, 'PROD_FOOD',  'CJ 햇반 컵반 비빔밥 280g.',              'on_sale', 1),
+(9,  '세탁세제 (리큐 1L)',   7900,  60, 'PROD_DAILY', '리큐 파워크린 드럼/일반겸용 1L.',         'on_sale', 2),
+(10, '화장지 30롤 묶음',    12000,  50, 'PROD_DAILY', '깨끗한나라 순수 3겹 30롤.',              'on_sale', 2),
+(11, '주방세제 (퐁퐁 500ml)', 3500, 120, 'PROD_DAILY', 'LG생건 퐁퐁 플러스 500ml.',             'on_sale', 1),
+(12, '물걸레 청소포 50매',   5500,  70, 'PROD_CLEAN', '크린랩 물걸레 청소포 대형 50매.',         'on_sale', 2),
+(13, '욕실 청소 티슈 40매',  4200,  90, 'PROD_CLEAN', '욕실·화장실 전용 항균 청소티슈 40매.',    'on_sale', 2),
+(14, '멀티탭 4구 (1.5m)',    9900,  40, 'PROD_ELEC',  '개별 스위치 4구 멀티탭 1.5m.',           'on_sale', 1),
+(15, '마스크 KF80 50매',    15000, 150, 'PROD_HEALTH','KF80 보건용 마스크 50매 개별포장.',        'on_sale', NULL),
+(16, '손소독제 500ml',       5900, 110, 'PROD_HEALTH','에탄올 62% 손소독제 500ml 펌프형.',       'on_sale', NULL),
+(17, '비타민C 1000mg 60정', 12800,  55, 'PROD_HEALTH','고함량 비타민C 1000mg 60정. 2개월분.',   'on_sale', NULL);
 
-/* V2: building蹂??ш퀬 (base) */
+/* V2: building별 재고 (base) */
 INSERT INTO product_building_stock (prod_id, building_id, stock) VALUES
 (1, 1, 50), (1, 2, 30), (1, 3, 30),
 (2, 1, 20), (2, 2, 15), (2, 3, 15),
@@ -516,37 +516,37 @@ VALUES
 INSERT INTO board
 (board_id, board_title, user_id, board_ctnt, read_count, code, anonymity, importance, imp_end_at, file_ck, reply_ck)
 VALUES
-(1, '?낆＜?덈퉬??,       'user9',   '?뱀떆 ?낆＜?섏떊遺꾨뱾 ?낆＜ ????醫 ?뚮젮二쇱꽭???졼뀥', 12, 'BOARD_QUESTION',   'N', 'N', NULL, 'Y', 'Y'),
-(2, 'Uniplace A 201??,  'user10',  '?댁븘遊ㅻ뒗??愿쒖텣?섎뜑?? ?섎뱾? ?대븷??',           9, 'BOARD_FREE', 'N', 'N', NULL, 'N', 'Y'),
-(3, '?꾨벑',   'user1', '?덈뀞?섏꽭???뱀떆 ???꾨벑 ?대뼸寃?怨좎튂?붿? ?꾩떆?섏슂?? ?쒓? 泥섏쓬 ?댁궗?ㅻ㈃???명뀒由ъ뼱???깆쓣 梨숆꺼?붾뒗???깆씠 ?덉폒?몄슂. 泥섏쓬蹂대뒗 ?뺥깭????紐곕씪???ъ?遊낅땲?ㅳ뀥??留앷?吏?寃?媛숈????딆??? ?덈줈 ?ъ옄???꾧퉴?뚯슂?졼뀪',    30, 'BOARD_FREE', 'N', 'Y', DATE_ADD(NOW(), INTERVAL 7 DAY), 'N', 'N'),
-(4, '紐⑹슂?쇰쭏???ㅼ떆??洹??쒕??몃윮', 'user11', '?뺤떎??留쏆엳?ㅼ슂.. ?踰덉＜??癒뱀뼱蹂닿퀬 ?ㅻ뒛 ???붽만???꾩씠 ?좊え李⑥뿉 ?쒖슦怨?! ?먮젅踰뚮뼞 ?곗뼱???щ㉨?덈뒗??留쏆엳?ㅼ슂!! ?낅쭧 源뚮떎濡쒖슫 ???猷몃찓?댄듃??癒뱀쓣 ?뺣룄濡?留쏆엳?듬땲??!!', 15, 'BOARD_FREE', 'N', 'N', NULL, 'N', 'Y'),
-(5, '?꾩쭊吏쒖젣諛?, 'user12', '媛뺣궓??뿉???由곕뒓 移대뱶吏媛?蹂댁떊遺?! ?쒕컻??. ?덉뿉 ?꾧툑?대옉 移대뱶 ?댁쟾硫댄뿀利??ㅼ뼱?덉뼱?붵뀪??媛?멸??좊텇?덉쑝硫??곕씫二쇱꽭??!!!', 22, 'BOARD_FREE', 'N', 'N', NULL, 'N', 'N'),
-(6, '?몃젅?대뜑???욎뿉 議고삎臾?, 'user13', '?몃젅?대뜑?ㅼ뿉 媛붾떎媛 ?섏삤???꾩쨷??議고삎臾쇱쓣 遊ㅻ꽕?? ?대뵖媛瑜?蹂닿퀬 ?덈떎 ?띠뼱??李곗뭇! ?ㅼ튂??議고삎臾쇱? ?대뼡 ?섎??쇨퉴?? 洹몃깷 ?섎?瑜??먯? ?딅뒗寃?醫뗭쓣源뚯슂? ???섏걶 踰꾨쫯?멸?遊먯슂. 洹몄돋?', 8, 'BOARD_FREE', 'N', 'N', NULL, 'N', 'Y'),
-(7, '?곗껜援?뿉 戮곷퐗?닿? ?덈굹??', 'user14', '?놁쑝硫??ш?吏怨좉??쇳빐???ъ춽?덈떎!', 5, 'BOARD_QUESTION', 'N', 'N', NULL, 'N', 'Y'),
-(8, '吏湲?移댄럹?먯꽌 ?섎떎 ?좎떎遺???(20????', 'user15', '?뚰겕?명뙆?ъそ 移댄럹?먯꽌 ?묒뾽?좎씪?덉뼱????쾶源뚯? ?섎떎媛 ?댁떆媛꾩씠?ъ꽌 萸먰븷吏 李얜떎 ?대윴寃껊룄 ?덇만???꾨Т???섎떎???щ엺 ?덈굹 ?댁꽌 ?щ젮??, 3, 'BOARD_FREE', 'N', 'N', NULL, 'N', 'Y');
+(1, '입주예비자',       'user9',   '혹시 입주하신분들 입주 전 팁 좀 알려주세요 ㅠㅜ', 12, 'BOARD_QUESTION',   'N', 'N', NULL, 'Y', 'Y'),
+(2, 'Uniplace A 201호',  'user10',  '살아봤는데 괜춘하더라. 님들은 어땠음?',           9, 'BOARD_FREE', 'N', 'N', NULL, 'N', 'Y'),
+(3, '전등',   'user1', '안녕하세오 혹시 이 전등 어떻게 고치는지 아시나요?? 제가 처음 이사오면서 인테리어용 등을 챙겨왔는데 등이 안켜져요. 처음보는 형태라 잘 몰라서 여쭤봅니다ㅜㅜ 망가진 것 같지는 않은데, 새로 사자니 아까워요ㅠㅠ',    30, 'BOARD_FREE', 'N', 'Y', DATE_ADD(NOW(), INTERVAL 7 DAY), 'N', 'N'),
+(4, '목요일마다 오시는 그 순대트럭', 'user11', '확실히 맛있네요.. 저번주에 먹어보고 오늘 또 왔길래 아이 유모차에 태우고!! 헐레벌떡 뛰어서 사먹었는데 맛있네요!! 입맛 까다로운 저희 룸메이트도 먹을 정도로 맛있습니다!!!', 15, 'BOARD_FREE', 'N', 'N', NULL, 'N', 'Y'),
+(5, '아진짜제발', 'user12', '강남역에서 셀린느 카드지갑 보신분!! 제발요.. 안에 현금이랑 카드 운전면허증 들어있어요ㅠㅜ 가져가신분있으면 연락주세요!!!!', 22, 'BOARD_FREE', 'N', 'N', NULL, 'N', 'N'),
+(6, '트레이더스 앞에 조형물', 'user13', '트레이더스에 갔다가 나오던 도중에 조형물을 봤네요. 어딘가를 보고 있다 싶어서 찰칵! 설치된 조형물은 어떤 의미일까요? 그냥 의미를 두지 않는게 좋을까요? 제 나쁜 버릇인가봐요. 그쵸?', 8, 'BOARD_FREE', 'N', 'N', NULL, 'N', 'Y'),
+(7, '우체국에 뽁뽁이가 있나요?', 'user14', '없으면 사가지고가야해서 여쭙니다!', 5, 'BOARD_QUESTION', 'N', 'N', NULL, 'N', 'Y'),
+(8, '지금 카페에서 수다 떠실분 ㅠ (20살 남)', 'user15', '테크노파크쪽 카페에서 작업할일있어서 늦게까지 하다가 이시간이여서 뭐할지 찾다 이런것도 있길래 아무나 수다떨 사람 있나 해서 올려욤', 3, 'BOARD_FREE', 'N', 'N', NULL, 'N', 'Y');
 
 INSERT INTO reply (reply_id, board_id, user_id, reply_ctnt, parent_id, reply_lev, reply_seq) VALUES
-(1, 1, 'user11', '怨듭슜怨듦컙 誘몃━ ?덉빟 ?덊븯硫??몃┝..', NULL, 1, 1),
-(2, 1, 'user12', '猷몄꽌鍮꾩뒪濡?二쇰Ц?????덈뒗寃?醫뗪릿?쒕뜲, ?щ쭔?섎㈃ 梨숆만嫄?誘몃━ 梨숆꺼?먯꽭??,               1,    2, 1),
-(3, 2, 'user13', '??洹몃깷 洹몃옱??,                 NULL, 1, 1),
-(4, 1, 'user3', '????ㅼ쓬???낆＜?몃뜲 沅곴툑?덉뼱??', NULL, 1, 2),
-(5, 1, 'user5', '?섎━踰좎씠???덉빟 瑗??섏꽭??', 4, 2, 1),
+(1, 1, 'user11', '공용공간 미리 예약 안하면 털림..', NULL, 1, 1),
+(2, 1, 'user12', '룸서비스로 주문할 수 있는게 좋긴한데, 웬만하면 챙길건 미리 챙겨두세요',               1,    2, 1),
+(3, 2, 'user13', '난 그냥 그랬음',                 NULL, 1, 1),
+(4, 1, 'user3', '저도 다음달 입주인데 궁금했어요.', NULL, 1, 2),
+(5, 1, 'user5', '엘리베이터 예약 꼭 하세요.', 4, 2, 1),
 
-(6, 2, 'user4', '???嫄곌린 ?댁븯?덈뒗??愿쒖갖?섏뼱??', NULL, 1, 2),
-(7, 2, 'user7', '?뚯쓬? 醫 ?덉뿀??寃?媛숈븘??', NULL, 1, 3),
-(8, 3, 'user8', '?꾨벑 ?ъ쭊 ?쒕쾲 ?щ젮蹂댁꽭??', NULL, 1, 1),
-(9, 3, 'user2', '?꾧린 臾몄젣???섎룄 ?덉뼱??', 8, 2, 1),
-(10, 4, 'user6', '???癒뱀뼱遊ㅻ뒗??吏꾩쭨 留쏆엳?댁슂.', NULL, 1, 1),
-(11, 4, 'user9', '紐??쒖? ?ㅻ굹??', NULL, 1, 2),
-(12, 4, 'user11','蹂댄넻 ???7?쒖? ???', 11, 2, 1),
-(13, 5, 'user1', '?뱀떆 ??Т?ㅼ뿉 臾쇱뼱蹂댁뀲?섏슂?', NULL, 1, 1),
-(14, 5, 'user10','李얠쑝?⑤굹??', NULL, 1, 2),
-(15, 6, 'user12','???遊ㅼ뼱?? ?쎄컙 ?щ엺 蹂대뒗 ?먮굦.', NULL, 1, 1),
-(16, 6, 'user4', '?ъ쭊 李띻린 醫뗭? 怨녹씠?붾씪援ъ슂.', NULL, 1, 2),
-(17, 7, 'user5', '?щ쭔???곗껜援?뿉???덉뼱??', NULL, 1, 1),
-(18, 7, 'user3', '?묒? ?ъ씠利덈뒗 臾대즺濡?二쇨린???⑸땲??', 17, 2, 1),
-(19, 8, 'user8', '????뚰겕?명뙆??洹쇱쿂?몃뜲???뗣뀑', NULL, 1, 1),
-(20, 8, 'user14','吏湲덈룄 怨꾩떊媛??', NULL, 1, 2);
+(6, 2, 'user4', '저도 거기 살았었는데 괜찮았어요.', NULL, 1, 2),
+(7, 2, 'user7', '소음은 좀 있었던 것 같아요.', NULL, 1, 3),
+(8, 3, 'user8', '전등 사진 한번 올려보세요.', NULL, 1, 1),
+(9, 3, 'user2', '전기 문제일 수도 있어요.', 8, 2, 1),
+(10, 4, 'user6', '저도 먹어봤는데 진짜 맛있어요.', NULL, 1, 1),
+(11, 4, 'user9', '몇 시쯤 오나요?', NULL, 1, 2),
+(12, 4, 'user11','보통 저녁 7시쯤 와요.', 11, 2, 1),
+(13, 5, 'user1', '혹시 역무실에 물어보셨나요?', NULL, 1, 1),
+(14, 5, 'user10','찾으셨나요?', NULL, 1, 2),
+(15, 6, 'user12','저도 봤어요! 약간 사람 보는 느낌.', NULL, 1, 1),
+(16, 6, 'user4', '사진 찍기 좋은 곳이더라구요.', NULL, 1, 2),
+(17, 7, 'user5', '웬만한 우체국에는 있어요.', NULL, 1, 1),
+(18, 7, 'user3', '작은 사이즈는 무료로 주기도 합니다.', 17, 2, 1),
+(19, 8, 'user8', '저도 테크노파크 근처인데요 ㅋㅋ', NULL, 1, 1),
+(20, 8, 'user14','지금도 계신가요?', NULL, 1, 2);
 
 INSERT INTO board_likes (user_id, board_id) VALUES
 ('user11', 1), ('user12', 1), ('user13', 2), ('user14', 3);
@@ -570,38 +570,38 @@ INSERT INTO faq (faq_id, faq_title, faq_ctnt, is_active, code) VALUES
 INSERT INTO qna
 (qna_id, parent_id, qna_title, user_id, qna_st, read_count, qna_ctnt, code, file_ck, reply_ck, group_id, qna_lev)
 VALUES
-(1, NULL, '寃곗젣 ?곸닔利?,       'user14',  'waiting',  0, '寃곗젣 ?곸닔利앹? ?대뵒???ㅼ슫諛쏆븘??',              'QNA_PAYMENT', 'N', 'Y', 1, 0),
-(2, 1,    'Re: 寃곗젣 ?곸닔利?,   'jinung2', 'complete', 0, '寃곗젣 ?곸꽭 ?섏씠吏?먯꽌 ?ㅼ슫濡쒕뱶 諛쏆쓣 ???덉뒿?덈떎.',  'QNA_PAYMENT', 'N', 'N', 1, 1),
-(3, NULL, '?낆＜ ?덉감',    'user15',  'complete', 2, '?낆＜?????대뼡 ?쒕쪟媛 ?꾩슂?쒓???',              'QNA_MOVEINOUT', 'N', 'Y', 2, 0),
-(4, 3,    'Re: ?낆＜ ?덉감','hyunji2', 'complete', 0, '?좊텇利앷낵 怨꾩빟???щ낯???꾩슂?⑸땲??',     'QNA_MOVEINOUT', 'N', 'N', 2, 1);
+(1, NULL, '결제 영수증',       'user14',  'waiting',  0, '결제 영수증은 어디서 다운받아요?',              'QNA_PAYMENT', 'N', 'Y', 1, 0),
+(2, 1,    'Re: 결제 영수증',   'jinung2', 'complete', 0, '결제 상세 페이지에서 다운로드 받을 수 있습니다.',  'QNA_PAYMENT', 'N', 'N', 1, 1),
+(3, NULL, '입주 절차',    'user15',  'complete', 2, '입주할 때 어떤 서류가 필요한가요?',              'QNA_MOVEINOUT', 'N', 'Y', 2, 0),
+(4, 3,    'Re: 입주 절차','hyunji2', 'complete', 0, '신분증과 계약서 사본이 필요합니다.',     'QNA_MOVEINOUT', 'N', 'N', 2, 1);
 
 INSERT INTO complain (comp_id, comp_title, user_id, comp_ctnt, comp_st, code, file_ck, reply_ck) VALUES
-(1, '?쇰갇 ?뚯쓬',     'user16', '3痢듭뿉??諛ㅻ쭏???곗냼由щ굹??! ?뺤씤醫 ?댁＜?몄슂..?쒕컻.. ?좎쓣 紐??붿?媛 踰뚯뜥 ?쇱＜?쇱씠 ?섏뿀?ㅺ퀬??.',   'in_progress', 'COMP_NOISE', 'N', 'N'),
-(2, '以묐났 寃곗젣', 'user3',  '寃곗젣媛 以묐났??寃?媛숈븘??', 'resolved',    'COMP_PERSONAL', 'N', 'Y'),
-(3, '?뚯쓬', 'user25',  '?쀬쭛???덈Т ?쒕걚?ъ썙??', 'resolved',    'COMP_NOISE', 'N', 'N'),
-(4, '猷몄꽌鍮꾩뒪', 'user2',  '而ㅽ뵾 ?먮몢 諛붽씀?몄슂. 留쏆씠 ?녿꽕??(', 'in_progress',    'COMP_ETC', 'N', 'N'),
-(5, '?꾩뼱??援먯껜?댁＜?몄슂', 'user7',  '?낆＜?쒖? ?쇰쭏 吏?섏????딆븯?붾뜲, ?꾩뼱?쎌씠 ???묐룞???덈맗?덈떎. 醫 鍮⑤━ 泥섎━?댁＜?몄슂..;;', 'resolved',    'COMP_SAFETY', 'N', 'N'),
-(6, '??耳?댁〈 泥좉굅?댁＜?몄슂', 'user13',  '諛섎젮?숇Ъ??媛?ν븳 諛⑷퉴吏???댄빐?섍쿋?붾뜲, ??耳?댁〈???ㅻⅨ 怨듭슜?쒖꽕怨?媛숈? 痢듭뿉 ?먯떆硫??뚮젅瑜닿린 ?덈뒗 ?щ엺?ㅼ? ?앷컖 ?덊븯?쒕뒗 嫄닿??? ?쇱＜???대줈 鍮⑤━ 泥좉굅 ?쒖옉 ?덊븯硫??좉퀬?섍쿋?듬땲??', 'in_progress',    'COMP_SAFETY', 'N', 'N'),
+(1, '야밤 소음',     'user16', '3층에서 밤마다 큰소리나요!! 확인좀 해주세요..제발.. 잠을 못 잔지가 벌써 일주일이 넘었다고요..',   'in_progress', 'COMP_NOISE', 'N', 'N'),
+(2, '중복 결제', 'user3',  '결제가 중복된 것 같아요.', 'resolved',    'COMP_PERSONAL', 'N', 'Y'),
+(3, '소음', 'user25',  '윗집이 너무 시끄러워요.', 'resolved',    'COMP_NOISE', 'N', 'N'),
+(4, '룸서비스', 'user2',  '커피 원두 바꾸세요. 맛이 없네요:(', 'in_progress',    'COMP_ETC', 'N', 'N'),
+(5, '도어락 교체해주세요', 'user7',  '입주한지 얼마 지나지도 않았는데, 도어락이 잘 작동이 안됩니다. 좀 빨리 처리해주세요..;;', 'resolved',    'COMP_SAFETY', 'N', 'N'),
+(6, '펫 케어존 철거해주세요', 'user13',  '반려동물이 가능한 방까지는 이해하겠는데, 펫 케어존을 다른 공용시설과 같은 층에 두시면 알레르기 있는 사람들은 생각 안하시는 건가요? 일주일 내로 빨리 철거 시작 안하면 신고하겠습니다.', 'in_progress',    'COMP_SAFETY', 'N', 'N'),
 (7, 'Hello', 'user22',  'Hello, I would also like to live here. Is it possible for a foreigner to move in?', 'resolved',    'COMP_CONTRACT', 'N', 'N'),
-(8, '?ъ뒪??, 'user17',  '湲곌뎄 醫 ?섎젮二쇱꽭?? 湲곌뎄 醫낅쪟媛 ?덈Т ?곸뼱??', 'resolved',    'COMP_FACILITY', 'N', 'N'),
-(9, '?곗옣 怨꾩빟', 'user6',  '留ㅻ쾲 怨꾩빟 ?앸궇?뚮쭏???덈줈 怨꾩빟?섍린 ?덈Т 踰덇굅濡쒖썙?? ?곗옣??諛⑸쾿???곕줈 留덈젴?섎뱺吏, ?뚯븘???곕씫二쇰뜕吏, ?쎄쾶 諛붽퓭遊먯슂.', 'resolved',    'COMP_CONTRACT', 'N', 'N'),
-(10, '媛쒖냼由?, 'user3',  '?놁쭛媛쒓? 留⑤궇 吏뽰뼱???덈Т ?쒕걚?ъ썙?? ?대낫?댁꽭??', 'resolved',    'COMP_NOISE', 'N', 'N');
+(8, '헬스장', 'user17',  '기구 좀 늘려주세요. 기구 종류가 너무 적어요.', 'resolved',    'COMP_FACILITY', 'N', 'N'),
+(9, '연장 계약', 'user6',  '매번 계약 끝날때마다 새로 계약하기 너무 번거로워요, 연장할 방법이 따로 마련하든지, 알아서 연락주던지, 쉽게 바꿔봐요.', 'resolved',    'COMP_CONTRACT', 'N', 'N'),
+(10, '개소리', 'user3',  '옆집개가 맨날 짖어서 너무 시끄러워요, 내보내세요.', 'resolved',    'COMP_NOISE', 'N', 'N');
 
 /* reviews */
 INSERT INTO reviews
 (review_id, user_id, room_id, rating, review_title, review_ctnt, code, file_ck, reply_ck)
 VALUES
-(1, 'user1', 2, 5, '??癒몃Ъ??媛묐땲??',  '源⑤걮?섍퀬 議곗슜?댁슂.',       'REV_ROOM', 'N', 'N'),
-(2, 'user2', 3, 4, '媛믩룄 ?곷떦?섎땲 愿쒖텣??,  '?щ쭔???붿꽭吏묐낫???섏???,       'REV_MGMT', 'N', 'N'),
-(3, 'user4', 4, 3, '吏㏐쾶 stay ?대뇬?듬땲??,  '?먯랬 ?꾩뿉 寃쏀뿕?쇱븘 ?대낫?몄슂', 'REV_ROOM', 'N', 'N'),
-(4, 'user5',  1, 5, '源붾걫?섍퀬 梨꾧킅 理쒓퀬?덉슂',         '1痢듭씤??李쎈Ц???ш퀬 ?⑦뼢?대씪 ?뉖튆?????ㅼ뼱??',     'REV_ROOM',     'N', 'N'),
-(5, 'user6',  2, 4, '?꾩튂 ?명븯怨?諛??곹깭 醫뗭븘??,      '二쇰? 留쏆쭛??留롪퀬 諛⑸룄 泥?껐?섍쾶 ?좎??⑸땲??',         'REV_LOCATION', 'N', 'N'),
-(6, 'user7',  3, 5, '怨듭슜?쒖꽕???덈Т ?몃━?댁슂',        '?쇱슫吏? 誘명똿猷몄씠 ??媛뽰떠???ы깮洹쇰Т?섍린 理쒓퀬?덉슂.', 'REV_FACILITY', 'N', 'N'),
-(7, 'user8',  4, 3, '?④린 ?숇컯?쇰줈 ?섏걯吏 ?딆븘??,     '?ㅽ뀒????낆쑝濡??④린??愿쒖갖?쇰굹 ?섎궔??遺議깊빐??',   'REV_MGMT',     'N', 'N'),
-(8, 'user9',  5, 4, '?볤퀬 苡뚯쟻??諛⑹씠?먯슂',            '2?몄떎?대씪 怨듦컙???ъ쑀濡?퀬 ?뺤떎??源⑤걮?댁슂.',         'REV_ROOM',     'N', 'N'),
-(9, 'user10', 1, 4, '泥섏쓬 ?먯랬?섍린????醫뗭? ?섍꼍',    '愿由ъ궗臾댁냼媛 移쒖젅?섍퀬 二쇰????몄쓽?먮룄 媛源뚯썙??',    'REV_LOCATION', 'N', 'N'),
-(10, 'user11', 2, 5, '?ш퀎??寃곗젙?덉뒿?덈떎',             '1??嫄곗＜?섎㈃??遺덊렪???먯씠 嫄곗쓽 ?놁뿀?댁슂.',           'REV_FACILITY', 'N', 'N'),
-(11, 'user12', 3, 4, '媛寃??鍮?留뚯”?ㅻ윭???좏깮',       '愿由щ퉬???명꽣?룹씠 ?ы븿?섏뼱 留ㅼ슦 寃쎌젣?곸씠?먯슂.',       'REV_MGMT',     'N', 'N');
+(1, 'user1', 2, 5, '잘 머물다 갑니다.',  '깨끗하고 조용해요.',       'REV_ROOM', 'N', 'N'),
+(2, 'user2', 3, 4, '값도 적당하니 괜춘함',  '웬만한 월세집보다 나은듯',       'REV_MGMT', 'N', 'N'),
+(3, 'user4', 4, 3, '짧게 stay 해봤습니다',  '자취 전에 경험삼아 해보세요', 'REV_ROOM', 'N', 'N'),
+(4, 'user5',  1, 5, '깔끔하고 채광 최고예요',         '1층인데 창문이 크고 남향이라 햇빛이 잘 들어요.',     'REV_ROOM',     'N', 'N'),
+(5, 'user6',  2, 4, '위치 편하고 방 상태 좋아요',      '주변 맛집도 많고 방도 청결하게 유지됩니다.',         'REV_LOCATION', 'N', 'N'),
+(6, 'user7',  3, 5, '공용시설이 너무 편리해요',        '라운지와 미팅룸이 잘 갖춰져 재택근무하기 최고예요.', 'REV_FACILITY', 'N', 'N'),
+(7, 'user8',  4, 3, '단기 숙박으로 나쁘지 않아요',     '스테이 타입으로 단기엔 괜찮으나 수납이 부족해요.',   'REV_MGMT',     'N', 'N'),
+(8, 'user9',  5, 4, '넓고 쾌적한 방이에요',            '2인실이라 공간이 여유롭고 욕실도 깨끗해요.',         'REV_ROOM',     'N', 'N'),
+(9, 'user10', 1, 4, '처음 자취하기에 딱 좋은 환경',    '관리사무소가 친절하고 주변에 편의점도 가까워요.',    'REV_LOCATION', 'N', 'N'),
+(10, 'user11', 2, 5, '재계약 결정했습니다',             '1년 거주하면서 불편한 점이 거의 없었어요.',           'REV_FACILITY', 'N', 'N'),
+(11, 'user12', 3, 4, '가격 대비 만족스러운 선택',       '관리비에 인터넷이 포함되어 매우 경제적이에요.',       'REV_MGMT',     'N', 'N');
 
 INSERT INTO notification
 (notification_id, receiver_id, code, sender_id, message, is_read, target_id, target, url_path)
@@ -612,7 +612,7 @@ VALUES
 (4, 'user11', 'NOTI_NOTICE', 'jinung2', 'Your reply got a like.',             'N', 1,    'reply',  '/community/boards/1');
 
 -- =========================================================
--- 9) cart (V2: building_id ?ы븿)
+-- 9) cart (V2: building_id 포함)
 -- =========================================================
 INSERT INTO cart (cart_id, user_id) VALUES
 (1, 'user13'),
@@ -650,7 +650,7 @@ INSERT INTO charge_status (status_cd, `description`, is_terminal, display_order,
 ('overdue', 'overdue',  0, 3, 1);
 
 -- =========================================================
--- 11) payments/orders (V2: order_items.building_id ?ы븿)
+-- 11) payments/orders (V2: order_items.building_id 포함)
 -- =========================================================
 INSERT INTO payment
 (payment_id, user_id, service_goods_id, target_type, target_id, currency, total_price, captured_price, payment_method_id, provider, provider_payment_id, merchant_uid, idempotency_key, tax_scope_price, tax_ex_scope_price, tax_free_price, payment_st, paid_at)
@@ -671,7 +671,7 @@ INSERT INTO orders (order_id, user_id, order_st, total_price, payment_id, order_
 (4, 'user7', 'paid',      21000, 7, NOW()),
 (5, 'user8', 'paid',      15000, 8, NOW());
 
-/* V2: order_items building_id ?ы븿 */
+/* V2: order_items building_id 포함 */
 INSERT INTO order_items (order_item_id, order_id, prod_id, building_id, order_quantity, order_price) VALUES
 (1, 1, 1, 1, 2,  4500),
 (2, 1, 4, 1, 1, 30000),
@@ -721,21 +721,21 @@ VALUES
 (8, 8, 'tosspay', 'APPROVE_OK',   'pref_008', 'uniplace://pay', 'https://example.com/return/8', JSON_OBJECT('state','returned'), JSON_OBJECT('ready',true),  JSON_OBJECT('approved',true),  NULL,        NULL);
 
 -- =========================================================
--- PART B. 異붽? ?곹뭹 + 由щ럭 移댄뀒怨좊━/由щ럭 ?섑뵆 (V2 ?명솚)
+-- PART B. 추가 상품 + 리뷰 카테고리/리뷰 샘플 (V2 호환)
 -- =========================================================
 
-/* B-1. PRODUCT_CATEGORY 怨듯넻肄붾뱶 異붽? ?꾨줈 ??? */
+/* B-1. PRODUCT_CATEGORY 공통코드 추가 위로 옮김 */
 
 
-/* B-2. 由щ럭 移댄뀒怨좊━ 洹몃９/肄붾뱶 ?꾨줈 ???*/
+/* B-2. 리뷰 카테고리 그룹/코드 위로 옮김*/
 
-/* B-3. ?좉퇋 ?곹뭹 (prod_id 6~17 怨좎젙 ?쎌엯: AUTO_INCREMENT 瑗ъ엫 諛⑹?) ?꾨줈 ???*/
+/* B-3. 신규 상품 (prod_id 6~17 고정 삽입: AUTO_INCREMENT 꼬임 방지) 위로 옮김*/
 
-/* B-4. ?좉퇋 ?곹뭹 鍮뚮뵫蹂??ш퀬 (1~2 鍮뚮뵫 湲곗?) ?꾨줈 ??? */
+/* B-4. 신규 상품 빌딩별 재고 (1~2 빌딩 기준) 위로 옮김 */
 
-/* B-5. 異붽? 由щ럭 (REV_* ?ъ슜) ?꾨줈 ???*/
+/* B-5. 추가 리뷰 (REV_* 사용) 위로 옮김*/
 
-/* 洹몃９ 怨듯넻 肄붾뱶??誘쇱썝, QnA ?꾨줈 ??린怨?媛?移댄뀒怨좊━???꾨줈 ???*/
+/* 그룹 공통 코드에 민원, QnA 위로 옮기고 각 카테고리도 위로 옮김*/
 
 
 -- =========================================================
@@ -743,7 +743,6 @@ VALUES
 -- =========================================================
 SET FOREIGN_KEY_CHECKS = 1;
 SET SQL_SAFE_UPDATES = 1;
-
 
 
 
