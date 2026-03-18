@@ -238,7 +238,17 @@ RAG_SEARCH_TOOL_DEFINITION = {
 
 def execute_rag_search(query: str) -> dict[str, Any]:
     """RAG 검색 실행 후 Tool 결과 형식으로 반환."""
-    results = chroma_rag_search(query)
+    from app.config.settings import settings
+    rag_engine = getattr(settings, "rag_engine", "chroma").lower()
+    if rag_engine == "milvus":
+        milvus_results = _milvus_rag_search(query)
+        if milvus_results is None:
+            logger.warning("[RAG] Milvus unavailable. Falling back to Chroma search")
+            results = chroma_rag_search(query)
+        else:
+            results = milvus_results
+    else:
+        results = chroma_rag_search(query)
 
     if not results:
         return {
@@ -261,8 +271,111 @@ def execute_rag_search(query: str) -> dict[str, Any]:
     }
 
 
+def _milvus_rag_search(query: str, top_k: int | None = None) -> list[dict[str, Any]] | None:
+    from app.config.settings import settings
+
+    normalized = (query or "").strip()
+    if not normalized:
+        return []
+    if not settings.milvus_uri or not settings.milvus_collection:
+        logger.warning("[RAG] rag_engine=milvus but Milvus is not configured")
+        return None
+
+    try:
+        from pymilvus import MilvusClient  # type: ignore
+        from app.integrations.milvus_client import embed_text
+
+        vector = embed_text(normalized)
+        if not vector:
+            return []
+
+        client = MilvusClient(
+            uri=settings.milvus_uri,
+            token=settings.milvus_token or None,
+            db_name=settings.milvus_db_name or "default",
+        )
+        raw_results = client.search(
+            collection_name=settings.milvus_collection,
+            data=[vector],
+            limit=max(1, top_k or settings.top_k),
+            output_fields=["text", "content", "chunk", "title", "source"],
+            search_params={"metric_type": "COSINE", "params": {"nprobe": 10}},
+        )
+    except Exception as exc:
+        logger.warning("[RAG] Milvus search failed: %s", exc.__class__.__name__)
+        return None
+
+    hits = raw_results[0] if isinstance(raw_results, list) and raw_results and isinstance(raw_results[0], list) else raw_results
+    if not isinstance(hits, list):
+        return None
+
+    threshold = settings.similarity_threshold
+    docs: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    for hit in hits:
+        if not isinstance(hit, dict):
+            continue
+
+        score_raw = hit.get("score")
+        if score_raw is None:
+            score_raw = hit.get("distance")
+        try:
+            score = float(score_raw) if score_raw is not None else None
+        except (TypeError, ValueError):
+            score = None
+
+        if score is not None and score < threshold:
+            continue
+
+        entity = hit.get("entity")
+        entity = entity if isinstance(entity, dict) else {}
+
+        content = ""
+        for key in ("text", "content", "chunk"):
+            value = entity.get(key)
+            if isinstance(value, str) and value.strip():
+                content = value.strip()
+                break
+        if not content:
+            for key in ("text", "content", "chunk"):
+                value = hit.get(key)
+                if isinstance(value, str) and value.strip():
+                    content = value.strip()
+                    break
+        if not content or content in seen:
+            continue
+
+        source = "milvus"
+        for key in ("source", "title", "file", "filename"):
+            value = entity.get(key)
+            if isinstance(value, str) and value.strip():
+                source = value.strip()
+                break
+        if source == "milvus":
+            for key in ("source", "title", "file", "filename"):
+                value = hit.get(key)
+                if isinstance(value, str) and value.strip():
+                    source = value.strip()
+                    break
+
+        seen.add(content)
+        docs.append(
+            {
+                "content": content,
+                "source": source,
+                "score": score if score is not None else 0.0,
+            }
+        )
+
+    return docs
+
+
 def is_rag_available() -> bool:
     """RAG 사용 가능 여부 (패키지 설치 + 문서 인덱싱 여부)."""
+    from app.config.settings import settings
+    if getattr(settings, "rag_engine", "chroma").lower() == "milvus":
+        return bool(settings.milvus_uri and settings.milvus_collection)
     if not _CHROMA_AVAILABLE or not _ST_AVAILABLE:
         return False
     col = _get_collection()
