@@ -6,4 +6,5 @@ AI/volumes/
 AI/chroma_db/
 AI/rag_docs/.manifest.json
 AI/.env
+AI/aws.env
 AI/chroma_db/ 
