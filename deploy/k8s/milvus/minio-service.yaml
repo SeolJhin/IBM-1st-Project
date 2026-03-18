@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus-minio
+  labels:
+    app: milvus-minio
+spec:
+  type: ClusterIP
+  selector:
+    app: milvus-minio
+  ports:
+    - name: api
+      port: 9000
+      targetPort: 9000
