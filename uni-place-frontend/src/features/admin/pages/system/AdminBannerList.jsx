@@ -1,6 +1,7 @@
 // features/admin/pages/system/AdminBannerList.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { adminApi } from '../../api/adminApi';
+import { toApiImageUrl } from '../../../file/api/fileApi';
 import styles from '../reservation/AdminReservation.module.css';
 
 const STATUS_LABELS = {
@@ -321,13 +322,9 @@ export default function AdminBannerList() {
     }
   };
 
-  const imageUrl = detail?.imageUrl
-    ? detail.imageUrl.startsWith('/api')
-      ? detail.imageUrl
-      : `/api${detail.imageUrl}`
-    : detail?.files?.[0]?.fileId
-      ? `/api/files/${detail.files[0].fileId}/view`
-      : '';
+  const imageUrl = toApiImageUrl(
+    detail?.imageUrl || detail?.files?.[0]?.viewUrl || ''
+  );
 
   return (
     <div className={styles.mainInner}>

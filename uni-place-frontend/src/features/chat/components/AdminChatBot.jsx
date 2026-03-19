@@ -517,13 +517,19 @@ function AdminActionButtons({ buttons }) {
         <button
           key={i}
           className={styles.actionBtn}
-          onClick={() =>
-            btn.url?.startsWith('http') ||
-            btn.url?.startsWith('/ai/') ||
-            btn.url?.startsWith('/api/ai/')
-              ? window.open(btn.url, '_blank')
-              : navigate(btn.url)
-          }
+          onClick={() => {
+            const url = btn.url || '';
+            if (
+              url.startsWith('http') ||
+              url.startsWith('/ai/') ||
+              url.startsWith('/api/ai/')
+            ) {
+              const openUrl = url.startsWith('/ai/') ? `/api${url}` : url;
+              window.open(openUrl, '_blank');
+              return;
+            }
+            navigate(url);
+          }}
         >
           {btn.icon && <span className={styles.actionBtnIcon}>{btn.icon}</span>}
           {btn.label}

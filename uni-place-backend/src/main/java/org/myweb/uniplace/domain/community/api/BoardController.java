@@ -63,12 +63,12 @@ public class BoardController {
 
     // 게시판 등록
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> boardCreate(
+    public ResponseEntity<ApiResponse<Integer>> boardCreate(
             @ModelAttribute BoardCreateRequest request,
             @RequestParam(name = "ofile", required = false) MultipartFile file
     ) {
-        boardService.createBoard(request, file);
-        return ResponseEntity.ok(ApiResponse.ok());
+        int boardId = boardService.createBoard(request, file);
+        return ResponseEntity.ok(ApiResponse.ok(boardId));
     }
 
     // 게시판 상세 보기

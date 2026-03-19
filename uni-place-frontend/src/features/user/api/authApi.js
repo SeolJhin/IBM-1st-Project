@@ -171,4 +171,26 @@ export const authApi = {
       method: 'POST',
       body: { token, newPassword },
     }),
+
+  // ── 얼굴 인식 로그인
+  faceLogin: ({ descriptor, deviceId }) =>
+    request('/auth/face/login', {
+      method: 'POST',
+      body: { descriptor, deviceId },
+    }),
+
+  // ── 얼굴 등록 (로그인 필요)
+  faceRegister: ({ descriptor }) =>
+    request('/auth/face/register', {
+      method: 'POST',
+      body: { descriptor },
+      auth: true,
+    }),
+
+  // ── 얼굴 삭제 (로그인 필요)
+  faceDelete: () =>
+    request('/auth/face', {
+      method: 'DELETE',
+      auth: true,
+    }),
 };

@@ -26,7 +26,15 @@ from app.services.tools.db_schema import DB_SCHEMA
 from app.services.tools.tool_definitions import TOOL_DEFINITIONS, AUTH_REQUIRED_TOOLS
 from app.services.tools.tool_executor import execute_tool
 from app.services.tools.tool_result_formatter import format_tool_result
-from app.services.rag.chroma_rag import execute_rag_search
+from app.integrations.milvus_client import search_vectors as _milvus_search
+
+def execute_rag_search(query: str) -> dict:
+    from app.schemas.ai_request import AiRequest
+    req = AiRequest(prompt=query, intent="RAG_SEARCH", user_id=None)
+    results = _milvus_search(req)
+    if not results:
+        return {"found": False, "message": "관련 문서를 찾지 못했습니다.", "results": []}
+    return {"found": True, "count": len(results), "results": [{"content": r} for r in results]}
 
 # 페이지 라우트 맵 — AI가 링크 버튼을 생성할 때 참고
 PAGE_ROUTES = {
@@ -501,9 +509,9 @@ def _force_popular_goods_query(user_id: str) -> "AiResponse":
     }, user_id)
     my_data = (my_result or {}).get("data") or []
 
-    # Step2: 전체 인기 품목 (query_database_admin — user_id 조건 없이 전체 집계)
+    # Step2: 전체 인기 품목 (query_database — user_id 조건 없이 전체 집계)
     # userId를 넘겨서 로그인된 사용자 요청임을 보장 (외부 비로그인 호출 차단)
-    pop_result = execute_tool("query_database_admin", {
+    pop_result = execute_tool("query_database", {
         "sql": "SELECT p.prod_nm, SUM(oi.order_quantity) as total_qty FROM order_items oi JOIN product p ON oi.prod_id=p.prod_id JOIN orders o ON oi.order_id=o.order_id WHERE o.order_st='paid' GROUP BY p.prod_id, p.prod_nm ORDER BY total_qty DESC LIMIT 10",
         "description": "전체 인기 룸서비스 품목 집계"
     }, user_id)
@@ -759,7 +767,7 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
                     logger.info("[ToolOrchestrator] 구매이력 0건 → _force_popular_goods_query 즉시 반환")
                     return _force_popular_goods_query(user_id)
                     logger.info("[ToolOrchestrator] 내 구매이력 0건 + 룸서비스추천 → 전체 인기품목 주입")
-                    _pop = execute_tool("query_database_admin", {
+                    _pop = execute_tool("query_database", {
                         "sql": "SELECT sg.service_goods_nm, COUNT(*) as total_cnt FROM payment p JOIN service_goods sg ON p.service_goods_id=sg.service_goods_id WHERE p.payment_st='paid' GROUP BY sg.service_goods_nm ORDER BY total_cnt DESC LIMIT 10",
                         "description": "전체 인기 품목 집계"
                     }, user_id)

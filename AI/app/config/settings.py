@@ -52,19 +52,15 @@ class Settings(BaseSettings):
 
     # ── Spring Boot (Tool Calling 역방향 호출) ────────────────────
     spring_base_url: str = ""
+    ai_internal_token: str = ""
 
-    # ── Milvus (RAG 벡터DB - 유료, 기존 설정 유지) ───────────────
+    # ── Milvus (RAG 벡터DB) ───────────────────────────────────────
     milvus_uri: str = ""
     cors_allowed_origins: str = ""
     milvus_token: str = ""
     milvus_db_name: str = "default"
     milvus_collection: str = "uniplace_knowledge"
-
-    # ── ChromaDB (RAG 벡터DB - 무료 로컬, Milvus 대체) ───────────
-    # rag_engine: "chroma" (무료 로컬) | "milvus" (유료)
-    rag_engine: str = "chroma"
-    chroma_persist_dir: str = str(BASE_DIR / "chroma_db")
-    chroma_collection: str = "uniplace_knowledge"
+    rag_engine: str = "milvus"
 
     # ── Embedding ─────────────────────────────────────────────────
     embedding_provider: str = "watsonx"

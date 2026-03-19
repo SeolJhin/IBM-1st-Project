@@ -1,7 +1,6 @@
 package org.myweb.uniplace.domain.file.application;
 
 import java.io.IOException;
-import java.nio.file.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +15,9 @@ import org.myweb.uniplace.domain.file.domain.enums.FileRefType;
 import org.myweb.uniplace.domain.file.repository.UploadFileRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
 import org.myweb.uniplace.global.exception.ErrorCode;
+import org.myweb.uniplace.global.storage.StorageService;
 import org.myweb.uniplace.global.util.FileNameChange;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,9 +32,7 @@ public class FileServiceImpl implements FileService {
     private static final String NOT_DELETED = "N";
 
     private final UploadFileRepository uploadFileRepository;
-
-    @Value("${file.upload-path}")
-    private String uploadBasePath;
+    private final StorageService storageService;   // 로컬 or S3 자동 주입
 
     private static final List<String> ALLOWED_EXT = List.of(
             ".png", ".jpg", ".jpeg", ".gif", ".webp",
@@ -54,7 +51,6 @@ public class FileServiceImpl implements FileService {
         }
 
         String parentType = normalizeParentType(request.getFileParentType());
-
         Integer parentId = request.getFileParentId();
         if (parentId == null) {
             throw new IllegalArgumentException("fileParentId는 필수입니다.");
@@ -68,18 +64,19 @@ public class FileServiceImpl implements FileService {
                     .build();
         }
 
-        List<Path> written = new ArrayList<>();
+        List<String[]> stored = new ArrayList<>(); // [relativeDir, fileName] 롤백용
 
         try {
             for (MultipartFile file : request.getFiles()) {
                 if (file == null || file.isEmpty()) continue;
 
-                UploadFile saved = saveSingle(parentType, parentId, file, written);
-                uploaded.add(FileResponse.fromEntity(saved));
+                UploadFile saved = saveSingle(parentType, parentId, file, stored);
+                uploaded.add(FileResponse.fromEntity(saved, storageService));
             }
         } catch (Exception e) {
-            for (Path p : written) {
-                try { Files.deleteIfExists(p); } catch (IOException ignore) {}
+            // 업로드 성공한 파일 롤백
+            for (String[] info : stored) {
+                storageService.delete(info[0], info[1]);
             }
             throw (e instanceof RuntimeException) ? (RuntimeException) e : new RuntimeException(e);
         }
@@ -91,16 +88,14 @@ public class FileServiceImpl implements FileService {
                 .build();
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<FileResponse> getActiveFiles(String parentType, Integer parentId) {
         String normalized = normalizeParentType(parentType);
-
         List<UploadFile> files =
                 uploadFileRepository.findByFileParentTypeAndFileParentIdAndDeleteYnOrderByFileIdDesc(
-                        normalized, parentId, NOT_DELETED
-                );
-
-        return files.stream().map(FileResponse::fromEntity).toList();
+                        normalized, parentId, NOT_DELETED);
+        return files.stream().map(f -> FileResponse.fromEntity(f, storageService)).toList();
     }
 
     @Override
@@ -112,7 +107,7 @@ public class FileServiceImpl implements FileService {
         return all.stream()
                 .collect(Collectors.groupingBy(
                         UploadFile::getFileParentId,
-                        Collectors.mapping(FileResponse::fromEntity, Collectors.toList())
+                        Collectors.mapping(f -> FileResponse.fromEntity(f, storageService), Collectors.toList())
                 ));
     }
 
@@ -121,19 +116,16 @@ public class FileServiceImpl implements FileService {
     public FileResponse getFile(Integer fileId) {
         UploadFile file = uploadFileRepository.findByFileIdAndDeleteYn(fileId, NOT_DELETED)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
-        return FileResponse.fromEntity(file);
+        return FileResponse.fromEntity(file, storageService);
     }
 
+    @Override
     @Transactional(readOnly = true)
     public List<FileResponse> getAllFilesForAdmin(String parentType, Integer parentId) {
         String normalized = normalizeParentType(parentType);
-
         List<UploadFile> files =
-                uploadFileRepository.findByFileParentTypeAndFileParentIdOrderByFileIdDesc(
-                        normalized, parentId
-                );
-
-        return files.stream().map(FileResponse::fromEntity).toList();
+                uploadFileRepository.findByFileParentTypeAndFileParentIdOrderByFileIdDesc(normalized, parentId);
+        return files.stream().map(f -> FileResponse.fromEntity(f, storageService)).toList();
     }
 
     @Override
@@ -141,7 +133,7 @@ public class FileServiceImpl implements FileService {
     public FileResponse getFileForAdmin(Integer fileId) {
         UploadFile file = uploadFileRepository.findById(fileId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
-        return FileResponse.fromEntity(file);
+        return FileResponse.fromEntity(file, storageService);
     }
 
     @Override
@@ -157,15 +149,16 @@ public class FileServiceImpl implements FileService {
         uploadFileRepository.softDeleteByIdsAndParent(fileIds, normalized, parentId);
     }
 
+    // ── private ──────────────────────────────────────────────────────────────
+
     private UploadFile saveSingle(
             String parentType,
             Integer parentId,
             MultipartFile file,
-            List<Path> written
+            List<String[]> stored
     ) throws IOException {
 
         String original = safeOriginalFilename(file);
-
         String extension = extractExtension(original);
         validateExtension(extension);
 
@@ -174,15 +167,11 @@ public class FileServiceImpl implements FileService {
         if (size > MAX_FILE_SIZE) throw new IllegalArgumentException("파일이 너무 큽니다. size=" + size);
 
         String renamed = FileNameChange.change(original);
-
         String relativeDir = buildRelativeDir(parentType, parentId);
 
-        Path dirPath = Paths.get(uploadBasePath).resolve(relativeDir);
-        Files.createDirectories(dirPath);
-
-        Path dest = dirPath.resolve(renamed);
-        file.transferTo(dest.toFile());
-        written.add(dest);
+        // 실제 저장 (로컬 or S3)
+        storageService.store(file, relativeDir, renamed);
+        stored.add(new String[]{relativeDir, renamed});
 
         UploadFile entity = UploadFile.builder()
                 .fileParentType(parentType)
@@ -204,12 +193,8 @@ public class FileServiceImpl implements FileService {
     private String buildRelativeDir(String parentType, Integer parentId) {
         LocalDate today = LocalDate.now();
         return String.format("%s/%d/%04d/%02d/%02d/",
-                parentType,
-                parentId,
-                today.getYear(),
-                today.getMonthValue(),
-                today.getDayOfMonth()
-        );
+                parentType, parentId,
+                today.getYear(), today.getMonthValue(), today.getDayOfMonth());
     }
 
     private String safeOriginalFilename(MultipartFile file) {
@@ -230,16 +215,13 @@ public class FileServiceImpl implements FileService {
     }
 
     private void validateExtension(String ext) {
-        if (ext == null || ext.isBlank() || ".".equals(ext)) {
+        if (ext == null || ext.isBlank() || ".".equals(ext))
             throw new IllegalArgumentException("확장자가 없는 파일은 업로드할 수 없습니다.");
-        }
-        if (!ALLOWED_EXT.contains(ext)) {
+        if (!ALLOWED_EXT.contains(ext))
             throw new IllegalArgumentException("허용되지 않는 파일 확장자입니다: " + ext);
-        }
     }
 
     private String toUnixPath(String path) {
         return path == null ? null : path.replace("\\", "/");
     }
 }
-

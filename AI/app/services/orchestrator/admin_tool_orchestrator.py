@@ -6,7 +6,7 @@
 - 모든 테이블 제한 없이 조회 가능 (user_id 필터 불필요)
 - 어드민 전용 분석 도구: admin_stats
 - 웹 검색 도구: web_search (Tavily — 무료 1000회/월)
-- RAG 검색 도구: rag_search (ChromaDB — 완전 무료 로컬)
+- RAG 검색 도구: rag_search (Milvus)
 - 시스템 프롬프트: 운영/관리 맥락
 
 [보안 전제]
@@ -31,11 +31,41 @@ from app.services.tools.web_search_tool import (
     execute_web_search,
     format_web_search_result,
 )
-from app.services.rag.chroma_rag import (
-    RAG_SEARCH_TOOL_DEFINITION,
-    execute_rag_search,
-    is_rag_available,
-)
+from app.integrations.milvus_client import search_vectors as _milvus_search
+
+# Milvus 기반 RAG 도구 정의
+RAG_SEARCH_TOOL_DEFINITION = {
+    "type": "function",
+    "function": {
+        "name": "rag_search",
+        "description": (
+            "UNI PLACE 내부 지식베이스(FAQ·규정·매뉴얼·공지사항 문서)에서 관련 내용을 검색합니다. "
+            "계약 규정, 이용 약관, 서비스 안내, 주의사항 등 문서화된 정보를 찾을 때 사용하세요. "
+            "실시간 DB 데이터가 필요하면 query_database를 사용하세요."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "검색할 질문 또는 키워드 (한국어 권장)",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+}
+
+def execute_rag_search(query: str) -> dict:
+    req = AiRequest(prompt=query, intent="RAG_SEARCH", user_id=None)
+    results = _milvus_search(req)
+    if not results:
+        return {"found": False, "message": "관련 문서를 찾지 못했습니다.", "results": []}
+    return {"found": True, "count": len(results), "results": [{"content": r} for r in results]}
+
+def is_rag_available() -> bool:
+    return bool(settings.milvus_uri and settings.milvus_collection)
+
 from app.services.document.payment_summary_doc import make_payment_summary
 from app.services.document.order_form_generator import generate_billing_report
 from app.services.tools.nearby_property_tool import (
@@ -123,7 +153,7 @@ _BASE_TOOL_DEFINITIONS = [
     },
     # ── 웹 검색 (Tavily) ───────────────────────────────────────────
     WEB_SEARCH_TOOL_DEFINITION,
-    # ── RAG 문서 검색 (ChromaDB) ───────────────────────────────────
+    # ── RAG 문서 검색 (Milvus) ────────────────────────────────────
     RAG_SEARCH_TOOL_DEFINITION,
     # ── 주변 부동산 매물 조회 (가격 추천용) ─────────────────────────
     NEARBY_PROPERTY_TOOL_DEFINITION,

@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 from pathlib import Path
 import tempfile
 
-from fastapi import APIRouter, Body, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter, Body, File, Form, UploadFile, HTTPException, Header
 from fastapi.responses import JSONResponse, Response, FileResponse
 from pydantic import BaseModel
 
@@ -15,11 +15,22 @@ from app.config.settings import settings
 from app.api.v1.executor import ERROR_RESPONSES, execute_ai_request, parse_ai_request
 from app.schemas.ai_request import AiRequest
 from app.schemas.ai_response import AiResponse
+from app.services.orchestrator.admin_tool_orchestrator import run_admin_tool_orchestrator
+from app.services.rag.index_pipeline import get_rag_status, reindex_rag
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/ai", tags=["ai"])
 
 _voice_pipeline = None
+
+
+def _verify_admin_api_key(x_ai_admin_key: str | None) -> None:
+    expected = (settings.ai_admin_api_key or "").strip()
+    # If no key configured, keep endpoint open for backward compatibility.
+    if not expected:
+        return
+    if (x_ai_admin_key or "").strip() != expected:
+        raise HTTPException(status_code=401, detail="Invalid admin API key")
 
 def get_voice_pipeline():
     global _voice_pipeline
@@ -62,6 +73,15 @@ def agent_chatbot(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONRespo
                 payload.get("userId", "MISSING"),
                 list((payload.get("slots") or {}).keys()))
     return _run(payload)
+
+
+@router.post("/chat/admin-chatbot", response_model=AiResponse, responses=ERROR_RESPONSES)
+def admin_chatbot(payload: Dict[str, Any] = Body(...)) -> AiResponse:
+    # Keep parity with legacy route: admin path uses admin_tool_orchestrator.
+    if not payload.get("intent"):
+        payload["intent"] = "AI_AGENT_CHATBOT"
+    req = AiRequest.model_validate(payload)
+    return run_admin_tool_orchestrator(req)
 
 # ── chat/voice-assistant ──────────────────────────────────────────────────────
 @router.post("/chat/voice-assistant", response_model=AiResponse, responses=ERROR_RESPONSES)
@@ -170,6 +190,21 @@ def get_stock_alerts(adminId: str = "") -> dict:
         logger.warning("[stock-alerts] 오류: %s", exc)
         return {"alert": None}
 
+
+@router.get("/admin/rag/status")
+def admin_rag_status(x_ai_admin_key: Optional[str] = Header(default=None)) -> dict:
+    _verify_admin_api_key(x_ai_admin_key)
+    return get_rag_status()
+
+
+@router.post("/admin/rag/reindex-if-changed")
+def admin_rag_reindex_if_changed(
+    x_ai_admin_key: Optional[str] = Header(default=None),
+    force: bool = False,
+) -> dict:
+    _verify_admin_api_key(x_ai_admin_key)
+    return reindex_rag(force=force)
+
 # ── operations ────────────────────────────────────────────────────────────────
 @router.post("/operations/roomservice-stock-monitoring", response_model=AiResponse, responses=ERROR_RESPONSES)
 def roomservice_stock(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONResponse:
@@ -211,7 +246,7 @@ def complaint_priority(payload: Dict[str, Any] = Body(...)):
 @router.post("/operations/room-recommendation")
 def room_recommendation(payload: Dict[str, Any] = Body(...)):
     try:
-        from app.ai.room_recommend import recommend_rooms
+        from app.ai.room_recommend_top3 import recommend_rooms
         import asyncio
 
         rooms = payload.get("rooms") or []
@@ -375,3 +410,29 @@ def inspection_image_compare(req: InspectionImageRequest):
     except Exception as e:
         logger.error(f"[INSPECTION] 예상치 못한 오류: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="이미지 분석 중 서버 오류가 발생했습니다.")
+
+
+# ── RAG 재인덱싱 ──────────────────────────────────────────────────────────────
+@router.post("/rag/reindex")
+def rag_reindex(force: bool = False) -> dict:
+    """
+    rag_docs/ 폴더의 txt/md 파일을 Milvus에 인덱싱.
+    force=true 이면 기존 데이터 무시하고 전체 재인덱싱.
+    """
+    try:
+        from app.services.rag.index_pipeline import reindex_rag
+        result = reindex_rag(force=force)
+        return result
+    except Exception as e:
+        logger.error("[RAG_REINDEX] 오류: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/rag/status")
+def rag_status() -> dict:
+    """RAG 인덱싱 상태 확인."""
+    try:
+        from app.services.rag.index_pipeline import get_rag_status
+        return get_rag_status()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

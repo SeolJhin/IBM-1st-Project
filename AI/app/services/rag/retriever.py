@@ -35,22 +35,7 @@ def retrieve_context(req: AiRequest) -> list[str]:
         if is_popular:
             candidates.extend(_search_popular_posts())
     if not is_popular:
-        # ChromaRAG 우선 검색 (rag_docs/ txt 파일 기반)
-        try:
-            from app.services.rag.chroma_rag import chroma_rag_search
-            chroma_results = chroma_rag_search(query)
-            for r in chroma_results:
-                if isinstance(r, dict):
-                    content = r.get("content", "")
-                elif isinstance(r, str):
-                    content = r
-                else:
-                    content = str(r)
-                if content:
-                    candidates.append(content)
-        except Exception:
-            pass
-        # Milvus fallback
+        # Milvus RAG 검색
         candidates.extend(search_vectors(req))
         candidates.extend(_lookup_static_context(req, query))
     unique_docs: list[str] = []

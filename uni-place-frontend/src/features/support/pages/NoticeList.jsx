@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
+import { toApiImageUrl } from '../../file/api/fileApi';
 import styles from './Support.module.css';
 import NoticeEditor from '../components/NoticeEditor';
 import { useAuth } from '../../user/hooks/useAuth';
@@ -129,33 +130,51 @@ export default function NoticeList() {
       return alert('내용을 입력해주세요.');
     setSubmitting(true);
     try {
-      const created = await supportApi.createNotice({
-        ...writeForm,
-        noticeCtnt: html,
-      });
       const pendingFiles = editorRef.current?.getPendingFiles() ?? [];
-      if (pendingFiles.length > 0 && created?.noticeId) {
+      let finalHtml = html;
+
+      if (pendingFiles.length > 0) {
+        // 1. 공지 먼저 생성해서 noticeId 확보 (blob URL 포함 상태)
+        const created = await supportApi.createNotice({
+          ...writeForm,
+          noticeCtnt: html,
+        });
+
+        // 2. 이미지 업로드
         const uploadResult = await supportApi.uploadFiles(
           'NOTICE',
           created.noticeId,
           pendingFiles
         );
-        let finalHtml = editorRef.current?.getHTML() ?? html;
         const uploaded = uploadResult?.files ?? [];
+
+        // 3. blob URL → 서버 URL 교체
         const parser = new DOMParser();
-        const doc = parser.parseFromString(finalHtml, 'text/html');
+        const doc = parser.parseFromString(html, 'text/html');
         doc.querySelectorAll('img[data-pending]').forEach((img, i) => {
-          if (uploaded[i]) {
-            img.src = supportApi.getFileViewUrl(uploaded[i].fileId);
+          const f = uploaded[i];
+          if (f) {
+            // viewUrl: S3모드 → https://...amazonaws.com/...
+            //          로컬모드 → /files/{id}/view (toApiImageUrl이 /api 붙여줌)
+            img.src = toApiImageUrl(f.viewUrl || '');
             img.removeAttribute('data-pending');
           }
         });
         finalHtml = doc.body.innerHTML;
+
+        // 4. 교체된 HTML로 업데이트
         await supportApi.updateNotice(created.noticeId, {
           ...writeForm,
           noticeCtnt: finalHtml,
         });
+      } else {
+        // 이미지 없으면 바로 생성
+        await supportApi.createNotice({
+          ...writeForm,
+          noticeCtnt: finalHtml,
+        });
       }
+
       resetEditor();
       setShowWriter(false);
       setPage(1);

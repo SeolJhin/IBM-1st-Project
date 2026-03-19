@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
+import { toApiImageUrl } from '../../file/api/fileApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 
@@ -289,12 +290,12 @@ export default function ComplainDetail() {
               {images.map((img) => (
                 <a
                   key={img.fileId}
-                  href={supportApi.getFileViewUrl(img.fileId)}
+                  href={toApiImageUrl(img.viewUrl || img.adminViewUrl || '')}
                   target="_blank"
                   rel="noreferrer"
                 >
                   <img
-                    src={supportApi.getFileViewUrl(img.fileId)}
+                    src={toApiImageUrl(img.viewUrl || img.adminViewUrl || '')}
                     alt={img.originFilename}
                     style={{
                       width: 120,

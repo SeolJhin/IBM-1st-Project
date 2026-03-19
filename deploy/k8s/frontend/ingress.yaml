@@ -25,13 +25,6 @@ spec:
                             name: backend-service
                             port:
                                 number: 80
-                  - path: /ai
-                    pathType: Prefix
-                    backend:
-                        service:
-                            name: ai-service
-                            port:
-                                number: 80
                   - path: /
                     pathType: Prefix
                     backend:
@@ -47,13 +40,6 @@ spec:
                     backend:
                         service:
                             name: backend-service
-                            port:
-                                number: 80
-                  - path: /ai
-                    pathType: Prefix
-                    backend:
-                        service:
-                            name: ai-service
                             port:
                                 number: 80
                   - path: /

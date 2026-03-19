@@ -23,6 +23,8 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Page<User> findByUserRole(UserRole userRole, Pageable pageable);
 
+    boolean existsByUserIdAndUserRole(String userId, UserRole userRole);
+
     // 아이디 찾기: 이름 + 전화번호 일치
     Optional<User> findByUserNmAndUserTel(String userNm, String userTel);
 }

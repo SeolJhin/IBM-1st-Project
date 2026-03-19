@@ -8,6 +8,7 @@ import { propertyApi } from '../../property/api/propertyApi';
 import { authApi } from '../../user/api/authApi';
 import { getOrCreateDeviceId } from '../../../app/http/tokenStore';
 import { withApiPrefix } from '../../../app/http/apiBase';
+import { toApiImageUrl } from '../../file/api/fileApi';
 import styles from './MyContractView.module.css';
 
 /* ─── 이미지 갤러리 ───────────────────────────────────────────── */
@@ -31,7 +32,7 @@ function ImageGallery({ files }) {
     <div className={styles.gallery}>
       <div className={styles.galleryMain}>
         <img
-          src={withApiPrefix(
+          src={toApiImageUrl(
             images[active]?.viewUrl ?? images[active]?.fileUrl
           )}
           alt={`방 사진 ${active + 1}`}
@@ -47,7 +48,7 @@ function ImageGallery({ files }) {
               onClick={() => setActive(i)}
             >
               <img
-                src={withApiPrefix(img.viewUrl ?? img.fileUrl)}
+                src={toApiImageUrl(img.viewUrl ?? img.fileUrl)}
                 alt={`썸네일 ${i + 1}`}
               />
             </button>
@@ -185,10 +186,12 @@ function RoomInfoPanel({ room, contract }) {
 
 /* ─── 계약서 이미지 뷰어 모달 ────────────────────────────────── */
 function ContractImageModal({ contract, onClose }) {
-  const imgUrl = withApiPrefix(`/files/${contract.contractPdfFileId}/view`);
-  const downloadUrl = withApiPrefix(
-    `/files/${contract.contractPdfFileId}/download`
-  );
+  const imgUrl =
+    toApiImageUrl(contract.contractPdfUrl) ||
+    withApiPrefix(`/files/${contract.contractPdfFileId}/view`);
+  const downloadUrl =
+    toApiImageUrl(contract.contractPdfUrl) ||
+    withApiPrefix(`/files/${contract.contractPdfFileId}/download`);
 
   return (
     <div className={styles.imgOverlay} onClick={onClose}>
