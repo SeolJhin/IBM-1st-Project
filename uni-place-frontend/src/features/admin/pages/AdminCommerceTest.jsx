@@ -1,10 +1,11 @@
 // src/features/admin/pages/AdminCommerceTest.jsx
-// ⚠️ 임시 테스트 페이지 — API 연결 확인 후 삭제할 것
+//  임시 테스트 페이지 — API 연결 확인 후 삭제할 것
 //
 // 확인 항목:
 // 1. 상품 목록 조회 (공개 GET /products)
 // 2. 관리자 전체 주문 목록 (GET /admin/orders)
 // 3. 관리자 룸서비스 주문 목록 (GET /admin/room-services)
+// dt 
 
 import { useState } from 'react';
 import { useAdminProductList } from '../hooks/useAdminProducts';
