@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class FileController {
 
     private final FileService fileService;
-    private final StorageService storageService;  // 로컬 or S3 자동 주입
+    private final StorageService storageService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<FileUploadResponse> upload(@ModelAttribute FileUploadRequest request) {
@@ -109,7 +109,6 @@ public class FileController {
 
     private ResponseEntity<Resource> buildResponse(FileResponse meta, ContentDisposition disposition)
             throws Exception {
-
         InputStream is = storageService.read(meta.getFilePath(), meta.getRenameFilename());
         InputStreamResource resource = new InputStreamResource(is);
 
