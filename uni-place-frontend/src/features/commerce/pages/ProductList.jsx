@@ -15,6 +15,7 @@ import { useCart } from '../hooks/useCart';
 import { useTenantContract } from '../hooks/useTenantContract';
 import { commerceApi } from '../api/commerceApi';
 import { withApiPrefix } from '../../../app/http/apiBase';
+import { toApiImageUrl } from '../../file/api/fileApi';
 import styles from './ProductList.module.css';
 import layoutStyles from '../../user/pages/MemberInfo.module.css';
 import Modal from '../../../shared/components/Modal/Modal';
@@ -114,7 +115,7 @@ function ProductCard({
           <img
             src={(() => {
               const u = product.images[0].viewUrl || '';
-              return u.startsWith('/api') ? u : `/api${u}`;
+              return toApiImageUrl(u);
             })()}
             alt={product.prodNm}
             className={styles.cardImgPhoto}

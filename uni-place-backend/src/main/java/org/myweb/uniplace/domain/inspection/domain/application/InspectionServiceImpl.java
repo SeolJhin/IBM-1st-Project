@@ -20,9 +20,11 @@ import org.myweb.uniplace.domain.inspection.domain.infrastructure.InspectionAiCl
 import org.myweb.uniplace.domain.inspection.domain.repository.InspectionRepository;
 import org.myweb.uniplace.domain.inspection.domain.repository.MaintenanceTicketRepository;
 import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.storage.StorageService;
+import org.myweb.uniplace.domain.inspection.api.dto.response.InspectionDetailResponse;
 import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.util.CustomMultipartFile;
-import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,9 +33,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
+
+
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -48,9 +50,8 @@ public class InspectionServiceImpl implements InspectionService {
     private final MaintenanceTicketRepository ticketRepository;
     private final FileService fileService;
     private final InspectionAiClient aiClient;
+    private final StorageService storageService;
 
-    @Value("${file.upload-path}")
-    private String uploadBasePath;
 
     private static final String FILE_PARENT_TYPE = "INSPECTION";
     private static final int    TEMP_PARENT_ID   = 0;
@@ -246,11 +247,7 @@ public class InspectionServiceImpl implements InspectionService {
     private String readFileAsBase64(Integer fileId) {
         try {
             FileResponse meta = fileService.getFile(fileId);
-            Path absPath = Paths.get(uploadBasePath)
-                    .resolve(meta.getFilePath())
-                    .resolve(meta.getRenameFilename())
-                    .normalize();
-            byte[] bytes = Files.readAllBytes(absPath);
+            byte[] bytes = storageService.read(meta.getFilePath(), meta.getRenameFilename()).readAllBytes();
             return Base64.getEncoder().encodeToString(bytes);
         } catch (IOException e) {
             log.error("[INSPECTION] 파일 읽기 실패 - fileId={}: {}", fileId, e.getMessage());
@@ -287,6 +284,6 @@ public class InspectionServiceImpl implements InspectionService {
         List<MaintenanceTicketResponse> ticketResponses = tickets.stream()
                 .map(MaintenanceTicketResponse::from)
                 .toList();
-        return InspectionDetailResponse.from(inspection, ticketResponses, aiSummary);
+        return InspectionDetailResponse.from(inspection, ticketResponses, aiSummary, fileService);
     }
 }

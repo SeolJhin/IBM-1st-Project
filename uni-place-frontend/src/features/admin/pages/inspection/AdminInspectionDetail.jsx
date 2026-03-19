@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { inspectionApi } from '../../api/inspectionApi';
 import styles from './AdminInspectionDetail.module.css';
+import { toApiImageUrl } from '../../../file/api/fileApi';
 
 const SEVERITY_LABEL = {
   low: { text: '낮음', color: '#16a34a' },
@@ -199,12 +200,17 @@ export default function AdminInspectionDetail() {
             <p className={styles.imageLabel}>이전 점검 (Before)</p>
             {data.beforeFileId ? (
               <img
-                src={`/api/files/${data.beforeFileId}/view`}
+                src={
+                  toApiImageUrl(data.beforeFileViewUrl) ||
+                  `/api/files/${data.beforeFileId}/view`
+                }
                 alt="이전 점검"
                 className={`${styles.image} ${styles.imageClickable}`}
                 onClick={() =>
                   setLightbox({
-                    src: `/api/files/${data.beforeFileId}/view`,
+                    src:
+                      toApiImageUrl(data.beforeFileViewUrl) ||
+                      `/api/files/${data.beforeFileId}/view`,
                     label: '이전 점검 (Before)',
                   })
                 }
@@ -216,12 +222,17 @@ export default function AdminInspectionDetail() {
           <div className={styles.imageBox}>
             <p className={styles.imageLabel}>이번 점검 (After)</p>
             <img
-              src={`/api/files/${data.afterFileId}/view`}
+              src={
+                toApiImageUrl(data.afterFileViewUrl) ||
+                `/api/files/${data.afterFileId}/view`
+              }
               alt="이번 점검"
               className={`${styles.image} ${styles.imageClickable}`}
               onClick={() =>
                 setLightbox({
-                  src: `/api/files/${data.afterFileId}/view`,
+                  src:
+                    toApiImageUrl(data.afterFileViewUrl) ||
+                    `/api/files/${data.afterFileId}/view`,
                   label: '이번 점검 (After)',
                 })
               }

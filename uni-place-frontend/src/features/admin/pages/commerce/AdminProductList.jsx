@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { adminApi } from '../../api/adminApi';
+import { toApiImageUrl } from '../../../file/api/fileApi';
 import styles from './AdminProductList.module.css';
 
 // ─── 상수 ─────────────────────────────────────────────────────────────────
@@ -524,10 +525,9 @@ function ProductFormModal({
                       className={`${styles.imageThumb} ${isDeleting ? styles.imageThumbDeleting : ''}`}
                     >
                       <img
-                        src={(() => {
-                          const u = img.adminViewUrl || img.viewUrl || '';
-                          return u.startsWith('/api') ? u : `/api${u}`;
-                        })()}
+                        src={toApiImageUrl(
+                          img.adminViewUrl || img.viewUrl || ''
+                        )}
                         alt="상품 이미지"
                         className={styles.imageThumbImg}
                       />

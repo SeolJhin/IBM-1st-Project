@@ -12,6 +12,8 @@ import org.myweb.uniplace.domain.file.application.FileService;
 import org.myweb.uniplace.domain.file.domain.enums.FileRefType;
 import org.myweb.uniplace.domain.property.domain.entity.Building;
 import org.myweb.uniplace.domain.property.domain.entity.Room;
+import org.myweb.uniplace.global.config.UploadProperties;
+import org.myweb.uniplace.global.storage.StorageService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,9 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -36,6 +36,8 @@ public class ContractImageServiceImpl implements ContractImageService {
 
     private final FileService fileService;
     private final ObjectMapper objectMapper;
+    private final StorageService storageService;   // ← 추가: 로컬/S3 겸용 읽기에 사용
+    private final UploadProperties uploadProperties; // ← 추가: 로컬 여부 판단용
 
     @Value("${contract.template-path:}")
     private String templatePath;
@@ -46,11 +48,11 @@ public class ContractImageServiceImpl implements ContractImageService {
     @Value("${contract.script-path:}")
     private String scriptPath;
 
-    @Value("${contract.temp-dir:C:/uniplace/temp}")
+    @Value("${contract.temp-dir:/tmp/contracts}")
     private String tempDir;
 
-    @Value("${file.upload-path:C:/uniplace/uploads}")
-    private String uploadBasePath;
+    // ※ uploadBasePath는 로컬 모드 전용이므로 삭제하고 UploadProperties를 통해 접근합니다.
+    //   S3 모드에서 이 필드를 직접 참조하면 C:/uniplace/uploads 기본값으로 항상 파일을 못 찾습니다.
 
     @Override
     public Integer generateAndSave(Contract contract) {
@@ -61,20 +63,26 @@ public class ContractImageServiceImpl implements ContractImageService {
 
         Path outputPath = null;
         Path dataFilePath = null;
+        Path tmpSignPath = null; // S3에서 내려받은 서명 이미지 임시 경로
         try {
             Path tempDirPath = Paths.get(tempDir);
             Files.createDirectories(tempDirPath);
 
             String base = "contract_" + contract.getContractId() + "_" + System.currentTimeMillis();
-            outputPath  = tempDirPath.resolve(base + ".jpg");
-            // ✅ JSON을 파일로 저장 → 인수 길이/인코딩 문제 완전 우회
+            outputPath   = tempDirPath.resolve(base + ".jpg");
             dataFilePath = tempDirPath.resolve(base + "_data.json");
 
             Map<String, String> dataMap = buildDataMap(contract);
             String dataJson = objectMapper.writeValueAsString(dataMap);
             Files.writeString(dataFilePath, dataJson, StandardCharsets.UTF_8);
 
-            String signImgPath = resolveSignImagePath(contract);
+            // ── 수정된 서명 이미지 경로 해석 ──────────────────────────────
+            // 로컬: 디스크에서 직접 경로 반환
+            // S3:   S3에서 /tmp에 임시 다운로드 후 경로 반환 → Python 스크립트에 전달
+            String[] signResult = resolveSignImagePath(contract, tempDirPath, base);
+            String signImgPath = signResult[0];
+            tmpSignPath = signResult[1] != null ? Paths.get(signResult[1]) : null;
+            // ──────────────────────────────────────────────────────────────
 
             if (!runPythonScript(outputPath.toString(), dataFilePath.toString(), signImgPath)) {
                 return null;
@@ -102,9 +110,9 @@ public class ContractImageServiceImpl implements ContractImageService {
         } catch (Exception e) {
             log.error("[ContractImage] 계약서 이미지 생성 오류 contractId={}", contract.getContractId(), e);
         } finally {
-            // 임시 파일 정리
-            if (outputPath != null)  try { Files.deleteIfExists(outputPath);  } catch (IOException ignored) {}
+            if (outputPath  != null) try { Files.deleteIfExists(outputPath);  } catch (IOException ignored) {}
             if (dataFilePath != null) try { Files.deleteIfExists(dataFilePath); } catch (IOException ignored) {}
+            if (tmpSignPath  != null) try { Files.deleteIfExists(tmpSignPath);  } catch (IOException ignored) {}
         }
         return null;
     }
@@ -131,11 +139,51 @@ public class ContractImageServiceImpl implements ContractImageService {
     }
 
     // ── private helpers ──────────────────────────────────────────
+
     private boolean isConfigured() {
         return templatePath != null && !templatePath.isBlank()
                 && scriptPath != null && !scriptPath.isBlank()
                 && Paths.get(templatePath).toFile().exists()
                 && Paths.get(scriptPath).toFile().exists();
+    }
+
+    /**
+     * 서명 이미지 경로 해석.
+     * 로컬: 디스크 경로를 그대로 반환
+     * S3:   storageService.read()로 임시 파일에 저장 후 그 경로를 반환
+     *
+     * @return [signImgPath, tmpFilePath]
+     *   signImgPath — Python 스크립트에 전달할 경로 (null이면 서명 없음)
+     *   tmpFilePath — finally에서 삭제할 임시 파일 경로 (로컬이면 null)
+     */
+    private String[] resolveSignImagePath(Contract contract, Path tempDirPath, String base) {
+        Integer signFileId = contract.getLessorSignFileId();
+        if (signFileId == null) return new String[]{null, null};
+
+        try {
+            FileResponse fr = fileService.getFile(signFileId);
+            if (fr == null) return new String[]{null, null};
+
+            if (uploadProperties.isS3()) {
+                // S3 모드: storageService.read()로 스트림을 가져와 /tmp에 저장
+                Path tmpSign = tempDirPath.resolve(base + "_sign.jpg");
+                try (InputStream is = storageService.read(fr.getFilePath(), fr.getRenameFilename())) {
+                    Files.copy(is, tmpSign, StandardCopyOption.REPLACE_EXISTING);
+                }
+                return new String[]{tmpSign.toString(), tmpSign.toString()};
+            } else {
+                // 로컬 모드: 디스크에서 직접 경로 확인 (기존 동작 유지)
+                Path p = Paths.get(uploadProperties.getUploadDir())
+                        .resolve(fr.getFilePath())
+                        .resolve(fr.getRenameFilename());
+                return p.toFile().exists()
+                        ? new String[]{p.toString(), null}
+                        : new String[]{null, null};
+            }
+        } catch (Exception e) {
+            log.warn("[ContractImage] 서명 이미지 경로 조회 실패: {}", e.getMessage());
+            return new String[]{null, null};
+        }
     }
 
     private Map<String, String> buildDataMap(Contract contract) {
@@ -162,13 +210,11 @@ public class ContractImageServiceImpl implements ContractImageService {
                 ? contract.getSignAt().toLocalDate() : LocalDate.now();
         m.putAll(splitDate("sign", signDate));
 
-        // ✅ 임대인 정보: building.building_lessor* 컬럼 → key: building_lessor_*
         m.put("building_lessor_nm",   safe(building != null ? building.getBuildingLessorNm() : ""));
         m.put("building_lessor_tel",  safe(building != null ? building.getBuildingLessorTel() : ""));
         m.put("building_lessor_addr", safe(building != null ? building.getBuildingLessorAddr() : ""));
         m.put("building_lessor_rrn",  maskRrn(building != null ? building.getBuildingLessorRrn() : ""));
 
-        // ✅ 임차인 정보: contract.lessor* 컬럼 (DB 컬럼명은 lessor이지만 실제 임차인 정보) → key: lessor_*
         m.put("lessor_nm",   safe(contract.getLessorNm()));
         m.put("lessor_tel",  safe(contract.getLessorTel()));
         m.put("lessor_addr", safe(contract.getLessorAddr()));
@@ -196,24 +242,9 @@ public class ContractImageServiceImpl implements ContractImageService {
         return rrn.length() >= 8 ? rrn.substring(0, 8) + "******" : rrn;
     }
 
-    private String resolveSignImagePath(Contract contract) {
-        Integer signFileId = contract.getLessorSignFileId();
-        if (signFileId == null) return null;
-        try {
-            FileResponse fr = fileService.getFile(signFileId);
-            if (fr == null) return null;
-            Path p = Paths.get(uploadBasePath).resolve(fr.getFilePath()).resolve(fr.getRenameFilename());
-            return p.toFile().exists() ? p.toString() : null;
-        } catch (Exception e) {
-            log.warn("[ContractImage] 서명 이미지 경로 조회 실패: {}", e.getMessage());
-            return null;
-        }
-    }
-
     private boolean runPythonScript(String outputPath, String dataFilePath, String signImgPath)
             throws IOException, InterruptedException {
 
-        // ✅ --data 대신 --data_file 로 JSON 파일 경로 전달
         List<String> cmd = new ArrayList<>(List.of(
                 pythonPath, scriptPath,
                 "--template", templatePath,
@@ -223,7 +254,7 @@ public class ContractImageServiceImpl implements ContractImageService {
         if (signImgPath != null) { cmd.add("--sign_img"); cmd.add(signImgPath); }
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.environment().put("PYTHONIOENCODING", "utf-8");  // ✅ 한글 인코딩
+        pb.environment().put("PYTHONIOENCODING", "utf-8");
         pb.redirectErrorStream(false);
 
         Process proc = pb.start();
