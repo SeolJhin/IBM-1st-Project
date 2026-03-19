@@ -25,8 +25,11 @@ public class S3StorageService implements StorageService {
     private final UploadProperties props;
 
     private String toKey(String relativeDir, String fileName) {
-        String dir = relativeDir.endsWith("/") ? relativeDir : relativeDir + "/";
-        return dir + fileName;
+        // relativeDir 끝 슬래시 제거 후 결합 → 이중 슬래시(//) 방지
+        String dir = relativeDir.endsWith("/")
+                ? relativeDir.substring(0, relativeDir.length() - 1)
+                : relativeDir;
+        return dir + "/" + fileName;
     }
 
     @Override
