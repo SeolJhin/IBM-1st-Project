@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
+import { toApiImageUrl } from '../../file/api/fileApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 import editorStyles from './NoticeEditor.module.css';
@@ -114,8 +115,9 @@ export default function NoticeDetail() {
         const doc = parser.parseFromString(finalHtml, 'text/html');
         const pendingImgs = doc.querySelectorAll('img[data-pending]');
         pendingImgs.forEach((img, i) => {
-          if (uploaded[i]) {
-            img.src = supportApi.getFileViewUrl(uploaded[i].fileId);
+          const f = uploaded[i];
+          if (f) {
+            img.src = toApiImageUrl(f.viewUrl || '');
             img.removeAttribute('data-pending');
           }
         });

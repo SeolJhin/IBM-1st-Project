@@ -60,8 +60,7 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceImplTest {
-	//deploy test
-// build test
+// deployment, integration test는 PaymentServiceTest에서 수행. PaymentServiceImplTest는 단위 테스트로서, 외부 의존성은 모두 모킹하여 내부 로직과 흐름 위주로 검증한다.
     @Mock
     private PaymentRepository paymentRepository;
     @Mock

@@ -291,6 +291,13 @@ export default function RoomDetail() {
     }
   };
 
+  const roomTypeLabel = {
+    one_room: '원룸',
+    two_room: '투룸',
+    three_room: '쓰리룸',
+    share: '쉐어',
+    loft: '로프트(복층)',
+  };
   const rentTypeLabel = { monthly_rent: '월세', stay: '단기' };
   const statusLabel = {
     available: '입주 가능',
@@ -414,6 +421,14 @@ export default function RoomDetail() {
 
             {/* 스펙 */}
             <div className={styles.specGrid}>
+              {room.roomType && (
+                <div className={styles.specItem}>
+                  <span className={styles.specLabel}>방 유형</span>
+                  <span className={styles.specValue}>
+                    {roomTypeLabel[room.roomType] || room.roomType}
+                  </span>
+                </div>
+              )}
               <div className={styles.specItem}>
                 <span className={styles.specLabel}>면적</span>
                 <span className={styles.specValue}>{room.roomSize}㎡</span>

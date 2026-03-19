@@ -53,7 +53,10 @@ function ActionButtons({ buttons, onModalRoute, onAction, allMessages }) {
                 normalizedUrl.startsWith('/ai/') ||
                 normalizedUrl.startsWith('/api/ai/')
               ) {
-                window.open(normalizedUrl, '_blank');
+                var openUrl = normalizedUrl.startsWith('/ai/')
+                  ? `/api${normalizedUrl}`
+                  : normalizedUrl;
+                window.open(openUrl, '_blank');
               } else if (MODAL_ROUTES[pathOnly] && onModalRoute) {
                 onModalRoute(MODAL_ROUTES[pathOnly]);
               } else if (

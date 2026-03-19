@@ -13,7 +13,7 @@ public interface BoardService {
 
     BoardResponse getBoardDetail(int boardId, boolean increaseReadCount);
 
-    void createBoard(BoardCreateRequest request, MultipartFile file);
+    int createBoard(BoardCreateRequest request, MultipartFile file);
 
     void updateBoard(int boardId, BoardUpdateRequest request, boolean deleteFlag, MultipartFile file);
 

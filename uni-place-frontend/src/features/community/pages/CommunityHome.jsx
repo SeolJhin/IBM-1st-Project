@@ -15,6 +15,7 @@ import UserStatusModal from '../../user/components/UserStatusModal';
 import styles from './CommunityHome.module.css';
 import { reviewApi } from '../../review/api/reviewApi';
 import ReviewModal from '../../review/components/ReviewModal';
+import { fileApi, toApiImageUrl } from '../../file/api/fileApi';
 
 function normalizeTab(value) {
   const k = String(value ?? '').toUpperCase();
@@ -230,9 +231,9 @@ function InlineImageBtn({ onInsert, disabled }) {
   const handleFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => onInsert(ev.target.result, file);
-    reader.readAsDataURL(file);
+    // base64(readAsDataURL) 대신 blob URL 사용 — DB에 base64가 저장되는 버그 방지
+    const blobUrl = URL.createObjectURL(file);
+    onInsert(blobUrl, file);
     e.target.value = '';
   };
   return (
@@ -454,13 +455,14 @@ export default function CommunityHome() {
     return nums;
   }, [page, totalPages]);
 
-  const handleInsertImage = (dataUrl, file) => {
+  const handleInsertImage = (blobUrl, file) => {
     const editorEl =
       editorContainerRef.current?.querySelector('[contenteditable]');
     if (editorEl) {
       editorEl.focus();
       const img = document.createElement('img');
-      img.src = dataUrl;
+      img.src = blobUrl;
+      img.setAttribute('data-pending-img', '1'); // 저장 시 서버 URL로 교체할 마커
       img.style.cssText =
         'max-width:100%;border-radius:8px;margin:8px 0;display:block;';
       const sel = window.getSelection();
@@ -477,7 +479,7 @@ export default function CommunityHome() {
       }
       setWriteContent(editorEl.innerHTML);
     }
-    setPendingImages((prev) => [...prev, { dataUrl, file }]);
+    setPendingImages((prev) => [...prev, { blobUrl, file }]);
   };
 
   const submitPost = async () => {
@@ -502,12 +504,47 @@ export default function CommunityHome() {
     setSubmitting(true);
     setError('');
     try {
-      await communityApi.createBoard({
+      // 1. 게시글 먼저 생성 (boardCtnt는 blob URL 포함 상태로 임시 저장)
+      const created = await communityApi.createBoard({
         boardTitle: title,
         boardCtnt: writeContent,
         code: effectiveCode,
         anonymity: anonymous ? 'Y' : 'N',
       });
+
+      // 2. 이미지가 있으면 업로드 후 blob URL → 서버 URL 교체
+      // 백엔드 createBoard가 boardId(Integer) 직접 반환
+      const boardId = typeof created === 'number' ? created : created?.boardId;
+      if (pendingImages.length > 0 && boardId) {
+        const files = pendingImages.map((p) => p.file);
+        const uploadResult = await fileApi.upload('BOARD', boardId, files);
+        const uploaded = uploadResult?.files ?? uploadResult ?? [];
+
+        // DOM 파서로 blob URL을 서버 URL로 교체
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(writeContent, 'text/html');
+        const imgs = doc.querySelectorAll('img[data-pending-img]');
+        imgs.forEach((img, i) => {
+          const file = uploaded[i];
+          if (file) {
+            // blob URL 해제
+            URL.revokeObjectURL(img.src);
+            img.src = toApiImageUrl(file.viewUrl);
+            img.removeAttribute('data-pending-img');
+          }
+        });
+        const finalHtml = doc.body.innerHTML;
+
+        // 3. 교체된 HTML로 업데이트
+        await communityApi.updateBoard(boardId, {
+          boardTitle: title,
+          boardCtnt: finalHtml,
+          anonymity: anonymous ? 'Y' : 'N',
+        });
+      }
+
+      // blob URL 메모리 해제
+      pendingImages.forEach((p) => URL.revokeObjectURL(p.blobUrl));
       setWriteTitle('');
       setWriteContent('');
       setAnonymous(false);

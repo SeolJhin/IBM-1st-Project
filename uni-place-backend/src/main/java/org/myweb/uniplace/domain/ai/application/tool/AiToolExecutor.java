@@ -3,6 +3,8 @@ package org.myweb.uniplace.domain.ai.application.tool;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.myweb.uniplace.domain.user.domain.enums.UserRole;
+import org.myweb.uniplace.domain.user.repository.UserRepository;
 import org.myweb.uniplace.domain.reservation.domain.enums.TourStatus;
 import org.myweb.uniplace.domain.reservation.repository.TourReservationRepository;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class AiToolExecutor {
 
     private final EntityManager em;
     private final TourReservationRepository tourRepository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public AiToolResponse execute(AiToolRequest req) {
@@ -70,6 +73,11 @@ public class AiToolExecutor {
             log.warn("[AiToolExecutor] query_database_admin: userId 없음 → 차단");
             return AiToolResponse.authRequired();
         }
+        if (!isAdminUser(userId)) {
+            log.warn("[AiToolExecutor] query_database_admin: non-admin userId={} denied", userId);
+            return AiToolResponse.authRequired();
+        }
+
         String sql  = getString(args, "sql");
         String desc = getString(args, "description");
 
@@ -300,6 +308,10 @@ public class AiToolExecutor {
         if (v instanceof java.sql.Date d) return d.toLocalDate().toString();
         if (v instanceof byte[] b) return new String(b);
         return v;
+    }
+
+    private boolean isAdminUser(String userId) {
+        return userRepository.existsByUserIdAndUserRole(userId, UserRole.admin);
     }
 
     // ── 슬롯 헬퍼 ────────────────────────────────────────────────────────────
