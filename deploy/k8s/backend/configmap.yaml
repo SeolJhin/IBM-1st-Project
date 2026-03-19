@@ -8,7 +8,7 @@ data:
   SERVER_SERVLET_CONTEXT_PATH: "/api"
   SERVER_FORWARD_HEADERS_STRATEGY: "framework"
   APP_OAUTH2_REDIRECT_URI: "https://uniplace.site/oauth2/success"
-  APP_CORS_ALLOWED_ORIGINS: "https://uniplace.site"
+  APP_CORS_ALLOWED_ORIGINS: "https://uniplace.site,https://www.uniplace.site"
   KAKAO_REDIRECT_URI: "https://uniplace.site/api/login/oauth2/code/kakao"
   GOOGLE_REDIRECT_URI: "https://uniplace.site/api/login/oauth2/code/google"
   AI_FASTAPI_BASE_URL: "http://ai-service"
