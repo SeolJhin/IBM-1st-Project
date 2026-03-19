@@ -174,7 +174,7 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public void createBoard(BoardCreateRequest request, MultipartFile file) {
+    public int createBoard(BoardCreateRequest request, MultipartFile file) {
         AuthUser authUser = requireCurrentAuthUser();
         String boardCode = normalizeBoardCodeForWrite(request.getCode());
         requireBoardWriteRole(authUser, boardCode);
@@ -215,6 +215,7 @@ public class BoardServiceImpl implements BoardService {
         }
 
         saved.markReply(false);
+        return saved.getBoardId();
     }
 
     @Override

@@ -7,6 +7,7 @@ import { adminApi } from '../../admin/api/adminApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import UserStatusModal from '../../user/components/UserStatusModal';
 import styles from './BoardDetail.module.css';
+import { toApiImageUrl } from '../../file/api/fileApi';
 
 const READ_COUNT_DEDUPE_MS = 1500;
 
@@ -942,13 +943,13 @@ export default function BoardDetail() {
                       <div key={f.fileId} className={styles.fileItem}>
                         {isImage ? (
                           <img
-                            src={`/api${f.viewUrl}`}
+                            src={toApiImageUrl(f.viewUrl)}
                             alt={f.originFilename || 'image'}
                             className={styles.attachedImage}
                           />
                         ) : (
                           <a
-                            href={`/api${f.downloadUrl}`}
+                            href={toApiImageUrl(f.downloadUrl)}
                             target="_blank"
                             rel="noreferrer"
                             className={styles.fileLink}
