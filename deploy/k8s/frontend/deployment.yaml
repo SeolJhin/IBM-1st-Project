@@ -18,6 +18,9 @@ spec:
         - name: frontend
           image: 194722402714.dkr.ecr.ap-northeast-2.amazonaws.com/uniplace-frontend:latest
           imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: frontend-secrets
           ports:
             - containerPort: 80
           readinessProbe:
