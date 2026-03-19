@@ -192,7 +192,8 @@ public class FileServiceImpl implements FileService {
 
     private String buildRelativeDir(String parentType, Integer parentId) {
         LocalDate today = LocalDate.now();
-        return String.format("%s/%d/%04d/%02d/%02d/",
+        // 끝 슬래시 없이 반환 → toKey에서 "/" + fileName 으로 결합하여 // 방지
+        return String.format("%s/%d/%04d/%02d/%02d",
                 parentType, parentId,
                 today.getYear(), today.getMonthValue(), today.getDayOfMonth());
     }

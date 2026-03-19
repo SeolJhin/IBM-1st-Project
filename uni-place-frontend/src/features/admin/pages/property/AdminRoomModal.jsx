@@ -127,9 +127,16 @@ export default function AdminRoomModal({ roomId, onClose, onSuccess }) {
       fu.newFiles.forEach((f) => fd.append('files', f));
       if (isEdit)
         fu.deleteFileIds.forEach((id) => fd.append('deleteFileIds', id));
-      await (isEdit
+      const result = await (isEdit
         ? adminApi.updateRoom(roomId, fd)
         : adminApi.createRoom(fd));
+      // 수정 완료 후 서버 응답으로 existingFiles 즉시 갱신
+      // → 모달을 닫지 않고 다시 열어도 삭제된 이미지가 사라진 상태로 표시됨
+      if (isEdit && result?.files) {
+        setExistingFiles(result.files);
+        fu.reset();
+        fu.initExistingOrder(result.files);
+      }
       onSuccess?.();
       onClose();
     } catch (e) {
