@@ -8,8 +8,10 @@ export function validatePassword(pwd) {
   if (pwd.length > 20) return '비밀번호는 20자 이하여야 합니다.';
   if (!/[a-zA-Z]/.test(pwd)) return '비밀번호에 영문자가 포함되어야 합니다.';
   if (!/[0-9]/.test(pwd)) return '비밀번호에 숫자가 포함되어야 합니다.';
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(pwd))
-    return '비밀번호에 특수기호가 1개 이상 포함되어야 합니다.';
+  const hasSpecial = [...pwd].some((ch) =>
+    `!@#$%^&*()_+-=[]{};':"\\|,.<>/?\`~`.includes(ch)
+  );
+  if (!hasSpecial) return '비밀번호에 특수기호가 1개 이상 포함되어야 합니다.';
   return '';
 }
 
