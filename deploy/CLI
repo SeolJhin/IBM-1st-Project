@@ -2,6 +2,8 @@ kubectl create secret generic ai-secrets --namespace uniplace --from-env-file=AI
 
 kubectl create secret generic backend-secrets --namespace uniplace --from-env-file=uni-place-backend/aws.env --dry-run=client -o yaml | kubectl apply -f -
 
+kubectl create secret generic frontend-secrets --namespace uniplace --from-env-file=uni-place-frontend/aws.env --dry-run=client -o yaml | kubectl apply -f -
+
 kubectl -n uniplace rollout restart deployment/ai
 kubectl -n uniplace rollout restart deployment/backend
 kubectl -n uniplace rollout restart deployment/frontend
