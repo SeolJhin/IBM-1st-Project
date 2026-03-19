@@ -32,7 +32,7 @@ public class NoticeServiceImpl implements NoticeService {
                 request.getKeyword(),
                 pageable
         );
-        return PageResponse.of(page.map(NoticeResponse::from));
+        return PageResponse.of(page.map(this::toResponse));
     }
 
     @Override
@@ -41,7 +41,7 @@ public class NoticeServiceImpl implements NoticeService {
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOTICE_NOT_FOUND));
         notice.increaseReadCount();
-        return NoticeResponse.from(notice);
+        return toResponse(notice);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class NoticeServiceImpl implements NoticeService {
                 .noticeSt(request.getNoticeSt())
                 .code(request.getCode())
                 .build();
-        return NoticeResponse.from(noticeRepository.save(notice));
+        return toResponse(noticeRepository.save(notice));
     }
 
     @Override
@@ -70,7 +70,7 @@ public class NoticeServiceImpl implements NoticeService {
                 request.getNoticeSt(),
                 request.getCode()
         );
-        return NoticeResponse.from(notice);
+        return toResponse(notice);
     }
 
     @Override
@@ -79,5 +79,22 @@ public class NoticeServiceImpl implements NoticeService {
             throw new BusinessException(ErrorCode.NOTICE_NOT_FOUND);
         }
         noticeRepository.deleteById(noticeId);
+    }
+
+    private NoticeResponse toResponse(Notice notice) {
+        return NoticeResponse.builder()
+                .noticeId(notice.getNoticeId())
+                .noticeTitle(notice.getNoticeTitle())
+                .userId(notice.getUserId())
+                .noticeCtnt(notice.getNoticeCtnt())
+                .importance(notice.getImportance())
+                .impEndAt(notice.getImpEndAt())
+                .readCount(notice.getReadCount())
+                .noticeSt(notice.getNoticeSt())
+                .fileCk(notice.getFileCk())
+                .code(notice.getCode())
+                .createdAt(notice.getCreatedAt())
+                .updatedAt(notice.getUpdatedAt())
+                .build();
     }
 }

@@ -44,6 +44,12 @@ export function toApiImageUrl(url) {
   return `/api${url.startsWith('/') ? url : `/${url}`}`;
 }
 
+export function toStableFileViewUrl(file) {
+  if (!file) return null;
+  if (file.fileId != null) return `${API}/files/${file.fileId}/view`;
+  return toApiImageUrl(file.viewUrl || file.adminViewUrl || '');
+}
+
 export const fileApi = {
   /**
    * GET /files?fileParentType=&fileParentId=
