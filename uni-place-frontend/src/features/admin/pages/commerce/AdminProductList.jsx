@@ -260,7 +260,9 @@ function ProductFormModal({
             : [];
         setExistingImages(list);
       })
-      .catch(() => {});
+      .catch((e) => {
+        setErr(e?.message || '기존 이미지 목록을 불러오지 못했습니다.');
+      });
   }, [isEdit, product?.prodId]);
 
   const set = (k) => (e) =>
@@ -348,13 +350,11 @@ function ProductFormModal({
 
       // 기존 이미지 삭제
       if (deletedFileIds.length > 0 && prodId) {
-        await adminApi
-          .deleteProductImages(prodId, deletedFileIds)
-          .catch(() => {});
+        await adminApi.deleteProductImages(prodId, deletedFileIds);
       }
       // 새 이미지 업로드
       if (newFiles.length > 0 && prodId) {
-        await adminApi.uploadProductImages(prodId, newFiles).catch(() => {});
+        await adminApi.uploadProductImages(prodId, newFiles);
       }
 
       onSaved();
