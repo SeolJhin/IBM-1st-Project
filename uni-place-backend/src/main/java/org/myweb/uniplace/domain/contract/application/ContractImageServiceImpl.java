@@ -15,8 +15,11 @@ import org.myweb.uniplace.domain.property.domain.entity.Room;
 import org.myweb.uniplace.global.config.UploadProperties;
 import org.myweb.uniplace.global.storage.StorageService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.annotation.PostConstruct;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -39,20 +42,54 @@ public class ContractImageServiceImpl implements ContractImageService {
     private final StorageService storageService;   // ← 추가: 로컬/S3 겸용 읽기에 사용
     private final UploadProperties uploadProperties; // ← 추가: 로컬 여부 판단용
 
-    @Value("${contract.template-path:}")
+    @Value("${contract.template-path:./src/main/resources/contracts/contract_template.png}")
     private String templatePath;
 
     @Value("${contract.python-path:python}")
     private String pythonPath;
 
-    @Value("${contract.script-path:}")
+    @Value("${contract.script-path:./src/main/resources/contracts/generate_contract.py}")
     private String scriptPath;
 
-    @Value("${contract.temp-dir:/tmp/contracts}")
+    @Value("${contract.temp-dir:./storage/tmp}")
     private String tempDir;
 
     // ※ uploadBasePath는 로컬 모드 전용이므로 삭제하고 UploadProperties를 통해 접근합니다.
     //   S3 모드에서 이 필드를 직접 참조하면 C:/uniplace/uploads 기본값으로 항상 파일을 못 찾습니다.
+
+    /**
+     * 서버 시작 시 호출.
+     * templatePath / scriptPath 가 파일시스템에 없으면
+     * classpath:contracts/ 에서 꺼내 같은 경로에 복사.
+     * → 로컬: src/main/resources/contracts/ 직접 접근
+     * → 배포: jar 내부 classpath 에서 추출하여 파일시스템에 배치
+     */
+    @PostConstruct
+    public void extractContractResourcesIfNeeded() {
+        extractIfMissing(templatePath, "contracts/contract_template.png");
+        extractIfMissing(scriptPath,   "contracts/generate_contract.py");
+    }
+
+    private void extractIfMissing(String configuredPath, String classpathLocation) {
+        if (configuredPath == null || configuredPath.isBlank()) return;
+        Path target = Paths.get(configuredPath).toAbsolutePath().normalize();
+        if (target.toFile().exists()) return; // 이미 있으면 스킵
+
+        try {
+            ClassPathResource res = new ClassPathResource(classpathLocation);
+            if (!res.exists()) {
+                log.warn("[ContractImage] classpath 리소스 없음: {}", classpathLocation);
+                return;
+            }
+            Files.createDirectories(target.getParent());
+            try (InputStream is = res.getInputStream()) {
+                Files.copy(is, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+            log.info("[ContractImage] 리소스 추출 완료: {} → {}", classpathLocation, target);
+        } catch (Exception e) {
+            log.warn("[ContractImage] 리소스 추출 실패: {} - {}", classpathLocation, e.getMessage());
+        }
+    }
 
     @Override
     public Integer generateAndSave(Contract contract) {
@@ -65,7 +102,7 @@ public class ContractImageServiceImpl implements ContractImageService {
         Path dataFilePath = null;
         Path tmpSignPath = null; // S3에서 내려받은 서명 이미지 임시 경로
         try {
-            Path tempDirPath = Paths.get(tempDir);
+            Path tempDirPath = Paths.get(tempDir).toAbsolutePath().normalize();
             Files.createDirectories(tempDirPath);
 
             String base = "contract_" + contract.getContractId() + "_" + System.currentTimeMillis();
@@ -141,10 +178,25 @@ public class ContractImageServiceImpl implements ContractImageService {
     // ── private helpers ──────────────────────────────────────────
 
     private boolean isConfigured() {
-        return templatePath != null && !templatePath.isBlank()
-                && scriptPath != null && !scriptPath.isBlank()
-                && Paths.get(templatePath).toFile().exists()
-                && Paths.get(scriptPath).toFile().exists();
+        if (templatePath == null || templatePath.isBlank()) {
+            log.warn("[ContractImage] contract.template-path 미설정");
+            return false;
+        }
+        if (scriptPath == null || scriptPath.isBlank()) {
+            log.warn("[ContractImage] contract.script-path 미설정");
+            return false;
+        }
+        Path tpl = Paths.get(templatePath).toAbsolutePath().normalize();
+        Path scr = Paths.get(scriptPath).toAbsolutePath().normalize();
+        if (!tpl.toFile().exists()) {
+            log.warn("[ContractImage] 템플릿 파일 없음: {}", tpl);
+            return false;
+        }
+        if (!scr.toFile().exists()) {
+            log.warn("[ContractImage] 스크립트 파일 없음: {}", scr);
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -246,8 +298,9 @@ public class ContractImageServiceImpl implements ContractImageService {
             throws IOException, InterruptedException {
 
         List<String> cmd = new ArrayList<>(List.of(
-                pythonPath, scriptPath,
-                "--template", templatePath,
+                pythonPath,
+                Paths.get(scriptPath).toAbsolutePath().normalize().toString(),
+                "--template", Paths.get(templatePath).toAbsolutePath().normalize().toString(),
                 "--output",   outputPath,
                 "--data_file", dataFilePath
         ));

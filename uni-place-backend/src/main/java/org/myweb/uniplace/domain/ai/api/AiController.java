@@ -131,7 +131,7 @@ public class AiController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin/stock-alerts")
-    public ApiResponse<Map<String, Object>> adminStockAlerts(@RequestParam(required = false) String adminId) {
+    public ApiResponse<Map<String, Object>> adminStockAlerts(@RequestParam(name = "adminId", required = false) String adminId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String resolvedAdminId = (adminId != null && !adminId.isBlank())
             ? adminId
@@ -275,12 +275,12 @@ public class AiController {
     @GetMapping("/proxy/market")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Object> proxyMarketData(
-            @RequestParam double lat,
-            @RequestParam double lon,
-            @RequestParam(defaultValue = "3") double radius,
-            @RequestParam(defaultValue = "all") String room_type,
-            @RequestParam(defaultValue = "monthly_rent") String rent_type,
-            @RequestParam(required = false) Double size_sqm) {
+            @RequestParam("lat") double lat,
+            @RequestParam("lon") double lon,
+            @RequestParam(name = "radius", defaultValue = "3") double radius,
+            @RequestParam(name = "room_type", defaultValue = "all") String room_type,
+            @RequestParam(name = "rent_type", defaultValue = "monthly_rent") String rent_type,
+            @RequestParam(name = "size_sqm", required = false) Double size_sqm) {
         try {
             java.util.List<java.util.Map<String, Object>> listings = new java.util.ArrayList<>();
 

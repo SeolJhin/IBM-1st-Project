@@ -37,7 +37,7 @@ public class RoomRecommendationController {
      */
     @GetMapping("/rooms/recommendations")
     public ApiResponse<List<RoomRecommendationResponse>> getRecommendations(
-            @RequestParam(required = false) String userQuery
+            @RequestParam(name = "userQuery", required = false) String userQuery
     ) {
         return ApiResponse.ok(recommendationService.getLatestTop3(userQuery));
     }

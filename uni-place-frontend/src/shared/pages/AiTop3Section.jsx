@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { propertyApi } from '../../features/property/api/propertyApi';
+import { toApiImageUrl } from '../../features/file/api/fileApi';
 import styles from './Home.module.css';
 import aiStyles from './AiTop3Section.module.css'; // 아래 CSS 파일도 추가
 
@@ -53,7 +54,7 @@ function AiRoomCard({ item, rankIdx }) {
       <div className={styles.aiTop3ImgWrap}>
         {item.thumbnailUrl ? (
           <img
-            src={item.thumbnailUrl}
+            src={toApiImageUrl(item.thumbnailUrl)}
             alt={item.buildingNm}
             className={styles.aiTop3Img}
           />

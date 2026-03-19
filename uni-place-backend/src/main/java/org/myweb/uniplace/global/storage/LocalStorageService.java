@@ -19,16 +19,19 @@ public class LocalStorageService implements StorageService {
 
     private final UploadProperties props;
 
+    private Path baseDir() {
+        return Paths.get(props.getUploadDir()).toAbsolutePath().normalize();
+    }
+
     @Override
     public void store(MultipartFile file, String relativeDir, String fileName) throws IOException {
-        Path dir = Paths.get(props.getUploadDir()).resolve(relativeDir);
+        Path dir = baseDir().resolve(relativeDir);
         Files.createDirectories(dir);
         file.transferTo(dir.resolve(fileName).toFile());
     }
 
     @Override
     public String resolveViewUrl(Integer fileId, String relativeDir, String fileName) {
-        // 로컬: 백엔드 FileController 가 스트리밍
         return "/files/" + fileId + "/view";
     }
 
@@ -39,7 +42,7 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public InputStream read(String relativeDir, String fileName) throws IOException {
-        Path path = Paths.get(props.getUploadDir())
+        Path path = baseDir()
                 .resolve(relativeDir)
                 .resolve(fileName)
                 .normalize();
@@ -49,7 +52,7 @@ public class LocalStorageService implements StorageService {
     @Override
     public void delete(String relativeDir, String fileName) {
         try {
-            Path path = Paths.get(props.getUploadDir())
+            Path path = baseDir()
                     .resolve(relativeDir)
                     .resolve(fileName)
                     .normalize();

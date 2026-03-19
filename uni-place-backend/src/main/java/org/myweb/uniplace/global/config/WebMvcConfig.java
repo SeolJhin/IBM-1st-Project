@@ -1,5 +1,6 @@
 package org.myweb.uniplace.global.config;
 
+import java.nio.file.Paths;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -17,13 +18,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
      * (FileController /view /download 엔드포인트와 별개로 추가 제공)
      * storage.type=s3 이면 이 경로는 사용되지 않음
      */
-    @Value("${file.upload-path:C:/uniplace/uploads}")
+    @Value("${file.upload-path:./storage/uploads}")
     private String uploadDir;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // file:/// 프로토콜로 로컬 디스크 경로 등록
-        String location = uploadDir.replace("\\", "/");
+        // 상대경로(./uploads)도 동작하도록 toAbsolutePath()로 변환
+        String location = Paths.get(uploadDir).toAbsolutePath().normalize().toString()
+                .replace("\\", "/");
         if (!location.endsWith("/")) location += "/";
 
         registry.addResourceHandler("/static-files/**")

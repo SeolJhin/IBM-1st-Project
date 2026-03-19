@@ -73,7 +73,7 @@ public class PaymentController {
     @PostMapping("/{paymentId}/abandon")
     public void abandon(
         @AuthenticationPrincipal AuthUser authUser,
-        @PathVariable Integer paymentId
+        @PathVariable("paymentId") Integer paymentId
     ) {
         if (authUser == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
