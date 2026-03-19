@@ -33,6 +33,32 @@ npm run build
 
 Build output: `dist/`
 
+## Deploy To S3 + CloudFront
+
+1. Build and deploy:
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/deploy-static-to-s3.ps1 `
+  -BucketName <frontend-bucket-name> `
+  -DistributionId <cloudfront-distribution-id> `
+  -Region ap-northeast-2
+```
+
+2. Dry-run (no upload/invalidation):
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/deploy-static-to-s3.ps1 `
+  -BucketName <frontend-bucket-name> `
+  -DistributionId <cloudfront-distribution-id> `
+  -Region ap-northeast-2 `
+  -DryRun
+```
+
+Recommended CloudFront behavior:
+- Default behavior: S3 frontend bucket origin.
+- Additional behavior: `/api/*` -> existing EKS ALB origin (disable caching).
+- Error response for SPA routes: map 403/404 to `/index.html` with HTTP 200.
+
 ## Test
 
 ```bash
@@ -52,4 +78,3 @@ npm run lint
 - Override with `.env`:
   - `FRONTEND_PROXY_TARGET=http://dev-host:8080`
   - `VITE_BACKEND_BASE_URL=/api`
-
