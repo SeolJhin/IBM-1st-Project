@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   device: 'device_id',
 };
 
+// deploy test
 let refreshPromise = null;
 
 
