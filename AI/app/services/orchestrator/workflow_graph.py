@@ -50,6 +50,12 @@ _TOOL_ORCHESTRATOR_INTENTS = {
     "ROOMSERVICE_STOCK_MONITOR",
     "CONTRACT_RENEWAL_RECOMMEND",
     "COMMON_SPACE_RECOMMEND",
+    # 결제 관련 — 일반 유저 챗봇에서 잘못 분류될 경우 tool_orchestrator가 처리
+    "PAYMENT_STATUS_SUMMARY",
+    "PAYMENT_SUMMARY_DOCUMENT",
+    "PAYMENT_ORDER_SUGGESTION",
+    # 민원 신고 — IntentRouter 가면 Spring 의존으로 500 위험
+    "COMPLAIN_PRIORITY_CLASSIFY",
 }
 
 

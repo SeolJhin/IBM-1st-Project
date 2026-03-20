@@ -1,180 +1,314 @@
+/* ═══════════════════════════════════════════════════════════════
+   Header.module.css  ·  UNI-PLACE  ·  Sharp / No-Radius Edition
+   ═══════════════════════════════════════════════════════════════ */
+
 .header {
   position: sticky;
   top: 0;
   z-index: 1000;
-
-  background: #131313;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-
-  /* ✅ overflow: visible → 알림 드롭다운이 header 밖으로 나올 수 있음 */
+  background: #ffffff;
+  border-bottom: 1px solid #ECEAE5;
   overflow: visible;
 }
 
-/* ✅ 빛 효과를 별도 div(.lightLayer)로 분리
-      이 div에만 overflow: hidden을 줘서 빛이 header 밖으로 못 나가게 막음 */
-.lightLayer {
-  position: absolute;
-  inset: 0; /* header 크기와 똑같이 꽉 채움 */
-  overflow: hidden; /* 빛만 여기서 잘라냄 */
-  pointer-events: none; /* 클릭 이벤트 통과 */
-  z-index: 0;
-}
-
-.lightLayer::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 250%;
-
-  background: radial-gradient(
-    circle,
-    rgba(202, 162, 87, 0.45) 0%,
-    rgba(217, 173, 91, 0.15) 25%,
-    transparent 60%
-  );
-
-  animation: moveLight 8s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes moveLight {
-  0% {
-    transform: translateX(-50%);
-  }
-  100% {
-    transform: translateX(50%);
-  }
-}
-
 .inner {
-  position: relative;
-  z-index: 2; /* lightLayer(z-index:0) 위에 렌더링 */
-
-  max-width: 1040px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 14px 16px;
+  padding: 0 24px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
 
+/* ── 브랜드 ── */
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-
   cursor: pointer;
-  position: relative;
-
-  transition: transform 0.12s ease;
+  flex-shrink: 0;
+  transition: opacity 0.18s;
 }
-
-.brand:active {
-  transform: scale(0.95);
-}
+.brand:hover  { opacity: 0.72; }
+.brand:active { transform: scale(0.97); }
 
 .logoMark {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;   /* 로고만 둥글게 복원 */
   object-fit: cover;
-  display: block;
-  box-shadow: 0 8px 18px rgba(217, 173, 91, 0.3);
 }
 
 .brandText {
   display: flex;
   flex-direction: column;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
 .brandName {
-  font-weight: 900;
-  letter-spacing: 1px;
-  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;     /* Syne에서 늘어나던 것 → Noto로 복구 */
+  color: #1A1A1A;
+  font-family: 'Noto Sans KR', -apple-system, sans-serif;  /* 로고만 Noto 고정 */
+  text-transform: uppercase;
 }
 
 .brandSub {
-  font-size: 12px;
-  color: #d7cebc;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: #BBBBBB;
+  text-transform: uppercase;
 }
 
+/* ── 네비게이션 ── */
 .nav {
   display: flex;
   align-items: center;
-  gap: 26px;
+  gap: 2px;
+  flex: 1;
+  justify-content: center;
 }
+
+.navItem { position: relative; }
 
 .linkBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   background: none;
   border: none;
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 700;
-  padding: 6px 4px;
+  color: #555555;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 8px 14px;
+  border-radius: 0;
   cursor: pointer;
   position: relative;
-
-  transition: transform 0.1s ease;
+  /* 박스 없이 색상만 */
+  transition: color 0.18s;
+  white-space: nowrap;
+  /* 브랜드명처럼 늘어나지 않게 body 폰트 */
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
 }
 
-.linkBtn:active {
-  transform: scale(0.95);
-}
-
-.linkBtn:hover {
-  color: #ffd993;
-}
-
+/* hover: 박스 없이 색상 + 언더라인 */
 .linkBtn::after {
   content: '';
   position: absolute;
-  bottom: -4px;
-  left: 50%;
-  width: 100%;
-  height: 2px;
-  background: #d9ad5b;
-
-  transform: translateX(-50%) scaleX(0);
+  bottom: 4px;
+  left: 14px;
+  right: 14px;
+  height: 1px;
+  background: var(--primary, #B8945A);
+  transform: scaleX(0);
   transform-origin: center;
-  transition: transform 0.25s ease;
+  transition: transform 0.22s cubic-bezier(0.16,1,0.3,1);
+}
+
+.linkBtn:hover {
+  color: #1A1A1A;
+  background: none;
 }
 
 .linkBtn:hover::after {
-  transform: translateX(-50%) scaleX(1);
+  transform: scaleX(1);
 }
 
-.icons {
-  position: relative;
-  display: flex;
-  gap: 8px;
+.linkBtnActive {
+  color: #1A1A1A;
+  font-weight: 600;
 }
 
-.iconBtn {
-  min-width: 34px;
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 12px;
-  border: 1px solid #d4d4d441;
-  background: rgba(90, 90, 90, 0.178);
-  color: #cecece;
+.linkBtnActive::after {
+  transform: scaleX(1);
+}
+
+/* ── Chevron ── */
+.chevron {
+  font-size: 15px;
+  line-height: 1;
+  display: inline-block;
+  transform: rotate(90deg);
+  transition: transform 0.2s ease;
+  color: #BBBBBB;
+}
+
+.chevronOpen {
+  transform: rotate(-90deg);
+  color: var(--primary, #B8945A);
+}
+
+/* ── 드롭다운 — 직사각형, 살짝 아래 ── */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 10px);     /* 헤더에서 10px 띄워서 답답함 해소 */
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+
+  background: #ffffff;
+  border: 1px solid #E8E5DF;
+  border-top: 2px solid var(--primary, #B8945A);
+  border-radius: 0;
+  padding: 6px 0;
+  min-width: 152px;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0.2s;
+
+  box-shadow: 0 16px 40px rgba(0,0,0,0.1);
+  z-index: 200;
+}
+
+.dropdownOpen {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 캐럿 없음 (직사각형이므로) */
+.dropdownCaret { display: none; }
+
+/* ── 드롭다운 항목 ── */
+.dropdownItem {
+  display: block;
+  width: 100%;
+  padding: 10px 18px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: #484848;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
   cursor: pointer;
+  transition: background 0.12s, color 0.15s, transform 0.18s;
+  white-space: nowrap;
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  letter-spacing: 0.01em;
+}
+
+.dropdownItem:hover {
+  background: #FAF8F4;
+  color: #1A1A1A;
+  transform: translateX(3px);  /* 오른쪽으로 살짝 */
+}
+
+.dropdownItemActive {
+  color: var(--primary, #B8945A);
+  font-weight: 600;
+  background: #FAF8F4;
+}
+
+/* ── 우측 영역 ── */
+.icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 160px;
+  justify-content: flex-end;
+}
+
+.bellWrap {
+  display: flex;
+  align-items: center;
+  color: #484848;
+}
+
+.iconPlaceholder {
+  width: 68px;
+  height: 34px;
+  background: #F0EDE8;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.7; }
+}
+
+/* 마이페이지 / 관리자 아이콘 — border 없이, 더 크게 */
+.iconCircle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;              /* border 제거 */
+  background: transparent;
+  color: #888888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.iconCircle:hover {
+  color: var(--primary, #B8945A);
+  transform: scale(1.1);
+}
+
+.iconCircle:active { transform: scale(0.93); }
+
+/* 로그인 버튼 — border 없음, 검정 배경 흰 글씨 */
+.loginBtn {
+  height: 34px;
+  padding: 0 20px;
+  border-radius: 0;
+  border: none;              /* border 제거 */
+  background: #1A1A1A;       /* 검정 배경 */
+  color: #FFFFFF;            /* 흰 글씨 */
   font-size: 12px;
   font-weight: 700;
-
-  transition: all 0.15s ease;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.18s;
+  white-space: nowrap;
+  font-family: inherit;
 }
 
-.iconBtn:hover {
-  background: #d9ad5b57;
-  border-color: #ac894860;
-  transition: 0.5s;
+.loginBtn:hover { background: #333333; }
+.loginBtn:active { opacity: 0.85; }
+
+/* 로그아웃 버튼 — border 없음 */
+.logoutBtn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 0;
+  border: none;              /* border 제거 */
+  background: transparent;
+  color: #999999;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
 }
 
-.iconBtn:active {
-  transform: scale(0.92);
-  background: #e8c27c;
+.logoutBtn:hover {
+  color: #333333;
+  background: #F5F3EF;
 }
+
+.logoutBtn:active { opacity: 0.85; }
+
+/* ── 반응형 ── */
+@media (max-width: 1023px) {
+  .inner   { padding: 0 16px; }
+  .nav     { gap: 0; }
+  .linkBtn { font-size: 13px; padding: 8px 10px; }
+  .brandSub { display: none; }
+}
+
+@media (max-width: 767px) { .nav { display: none; } }

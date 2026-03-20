@@ -12,6 +12,7 @@ from openpyxl.utils import get_column_letter
 from app.config.settings import settings
 from app.schemas.ai_request import AiRequest
 from app.services.actions.event_sink import publish_action_event
+from app.services.document.backend_file_uploader import upload_generated_file
 from app.services.document.draft_writer import write_document_draft
 from app.services.document.payment_excel_loader import load_payment_slots_from_excel
 
@@ -29,10 +30,26 @@ def make_payment_summary(req: AiRequest) -> tuple[str, dict]:
 
     answer, payload = _build_payment_document_summary(req)
 
+    xlsx_fname = None
+    file_id = None
     try:
-        xlsx_fname = _write_summary_xlsx(payload, user_id=req.user_id or "admin")
+        xlsx_path = _write_summary_xlsx(payload, user_id=req.user_id or "admin")
+        building_id = _to_int(req.get_slot("building_id"))
+        try:
+            uploaded = upload_generated_file(
+                xlsx_path,
+                file_parent_type="AI_DOCUMENT",
+                file_parent_id=building_id if building_id is not None else 0,
+            )
+        finally:
+            xlsx_path.unlink(missing_ok=True)
+
+        xlsx_fname = uploaded["file_name"]
+        file_id = uploaded["file_id"]
+        payload["file_id"] = file_id
         payload["xlsx_file_name"] = xlsx_fname
-        payload["download_url"] = f"/api/ai/payment/order-form/download/{xlsx_fname}"
+        payload["download_url"] = uploaded["download_url"]
+        payload["view_url"] = uploaded["view_url"]
     except Exception as _e:
         import logging
         logging.getLogger(__name__).warning("xlsx 생성 실패: %s", _e)
@@ -47,12 +64,13 @@ def make_payment_summary(req: AiRequest) -> tuple[str, dict]:
         "draft_path": draft_path,
         "draft_type": "payment_summary_document",
         "event_status": event,
+        "file_id": file_id,
         "xlsx_file_name": xlsx_fname,
         "download_url": payload.get("download_url"),
     }
 
 
-def _write_summary_xlsx(payload: dict[str, Any], user_id: str = "admin") -> str:
+def _write_summary_xlsx(payload: dict[str, Any], user_id: str = "admin") -> Path:
     out = Path(settings.payment_order_output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -160,7 +178,7 @@ def _write_summary_xlsx(payload: dict[str, Any], user_id: str = "admin") -> str:
     ws.freeze_panes = "A4"
 
     wb.save(fpath)
-    return fname
+    return fpath
 
 
 def _enrich_slots_from_excel(req: AiRequest) -> None:

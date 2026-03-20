@@ -14,17 +14,10 @@ from openpyxl.worksheet.worksheet import Worksheet
 from app.config.settings import settings
 from app.schemas.ai_request import AiRequest
 from app.services.actions.event_sink import publish_action_event
+from app.services.document.backend_file_uploader import upload_generated_file
 from app.services.tools.tool_executor import execute_tool
 
 logger = logging.getLogger(__name__)
-
-
-def _build_download_url(file_name: str) -> str:
-    base = (settings.spring_base_url or "").strip()
-    if base.endswith("/"):
-        base = base[:-1]
-    path = f"/ai/payment/order-form/download/{file_name}"
-    return f"{base}{path}" if base else path
 
 # ════════════════════════════════════════════════════════════════════════════
 # 빌딩별 결제 내역 리포트 (DB → xlsx)
@@ -118,6 +111,15 @@ LIMIT 500""".strip()
     pay_total = sum(int(r.get("captured_price", 0) or 0) for r in pay_rows)
     buildings = sorted({r.get("building_nm", "") for r in mc_rows + pay_rows} - {""})
 
+    try:
+        uploaded = upload_generated_file(
+            save_path,
+            file_parent_type="AI_DOCUMENT",
+            file_parent_id=0,
+        )
+    finally:
+        save_path.unlink(missing_ok=True)
+
     return {
         "month":        month,
         "buildings":    buildings,
@@ -126,8 +128,10 @@ LIMIT 500""".strip()
         "pay_count":    len(pay_rows),
         "pay_total":    pay_total,
         "grand_total":  mc_total + pay_total,
-        "file_name":    fname,
-        "download_url": _build_download_url(fname),
+        "file_id":      uploaded["file_id"],
+        "file_name":    uploaded["file_name"],
+        "download_url": uploaded["download_url"],
+        "view_url":     uploaded["view_url"],
     }
 
 
@@ -350,17 +354,29 @@ def create_order_form_from_suggestion(req: AiRequest) -> tuple[str, dict[str, An
     finally:
         wb.close()
 
+    building_id = _to_int(req.get_slot("building_id"))
+    try:
+        uploaded = upload_generated_file(
+            output_path,
+            file_parent_type="AI_DOCUMENT",
+            file_parent_id=building_id if building_id is not None else 0,
+        )
+    finally:
+        output_path.unlink(missing_ok=True)
+
     payload = {
         "approved": True,
-        "building_id": _to_int(req.get_slot("building_id")),
+        "building_id": building_id,
         "month": str(req.get_slot("month") or req.get_slot("billing_month") or ""),
         "item_count": len(items),
-        "order_form_path": str(output_path),
-        "file_name": output_path.name,
+        "file_id": uploaded["file_id"],
+        "file_name": uploaded["file_name"],
+        "download_url": uploaded["download_url"],
+        "view_url": uploaded["view_url"],
     }
     event = publish_action_event("payment_order_form_created", {"user_id": req.user_id, **payload})
     payload["event_status"] = event
-    return f"Order form generated: {output_path.name}", payload
+    return f"Order form generated: {uploaded['file_name']}", payload
 
 
 def _build_output_path(req: AiRequest) -> Path:

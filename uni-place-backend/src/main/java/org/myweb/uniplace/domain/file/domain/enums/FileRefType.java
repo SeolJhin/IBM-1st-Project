@@ -15,7 +15,8 @@ public enum FileRefType {
     COMPANY("COMPANY"),
     PRODUCT("PRODUCT"),
 	BUILDING("BUILDING"),
-	INSPECTION("INSPECTION");
+	INSPECTION("INSPECTION"),
+    AI_DOCUMENT("AI_DOCUMENT");
 
     private final String value;
 
