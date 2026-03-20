@@ -1088,10 +1088,11 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
                 answer=answer_text,
                 confidence=0.98,
                 metadata={
+                    "file_id":      summary.get("file_id"),
                     "file_name":    fname,
                     "download_url": dl_url,
                     "buttons": [
-                        {"label": "📥 엑셀 다운로드", "url": (dl_url or ("/ai/payment/order-form/download/" + fname)), "icon": "📥"},
+                        {"label": "📥 엑셀 다운로드", "url": (dl_url or (f"/api/files/{summary.get('file_id')}/download" if summary.get("file_id") else "")), "icon": "📥"},
                         {"label": "결제 내역 관리",   "url": "/admin/pay/payments", "icon": "💳"},
                     ],
                 },
@@ -1116,17 +1117,20 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
             answer, meta = make_payment_summary(_pay_req)
             draft_path  = meta.get("draft_path", "")
             draft_type  = meta.get("draft_type", "")
+            file_id     = meta.get("file_id")
             xlsx_fname  = meta.get("xlsx_file_name")
             dl_url      = meta.get("download_url")
+            if not dl_url and file_id:
+                dl_url = f"/api/files/{file_id}/download"
 
             # 다운로드 안내 문구
             dl_text = ""
             if xlsx_fname:
                 dl_text = f"\n\n📥 **엑셀 다운로드**: {xlsx_fname}"
 
-            buttons = [{{"label": "결제 내역 관리", "url": "/admin/pay/payments", "icon": "💳"}}]
+            buttons = [{"label": "결제 내역 관리", "url": "/admin/pay/payments", "icon": "💳"}]
             if xlsx_fname:
-                buttons.append({{"label": "📥 엑셀 다운로드", "url": (dl_url or f"/ai/payment/order-form/download/{xlsx_fname}"), "icon": "📥"}})
+                buttons.append({"label": "📥 엑셀 다운로드", "url": dl_url or "", "icon": "📥"})
 
             return AiResponse(
                 answer=f"✅ 결제 문서가 자동 생성되었습니다.\n{answer}{dl_text}",
@@ -1134,6 +1138,7 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
                 metadata={
                     "draft_path": draft_path,
                     "draft_type": draft_type,
+                    "file_id": file_id,
                     "xlsx_file_name": xlsx_fname,
                     "download_url": dl_url,
                     "buttons": buttons,
