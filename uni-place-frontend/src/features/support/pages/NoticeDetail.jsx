@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
-import { toApiImageUrl } from '../../file/api/fileApi';
+import {
+  toApiImageUrl,
+  toStableFileViewUrl,
+} from '../../file/api/fileApi';
 import { useAuth } from '../../user/hooks/useAuth';
 import styles from './Support.module.css';
 import editorStyles from './NoticeEditor.module.css';
@@ -52,7 +55,10 @@ export default function NoticeDetail() {
     setLoading(true);
     try {
       const data = await supportApi.getNoticeDetail(noticeId);
-      setNotice(data);
+      setNotice({
+        ...data,
+        noticeCtnt: data?.noticeCtnt ?? '',
+      });
       setForm({
         noticeTitle: data?.noticeTitle ?? '',
         noticeSt: data?.noticeSt ?? 'notice',
@@ -117,7 +123,7 @@ export default function NoticeDetail() {
         pendingImgs.forEach((img, i) => {
           const f = uploaded[i];
           if (f) {
-            img.src = toApiImageUrl(f.viewUrl || '');
+            img.src = toStableFileViewUrl(f) || toApiImageUrl(f.viewUrl || '');
             img.removeAttribute('data-pending');
           }
         });
@@ -132,7 +138,10 @@ export default function NoticeDetail() {
         importance: form.importance ?? 'N',
       });
 
-      setNotice(updated);
+      setNotice({
+        ...updated,
+        noticeCtnt: updated?.noticeCtnt ?? '',
+      });
       editorRef.current?.clearPendingFiles();
       setEditing(false);
       alert('공지사항이 수정되었습니다.');

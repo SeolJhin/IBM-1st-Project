@@ -8,10 +8,9 @@ metadata:
         alb.ingress.kubernetes.io/scheme: internet-facing
         alb.ingress.kubernetes.io/target-type: ip
         alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
-        alb.ingress.kubernetes.io/ssl-redirect: "443"
         alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:194722402714:certificate/2c4d1727-442c-4c94-9019-f166118f433d
         alb.ingress.kubernetes.io/success-codes: "200-499"
-        alb.ingress.kubernetes.io/healthcheck-path: /
+        alb.ingress.kubernetes.io/healthcheck-path: /api
 spec:
     ingressClassName: alb
     rules:
@@ -25,13 +24,6 @@ spec:
                             name: backend-service
                             port:
                                 number: 80
-                  - path: /
-                    pathType: Prefix
-                    backend:
-                        service:
-                            name: frontend-service
-                            port:
-                                number: 80
         - host: www.uniplace.site
           http:
               paths:
@@ -40,12 +32,5 @@ spec:
                     backend:
                         service:
                             name: backend-service
-                            port:
-                                number: 80
-                  - path: /
-                    pathType: Prefix
-                    backend:
-                        service:
-                            name: frontend-service
                             port:
                                 number: 80

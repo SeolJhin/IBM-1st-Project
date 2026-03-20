@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supportApi } from '../api/supportApi';
-import { toApiImageUrl } from '../../file/api/fileApi';
+import {
+  toApiImageUrl,
+  toStableFileViewUrl,
+} from '../../file/api/fileApi';
 import styles from './Support.module.css';
 import NoticeEditor from '../components/NoticeEditor';
 import { useAuth } from '../../user/hooks/useAuth';
@@ -156,7 +159,7 @@ export default function NoticeList() {
           if (f) {
             // viewUrl: S3모드 → https://...amazonaws.com/...
             //          로컬모드 → /files/{id}/view (toApiImageUrl이 /api 붙여줌)
-            img.src = toApiImageUrl(f.viewUrl || '');
+            img.src = toStableFileViewUrl(f) || toApiImageUrl(f.viewUrl || '');
             img.removeAttribute('data-pending');
           }
         });

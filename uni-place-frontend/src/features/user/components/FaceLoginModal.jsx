@@ -11,8 +11,8 @@ import styles from './FaceLoginModal.module.css';
 
 import * as faceapi from '@vladmandic/face-api';
 
-// 모델은 node_modules에서 직접 로드 (public 폴더 불필요)
-const MODELS_URL = '/node_modules/@vladmandic/face-api/model';
+// Use static model assets bundled under public/models -> dist/models
+const MODELS_URL = '/models';
 const API_BASE = '/api';
 const SCAN_MS = 300;
 const SAMPLES = 40;
