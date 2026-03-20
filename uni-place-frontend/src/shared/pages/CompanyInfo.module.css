@@ -58,7 +58,8 @@
   margin: 12px 0 10px;
   font-size: clamp(32px, 4vw, 48px);
   line-height: 1.16;
-  font-weight: 800;
+  font-weight: 700;
+  font-family: var(--font-body);
 }
 
 .heroLead {
@@ -103,6 +104,8 @@
   font-size: 30px;
   line-height: 1.24;
   color: #10192c;
+  font-weight: 700;
+  font-family: var(--font-body);
 }
 
 .sectionBody {
@@ -165,7 +168,7 @@
 
 .check {
   color: #11604a;
-  font-weight: 800;
+  font-weight: 700;
   transform: translateY(1px);
 }
 
@@ -200,6 +203,8 @@
   font-size: 26px;
   line-height: 1.34;
   color: #10192c;
+  font-weight: 700;
+  font-family: var(--font-body);
 }
 
 .missionList {

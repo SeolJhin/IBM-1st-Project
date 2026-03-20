@@ -1,0 +1,423 @@
+/* ═══════════════════════════════════════════════════════════════
+   AboutDetail.module.css — UNI-PLACE Journal Detail
+   인스타그램 에디토리얼 × 롱폼 아티클 레이아웃
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── 페이지 기반 ─────────────────────────────────────────── */
+.page {
+  min-height: 100vh;
+  background: var(--bg, #ffffff);
+}
+
+/* ── 히어로 ─────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 560px;
+  display: flex;
+  align-items: flex-end;
+  padding-top: 64px; /* 헤더 오프셋 */
+  overflow: hidden;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.2) 0%,
+    rgba(0,0,0,0.65) 100%
+  );
+}
+
+.heroInner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 24px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 뒤로가기 버튼 */
+.backLink {
+  align-self: flex-start;
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.65);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s, letter-spacing 0.2s;
+  margin-bottom: 8px;
+}
+
+.backLink:hover {
+  color: var(--primary, #B8945A);
+  letter-spacing: 0.28em;
+}
+
+.heroMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.heroTag {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: var(--primary, #B8945A);
+  background: rgba(184, 148, 90, 0.15);
+  border: 1px solid rgba(184, 148, 90, 0.35);
+  padding: 4px 12px;
+  backdrop-filter: blur(8px);
+}
+
+.heroDate {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.heroTitle {
+  font-family: var(--font-body);
+  font-size: clamp(28px, 5vw, 56px);
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 0;
+  max-width: 720px;
+}
+
+.heroSubtitle {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 560px;
+}
+
+/* ── 아티클 래퍼 ─────────────────────────────────────────── */
+.articleWrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 96px;
+}
+
+/* ── 아티클 본문 ─────────────────────────────────────────── */
+.article {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 64px 0 56px;
+}
+
+/* 발췌 바 */
+.excerptBar {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 48px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--line, #E4E1DB);
+  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+}
+
+.excerptLine {
+  flex-shrink: 0;
+  width: 3px;
+  min-height: 100%;
+  background: var(--primary, #B8945A);
+  align-self: stretch;
+  display: block;
+}
+
+.excerpt {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.8;
+  color: var(--text, #2A2A2A);
+  margin: 0;
+}
+
+/* ── 본문 블록 ───────────────────────────────────────────── */
+.bodyBlocks {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.lead {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.75;
+  color: var(--text, #2A2A2A);
+  margin: 0;
+  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.paragraph {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 16px;
+  line-height: 1.9;
+  color: var(--text-sub, #484848);
+  margin: 0;
+  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 인용구 블록 */
+.blockquote {
+  margin: 16px 0;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  background: var(--surface-2, #F5F3EF);
+  padding: 28px 32px;
+  border: none;
+  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.quoteBar {
+  flex-shrink: 0;
+  width: 3px;
+  min-height: 100%;
+  background: var(--primary, #B8945A);
+  align-self: stretch;
+  display: block;
+}
+
+.quoteText {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--text, #2A2A2A);
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+/* ── 태그 ────────────────────────────────────────────────── */
+.tagRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line, #E4E1DB);
+  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+.tagChip {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary, #B8945A);
+  background: var(--primary-light, #F5EDD8);
+  padding: 5px 14px;
+  letter-spacing: 0.05em;
+}
+
+/* ── 관련 콘텐츠 ─────────────────────────────────────────── */
+.relatedSection {
+  border-top: 1px solid var(--line, #E4E1DB);
+  padding-top: 56px;
+  animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
+.relatedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.relatedLabel {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--primary, #B8945A);
+  text-transform: uppercase;
+}
+
+.relatedAll {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text, #2A2A2A);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.relatedAll:hover {
+  color: var(--primary, #B8945A);
+  transform: translateX(4px);
+}
+
+.relatedGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line, #E4E1DB);
+  border: 1px solid var(--line, #E4E1DB);
+}
+
+/* ── 관련 카드 ───────────────────────────────────────────── */
+.relatedCard {
+  background: var(--bg, #fff);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.relatedCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+
+.relatedCard:focus-visible {
+  outline: 2px solid var(--primary, #B8945A);
+  outline-offset: 2px;
+}
+
+.relatedImage {
+  aspect-ratio: 4 / 3;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.relatedCard:hover .relatedImage {
+  transform: scale(1.03);
+}
+
+.relatedBody {
+  padding: 18px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.relatedCategory {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary, #B8945A);
+  letter-spacing: 0.08em;
+}
+
+.relatedTitle {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text, #2A2A2A);
+  line-height: 1.35;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.relatedDate {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 11px;
+  color: var(--muted, #737373);
+  margin-top: 4px;
+}
+
+/* ── 404 ─────────────────────────────────────────────────── */
+.notFound {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding-top: 64px;
+}
+
+.backBtn {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--text, #2A2A2A);
+  border: none;
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.backBtn:hover {
+  background: var(--primary, #B8945A);
+}
+
+/* ── 반응형 ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hero {
+    min-height: 420px;
+  }
+  .article {
+    padding: 48px 0 40px;
+  }
+  .relatedGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .heroInner {
+    padding: 48px 16px 44px;
+  }
+  .articleWrap {
+    padding: 0 16px 72px;
+  }
+  .article {
+    padding: 40px 0;
+  }
+  .excerptBar {
+    gap: 14px;
+  }
+  .excerpt {
+    font-size: 15px;
+  }
+  .lead {
+    font-size: 17px;
+  }
+  .relatedGrid {
+    grid-template-columns: 1fr;
+  }
+  .blockquote {
+    padding: 20px 22px;
+  }
+  .quoteText {
+    font-size: 16px;
+  }
+}
