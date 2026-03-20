@@ -564,9 +564,6 @@ def _is_community_list_query(prompt: str) -> bool:
 
 
 def _is_rag_query(prompt: str) -> bool:
-    rag_keywords = [
-        "꿀팁", "후기", "리뷰", "추천", "어때", "경험", "정보", "알려줘"
-    ]
     # 납부/계약 "방법·절차·안내" 질문은 개인 DB 조회 아닌 RAG로 처리
     how_to_keywords = [
         "어떻게 납부", "납부 방법", "납부 절차", "납부 안내",
@@ -575,7 +572,7 @@ def _is_rag_query(prompt: str) -> bool:
         "어떻게 신청", "신청 방법",
         "어떻게 해요", "어떻게 하나요", "어떻게 되나요",
         "어떤 식으로", "어떤식으로",
-        # 입주/규정/정책 관련 직접 키워드 추가
+        # 입주/규정/정책 관련 직접 키워드
         "입주 규칙", "입주규칙", "입주 규정", "입주규정",
         "이용 규칙", "이용규칙", "이용 규정", "이용규정",
         "이용약관", "이용 약관",
@@ -587,7 +584,7 @@ def _is_rag_query(prompt: str) -> bool:
         "위약금", "계약 해지", "해지 방법",
         "보증금 반환", "보증금 환급",
     ]
-    return any(k in prompt for k in rag_keywords) or any(k in prompt for k in how_to_keywords)
+    return any(k in prompt for k in how_to_keywords)
 
 def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -> AiResponse:
     client = _get_client(provider)
@@ -665,11 +662,16 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
             else:
                 texts.append(str(item))
 
-        context_text = "\n".join(texts)
+        context_text = "\n\n".join(texts)
 
         messages.append({
             "role": "system",
-            "content": f"다음 정보를 참고해서 답변하세요:\n{context_text}"
+            "content": (
+                "⚠️ [UNI PLACE 내부 문서 — 반드시 이 내용만 사용하여 답변하세요]\n\n"
+                f"{context_text}\n\n"
+                "★ 위 내용을 근거로 UNI PLACE 서비스에 맞게 한국어로 답변하세요. "
+                "위 내용에 없는 정보(통신사, 금융, 부동산 등 외부 계약)는 절대 언급하지 마세요."
+            )
         })
     elif forced_tool == "rag_search":
         # RAG를 시도했지만 결과가 없는 경우 — LLM이 임의로 정책/규정을 만들지 못하도록 명시
@@ -685,10 +687,16 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
     
     logger.info("[ToolOrchestrator] tool_choice=%s (needs_tool=%s)", _tool_choice, _needs_tool)
 
+    # RAG 모드(_tool_choice=none)일 때는 tools 파라미터 자체를 제거
+    # tools가 있으면 LLM이 tool call을 시도하려다 혼란스러워함
+    _llm_kwargs = dict(temperature=0.0, max_tokens=1024, messages=messages)
+    if _tool_choice != "none":
+        _llm_kwargs["tools"] = tools
+        _llm_kwargs["tool_choice"] = _tool_choice
+
     resp1, used_model = _call_with_fallback(
         client, provider, primary_model,
-        dict(temperature=0.0, max_tokens=1024, messages=messages,
-             tools=tools, tool_choice=_tool_choice),
+        _llm_kwargs,
     )
     if resp1 is None:
         return AiResponse(answer="AI 서비스에 일시적인 문제가 있습니다.", confidence=0.0)

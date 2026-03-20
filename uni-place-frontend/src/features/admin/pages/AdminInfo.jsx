@@ -36,7 +36,10 @@ const diffDays = (date) =>
 const diffFromNowDays = (date) =>
   (new Date() - new Date(date)) / (1000 * 60 * 60 * 24);
 
-const getPaymentDate = (p) => p?.paidAt ?? p?.createdAt ?? null;
+const getPaymentDate = (p) => {
+  if (p.paidAt) return new Date(p.paidAt);
+  return null;
+};
 const getPaymentAmount = (p) => toNum(p?.capturedPrice ?? p?.totalPrice);
 
 const isRentPayment = (p) => {
@@ -82,7 +85,7 @@ function AlertSection({ alerts }) {
 
       <div className={styles.alertCol}>
         <div className={`${styles.alertTitle} ${styles.info}`}>🟢 참고</div>
-        {renderList(alerts.info)}
+        {alerts.info.length > 0 ? renderList(alerts.info) : <div>- 없음</div>}
       </div>
     </div>
   );
@@ -118,13 +121,189 @@ function buildAlerts(metrics) {
     });
   }
 
-  if (danger.length === 0 && warning.length === 0) {
-    info.push({ text: '현재 특이사항 없음' });
-  } else {
-    info.push({ text: '기타' });
+  if (metrics?.newUsers > 0) {
+    info.push({
+      text: `신규 가입자 (${metrics.newUsers}명)`,
+    });
+  }
+
+  if (metrics?.qnaCount > 0) {
+    info.push({
+      text: `1:1문의 (${metrics.qnaCount}건)`,
+    });
   }
 
   return { danger, warning, info };
+}
+
+function Donut({ percent, label }) {
+  const p = Math.max(0, Math.min(100, toNum(percent)));
+  const r = 52;
+  const c = 2 * Math.PI * r;
+  const dash = (p / 100) * c;
+
+  return (
+    <div className={styles.donutWrap}>
+      <svg viewBox="0 0 140 140" className={styles.donut}>
+        <circle cx="70" cy="70" r={r} className={styles.donutTrack} />
+        <circle
+          cx="70"
+          cy="70"
+          r={r}
+          className={styles.donutValue}
+          strokeDasharray={`${dash} ${c - dash}`}
+        />
+      </svg>
+      <div className={styles.donutCenter}>
+        <strong>{formatPercent(p)}</strong>
+        <span>{label}</span>
+      </div>
+    </div>
+  );
+}
+
+const formatYAxis = (v) => `${Math.round(v / 10000)}만`;
+
+function LineChart({ data, rangeType }) {
+  const width = 520;
+  const height = 220;
+  const padX = 40;
+  const padY = 20;
+
+  const unitMap = {
+    daily: 100000, // 10만
+    monthly: 1000000, // 100만
+    yearly: 10000000, // 1000만
+  };
+
+  const unit = unitMap[rangeType];
+
+  const rawMax = Math.max(...data.map((d) => toNum(d.value)), 1);
+
+  const max = Math.ceil(rawMax / unit) * unit;
+  const scaledMax = Math.ceil(max / unit) * unit;
+
+  const steps = 5;
+
+  const yTicks = Array.from({ length: steps + 1 }, (_, i) => {
+    const value = (max / steps) * i;
+
+    const y = height - padY - (value / max) * (height - padY * 2);
+
+    return { value, y };
+  });
+
+  const points = data.map((d, idx) => {
+    const x = padX + ((width - padX * 2) * idx) / Math.max(1, data.length - 1);
+    const y =
+      height - padY - (toNum(d.value) / scaledMax) * (height - padY * 2);
+    return { ...d, x, y };
+  });
+
+  const pathD = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
+    .join(' ');
+
+  const [hover, setHover] = useState(null);
+
+  return (
+    <div className={styles.lineWrap}>
+      <svg viewBox={`0 0 ${width} ${height}`} className={styles.lineSvg}>
+        <line
+          x1={padX}
+          y1={height - padY}
+          x2={width - padX}
+          y2={height - padY}
+          stroke="#ddd"
+          strokeWidth="4"
+        />
+
+        <path d={pathD} className={styles.linePath} strokeDasharray="5 5" />
+
+        {points.map((p, i) => (
+          <circle
+            key={i}
+            cx={p.x}
+            cy={p.y}
+            r="4"
+            className={styles.lineDot}
+            onMouseEnter={() => setHover(p)}
+            onMouseLeave={() => setHover(null)}
+          />
+        ))}
+
+        {points.map((p, i) => (
+          <line
+            key={`tick-${i}`}
+            x1={p.x}
+            y1={height - padY}
+            x2={p.x}
+            y2={height - padY + 6}
+            stroke="#999"
+          />
+        ))}
+
+        {points.map((p) => (
+          <text
+            key={`label-${p.label}`}
+            x={p.x}
+            y={height - padY + 18}
+            textAnchor="middle"
+            fontSize="10"
+            fill="#666"
+          >
+            {p.label}
+          </text>
+        ))}
+
+        {hover && (
+          <g>
+            <rect
+              x={hover.x - 40}
+              y={hover.y - 40}
+              width="80"
+              height="24"
+              rx="6"
+              fill="#333"
+            />
+            <text
+              x={hover.x}
+              y={hover.y - 24}
+              textAnchor="middle"
+              fill="#fff"
+              fontSize="13"
+            >
+              {formatMoney(hover.value)}
+            </text>
+          </g>
+        )}
+
+        {yTicks.map((t, i) => (
+          <line
+            key={`y-line-${i}`}
+            x1={padX}
+            y1={t.y}
+            x2={width - padX}
+            y2={t.y}
+            stroke="#eee"
+          />
+        ))}
+
+        {yTicks.map((t, i) => (
+          <text
+            key={`y-text-${i}`}
+            x={padX - 8}
+            y={t.y + 3}
+            textAnchor="end"
+            fontSize="10"
+            fill="#888"
+          >
+            {formatYAxis(t.value, rangeType)}
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
 }
 
 /* ================= 메인 ================= */
@@ -134,6 +313,76 @@ export default function AdminInfo() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [rangeType, setRangeType] = useState('daily');
+  const [isOpen, setIsOpen] = useState(false);
+
+  const getDateKey = (date, type) => {
+    const d = new Date(date);
+
+    if (type === 'daily') {
+      return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    if (type === 'monthly') {
+      return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    if (type === 'yearly') {
+      return `${d.getFullYear()}`;
+    }
+  };
+
+  const generateRange = (type) => {
+    const now = new Date();
+    const arr = [];
+
+    if (type === 'daily') {
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        arr.push(getDateKey(d, 'daily'));
+      }
+    }
+
+    if (type === 'monthly') {
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(now.getMonth() - i);
+        arr.push(getDateKey(d, 'monthly'));
+      }
+    }
+
+    if (type === 'yearly') {
+      for (let i = 4; i >= 0; i--) {
+        const d = new Date();
+        d.setFullYear(now.getFullYear() - i);
+        arr.push(getDateKey(d, 'yearly'));
+      }
+    }
+
+    return arr;
+  };
+
+  const buildRevenueSeries = (payments, type) => {
+    const range = generateRange(type);
+
+    const map = {};
+    range.forEach((k) => (map[k] = 0));
+
+    payments.forEach((p) => {
+      if (!p.paidAt) return;
+
+      const key = getDateKey(p.paidAt, type);
+      if (map[key] !== undefined) {
+        map[key] += toNum(p.totalPrice);
+      }
+    });
+
+    return range.map((k) => ({
+      label: k,
+      value: map[k],
+    }));
+  };
 
   const alerts = buildAlerts(metrics);
 
@@ -197,6 +446,28 @@ export default function AdminInfo() {
     return all;
   };
 
+  const fetchAllQna = async () => {
+    let page = 1;
+    let all = [];
+
+    while (true) {
+      const res = await adminApi.getQna({
+        page,
+        size: 50,
+        sort: 'qnaId',
+        direct: 'DESC',
+      });
+
+      const content = res?.content ?? [];
+      all = [...all, ...content];
+
+      if (page >= (res?.totalPages ?? 1)) break;
+      page++;
+    }
+
+    return all;
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -210,22 +481,14 @@ export default function AdminInfo() {
       const users = await fetchAllUsers();
       const roomsRes = await adminApi.getRooms?.().catch(() => []);
       const reservations = await fetchAllReservations();
+      const qnas = await fetchAllQna().catch((e) => {
+        console.error('QNA API ERROR:', e);
+        return [];
+      });
 
       const payments = paymentsRes?.content ?? paymentsRes ?? [];
       const complains = complainsRes?.content ?? complainsRes ?? [];
       const rooms = roomsRes?.content ?? roomsRes ?? [];
-
-      console.table(
-        contracts.map((c) => ({
-          contractId: c.contractId,
-          contractSt: c.contractSt,
-          contractStatus: c.contractStatus,
-          userId: c.userId,
-          roomId: c.roomId,
-          contractStart: c.contractStart,
-          contractEnd: c.contractEnd,
-        }))
-      );
 
       /* ================= ALERT ================= */
 
@@ -303,6 +566,8 @@ export default function AdminInfo() {
         (c) => !eq(c.compSt, 'resolved')
       ).length;
 
+      const unresolvedQna = qnas.filter((q) => eq(q.qnaSt, 'waiting')).length;
+
       /* ================= 운영 ================= */
 
       const vacantRooms = rooms.filter(
@@ -311,6 +576,8 @@ export default function AdminInfo() {
 
       const vacancyRate =
         rooms.length > 0 ? (vacantRooms / rooms.length) * 100 : 0;
+
+      const occupancyRate = rooms.length > 0 ? 100 - vacancyRate : 0;
 
       const todayCheckin = contracts.filter((c) =>
         isToday(c.contractStart)
@@ -339,6 +606,30 @@ export default function AdminInfo() {
       const paymentFailRate =
         totalPayments > 0 ? (failCount / totalPayments) * 100 : 0;
 
+      const monthlyMap = {};
+
+      payments.forEach((p) => {
+        if (!eq(p.paymentSt, 'paid')) return;
+
+        const date = getPaymentDate(p);
+        if (!date) return;
+
+        const d = new Date(date);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+        monthlyMap[key] = (monthlyMap[key] || 0) + getPaymentAmount(p);
+      });
+
+      const revenueSeries = buildRevenueSeries(payments, rangeType);
+      // 최근 6개월만 정렬
+      const monthlyRevenueSeries = Object.entries(monthlyMap)
+        .sort(([a], [b]) => new Date(a) - new Date(b))
+        .slice(-6)
+        .map(([label, value]) => ({
+          label: label.slice(5), // "03" 이런식
+          value,
+        }));
+
       setMetrics({
         unpaidMonthlyRent,
         paymentFailSpike,
@@ -353,8 +644,12 @@ export default function AdminInfo() {
         revenueGrowth,
         unresolvedComplaints,
         unresolvedComplaintsToday,
+        unresolvedQna,
+        monthlyRevenueSeries,
+        payments,
 
         vacancyRate,
+        occupancyRate,
         todayCheckin,
         todayCheckout,
         paymentFailRate,
@@ -391,44 +686,117 @@ export default function AdminInfo() {
       </div>
 
       <section className={styles.section}>
-        <h2>알림</h2>
-        <AlertSection alerts={alerts} />
+        <div className={styles.alertHeader} onClick={() => setIsOpen(!isOpen)}>
+          <div className={styles.alertLeft}>
+            <h2>알림</h2>
+
+            <div className={styles.alertSummary}>
+              {alerts.danger.length > 0 && (
+                <span className={styles.red}>🔴 {alerts.danger.length}</span>
+              )}
+              {alerts.warning.length > 0 && (
+                <span className={styles.yellow}>
+                  🟡 {alerts.warning.length}
+                </span>
+              )}
+              {alerts.info.length > 0 && (
+                <span className={styles.green}>🟢 {alerts.info.length}</span>
+              )}
+            </div>
+          </div>
+
+          <span className={styles.arrow}>{isOpen ? '▲' : '▼'}</span>
+        </div>
+
+        {isOpen && <AlertSection alerts={alerts} />}
       </section>
 
       <section className={styles.section}>
-        <h2>KPI 요약</h2>
-        <div className={styles.kpiGrid}>
-          <div className={styles.kpi}>
-            <span>오늘 방문자</span>
-            <strong>{formatNumber(metrics.todayVisitors)}</strong>
-          </div>
+        <h2>Today KPI</h2>
 
-          <div className={styles.kpi}>
-            <span>신규 회원</span>
-            <strong>{formatNumber(metrics.newUsers)}</strong>
-          </div>
+        <div className={styles.topCards}>
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiHeader}>
+              <span>💰 매출</span>
+            </div>
 
-          <div className={styles.kpi}>
-            <span>활성 계약</span>
-            <strong>{formatNumber(metrics.activeContracts)}</strong>
-          </div>
-
-          <div className={styles.kpi}>
-            <span>투어 예약</span>
-            <strong>{formatNumber(metrics.todayReservations)}</strong>
-          </div>
-
-          <div className={styles.kpi}>
-            <span>오늘 매출</span>
-            <strong>
+            <div className={styles.kpiValue}>
               {formatMoney(metrics.monthlyRevenue)} (
               {formatPercent(metrics.revenueGrowth)})
-            </strong>
+            </div>
           </div>
 
-          <div className={styles.kpi}>
-            <span>오늘 등록된 민원 수</span>
-            <strong>{formatNumber(metrics.unresolvedComplaintsToday)}</strong>
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiHeader}>
+              <span>👥 방문자</span>
+            </div>
+
+            <div className={styles.kpiValue}>{metrics.todayVisitors}</div>
+          </div>
+
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiHeader}>
+              <span>📄 활성 계약</span>
+            </div>
+
+            <div className={styles.kpiValue}>{metrics.activeContracts}</div>
+          </div>
+
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiHeader}>
+              <span>📅 투어 예약</span>
+            </div>
+
+            <div className={styles.kpiValue}>{metrics.todayReservations}</div>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.chartGrid}>
+          <div className={styles.chartCard}>
+            <div className={styles.chartHeader}>
+              <h3>📈 매출 추이</h3>
+              <div className={styles.filterButtons}>
+                <button
+                  onClick={() => setRangeType('daily')}
+                  className={rangeType === 'daily' ? styles.active : ''}
+                >
+                  일별
+                </button>
+                <button
+                  onClick={() => setRangeType('monthly')}
+                  className={rangeType === 'monthly' ? styles.active : ''}
+                >
+                  월별
+                </button>
+                <button
+                  onClick={() => setRangeType('yearly')}
+                  className={rangeType === 'yearly' ? styles.active : ''}
+                >
+                  연별
+                </button>
+              </div>
+            </div>
+            <LineChart
+              data={buildRevenueSeries(metrics.payments, rangeType)}
+              rangeType={rangeType}
+            />
+          </div>
+          <div className={styles.chartCard}>
+            <h3>🏠 방 현황</h3>
+            <div
+              style={{
+                display: 'flex',
+                gap: '20px',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%',
+              }}
+            >
+              <Donut percent={metrics.occupancyRate} label="입주율" />
+              <Donut percent={metrics.vacancyRate} label="공실률" />
+            </div>
           </div>
         </div>
       </section>
@@ -439,9 +807,6 @@ export default function AdminInfo() {
         <div className={styles.operationGrid}>
           <div className={styles.opCard}>
             <h3>🏠 숙소 운영</h3>
-            <p>
-              공실률: <strong>{formatPercent(metrics.vacancyRate)}</strong>
-            </p>
             <p>
               체크인: <strong>{metrics.todayCheckin}</strong>
             </p>
@@ -467,6 +832,9 @@ export default function AdminInfo() {
             <h3>📞 고객 대응</h3>
             <p>
               미처리 민원: <strong>{metrics.unresolvedComplaints}</strong>
+            </p>
+            <p>
+              미처리 질문: <strong>{metrics.unresolvedQna}</strong>
             </p>
           </div>
         </div>
