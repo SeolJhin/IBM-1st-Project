@@ -1,6 +1,7 @@
 // src/shared/components/BannerSlider/BannerSlider.jsx
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import styles from './BannerSlider.module.css';
+import { toApiImageUrl } from '../../utils/imageUrl';
 
 const API_PREFIX = '/api';
 
@@ -103,17 +104,13 @@ function DefaultBannerBg({ pattern, gradient }) {
 function getBannerImageUrl(banner) {
   if (!banner) return null;
   if (banner.imageUrl) {
-    const u = banner.imageUrl;
-    return u.startsWith('/api') ? u : `${API_PREFIX}${u}`;
+    return toApiImageUrl(banner.imageUrl);
   }
   const files = banner.files;
   if (Array.isArray(files) && files.length > 0) {
     const f = files[0];
-    if (f?.viewUrl) {
-      const u = f.viewUrl;
-      return u.startsWith('/api') ? u : `${API_PREFIX}${u}`;
-    }
     if (f?.fileId) return `${API_PREFIX}/files/${f.fileId}/view`;
+    if (f?.viewUrl) return toApiImageUrl(f.viewUrl);
   }
   return null;
 }

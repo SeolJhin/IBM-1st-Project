@@ -541,7 +541,7 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
             onConfirm={() => {
               handleProviderPayment(payMethod);
             }}
-            confirmLabel="Continue with selected method"
+            confirmLabel="선택한 수단으로 결제"
           />
 
           <button type="button" className={styles.refreshMiniBtn} onClick={loadData}>

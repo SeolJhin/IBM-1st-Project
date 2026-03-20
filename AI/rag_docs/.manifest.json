@@ -1,6 +1,7 @@
 {
-  "status": "skipped",
-  "reason": "no_documents",
-  "documents": 0,
-  "fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  "status": "error",
+  "reason": "MilvusException",
+  "documents": 43,
+  "indexed": 0,
+  "fingerprint": "fd19dd5addb9b59a40817c28bec26b2db877a2fe7b47b0faa96d7a24c160d21b"
 }
