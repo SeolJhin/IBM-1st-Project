@@ -21,16 +21,18 @@
 .pageKicker {
   margin: 0 0 4px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.2em;
   color: var(--primary, #d9ad5b);
+  font-family: var(--font-body);
 }
 .pageTitle {
   margin: 0 0 4px;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text, #0b0e12);
   letter-spacing: -0.01em;
+  font-family: var(--font-body);
 }
 .pageSub {
   margin: 0 0 20px;
@@ -72,8 +74,9 @@
 .filterTitle {
   margin: 0;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
+  font-family: var(--font-body);
 }
 .resetBtn {
   font-size: 12px;
@@ -255,8 +258,9 @@
 .cardTitle {
   margin: 0 0 10px;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
+  font-family: var(--font-body);
 }
 .priceRow {
   display: flex;
@@ -274,8 +278,9 @@
 }
 .priceRent {
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
+  font-family: var(--font-body);
 }
 .cardMeta {
   display: flex;
