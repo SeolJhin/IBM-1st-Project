@@ -23,11 +23,28 @@ def ensure_rag_runtime() -> None:
 def get_rag_status() -> dict[str, Any]:
     ensure_rag_runtime()
     manifest = _load_manifest()
+    # ── 문제3 수정: Milvus 실체 기준으로 검증 ──────────────────────────────
+    milvus_collection_exists = False
+    milvus_doc_count = 0
+    if settings.milvus_uri and settings.milvus_collection:
+        try:
+            from pymilvus import MilvusClient  # type: ignore
+            client = MilvusClient(uri=settings.milvus_uri,
+                                  token=settings.milvus_token or None,
+                                  db_name=settings.milvus_db_name or "default")
+            milvus_collection_exists = client.has_collection(collection_name=settings.milvus_collection)
+            if milvus_collection_exists:
+                stats = client.get_collection_stats(collection_name=settings.milvus_collection)
+                milvus_doc_count = int((stats or {}).get("row_count", 0))
+        except Exception as e:
+            logger.warning("Milvus status check failed: %s", e)
     return {
         "source_dir": str(Path(settings.rag_source_dir).resolve()),
         "manifest_path": str(Path(settings.rag_manifest_path).resolve()),
         "milvus_collection": settings.milvus_collection,
         "milvus_configured": bool(settings.milvus_uri and settings.milvus_collection),
+        "milvus_collection_exists": milvus_collection_exists,
+        "milvus_doc_count": milvus_doc_count,
         "manifest": manifest,
     }
 
@@ -37,6 +54,19 @@ def reindex_rag(*, force: bool = False) -> dict[str, Any]:
     docs = _load_source_documents(Path(settings.rag_source_dir))
     fingerprint = _fingerprint(docs)
     previous = _load_manifest()
+
+    # ── 문제3 수정: manifest 일치해도 Milvus에 실제 컬렉션 없으면 강제 재인덱싱 ──
+    if not force and previous.get("fingerprint") == fingerprint:
+        try:
+            from pymilvus import MilvusClient  # type: ignore
+            _mc = MilvusClient(uri=settings.milvus_uri,
+                               token=settings.milvus_token or None,
+                               db_name=settings.milvus_db_name or "default")
+            if not _mc.has_collection(collection_name=settings.milvus_collection):
+                logger.warning("[RAG] manifest=ok 이지만 Milvus 컬렉션 없음 → 강제 재인덱싱")
+                force = True
+        except Exception:
+            pass
 
     if not force and previous.get("fingerprint") == fingerprint:
         return {
@@ -329,4 +359,3 @@ def _save_manifest(data: dict[str, Any]) -> None:
     path = Path(settings.rag_manifest_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=True, indent=2), encoding="utf-8")
-
