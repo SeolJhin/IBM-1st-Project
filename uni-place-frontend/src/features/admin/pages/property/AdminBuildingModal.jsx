@@ -77,9 +77,14 @@ export default function AdminBuildingModal({ buildingId, onClose, onSuccess }) {
       fu.newFiles.forEach((f) => fd.append('files', f));
       if (isEdit)
         fu.deleteFileIds.forEach((id) => fd.append('deleteFileIds', id));
-      await (isEdit
+      const result = await (isEdit
         ? adminApi.updateBuilding(buildingId, fd)
         : adminApi.createBuilding(fd));
+      if (isEdit && result?.files) {
+        setExistingFiles(result.files);
+        fu.reset();
+        fu.initExistingOrder(result.files);
+      }
       onSuccess?.();
       onClose();
     } catch (e) {

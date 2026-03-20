@@ -1,13 +1,17 @@
 package org.myweb.uniplace.domain.file.api;
 
 import java.io.InputStream;
+import java.io.FileNotFoundException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 import java.util.List;
 
 import org.myweb.uniplace.domain.file.api.dto.request.FileUploadRequest;
 import org.myweb.uniplace.domain.file.api.dto.response.FileResponse;
 import org.myweb.uniplace.domain.file.api.dto.response.FileUploadResponse;
 import org.myweb.uniplace.domain.file.application.FileService;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
 import org.myweb.uniplace.global.storage.StorageService;
 
@@ -109,7 +113,12 @@ public class FileController {
 
     private ResponseEntity<Resource> buildResponse(FileResponse meta, ContentDisposition disposition)
             throws Exception {
-        InputStream is = storageService.read(meta.getFilePath(), meta.getRenameFilename());
+        InputStream is;
+        try {
+            is = storageService.read(meta.getFilePath(), meta.getRenameFilename());
+        } catch (FileNotFoundException | NoSuchFileException e) {
+            throw new BusinessException(ErrorCode.FILE_NOT_FOUND);
+        }
         InputStreamResource resource = new InputStreamResource(is);
 
         HttpHeaders headers = new HttpHeaders();
