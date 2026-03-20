@@ -51,7 +51,8 @@ function ActionButtons({ buttons, onModalRoute, onAction, allMessages }) {
               if (
                 normalizedUrl.startsWith('http') ||
                 normalizedUrl.startsWith('/ai/') ||
-                normalizedUrl.startsWith('/api/ai/')
+                normalizedUrl.startsWith('/api/ai/') ||
+                normalizedUrl.startsWith('/api/')
               ) {
                 var openUrl = normalizedUrl.startsWith('/ai/')
                   ? `/api${normalizedUrl}`

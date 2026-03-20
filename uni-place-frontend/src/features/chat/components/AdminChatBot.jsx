@@ -522,7 +522,8 @@ function AdminActionButtons({ buttons }) {
             if (
               url.startsWith('http') ||
               url.startsWith('/ai/') ||
-              url.startsWith('/api/ai/')
+              url.startsWith('/api/ai/') ||
+              url.startsWith('/api/')
             ) {
               const openUrl = url.startsWith('/ai/') ? `/api${url}` : url;
               window.open(openUrl, '_blank');
