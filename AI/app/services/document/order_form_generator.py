@@ -20,11 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 def _build_download_url(file_name: str) -> str:
-    base = (settings.spring_base_url or "").strip()
-    if base.endswith("/"):
-        base = base[:-1]
-    path = f"/ai/payment/order-form/download/{file_name}"
-    return f"{base}{path}" if base else path
+    return f"/ai/payment/order-form/download/{file_name}"
 
 # ════════════════════════════════════════════════════════════════════════════
 # 빌딩별 결제 내역 리포트 (DB → xlsx)
