@@ -1,0 +1,187 @@
+/* features/admin/pages/user/AdminUserDashboard.module.css */
+
+.topRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* KPI */
+.kpiRow {
+  display: flex;
+  min-width: 60px;
+  gap: 16px;
+}
+
+.kpiCard {
+  flex: 1;
+  border: 1px solid rgba(31, 36, 48, 0.12);
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.kpiCard p {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.kpiCard h2 {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+/* 차트 영역 */
+.chartRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 도넛 */
+.donutBox {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+}
+
+.donutWrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.donut {
+  width: 140px;
+  height: 140px;
+  transform: rotate(-90deg);
+}
+
+.donutTrack,
+.donutValue {
+  fill: none;
+}
+
+.donutTrack {
+  fill: none;
+  stroke: rgba(31, 36, 48, 0.1);
+  stroke-width: 14;
+}
+
+.donutValue {
+  fill: none;
+  stroke: #4f46e5;
+  stroke-width: 14;
+  stroke-linecap: round;
+}
+
+.donutCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.donutCenter strong {
+  display: block;
+  font-size: 20px;
+}
+
+.donutCenter span {
+  font-size: 12px;
+  color: #666;
+}
+
+.mainRow {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* 그래프 */
+.chartCard {
+  flex: 2;
+  width: 160px;
+  background: #fff;
+  border: 1px solid rgba(31, 36, 48, 0.12);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 필터 */
+.filterGroup button {
+  margin-left: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* 차트 */
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  height: 160px;
+  flex: 1;
+}
+
+.barGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bar {
+  width: 8px;
+  background: #4ade80;
+}
+
+.barInactive {
+  width: 8px;
+  background: #93c5fd;
+}
+
+.barDeleted {
+  width: 8px;
+  background: #fca5a5;
+}
+
+.chartWrap {
+  display: flex;
+  gap: 10px;
+}
+
+.yAxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 160px;
+}
+
+.yRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gridLine {
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb; /* 연한 회색 */
+}
