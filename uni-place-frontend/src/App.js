@@ -7,6 +7,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from './shared/components/ScrollToTop';
 import Home from './shared/pages/Home';
 import About from './shared/pages/About';
+import AboutDetail from './shared/pages/AboutDetail';
 import CompanyInfo from './shared/pages/CompanyInfo';
 import CommunityHome from './features/community/pages/CommunityHome';
 import BoardDetail from './features/community/pages/BoardDetail';
@@ -153,7 +154,8 @@ export default function App() {
           path="/company_info"
           element={<CompanyInfo variant="company" />}
         />
-        <Route path="/about" element={<About variant="about" />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/about/:slug" element={<AboutDetail />} />
         <Route path="/community" element={<CommunityHome />} />
         <Route path="/community/:boardId" element={<BoardDetail />} />
         <Route path="/guide" element={<CompanyInfo variant="guide" />} />
