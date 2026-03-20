@@ -1,52 +1,101 @@
-:root{
-  /* Set A */
-  --a-1:#909CA7;
-  --a-2:#FFD993;
-  --a-3:#D7CEBC;
-  --a-4:#FFE0B9;
-  --a-5:#FFFFFF;
+/* ═══════════════════════════════════════════════════════════════
+   UNI-PLACE  ·  Design Tokens  ·  Syne × Modern Edition
+   Syne: 기하학적 모던 산세리프 — 제목/헤드라인
+   Noto Sans KR: 한국어 본문/UI
+   ═══════════════════════════════════════════════════════════════ */
 
-  /* Set B (메인) */
-  --b-1:#48535F;
-  --b-2:#D9AD5B;
-  --b-3:#9A8C70;
-  --b-4:#FFCD8E;
-  --b-5:#FDF7EC;
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
 
-  /* Set C (다크) */
-  --c-1:#0B0E12;
-  --c-2:#BD9853;
-  --c-3:#362F20;
-  --c-4:#BA8037;
-  --c-5:#B79E9E;
+:root {
+  /* ── Raw Palette ─────────────────────────────────── */
+  --a-1: #8A8F9A;
+  --a-2: #B8945A;
+  --a-3: #E8E5DF;
+  --a-4: #F5EDD8;
+  --a-5: #FFFFFF;
 
-  /* semantic (recomposed palette) */
-  --bg: #FFFFFF;
-  --surface: #FFFFFF;
-  --text: #0B0E12;
-  --muted: #48535F;
-  --line: #D7CEBC;
+  --b-1: #1A1A1A;
+  --b-2: #B8945A;
+  --b-3: #8C7E5E;
+  --b-4: #D4B07A;
+  --b-5: #FAFAF8;
 
-  --primary: #D9AD5B;
-  --primary-weak: #FFD993;
-  --accent: #BA8037;
-  --accent-soft: #9A8C70;
-  --highlight: #FFCD8E;
-  --ink-soft: #362F20;
-  --soft-rose: #B79E9E;
-  --steel: #909CA7;
-  --cream: #FFE0B9;
+  --c-1: #0D0D0D;
+  --c-2: #9A7840;
+  --c-3: #3D3525;
+  --c-4: #9A7840;
+  --c-5: #9A9090;
 
-  --radius: 14px;
-  --shadow: 0 10px 28px rgba(11,14,18,0.10);
+  /* ── Semantic Tokens ─────────────────────────────── */
+  --bg:        #FFFFFF;
+  --surface:   #FAFAF8;
+  --surface-2: #F5F3EF;
+  --surface-3: #EDE9E2;
+
+  --text:      #2A2A2A;
+  --text-sub:  #484848;
+  --muted:     #737373;
+
+  --line:      #E4E1DB;
+  --line-soft: rgba(184,148,90,0.14);
+
+  --primary:       #B8945A;   /* 샴페인 골드 */
+  --primary-weak:  #D4B07A;
+  --primary-light: #F5EDD8;
+  --accent:        #9A7840;
+  --accent-soft:   #8C7E5E;
+
+  --highlight:  #F5EDD8;
+  --ink-soft:   #484848;
+  --soft-rose:  #9A9090;
+  --steel:      #8A8F9A;
+  --cream:      #F5EDD8;
+
+  --radius:    12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+
+  --shadow:      0 4px 24px rgba(0,0,0,0.07);
+  --shadow-sm:   0 2px 8px rgba(0,0,0,0.05);
+  --shadow-gold: 0 4px 20px rgba(184,148,90,0.16);
+
+  --ease:     cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+
+  /* Syne — 기하학적 모던, 헤드라인 전용
+     Noto Sans KR — 한국어 본문·UI           */
+  --font-display: 'Syne', 'Noto Sans KR', -apple-system, sans-serif;
+  --font-body:    'Noto Sans KR', 'Syne', -apple-system,
+                   'Apple SD Gothic Neo', system-ui, sans-serif;
 }
 
-body{
-  margin:0;
+/* ── Base Reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
-    Apple SD Gothic Neo, Noto Sans KR, sans-serif;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-a{ color: inherit; }
-button{ font-family: inherit; }
+
+a { color: inherit; text-decoration: none; }
+a:hover { color: var(--primary); }
+button { font-family: inherit; cursor: pointer; }
+img, video { display: block; max-width: 100%; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+  margin: 0;
+}
+
+p  { margin: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }

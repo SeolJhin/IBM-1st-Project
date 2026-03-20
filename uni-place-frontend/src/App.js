@@ -106,6 +106,12 @@ import AdminOpenTickets from './features/admin/pages/inspection/AdminOpenTickets
 import ChatBot from './features/chat/components/ChatBot';
 import AdminChatBot from './features/chat/components/AdminChatBot';
 
+// ── 법적고지 & SNS ────────────────────────────────────────
+import Terms from './shared/pages/Terms';
+import Privacy from './shared/pages/Privacy';
+import Cookies from './shared/pages/Cookies';
+import SnsPage from './shared/pages/SnsPage';
+
 import {
   GEMINI_API_KEY,
   USE_BACKEND_AI,
@@ -299,6 +305,14 @@ export default function App() {
             </Route>
           </Route>
         </Route>
+
+        {/* ── 법적고지 ── */}
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/cookies" element={<Cookies />} />
+
+        {/* ── SNS 더미 페이지 ── */}
+        <Route path="/sns/:platform" element={<SnsPage />} />
 
         {/* ── 나머지 ── */}
         <Route path="*" element={<Navigate to="/" replace />} />

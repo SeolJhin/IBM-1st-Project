@@ -1,6 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import styles from './PaymentOptionPanel.module.css';
 
+import tossPayLogo from '../PGlogos/toss2.png';
+import naverPayLogo from '../PGlogos/logo_navergr_small.svg';
+import kakaoPayLogo from '../PGlogos/payment_icon_yellow_small.png';
+
 function cls(...values) {
   return values.filter(Boolean).join(' ');
 }
@@ -12,7 +16,7 @@ export default function PaymentOptionPanel({
   subtitle = '',
   loading = false,
   error = '',
-  confirmLabel = 'Continue with selected method',
+  confirmLabel = '선택한 수단으로 결제',
   onSelect,
   onConfirm,
   onCancel,
@@ -87,67 +91,69 @@ export default function PaymentOptionPanel({
       </div>
 
       <div className={styles.benefitWrap}>
-        <span className={styles.badge}>혜택</span>
-        <div className={styles.easyPayGrid}>
-          <button
-            type="button"
-            className={cls(
-              styles.easyPayBtn,
-              isSelectedEasyPay('toss') && styles.selected
-            )}
-            onClick={() =>
-              handleEasyPay(
-                'toss',
-                easyPayOptions.find((opt) => opt.id === 'toss')?.available !== false
-              )
-            }
-            disabled={
-              loading || easyPayOptions.find((opt) => opt.id === 'toss')?.available === false
-            }
-          >
-            <span className={cls(styles.easyLogo, styles.logoToss)}>+ toss pay</span>
-          </button>
+  <span className={styles.badge}>혜택</span>
+  <div className={styles.easyPayGrid}>
+    <button
+      type="button"
+      className={cls(
+        styles.easyPayBtn,
+        isSelectedEasyPay('toss') && styles.selected
+      )}
+      onClick={() =>
+        handleEasyPay(
+          'toss',
+          easyPayOptions.find((opt) => opt.id === 'toss')?.available !== false
+        )
+      }
+      disabled={
+        loading || easyPayOptions.find((opt) => opt.id === 'toss')?.available === false
+      }
+    >
+      <img src={tossPayLogo} alt="토스페이" className={styles.easyLogoImg} />
+      <span>토스페이</span>
+    </button>
 
-          <button
-            type="button"
-            className={cls(
-              styles.easyPayBtn,
-              isSelectedEasyPay('naver') && styles.selected
-            )}
-            onClick={() =>
-              handleEasyPay(
-                'naver',
-                easyPayOptions.find((opt) => opt.id === 'naver')?.available !== false
-              )
-            }
-            disabled={
-              loading || easyPayOptions.find((opt) => opt.id === 'naver')?.available === false
-            }
-          >
-            <span className={cls(styles.easyLogo, styles.logoNpayBox)}>N</span>
-            <span>N Pay</span>
-          </button>
+    <button
+      type="button"
+      className={cls(
+        styles.easyPayBtn,
+        isSelectedEasyPay('naver') && styles.selected
+      )}
+      onClick={() =>
+        handleEasyPay(
+          'naver',
+          easyPayOptions.find((opt) => opt.id === 'naver')?.available !== false
+        )
+      }
+      disabled={
+        loading || easyPayOptions.find((opt) => opt.id === 'naver')?.available === false
+      }
+    >
+      <img src={naverPayLogo} alt="네이버페이" className={styles.easyLogoImg} />
+      <span>네이버페이</span>
+    </button>
 
-          <button
-            type="button"
-            className={cls(
-              styles.easyPayBtn,
-              isSelectedEasyPay('kakao') && styles.selected
-            )}
-            onClick={() =>
-              handleEasyPay(
-                'kakao',
-                easyPayOptions.find((opt) => opt.id === 'kakao')?.available !== false
-              )
-            }
-            disabled={
-              loading || easyPayOptions.find((opt) => opt.id === 'kakao')?.available === false
-            }
-          >
-            <span className={cls(styles.easyLogo, styles.logoKakaoCircle)}>pay</span>
-          </button>
-        </div>
-      </div>
+    <button
+      type="button"
+      className={cls(
+        styles.easyPayBtn,
+        isSelectedEasyPay('kakao') && styles.selected
+      )}
+      onClick={() =>
+        handleEasyPay(
+          'kakao',
+          easyPayOptions.find((opt) => opt.id === 'kakao')?.available !== false
+        )
+      }
+      disabled={
+        loading || easyPayOptions.find((opt) => opt.id === 'kakao')?.available === false
+      }
+    >
+      <img src={kakaoPayLogo} alt="카카오페이" className={styles.easyLogoImg} />
+      <span>카카오페이</span>
+    </button>
+  </div>
+</div>
 
       <div className={styles.cardGrid}>
         {cardCompanies.map((card) => (

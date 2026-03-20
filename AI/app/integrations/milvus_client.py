@@ -4,14 +4,13 @@ from typing import Any
 from app.config.settings import settings
 from app.schemas.ai_request import AiRequest
 
-# Chroma 모드에서는 Milvus 임베딩이 필요 없을 수 있으므로
-# 앱 시작 시점이 아니라 실제 사용 시점에 모델을 로딩한다.
 _embedding_model = None
 
 logger = logging.getLogger(__name__)
 
 
 def search_vectors(req: AiRequest) -> list[str]:
+    # ── 문제1 수정: query와 prompt 둘 다 사용 ──────────────────────────────
     query = _build_query(req)
     if not query:
         return []
@@ -31,6 +30,13 @@ def search_vectors(req: AiRequest) -> list[str]:
             token=settings.milvus_token or None,
             db_name=settings.milvus_db_name or "default",
         )
+
+        # ── 문제3 수정: 검색 전 컬렉션 실제 존재 여부 확인 ──────────────────
+        if not client.has_collection(collection_name=settings.milvus_collection):
+            logger.warning("Milvus collection '%s' not found — RAG unavailable",
+                           settings.milvus_collection)
+            return []
+
         results = client.search(
             collection_name=settings.milvus_collection,
             data=[vector],
@@ -53,20 +59,35 @@ def embed_text(text: str) -> list[float]:
 
 
 def _build_query(req: AiRequest) -> str:
+    # ── 문제1 수정: prompt와 query(slots) 모두 활용 ────────────────────────
     prompt = (req.prompt or "").strip()
+    query = str(req.get_slot("query") or "").strip()   # ← query 슬롯 추가
     topic = str(req.get_slot("topic") or "").strip()
     keyword = str(req.get_slot("keyword") or "").strip()
-    return " ".join(part for part in (prompt, topic, keyword) if part).strip()
+    # prompt 또는 query 중 있는 것 사용 (중복 제거)
+    text = query if query and not prompt else prompt
+    return " ".join(part for part in (text, topic, keyword) if part).strip()
 
 
 def _embed_query(text: str) -> list[float]:
+    # ── 문제2 수정: embedding_provider 분기 적용 ──────────────────────────
+    provider = (settings.embedding_provider or "bge").strip().lower()
+
+    if provider == "openai":
+        return _embed_with_openai(text)
+    if provider in ("watsonx", "ibm"):
+        return _embed_with_watsonx(text)
+    # 기본값: bge (로컬 SentenceTransformer)
+    return _embed_with_bge(text)
+
+
+def _embed_with_bge(text: str) -> list[float]:
     global _embedding_model
     if _embedding_model is None:
         try:
-            # 지연 로딩: Milvus 임베딩 경로를 사용할 때만 로딩
             from sentence_transformers import SentenceTransformer  # type: ignore
-
             _embedding_model = SentenceTransformer("BAAI/bge-m3")
+            logger.info("BGE 임베딩 모델 로딩 완료")
         except Exception as exc:
             logger.warning("SentenceTransformer load failed: %s", exc.__class__.__name__)
             return []
@@ -107,7 +128,7 @@ def _embed_with_watsonx(text: str) -> list[float]:
         return list(vector) if isinstance(vector, list) else []
     except Exception as exc:
         logger.warning("watsonx embedding failed: %s", exc.__class__.__name__)
-        return []
+    return []
 
 
 def _extract_texts(results: Any, threshold: float) -> list[str]:
@@ -123,7 +144,7 @@ def _extract_texts(results: Any, threshold: float) -> list[str]:
         if not isinstance(hit, dict):
             continue
 
-        score = _to_float(hit.get("score"))
+        score = _to_float(hit.get("distance") or hit.get("score"))
         if score is not None and score < threshold:
             continue
 

@@ -71,7 +71,7 @@ public class RoomServiceImpl implements RoomService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.ROOM_NOT_FOUND));
 
         List<FileResponse> files =
-                fileService.getAllFilesForAdmin(FileRefType.ROOM.dbValue(), roomId);
+                fileService.getActiveFiles(FileRefType.ROOM.dbValue(), roomId);
 
         return RoomDetailResponse.fromEntity(room, files);
     }
@@ -274,5 +274,3 @@ public class RoomServiceImpl implements RoomService {
         return buildings.get(0);
     }
 }
-
-
