@@ -27,6 +27,25 @@ async def lifespan(app: FastAPI):
     ensure_rag_runtime()
     start_reindex_daemon()
     start_stock_alert_daemon()
+
+    # 임베딩 모델 워밍업 — 첫 요청에서 15~20초 지연 방지
+    try:
+        from app.integrations.milvus_client import embed_text
+        logger.info("[Warmup] 임베딩 모델 로딩 시작...")
+        embed_text("warmup")
+        logger.info("[Warmup] 임베딩 모델 로딩 완료")
+    except Exception as e:
+        logger.warning("[Warmup] 임베딩 모델 로딩 실패 (무시): %s", e)
+
+    # rag_docs → Milvus 자동 인덱싱 (변경된 파일만, 로컬/배포 공통)
+    try:
+        from app.services.rag.index_pipeline import reindex_rag
+        result = reindex_rag(force=False)
+        logger.info("[RAG] 인덱싱 결과: status=%s documents=%s indexed=%s",
+                    result.get("status"), result.get("documents"), result.get("indexed"))
+    except Exception as e:
+        logger.warning("[RAG] 인덱싱 실패 (무시): %s", e)
+
     yield
     # 서버 종료
 
