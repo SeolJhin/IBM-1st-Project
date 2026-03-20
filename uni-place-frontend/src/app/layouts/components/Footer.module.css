@@ -1,138 +1,202 @@
-.footer{
-  width: 100%;
-  margin-top: 40px;
+/* ═══════════════════════════════════════════════════════════════
+   Footer.module.css  ·  UNI-PLACE  ·  Sharp Edition
+   ═══════════════════════════════════════════════════════════════ */
+
+.footer { width: 100%; margin-top: 80px; }
+
+.topLine {
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    var(--primary, #B8945A) 20%,
+    var(--primary, #B8945A) 80%,
+    transparent 100%
+  );
+  opacity: 0.45;
 }
 
-.bottom{
-  background: #0B0E12;
+.body {
+  background: #F8F6F2;
+  border-top: 1px solid #E8E5DF;
 }
 
-.container{
-  max-width: 1120px;
+.container {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 56px 24px;
+  padding: 56px 24px 36px;
 }
 
-.aboutCol{
+/* 5열 그리드 (브랜드 + 회사소개 + 서비스 + 커뮤니티 → 서비스 통합 + 연락처) */
+.grid {
   display: grid;
-  gap: 22px;
-}
-
-.aboutHead{
-  display: grid;
-  gap: 6px;
-}
-
-.kicker{
-  margin: 0;
-  font-size: 12px;
-  letter-spacing: 0.22em;
-  color: rgba(255,255,255,0.64);
-}
-
-.headline{
-  margin: 8px 0 0;
-  font-size: 32px;
-  line-height: 1.18;
-  color: #ffffff;
-}
-
-.contactList{
-  display: grid;
-  gap: 14px;
-}
-
-.miniKicker{
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  color: rgba(255,255,255,0.58);
-}
-
-.bodyText{
-  margin: 6px 0 0;
-  font-size: 14px;
-  line-height: 1.55;
-  color: rgba(255,255,255,0.9);
-}
-
-.bottomGrid{
-  display: grid;
+  grid-template-columns: 1.4fr 0.9fr 0.9fr 1.2fr;
   gap: 40px;
-  grid-template-columns: 1fr;
+  align-items: start;
 }
 
-.logoWrap{
-  display: flex;
-  align-items: flex-start;
-}
+/* 1열: 브랜드 */
+.brandCol { display: flex; flex-direction: column; gap: 20px; }
 
-.logoInline{
+/* 로고 버튼 — 클릭 시 홈 최상단 이동 */
+.brandWrap {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-}
-
-.logoMark{
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  object-fit: cover;
-  display: block;
-}
-
-.logoTitle{
-  margin: 0;
-  color: #ffffff;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  font-size: 14px;
-}
-
-.logoSub{
-  margin: 3px 0 0;
-  color: rgba(255,255,255,0.7);
-  font-size: 11px;
-}
-
-.navCol{
-  display: grid;
-  gap: 12px;
-}
-
-.navTitle{
-  margin: 0;
-  color: rgba(255,255,255,0.7);
-  font-size: 12px;
-  letter-spacing: 0.22em;
-}
-
-.navList{
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
   gap: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity 0.18s;
+  font-family: inherit;
+  text-align: left;
 }
 
-.navList a{
-  color: #201812;
-  background: #FDF7EC;
-  border: 1px solid #D7CEBC;
-  border-radius: 8px;
-  padding: 6px 10px;
+.brandWrap:hover { opacity: 0.72; }
+
+.logoMark {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;   /* 로고만 둥글게 복원 */
+  object-fit: cover;
+}
+
+.logoTitle {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #1A1A1A;
+  font-family: 'Noto Sans KR', -apple-system, sans-serif;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.logoSub {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #AAAAAA;
+  margin: 3px 0 0;
+}
+
+.slogan { font-size: 14px; font-weight: 400; line-height: 1.72; color: #666; }
+
+.sns { display: flex; gap: 6px; }
+
+.snsIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;               /* 32 → 36 */
+  height: 36px;
+  border-radius: 0;
+  border: none;              /* border 완전 제거 */
+  background: transparent;
+  color: #BBBBBB;
+  transition: color 0.18s, background 0.18s, transform 0.15s;
+}
+
+.snsIcon:hover {
+  transform: translateY(-2px);
+}
+
+/* 각 플랫폼 브랜드 hover 색 */
+.snsInstagram:hover { color: #E1306C; }   /* 인스타 핑크-레드 */
+.snsYoutube:hover   { color: #FF0000; }   /* 유튜브 레드 */
+.snsBlog:hover      { color: #03C75A; }   /* 네이버 그린 */
+.snsKakao:hover     { color: #FFE000; }   /* 카카오 옐로우 */
+
+/* 2·3열: 링크 */
+.linkCol { display: flex; flex-direction: column; gap: 14px; }
+
+.colTitle {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  color: var(--primary, #B8945A);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.linkList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.linkList button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  text-align: left;
+  /* 색 + 위로 살짝 이동 */
+  transition: color 0.18s, transform 0.18s;
+  font-family: inherit;
   display: inline-block;
+}
+
+.linkList button:hover {
+  color: var(--primary, #B8945A);
+  transform: translateY(-2px);
+}
+
+/* 4열: 연락처 */
+.contactCol { display: flex; flex-direction: column; gap: 18px; }
+
+.contactList { display: flex; flex-direction: column; gap: 12px; }
+
+.contactRow { display: flex; flex-direction: column; gap: 2px; }
+
+.contactLabel {
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  color: #BBBBBB;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.contactValue { font-size: 13px; color: #444; line-height: 1.55; }
+
+/* 하단 바 */
+.bottomBar {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid #E2DFDA;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.copyright { font-size: 11px; color: #BBBBBB; margin: 0; }
+
+.legalLinks { display: flex; align-items: center; gap: 8px; }
+
+.legalLinks a {
+  font-size: 11px;
+  color: #999;
   text-decoration: none;
-  font-size: 14px;
+  display: inline-block;
+  transition: color 0.15s, transform 0.18s;
 }
 
-.navList a:hover{
-  background: #FFD993;
+.legalLinks a:hover {
+  color: var(--primary, #B8945A);
+  transform: translateY(-2px);
 }
 
-@media (min-width: 900px){
-  .bottomGrid{
-    grid-template-columns: 0.9fr 1.6fr 0.7fr 0.7fr;
-    align-items: start;
-  }
+.dot { color: #DDD; font-size: 11px; }
+
+/* 반응형 */
+@media (max-width: 1024px) { .grid { grid-template-columns: 1fr 1fr; gap: 32px; } }
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; gap: 28px; }
+  .bottomBar { flex-direction: column; align-items: flex-start; }
 }

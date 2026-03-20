@@ -8,22 +8,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 34px;
-  height: 34px;
-  padding: 0 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  color: #d7cebc;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;              /* border 제거 */
+  border-radius: 0;
+  /* 따뜻한 브론즈 종 색 — #C4A882 연한 황동 */
+  color: #C4A882;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
+  transition: color 0.18s, transform 0.15s;
 }
 .bellBtn:hover {
-  background: rgba(217, 173, 91, 0.15);
-  color: #d9ad5b;
-  border-color: rgba(217, 173, 91, 0.4);
+  color: #B8945A;            /* hover 시 골드로 */
+  transform: scale(1.08);
 }
 
 .badge {
@@ -49,10 +47,11 @@
   top: calc(100% + 8px);
   right: 0;
   width: 320px;
-  background: #161a22;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  background: #ffffff;
+  border: 1px solid #E8E5DF;
+  border-top: 2px solid #B8945A;
+  border-radius: 0;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
   z-index: 100;
   overflow: hidden;
 }
@@ -62,36 +61,29 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid #F0EDE8;
 }
 
 .dropTitle {
-  font-size: 15px;
-  font-weight: 800;
-  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1A1A1A;
 }
 
 .readAllBtn {
   background: none;
   border: none;
-  color: #d9ad5b;
+  color: #B8945A;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
-  transition: background 0.15s;
+  transition: color 0.15s;
 }
-.readAllBtn:hover {
-  background: rgba(217, 173, 91, 0.1);
-}
+.readAllBtn:hover { color: #9A7840; }
 
 /* ─── Drop List ─── */
-.dropList {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
+.dropList { list-style: none; margin: 0; padding: 0; }
 
 .dropItem {
   display: flex;
@@ -99,86 +91,55 @@
   justify-content: space-between;
   gap: 8px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid #F5F3EF;
   cursor: pointer;
   transition: background 0.12s;
 }
-.dropItem:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-.dropItem.unread {
-  background: rgba(217, 173, 91, 0.05);
-}
-.dropItem.unread:hover {
-  background: rgba(217, 173, 91, 0.1);
-}
-.dropItem:focus-visible {
-  outline: 2px solid #d9ad5b;
-  outline-offset: -2px;
-}
+.dropItem:hover { background: #FAF8F4; }
+.dropItem.unread { background: rgba(184,148,90,0.04); }
+.dropItem.unread:hover { background: rgba(184,148,90,0.08); }
+.dropItem:focus-visible { outline: 2px solid #B8945A; outline-offset: -2px; }
 
-.dropItemLeft {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
+.dropItemLeft { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 
 .typeBadge {
   display: inline-block;
   font-size: 10px;
   font-weight: 700;
-  color: #d9ad5b;
-  background: rgba(217, 173, 91, 0.15);
-  border-radius: 4px;
-  padding: 1px 5px;
+  color: #B8945A;
+  background: rgba(184,148,90,0.1);
+  padding: 1px 6px;
   width: fit-content;
+  letter-spacing: 0.04em;
 }
 
 .dropMsg {
   margin: 0;
   font-size: 13px;
-  color: #f4ecd8;
+  color: #2A2A2A;
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.dropTime {
-  font-size: 11px;
-  color: rgba(215, 206, 188, 0.4);
-}
+.dropTime { font-size: 11px; color: #AAAAAA; }
 
-.dropItemRight {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.dropItemRight { flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
 
-.dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #d9ad5b;
-  flex-shrink: 0;
-}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: #B8945A; flex-shrink: 0; }
 
 .readBtn {
   background: none;
   border: none;
-  color: rgba(215, 206, 188, 0.4);
-  font-size: 13px;
+  color: #AAAAAA;
+  font-size: 12px;
   cursor: pointer;
   padding: 2px 4px;
-  border-radius: 4px;
   transition: color 0.15s;
+  font-family: inherit;
 }
-.readBtn:hover {
-  color: #d9ad5b;
-}
+.readBtn:hover { color: #B8945A; }
 
 /* ─── Footer ─── */
 .viewAllBtn {
@@ -187,108 +148,72 @@
   padding: 12px;
   background: none;
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  color: #d9ad5b;
-  font-size: 13px;
+  border-top: 1px solid #F0EDE8;
+  color: #B8945A;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   text-align: center;
   transition: background 0.15s;
+  font-family: inherit;
+  letter-spacing: 0.04em;
 }
-.viewAllBtn:hover {
-  background: rgba(217, 173, 91, 0.08);
-}
+.viewAllBtn:hover { background: #FAF8F4; }
 
 /* ─── States ─── */
-.loadingWrap {
-  display: flex;
-  justify-content: center;
-  padding: 24px;
-}
+.loadingWrap { display: flex; justify-content: center; padding: 24px; }
 .spinner {
   display: inline-block;
-  width: 22px;
-  height: 22px;
-  border: 3px solid rgba(217, 173, 91, 0.2);
-  border-top-color: #d9ad5b;
+  width: 20px; height: 20px;
+  border: 2px solid rgba(184,148,90,0.2);
+  border-top-color: #B8945A;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.empty {
-  padding: 28px 16px;
-  text-align: center;
-  font-size: 13px;
-  color: rgba(215, 206, 188, 0.4);
-}
+.empty { padding: 28px 16px; text-align: center; font-size: 13px; color: #AAAAAA; }
 
-/* ── 읽음 아이템 ── */
-.dropItem.read {
-  opacity: 0.45;
-}
-.dropItem.read:hover {
-  background: rgba(255, 255, 255, 0.03);
-  opacity: 0.6;
-}
+.dropItem.read { opacity: 0.5; }
+.dropItem.read:hover { background: #FAF8F4; opacity: 0.7; }
 
-.typeBadge.badgeRead {
-  color: #666;
-  background: rgba(140, 140, 140, 0.15);
-}
+.typeBadge.badgeRead { color: #AAAAAA; background: rgba(0,0,0,0.05); }
+.dropMsg.msgRead { color: #AAAAAA; }
 
-.dropMsg.msgRead {
-  color: #888;
-}
-
-/* ─── 더 보기 버튼 ─── */
+/* ─── 더 보기 ─── */
 .expandBtn {
   display: block;
   width: 100%;
   padding: 10px 16px;
-  background: rgba(217, 173, 91, 0.06);
+  background: #FAF8F4;
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: #d9ad5b;
+  border-top: 1px solid #F0EDE8;
+  color: #B8945A;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   text-align: center;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.04em;
   transition: background 0.15s;
+  font-family: inherit;
 }
-.expandBtn:hover {
-  background: rgba(217, 173, 91, 0.13);
-}
+.expandBtn:hover { background: #F5F0E8; }
 
-/* ─── Footer ─── */
-.dropFooter {
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  display: flex;
-  flex-direction: column;
-}
+.dropFooter { border-top: 1px solid #F0EDE8; display: flex; flex-direction: column; }
 
 .deleteReadBtn {
   width: 100%;
   padding: 10px 12px;
   background: none;
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  color: #e07070;
+  border-bottom: 1px solid #F5F3EF;
+  color: #C06060;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   text-align: center;
   transition: background 0.15s;
+  font-family: inherit;
 }
-.deleteReadBtn:hover:not(:disabled) {
-  background: rgba(224, 112, 112, 0.08);
-}
-.deleteReadBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.deleteReadBtn:hover:not(:disabled) { background: rgba(192,96,96,0.06); }
+.deleteReadBtn:disabled { opacity: 0.4; cursor: not-allowed; }

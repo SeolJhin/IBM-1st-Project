@@ -1,138 +1,254 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import styles from './Header.module.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../features/user/hooks/useAuth';
 import NotificationBell from './NotificationBell';
 import homeLogo from '../../../home_logo.png';
 
+/* ─ 아이콘 SVG ─────────────────────────────────────────────────
+   Feather 스타일 — 얇은 선(strokeWidth 1.5), 최소한의 형태
+────────────────────────────────────────────────────────────── */
+
+/* 마이페이지 — 사람 윤곽선 */
+function IconUser() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="7" r="4" />
+      <path d="M5 21v-1a7 7 0 0 1 14 0v1" />
+    </svg>
+  );
+}
+
+/* 관리자 — 방패/보안 */
+function IconAdmin() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l8 4v6c0 5-4 9-8 10C8 21 4 17 4 12V6l8-4z" />
+    </svg>
+  );
+}
+
+/* ── 네비게이션 데이터 ──────────────────────────────────────
+   커뮤니티를 마지막으로
+   공용공간: /spaces는 App.js에 없으므로 /reservations/space/list 사용
+──────────────────────────────────────────────────────────── */
+const NAV_ITEMS = [
+  {
+    label: '회사소개',
+    path: '/company_info',
+    children: [
+      { label: '회사소개', path: '/company_info' },
+      { label: '뉴스',     path: '/news' },
+      { label: '입주 가이드', path: '/guide' },
+    ],
+  },
+  {
+    label: '방찾기',
+    path: '/rooms',
+    children: [
+      { label: '방',      path: '/rooms' },
+      { label: '공용공간', path: '/rooms', state: { tab: 'spaces' } },
+      { label: '건물 목록', path: '/buildings' },
+    ],
+  },
+  {
+    label: '고객센터',
+    path: '/support',
+    children: [
+      { label: '공지사항', path: '/support/notice' },
+      { label: 'FAQ',     path: '/support/faq' },
+      { label: '민원',    path: '/support/complain' },
+      { label: 'Q&A',    path: '/support/qna' },
+    ],
+  },
+  {
+    label: '커뮤니티',  // 마지막 순서
+    path: '/community',
+    // children 없음 → 드롭다운 없이 바로 이동
+  },
+];
+
+/* ── 개별 NavItem ──────────────────────────────────────────── */
+function NavItem({ item }) {
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const [open, setOpen] = useState(false);
+  const ref      = useRef(null);
+  const timerRef = useRef(null);
+
+  const hasDropdown = Boolean(item.children?.length);
+
+  // 현재 경로가 이 메뉴(또는 서브메뉴)에 해당하는지
+  const isActive =
+    location.pathname === item.path ||
+    (item.children?.some((c) => location.pathname.startsWith(c.path)));
+
+  // active 바는 모든 메뉴에서 제거 — 글자색만 진해짐
+  const open_ = () => { clearTimeout(timerRef.current); setOpen(true); };
+  const close_ = () => { timerRef.current = setTimeout(() => setOpen(false), 120); };
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [open]);
+
+  const handleClick      = () => { if (!hasDropdown) navigate(item.path); };
+  const handleChildClick = (child) => {
+    setOpen(false);
+    navigate(child.path, child.state ? { state: child.state } : undefined);
+  };
+
+  return (
+    <div
+      ref={ref}
+      className={styles.navItem}
+      onMouseEnter={open_}
+      onMouseLeave={close_}
+    >
+      <button
+        className={[
+          styles.linkBtn,
+          isActive ? styles.linkBtnActive : '',
+        ].filter(Boolean).join(' ')}
+        type="button"
+        onClick={handleClick}
+        aria-haspopup={hasDropdown ? 'true' : undefined}
+        aria-expanded={hasDropdown ? String(open) : undefined}
+      >
+        {item.label}
+        {hasDropdown && (
+          <span
+            className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`}
+            aria-hidden="true"
+          >›</span>
+        )}
+      </button>
+
+      {hasDropdown && (
+        <div
+          className={`${styles.dropdown} ${open ? styles.dropdownOpen : ''}`}
+          onMouseEnter={() => clearTimeout(timerRef.current)}
+          onMouseLeave={close_}
+          role="menu"
+        >
+          <div className={styles.dropdownCaret} aria-hidden="true" />
+          {item.children.map((child) => (
+            <button
+              key={child.path + (child.state?.tab || '')}
+              className={`${styles.dropdownItem} ${
+                location.pathname === child.path && !child.state ? styles.dropdownItemActive : ''
+              }`}
+              type="button"
+              role="menuitem"
+              onClick={() => handleChildClick(child)}
+            >
+              {child.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Header 본체 ──────────────────────────────────────────── */
 export default function Header() {
   const navigate = useNavigate();
   const { user, loading, logout } = useAuth();
 
   const goHome = useCallback(() => navigate('/'), [navigate]);
-
   const onKeyDownBrand = (e) => {
     if (e.key === 'Enter' || e.key === ' ') goHome();
   };
-
   const onClickLogout = useCallback(async () => {
-    try {
-      await logout();
-    } finally {
-      navigate('/', { replace: true });
-    }
+    try { await logout(); } finally { navigate('/', { replace: true }); }
   }, [logout, navigate]);
 
-  function normalizeRole(user) {
+  function normalizeRole(u) {
     const raw =
-      user?.userRole ??
-      user?.role ??
-      user?.userRl ??
-      user?.user_role ??
-      user?.authority ??
-      user?.authorities?.[0];
-
-    return String(raw ?? '')
-      .toLowerCase()
-      .replace('role_', '');
+      u?.userRole ?? u?.role ?? u?.userRl ?? u?.user_role ??
+      u?.authority ?? u?.authorities?.[0];
+    return String(raw ?? '').toLowerCase().replace('role_', '');
   }
 
-  const role = normalizeRole(user);
-  const isAdmin = role === 'admin';
+  const isAdmin = normalizeRole(user) === 'admin';
 
   return (
     <header className={styles.header}>
-      {/* ✅ 빛 효과 전용 레이어
-            - position: absolute로 header에 꽉 차게 깔림
-            - 이 div 안에서만 overflow: hidden → 빛이 header 밖으로 못 나감
-            - header 자체는 overflow: visible → 알림 드롭다운이 아래로 나올 수 있음 */}
-      <div className={styles.lightLayer} aria-hidden="true" />
-
       <div className={styles.inner}>
+
+        {/* 로고 */}
         <div
           className={styles.brand}
           onClick={goHome}
           onKeyDown={onKeyDownBrand}
           role="button"
           tabIndex={0}
+          aria-label="UNI PLACE 홈으로 이동"
         >
-          <img
-            className={styles.logoMark}
-            src={homeLogo}
-            alt="UNI PLACE logo"
-          />
+          <img className={styles.logoMark} src={homeLogo} alt="UNI PLACE logo" />
           <div className={styles.brandText}>
             <div className={styles.brandName}>UNI PLACE</div>
-            <div className={styles.brandSub}>Living as a Serivce</div>
+            <div className={styles.brandSub}>Living as a Service</div>
           </div>
         </div>
 
-        <nav className={styles.nav}>
-          <button
-            className={styles.linkBtn}
-            type="button"
-            onClick={() => navigate('/company_info')}
-          >
-            회사소개
-          </button>
-
-          <button
-            className={styles.linkBtn}
-            type="button"
-            onClick={() => navigate('/community')}
-          >
-            커뮤니티
-          </button>
-
-          <button
-            className={styles.linkBtn}
-            type="button"
-            onClick={() => navigate('/support')}
-          >
-            고객센터
-          </button>
-
-          <button
-            className={styles.linkBtn}
-            type="button"
-            onClick={() => navigate('/membership')}
-          >
-            방찾기
-          </button>
+        {/* 네비게이션 */}
+        <nav className={styles.nav} aria-label="메인 메뉴">
+          {NAV_ITEMS.map((item) => (
+            <NavItem key={item.path} item={item} />
+          ))}
         </nav>
 
+        {/* 우측 — 알림벨 → 마이페이지 아이콘 → 로그아웃/로그인 */}
         <div className={styles.icons}>
-          {loading ? null : user ? (
-            <>
-              <button
-                className={styles.iconBtn}
-                type="button"
-                aria-label="mypage"
-                onClick={() => navigate(isAdmin ? '/admin' : '/me')}
-              >
-                {isAdmin ? '관리자페이지' : '마이페이지'}
-              </button>
-              <button
-                className={styles.iconBtn}
-                type="button"
-                aria-label="logout"
-                onClick={onClickLogout}
-              >
-                로그아웃
-              </button>
-            </>
+
+          {/* 알림벨 — 로그인 상태일 때만 */}
+          {!loading && user && (
+            <div className={styles.bellWrap}>
+              <NotificationBell />
+            </div>
+          )}
+
+          {/* 마이페이지 / 관리자 아이콘 — 로그인 상태일 때만 */}
+          {!loading && user && (
+            <button
+              className={styles.iconCircle}
+              type="button"
+              onClick={() => navigate(isAdmin ? '/admin' : '/me')}
+              aria-label={isAdmin ? '관리자 페이지' : '마이페이지'}
+              title={isAdmin ? '관리자 페이지' : '마이페이지'}
+            >
+              {isAdmin ? <IconAdmin /> : <IconUser />}
+            </button>
+          )}
+
+          {/* 로그아웃(로그인 상태) / 로그인(비로그인) / placeholder(로딩중)
+              항상 같은 너비 버튼을 렌더해서 헤더 레이아웃 이동 방지 */}
+          {loading ? (
+            <div className={styles.iconPlaceholder} aria-hidden="true" />
+          ) : user ? (
+            <button
+              className={styles.logoutBtn}
+              type="button"
+              onClick={onClickLogout}
+            >
+              로그아웃
+            </button>
           ) : (
             <button
-              className={styles.iconBtn}
+              className={styles.loginBtn}
               type="button"
-              aria-label="login"
               onClick={() => navigate('/login')}
             >
               로그인
             </button>
           )}
 
-          {!loading && user && <NotificationBell />}
         </div>
       </div>
     </header>
