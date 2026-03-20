@@ -59,21 +59,28 @@ public class FaceAuthServiceImpl implements FaceAuthService {
     public void registerDescriptor(String userId, String descriptorJson) {
         validate128d(descriptorJson);
         String encrypted = aesEncrypt(descriptorJson);
+
+        // ── upsert: 이미 등록된 경우 UPDATE, 없으면 INSERT ─────────────────
+        // findByUserId → flush 후 확인하여 중복 키 방지
+        faceDescriptorRepository.flush();
         FaceDescriptor face = faceDescriptorRepository.findByUserId(userId).orElse(null);
         if (face == null) {
+            // 혹시 flush 후에도 없으면 신규 INSERT
             face = FaceDescriptor.builder()
                 .userId(userId)
                 .descriptor(toJsonArray(List.of(encrypted)))
                 .build();
+            faceDescriptorRepository.saveAndFlush(face);
         } else {
+            // 기존 데이터 UPDATE
             List<String> existing = fromJsonArray(face.getDescriptor());
             existing.add(encrypted);
             if (existing.size() > FaceDescriptor.MAX_VECTORS) {
                 existing = existing.subList(existing.size() - FaceDescriptor.MAX_VECTORS, existing.size());
             }
             face.updateDescriptor(toJsonArray(existing));
+            faceDescriptorRepository.saveAndFlush(face);
         }
-        faceDescriptorRepository.save(face);
         log.info("[FACE_REGISTER] userId={} vectors={}", userId, fromJsonArray(face.getDescriptor()).size());
     }
 
