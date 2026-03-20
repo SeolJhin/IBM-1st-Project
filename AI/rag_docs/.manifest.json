@@ -1,7 +1,7 @@
 {
-  "status": "ok",
+  "status": "error",
+  "reason": "MilvusException",
   "documents": 43,
-  "indexed": 43,
-  "fingerprint": "1a099757c61282ed69c0cbe2fd837c11d379a4f6cdfca82ca43a24035fc7d106",
-  "reindexed_at": "2026-03-20T05:53:13.595729Z"
+  "indexed": 0,
+  "fingerprint": "fd19dd5addb9b59a40817c28bec26b2db877a2fe7b47b0faa96d7a24c160d21b"
 }

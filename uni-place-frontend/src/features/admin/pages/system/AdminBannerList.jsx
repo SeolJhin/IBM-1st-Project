@@ -322,9 +322,11 @@ export default function AdminBannerList() {
     }
   };
 
-  const imageUrl = toApiImageUrl(
-    detail?.imageUrl || detail?.files?.[0]?.viewUrl || ''
-  );
+  const firstBannerFile = detail?.files?.[0];
+  const imageUrl =
+    firstBannerFile?.fileId != null
+      ? `/api/files/${firstBannerFile.fileId}/view`
+      : toApiImageUrl(detail?.imageUrl || firstBannerFile?.viewUrl || '');
 
   return (
     <div className={styles.mainInner}>

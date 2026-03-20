@@ -1,55 +1,74 @@
+/* ═══════════════════════════════════════════════════════════════
+   PageHeader.module.css  ·  UNI-PLACE  ·  Light Modern
+   VIVADE 스타일 — 흰 배경 + 검정 제목 + 골드 활성 탭
+   ═══════════════════════════════════════════════════════════════ */
+
 .pageHeader {
-  background-color: #fff;
-  border-bottom: 1px solid #e9ecef;
-  padding-top: 70px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #E8E5DF;
+  padding-top: 64px; /* 헤더 높이(64px)와 맞춤 */
 }
 
 .inner {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 28px 24px 0;
 }
 
 .title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
-  color: #111827;
+  /* 흰 배경 → 진한 검정 */
+  color: #111111;
   margin: 0 0 4px;
+  font-family: var(--font-display, 'DM Sans', sans-serif);
+  letter-spacing: -0.01em;
 }
 
 .subtitle {
-  font-size: 13.5px;
-  color: #6b7280;
+  font-size: 14px;
+  /* 서브도 충분히 진하게 — #6B6B6B 이상 */
+  color: #6B6B6B;
   font-weight: 400;
   margin: 0 0 20px;
+  line-height: 1.55;
 }
 
+/* ── 탭 영역 ──────────────────────────────────────────────── */
 .tabs {
   display: flex;
   gap: 0;
+  /* 하단 구분선 겸 탭 컨테이너 */
 }
 
 .tabBase {
-  padding: 10px 20px;
+  padding: 10px 18px;
   font-size: 13.5px;
   font-weight: 600;
   background: none;
   border: none;
   cursor: pointer;
+  /* 탭 하단에 2.5px 라인 (기본은 투명) */
   border-bottom: 2.5px solid transparent;
-  transition: all 0.15s;
-  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  /* 흰 배경 → 기본 탭 텍스트도 충분히 진하게 */
+  color: #555555;
+  margin-bottom: -1px; /* 컨테이너 border-bottom과 겹치도록 */
 }
 
+/* 비활성 기본 탭 */
 .tabDefault {
-  color: #6b7280;
+  color: #555555;
 }
 
+/* 활성 탭 — 골드 포인트 */
 .tabActive {
-  color: #1a4fd6;
-  border-bottom-color: #1a4fd6;
+  color: var(--primary, #C9962F);
+  border-bottom-color: var(--primary, #C9962F);
 }
 
+/* 호버 탭 */
 .tabHover {
-  color: #1a4fd6;
+  color: #111111;
 }
