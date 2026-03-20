@@ -1,0 +1,105 @@
+/* SnsPage.module.css */
+.page { background: #FDFCF9; min-height: 100vh; }
+
+.main { padding-top: 64px; }
+
+.hero {
+  padding: 80px 24px 96px;
+  position: relative;
+  overflow: hidden;
+}
+
+.heroInner {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  background: rgba(255,255,255,0.18);
+  margin-bottom: 24px;
+}
+
+.heroTitle {
+  margin: 0 0 12px;
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 800;
+  color: #ffffff;
+  font-family: var(--font-display, 'DM Sans', sans-serif);
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+.heroDesc {
+  margin: 0 0 32px;
+  font-size: 15px;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.7;
+}
+
+.ctaBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 32px;
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.6);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.ctaBtn:hover {
+  background: rgba(255,255,255,0.28);
+  border-color: rgba(255,255,255,0.9);
+  transform: translateY(-2px);
+  color: #ffffff;
+}
+
+/* 안내 */
+.notice {
+  background: #ffffff;
+  padding: 56px 24px;
+  border-top: 1px solid #ECEAE5;
+}
+
+.noticeInner {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.noticeText {
+  font-size: 15px;
+  color: #555555;
+  line-height: 1.8;
+  margin: 0 0 20px;
+}
+
+.noticeLinks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.noticeLink {
+  font-size: 13px;
+  color: var(--primary, #B8945A);
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.noticeLink:hover { opacity: 0.7; }
+
+.noticeDot { color: #CCCCCC; font-size: 13px; }

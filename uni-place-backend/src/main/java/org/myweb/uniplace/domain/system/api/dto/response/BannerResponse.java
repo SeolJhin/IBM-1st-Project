@@ -30,7 +30,12 @@ public class BannerResponse {
         // FileResponse.viewUrl 이 이미 환경에 맞는 URL을 담고 있음
         String imageUrl = null;
         if (files != null && !files.isEmpty() && files.get(0) != null) {
-            imageUrl = files.get(0).getViewUrl();
+            Integer fileId = files.get(0).getFileId();
+            if (fileId != null) {
+                imageUrl = "/files/" + fileId + "/view";
+            } else {
+                imageUrl = files.get(0).getViewUrl();
+            }
         }
 
         return BannerResponse.builder()

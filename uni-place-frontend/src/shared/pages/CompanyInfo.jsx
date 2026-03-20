@@ -3,8 +3,8 @@ import Footer from "../../app/layouts/components/Footer";
 import PageHeader from "../components/PageHeader/PageHeader";
 import styles from "./CompanyInfo.module.css";
 
+// ── "홈" 버튼 제거 ────────────────────────────────────────
 const pageCategories = [
-  { label: "홈", path: "/" },
   { label: "회사소개", path: "/company_info" },
   { label: "뉴스", path: "/news" },
   { label: "입주 가이드", path: "/guide" },
