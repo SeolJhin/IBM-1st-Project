@@ -1,12 +1,11 @@
-# AI/app/integrations/llm_client_groq.py
+# AI/app/integrations/llm_client_gemini.py
 import logging
+import random
 
 from openai import OpenAI
 
 from app.config.settings import settings
 from app.schemas.ai_request import AiRequest
-
-logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """당신은 UNI PLACE의 AI 어시스턴트입니다.
 항상 친절하고 자연스러운 한국어로 답변하세요.
@@ -17,6 +16,11 @@ UNI PLACE는 주거 플랫폼으로 계약, 공용공간, 결제, 룸서비스, 
 - 사용자가 "유니플레이스B", "유니플레이스 비", "B빌딩" 등 다양하게 표기해도 동일한 건물을 의미할 수 있습니다.
 - [전체 등록 빌딩명] 목록이 있으면 그 목록에서 가장 비슷한 건물명을 찾아 답변하세요.
 - available_building_names에 없는 건물 정보는 "해당 건물 정보를 찾을 수 없습니다"라고 안내하세요.
+
+[RAG 답변 규칙 — 반드시 준수]
+- [참고 정보]가 있으면 반드시 그 내용만을 근거로 답변하세요.
+- [참고 정보 없음]이 표시된 경우, 입주 규칙·정책·금액 등 구체적인 정보를 절대 임의로 만들어내지 마세요.
+- [참고 정보 없음] 시 "현재 해당 정보를 찾을 수 없습니다. 정확한 안내는 고객센터(앱 내 QnA)를 이용해 주세요."라고 안내하세요.
 
 [응답 규칙]
 1. 이전 대화 내용을 반드시 기억하고 맥락에 맞게 이어서 답변하세요.
@@ -58,11 +62,25 @@ LIST_INTENTS = {
     "MY_RESERVATION", "MY_TOUR", "MY_COMPLAIN", "REVIEW_INFO",
 }
 
+logger = logging.getLogger(__name__)
 
-def chat_with_groq(req: AiRequest, docs: list[str]) -> str:
-    api_key = settings.groq_api_key
+# 키 로테이션: RPM 한도 분산용
+_KEY_ATTRS = ["gemini_api_key", "gemini_api_key_2", "gemini_api_key_3"]
+
+
+def _pick_api_key() -> str:
+    """설정된 키들 중 하나를 랜덤 선택 (로테이션)."""
+    keys = [getattr(settings, attr, "") for attr in _KEY_ATTRS]
+    available = [k for k in keys if k and k.strip()]
+    if not available:
+        return ""
+    return random.choice(available)
+
+
+def chat_with_gemini(req: AiRequest, docs: list[str]) -> str:
+    api_key = _pick_api_key()
     if not api_key:
-        logger.warning("GROQ_API_KEY 미설정")
+        logger.warning("GEMINI_API_KEY 미설정")
         return ""
 
     question = (req.prompt or "").strip()
@@ -72,7 +90,7 @@ def chat_with_groq(req: AiRequest, docs: list[str]) -> str:
     intent = req.intent or "GENERAL_QA"
     intent_guide = INTENT_GUIDE.get(intent, "사용자 질문에 한국어로 답변하세요.")
 
-    # ── items 블록 (목록형 intent는 docs에 이미 포함) ─────────────
+    # ── items 블록 ────────────────────────────────────────────────
     items_block = ""
     if intent not in LIST_INTENTS:
         items = req.get_slot("items")
@@ -90,12 +108,13 @@ def chat_with_groq(req: AiRequest, docs: list[str]) -> str:
         limit = len(docs) if intent in LIST_INTENTS else 5
         context_block = "\n[참고 정보 — 아래 내용을 빠짐없이 사용하세요]\n" + \
                         "\n".join(f"- {doc}" for doc in docs[:limit])
+    else:
+        context_block = "\n[참고 정보 없음 — 임의로 정보를 생성하지 마세요]\n"
 
-    # ── 대화 히스토리 (멀티턴 맥락 유지) ─────────────────────────
+    # ── 대화 히스토리 ─────────────────────────────────────────────
     history = req.get_history()
     history_messages = []
     if history:
-        # 최근 8개 대화를 LLM 메시지로 변환
         for msg in history[-8:]:
             role    = msg.get("role", "")
             content = (msg.get("content") or "").strip()
@@ -111,7 +130,6 @@ def chat_with_groq(req: AiRequest, docs: list[str]) -> str:
         f"[질문]\n{question}"
     )
 
-    # ── 메시지 구성: system → history → user ─────────────────────
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages.extend(history_messages)
     messages.append({"role": "user", "content": user_content})
@@ -119,11 +137,11 @@ def chat_with_groq(req: AiRequest, docs: list[str]) -> str:
     try:
         client = OpenAI(
             api_key=api_key,
-            base_url=settings.groq_base_url,
-            timeout=20.0,
+            base_url=settings.gemini_base_url,
+            timeout=30.0,
         )
         response = client.chat.completions.create(
-            model=settings.groq_model,
+            model=settings.gemini_model,
             temperature=0.4,
             max_tokens=1024,
             messages=messages,
@@ -133,5 +151,5 @@ def chat_with_groq(req: AiRequest, docs: list[str]) -> str:
             return content.strip()
         return ""
     except Exception as exc:
-        logger.warning("Groq 호출 실패: %s", exc.__class__.__name__)
+        logger.warning("Gemini 호출 실패: %s", exc.__class__.__name__)
         return ""
