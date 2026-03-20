@@ -101,6 +101,14 @@
   white-space: nowrap;
 }
 
+.easyLogoImg {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+
 .logoToss {
   color: #3b82f6;
   font-size: 15px;
