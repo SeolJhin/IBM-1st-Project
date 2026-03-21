@@ -3,6 +3,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../../app/http/axiosInstance';
+import ErrorActionNotice from '../../../shared/components/ErrorActionNotice/ErrorActionNotice';
 import styles from './AdminChatBot.module.css';
 import { QUICK_QUESTIONS } from '../config/chatConfig';
 
@@ -599,6 +600,7 @@ export default function AdminChatBot({ user }) {
   const [loading, setLoading] = useState(false);
   const [loadingLabel, setLoadingLabel] = useState('');
   const [error, setError] = useState(null);
+  const [retryPrompt, setRetryPrompt] = useState('');
   const [hasUnread, setHasUnread] = useState(false);
 
   const bottomRef = useRef(null);
@@ -671,6 +673,7 @@ export default function AdminChatBot({ user }) {
       isSendingRef.current = true;
       setInput('');
       setError(null);
+      setRetryPrompt(trimmed);
       setMessages((p) => [
         ...p,
         { role: 'user', content: trimmed, ts: Date.now() },
@@ -694,8 +697,9 @@ export default function AdminChatBot({ user }) {
             metadata: result.metadata,
           },
         ]);
+        setRetryPrompt('');
       } catch (e) {
-        setError(e?.message || '오류가 발생했습니다.');
+        setError(e);
       } finally {
         setLoading(false);
         setLoadingLabel('');
@@ -837,7 +841,23 @@ export default function AdminChatBot({ user }) {
               ))
             )}
             {loading && <TypingIndicator label={loadingLabel} />}
-            {error && <div className={styles.errorMsg}>⚠️ {error}</div>}
+            {error && (
+              <ErrorActionNotice
+                error={error}
+                fallback="관리자 AI 요청 처리 중 오류가 발생했습니다."
+                onRetry={
+                  retryPrompt
+                    ? () => {
+                        setError(null);
+                        sendMessage(retryPrompt);
+                      }
+                    : undefined
+                }
+                compact
+                variant="dark"
+                className={styles.errorNotice}
+              />
+            )}
             <div ref={bottomRef} />
           </div>
 
