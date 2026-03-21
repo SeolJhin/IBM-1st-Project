@@ -131,6 +131,10 @@
   font-size: 13px;
 }
 
+.errorNotice {
+  margin-top: 4px;
+}
+
 .notice {
   margin-top: 4px;
   padding: 10px 12px;
