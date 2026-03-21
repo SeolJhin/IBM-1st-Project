@@ -17,3 +17,23 @@ kubectl -n uniplace rollout status deployment/frontend
 kubectl -n uniplace get pods -l app=ai -w
 kubectl -n uniplace get pods -l app=backend -w
 kubectl -n uniplace get pods -l app=frontend -w
+
+
+
+# 1) aws.env 로드
+Get-Content "uni-place-frontend/aws.env" | ForEach-Object {
+  if ($_ -match '^\s*([^#][^=]*)=(.*)$') {
+    Set-Item -Path ("Env:" + $matches[1].Trim()) -Value $matches[2].Trim()
+  }
+}
+
+# 2) 빌드
+npm --prefix uni-place-frontend ci
+npm --prefix uni-place-frontend run build
+
+# 3) S3 업로드
+aws s3 sync .\uni-place-frontend\dist s3://$env:FRONTEND_S3_BUCKET --delete
+
+# 4) index.html 캐시 무효화 성격으로 덮어쓰기 + CloudFront invalidation
+aws s3 cp .\uni-place-frontend\dist\index.html s3://$env:FRONTEND_S3_BUCKET/index.html --cache-control "no-cache,no-store,must-revalidate" --content-type "text/html; charset=utf-8"
+aws cloudfront create-invalidation --distribution-id $env:FRONTEND_CLOUDFRONT_DISTRIBUTION_ID --paths "/" "/index.html"

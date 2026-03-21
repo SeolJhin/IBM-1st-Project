@@ -1,0 +1,61 @@
+.box {
+  border-radius: 12px;
+  border: 1px solid rgba(215, 104, 69, 0.35);
+  background: rgba(255, 224, 185, 0.45);
+  color: #0b0e12;
+  padding: 12px;
+}
+
+.dark {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}
+
+.compact {
+  padding: 10px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.message {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.actionBtn {
+  border-radius: 999px;
+  border: 1px solid rgba(154, 140, 112, 0.45);
+  background: #ffffff;
+  color: #48535f;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.actionBtn:hover {
+  background: #fdf7ec;
+}
+
+.dark .actionBtn {
+  border-color: rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.65);
+  color: #cbd5e1;
+}
+
+.dark .actionBtn:hover {
+  background: rgba(30, 41, 59, 0.85);
+}

@@ -302,21 +302,30 @@ def _fetch_molit(address: str, rent_type: str, size_sqm, room_type: str = "all")
         "tag_dong": "umdNm", "tag_jibun": "jibun",
         "tag_name": "mhouseNm", "label": "연립다세대",
     }
+    # 단독/다가구 — 원룸·고시원·다가구주택 거래 포함, 소형 방 데이터가 많음
+    # 활용신청: https://www.data.go.kr/data/15126472/openapi.do
+    _EP_SH = {
+        "url_path": "RTMSDataSvcSHRent/getRTMSDataSvcSHRent",
+        "tag_deposit": "deposit", "tag_rent": "monthlyRent",
+        "tag_area": "excluUseAr", "tag_floor": "floor",
+        "tag_dong": "umdNm", "tag_jibun": "jibun",
+        "tag_name": "umdNm", "label": "단독다가구",
+    }
 
     # room_type 기반 유사 건물 유형 선택
-    # one_room/loft → 오피스텔+연립 (소형 위주, 아파트 제외)
+    # one_room/loft → 단독다가구+오피스텔+연립 (소형 위주, 아파트 제외)
     # two_room/three_room → 아파트+오피스텔
-    # share → 연립+오피스텔
+    # share → 단독다가구+연립+오피스텔
     # all → 전체
     _room_type_ep_map = {
-        "one_room":   [_EP_OFFI, _EP_RH],
-        "loft":       [_EP_OFFI, _EP_RH],
+        "one_room":   [_EP_SH, _EP_OFFI, _EP_RH],
+        "loft":       [_EP_SH, _EP_OFFI, _EP_RH],
         "two_room":   [_EP_APT, _EP_OFFI],
         "three_room": [_EP_APT],
-        "share":      [_EP_RH, _EP_OFFI],
-        "all":        [_EP_OFFI, _EP_APT, _EP_RH],
+        "share":      [_EP_SH, _EP_RH, _EP_OFFI],
+        "all":        [_EP_SH, _EP_OFFI, _EP_APT, _EP_RH],
     }
-    endpoints = _room_type_ep_map.get(room_type, [_EP_OFFI, _EP_APT, _EP_RH])
+    endpoints = _room_type_ep_map.get(room_type, [_EP_SH, _EP_OFFI, _EP_APT, _EP_RH])
     logger.info("[NearbyTool/국토부] room_type=%s → 엔드포인트: %s", room_type, [e["label"] for e in endpoints])
 
     listings: list[dict] = []
@@ -557,14 +566,36 @@ def _compute_stats(
             sqm_price = _trimmed_mean(area_prices)
             method2_opt = round(sqm_price * size_sqm * _SHARE_AREA_COEFF)
 
+    # 10㎡ 이하 극소형: method2(㎡단가×면적)를 주 추천가로 사용
+    # 이유: 수집된 데이터가 더 넓은 면적 매물이라 절대가(method1)는 왜곡됨
+    #       ㎡당 단가로 환산하면 면적 차이를 보정할 수 있어 정확도가 높음
+    is_small_room = size_sqm and size_sqm <= 10
+
     if method1_opt and method2_opt:
-        opt = round((method1_opt + method2_opt) / 2)
+        if is_small_room:
+            # 소형: method2 주(70%) + method1 보조(30%)
+            opt = round(method2_opt * 0.7 + method1_opt * 0.3)
+            note = f"㎡단가방식({method2_opt}만)×0.7 + 시세할인({method1_opt}만)×0.3 [소형방 보정]"
+        else:
+            opt = round((method1_opt + method2_opt) / 2)
+            note = f"방법1({method1_opt}만)+방법2({method2_opt}만) 평균"
         share_detail = {
             "method1_opt": method1_opt,
             "method2_opt": method2_opt,
             "discount_rate": discount,
             "room_type": room_type,
-            "note": f"방법1({method1_opt}만)+방법2({method2_opt}만) 평균",
+            "is_small_room": is_small_room,
+            "note": note,
+        }
+    elif method2_opt and is_small_room:
+        # 소형이고 method2만 있으면 method2 단독 사용
+        opt = method2_opt
+        share_detail = {
+            "method2_opt": method2_opt,
+            "discount_rate": discount,
+            "room_type": room_type,
+            "is_small_room": True,
+            "note": f"㎡단가방식({method2_opt}만) 단독 적용 [소형방]",
         }
     elif method1_opt:
         opt = method1_opt

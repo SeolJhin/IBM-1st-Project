@@ -188,8 +188,9 @@
 .roomName {
   margin: 0;
   font-size: 24px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.02em;
+  font-family: var(--font-body);
 }
 
 .roomStatus {
@@ -222,8 +223,9 @@
 }
 .ratingVal {
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 700;
   color: var(--text);
+  font-family: var(--font-body);
 }
 .ratingCount {
   font-size: 13px;
@@ -279,7 +281,8 @@
 }
 .priceMain strong {
   font-size: 26px;
-  font-weight: 900;
+  font-weight: 700;
+  font-family: var(--font-body);
 }
 .priceSub {
   font-size: 12px;
@@ -340,10 +343,11 @@
 /* ── 섹션 공통 ── */
 .sectionTitle {
   font-size: 20px;
-  font-weight: 900;
+  font-weight: 700;
   margin: 0 0 16px;
   color: var(--text);
   letter-spacing: -0.01em;
+  font-family: var(--font-body);
 }
 
 /* ── 방 설명 ── */
@@ -384,7 +388,8 @@
 }
 .reviewSummaryVal {
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
+  font-family: var(--font-body);
 }
 .reviewSummaryCount {
   font-size: 13px;
@@ -581,7 +586,7 @@
   border: none;
   border-radius: 12px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;

@@ -1,5 +1,5 @@
 // features/property/pages/RoomList.jsx
-import { useState, useEffect, useCallback, useReducer } from 'react';
+import { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
@@ -66,6 +66,154 @@ function spaceReducer(state, action) {
     default:
       return state;
   }
+}
+
+const RECENT_SEARCH_KEY = 'uniplace_recent_room_searches_v1';
+const MAX_RECENT_SEARCHES = 8;
+const BUILDING_TYPO_ALIASES = {
+  유니플레이스: 'Uniplace',
+  유니플레이스a: 'Uniplace A',
+  유니플레이스b: 'Uniplace B',
+  유니플레이스c: 'Uniplace C',
+  유니플a: 'Uniplace A',
+  유니플b: 'Uniplace B',
+  유니플c: 'Uniplace C',
+  uniplacea: 'Uniplace A',
+  uniplaceb: 'Uniplace B',
+  uniplacec: 'Uniplace C',
+};
+
+function normalizeSearchText(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[^0-9a-z가-힣]/gi, '');
+}
+
+function toRecentSearchLabel(item) {
+  const building = String(item?.buildingNm || '').trim();
+  const room = String(item?.roomNo || '').trim();
+  if (building && room) return `${building} ${room}호`;
+  if (building) return building;
+  if (room) return `${room}호`;
+  return '최근 검색';
+}
+
+function levenshteinDistance(a, b) {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+
+  const dp = Array.from({ length: a.length + 1 }, () =>
+    new Array(b.length + 1).fill(0)
+  );
+  for (let i = 0; i <= a.length; i += 1) dp[i][0] = i;
+  for (let j = 0; j <= b.length; j += 1) dp[0][j] = j;
+
+  for (let i = 1; i <= a.length; i += 1) {
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return dp[a.length][b.length];
+}
+
+function resolveBuildingName(inputValue, buildings = []) {
+  const raw = String(inputValue || '').trim();
+  if (!raw) return { building: null, correctedFrom: '' };
+
+  const normalizedInput = normalizeSearchText(raw);
+  if (!normalizedInput) return { building: null, correctedFrom: '' };
+
+  const exact = buildings.find(
+    (b) => normalizeSearchText(b?.buildingNm) === normalizedInput
+  );
+  if (exact) return { building: exact, correctedFrom: '' };
+
+  const aliasTarget = BUILDING_TYPO_ALIASES[normalizedInput];
+  if (aliasTarget) {
+    const aliasNormalized = normalizeSearchText(aliasTarget);
+    const aliasMatch =
+      buildings.find(
+        (b) => normalizeSearchText(b?.buildingNm) === aliasNormalized
+      ) ||
+      buildings.find((b) =>
+        normalizeSearchText(b?.buildingNm).includes(aliasNormalized)
+      );
+    if (aliasMatch) return { building: aliasMatch, correctedFrom: raw };
+  }
+
+  const includeMatch = buildings.find((b) => {
+    const name = normalizeSearchText(b?.buildingNm);
+    return name.includes(normalizedInput) || normalizedInput.includes(name);
+  });
+  if (includeMatch) return { building: includeMatch, correctedFrom: '' };
+
+  let best = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  buildings.forEach((building) => {
+    const name = normalizeSearchText(building?.buildingNm);
+    if (!name) return;
+    const distance = levenshteinDistance(normalizedInput, name);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = building;
+    }
+  });
+
+  const threshold =
+    normalizedInput.length <= 4 ? 1 : normalizedInput.length <= 9 ? 2 : 3;
+  if (best && bestDistance <= threshold) {
+    return { building: best, correctedFrom: raw };
+  }
+
+  return { building: null, correctedFrom: '' };
+}
+
+function loadRecentSearches() {
+  try {
+    const raw = localStorage.getItem(RECENT_SEARCH_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentSearches(items) {
+  try {
+    localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(items));
+  } catch {
+    // ignore storage quota / private mode failures
+  }
+}
+
+function appendRecentSearch(prev, next) {
+  const buildingNm = String(next?.buildingNm || '').trim();
+  const roomNo = String(next?.roomNo || '').trim();
+  if (!buildingNm && !roomNo) return prev;
+
+  const nextBuilding = normalizeSearchText(buildingNm);
+  const nextRoom = normalizeSearchText(roomNo);
+  const deduped = (Array.isArray(prev) ? prev : []).filter((item) => {
+    return !(
+      normalizeSearchText(item?.buildingNm) === nextBuilding &&
+      normalizeSearchText(item?.roomNo) === nextRoom
+    );
+  });
+
+  const merged = [{ buildingNm, roomNo, at: Date.now() }, ...deduped].slice(
+    0,
+    MAX_RECENT_SEARCHES
+  );
+  return merged;
 }
 
 // ─── 별점 ────────────────────────────────────────────────────
@@ -262,8 +410,18 @@ function getBranchLabel(building) {
 }
 
 // ─── 방 필터 패널 ─────────────────────────────────────────────
-function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
+function FilterPanel({
+  query,
+  dispatch,
+  buildings,
+  buildingLoading,
+  roomNoCandidates = [],
+  recentSearches = [],
+  onApplyRecentSearch,
+  onRecordRecentSearch,
+}) {
   const [local, setLocal] = useState({
+    buildingNm: '',
     minRentPrice: '',
     maxRentPrice: '',
     minDeposit: '',
@@ -273,8 +431,11 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
     roomNo: '',
     floor: '',
   });
+  const [buildingCorrection, setBuildingCorrection] = useState(null);
+
   useEffect(() => {
     setLocal({
+      buildingNm: query.buildingNm ?? '',
       minRentPrice: query.minRentPrice ?? '',
       maxRentPrice: query.maxRentPrice ?? '',
       minDeposit: query.minDeposit ?? '',
@@ -285,6 +446,7 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
       floor: query.floor ?? '',
     });
   }, [
+    query.buildingNm,
     query.minRentPrice,
     query.maxRentPrice,
     query.minDeposit,
@@ -294,6 +456,24 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
     query.roomNo,
     query.floor,
   ]);
+
+  const buildingNameOptions = useMemo(() => {
+    const unique = new Set();
+    buildings.forEach((b) => {
+      const name = String(b?.buildingNm || '').trim();
+      if (name) unique.add(name);
+    });
+    return [...unique];
+  }, [buildings]);
+
+  const filteredRoomNoCandidates = useMemo(() => {
+    const keyword = normalizeSearchText(local.roomNo);
+    const source = Array.isArray(roomNoCandidates) ? roomNoCandidates : [];
+    if (!keyword) return source.slice(0, 30);
+    return source
+      .filter((value) => normalizeSearchText(value).includes(keyword))
+      .slice(0, 30);
+  }, [local.roomNo, roomNoCandidates]);
 
   const sel = (key) => (e) =>
     dispatch({
@@ -312,6 +492,71 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
   const kNum = (key) => (e) => {
     if (e.key === 'Enter') cNum(key)();
   };
+
+  const recordRecent = useCallback(
+    (nextBuildingNm, nextRoomNo) => {
+      if (typeof onRecordRecentSearch !== 'function') return;
+      onRecordRecentSearch({
+        buildingNm: String(nextBuildingNm || '').trim(),
+        roomNo: String(nextRoomNo || '').trim(),
+      });
+    },
+    [onRecordRecentSearch]
+  );
+
+  const applyBuildingFilter = useCallback(
+    (rawInput) => {
+      const input = String(rawInput ?? local.buildingNm ?? '').trim();
+      if (!input) {
+        setBuildingCorrection(null);
+        dispatch({
+          type: 'SET_FILTER',
+          payload: { buildingNm: undefined, buildingId: undefined },
+        });
+        recordRecent('', local.roomNo);
+        return;
+      }
+
+      const { building, correctedFrom } = resolveBuildingName(input, buildings);
+      const nextBuildingNm = building?.buildingNm || input;
+
+      setLocal((prev) => ({ ...prev, buildingNm: nextBuildingNm }));
+      dispatch({
+        type: 'SET_FILTER',
+        payload: {
+          buildingNm: nextBuildingNm,
+          buildingId: building?.buildingId,
+        },
+      });
+
+      if (building && correctedFrom) {
+        setBuildingCorrection(
+          `'${correctedFrom}' → '${nextBuildingNm}'로 보정됨`
+        );
+      } else if (!building && input) {
+        setBuildingCorrection(
+          `'${input}'과 일치하는 건물이 없어 입력값으로 검색`
+        );
+      } else {
+        setBuildingCorrection(null);
+      }
+
+      recordRecent(nextBuildingNm, local.roomNo);
+    },
+    [buildings, dispatch, local.buildingNm, local.roomNo, recordRecent]
+  );
+
+  const applyRoomNoFilter = useCallback(
+    (rawInput) => {
+      const roomNo = String(rawInput ?? local.roomNo ?? '').trim();
+      dispatch({
+        type: 'SET_FILTER',
+        payload: { roomNo: roomNo || undefined },
+      });
+      recordRecent(local.buildingNm || query.buildingNm, roomNo);
+    },
+    [dispatch, local.buildingNm, local.roomNo, query.buildingNm, recordRecent]
+  );
 
   return (
     <aside className={styles.filterPanel}>
@@ -334,23 +579,79 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
             건물 목록 로딩 중...
           </p>
         ) : (
-          <select
-            className={styles.filterSelect}
-            value={query.buildingNm || ''}
-            onChange={(e) => {
-              dispatch({
-                type: 'SET_FILTER',
-                payload: { buildingNm: e.target.value || undefined },
-              });
-            }}
-          >
-            <option value="">전체 건물</option>
-            {buildings.map((b) => (
-              <option key={b.buildingId} value={b.buildingNm}>
-                {getBranchLabel(b)}
-              </option>
-            ))}
-          </select>
+          <>
+            <div className={styles.buildingSearchRow}>
+              <input
+                className={styles.filterInput}
+                type="text"
+                list="building-name-options"
+                placeholder="건물명 입력 (예: Uniplace A, 유니플A)"
+                value={local.buildingNm}
+                onChange={(e) => {
+                  setBuildingCorrection(null);
+                  setLocal((prev) => ({ ...prev, buildingNm: e.target.value }));
+                }}
+                onBlur={() => applyBuildingFilter(local.buildingNm)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') applyBuildingFilter(local.buildingNm);
+                }}
+              />
+              <button
+                type="button"
+                className={styles.searchApplyBtn}
+                onClick={() => applyBuildingFilter(local.buildingNm)}
+              >
+                적용
+              </button>
+            </div>
+            <datalist id="building-name-options">
+              {buildingNameOptions.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+            {buildingCorrection ? (
+              <p className={styles.searchAssist}>{buildingCorrection}</p>
+            ) : null}
+            {recentSearches.length > 0 ? (
+              <div className={styles.recentSearchWrap}>
+                <div className={styles.recentSearchLabel}>최근 검색어</div>
+                <div className={styles.recentSearchList}>
+                  {recentSearches.map((item, idx) => (
+                    <button
+                      key={`${item?.buildingNm || ''}-${item?.roomNo || ''}-${idx}`}
+                      type="button"
+                      className={styles.recentSearchChip}
+                      onClick={() => {
+                        if (typeof onApplyRecentSearch === 'function') {
+                          onApplyRecentSearch(item);
+                        }
+                      }}
+                    >
+                      {toRecentSearchLabel(item)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <select
+              className={styles.filterSelect}
+              style={{ display: 'none' }}
+              value={query.buildingNm || ''}
+              onChange={(e) => {
+                dispatch({
+                  type: 'SET_FILTER',
+                  payload: { buildingNm: e.target.value || undefined },
+                });
+              }}
+            >
+              <option value="">전체 건물</option>
+              {buildings.map((b) => (
+                <option key={b.buildingId} value={b.buildingNm}>
+                  {getBranchLabel(b)}
+                </option>
+              ))}
+            </select>
+          </>
         )}
       </section>
 
@@ -394,25 +695,22 @@ function FilterPanel({ query, dispatch, buildings, buildingLoading }) {
             <input
               className={styles.filterInput}
               type="text"
+              list="room-no-options"
               placeholder="예) 101"
               value={local.roomNo}
               onChange={(e) =>
                 setLocal((p) => ({ ...p, roomNo: e.target.value }))
               }
-              onBlur={() =>
-                dispatch({
-                  type: 'SET_FILTER',
-                  payload: { roomNo: local.roomNo.trim() || undefined },
-                })
-              }
+              onBlur={() => applyRoomNoFilter(local.roomNo)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter')
-                  dispatch({
-                    type: 'SET_FILTER',
-                    payload: { roomNo: local.roomNo.trim() || undefined },
-                  });
+                if (e.key === 'Enter') applyRoomNoFilter(local.roomNo);
               }}
             />
+            <datalist id="room-no-options">
+              {filteredRoomNoCandidates.map((roomNo) => (
+                <option key={roomNo} value={roomNo} />
+              ))}
+            </datalist>
           </div>
           <div className={styles.searchField}>
             <span className={styles.searchFieldLabel}>층</span>
@@ -730,6 +1028,42 @@ export default function RoomList() {
   const [buildings, setBldgs] = useState([]);
   const [bldgLoading, setBL] = useState(false);
   const [bldgLoaded, setBldgLoaded] = useState(false);
+  const [recentSearches, setRecentSearches] = useState(() =>
+    loadRecentSearches()
+  );
+
+  const roomNoCandidates = useMemo(() => {
+    const fromRecent = recentSearches
+      .map((item) => String(item?.roomNo || '').trim())
+      .filter(Boolean);
+    const fromRooms = rooms
+      .map((room) => String(room?.roomNo || '').trim())
+      .filter(Boolean);
+    return [...new Set([...fromRecent, ...fromRooms])];
+  }, [recentSearches, rooms]);
+
+  const onRecordRecentSearch = useCallback((next) => {
+    setRecentSearches((prev) => {
+      const updated = appendRecentSearch(prev, next);
+      saveRecentSearches(updated);
+      return updated;
+    });
+  }, []);
+
+  const onApplyRecentSearch = useCallback(
+    (item) => {
+      const buildingNm = String(item?.buildingNm || '').trim();
+      const roomNo = String(item?.roomNo || '').trim();
+      dispatch({
+        type: 'SET_FILTER',
+        payload: {
+          buildingNm: buildingNm || undefined,
+          roomNo: roomNo || undefined,
+        },
+      });
+    },
+    [dispatch]
+  );
 
   /* ── 방 fetch ── */
   const fetchRooms = useCallback(async (q) => {
@@ -758,7 +1092,7 @@ export default function RoomList() {
         })
       );
       const sorted =
-        query.sort === '_rating'
+        q.sort === '_rating'
           ? [...enriched].sort((a, b) => (b._rating ?? 0) - (a._rating ?? 0))
           : enriched;
       setRooms(sorted);
@@ -930,6 +1264,10 @@ export default function RoomList() {
             dispatch={dispatch}
             buildings={buildings}
             buildingLoading={bldgLoading}
+            roomNoCandidates={roomNoCandidates}
+            recentSearches={recentSearches}
+            onApplyRecentSearch={onApplyRecentSearch}
+            onRecordRecentSearch={onRecordRecentSearch}
           />
         ) : activeTab === 'spaces' ? (
           <SpaceFilterPanel
@@ -1020,9 +1358,16 @@ export default function RoomList() {
                   <select
                     className={styles.sortSelect}
                     value={query.sort}
-                    onChange={(e) =>
-                      dispatch({ type: 'SET_SORT', payload: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // 낮은순 정렬은 ASC, 최신순/별점순은 DESC
+                      const direct =
+                        val === 'roomId' || val === '_rating' ? 'DESC' : 'ASC';
+                      dispatch({
+                        type: 'SET_FILTER',
+                        payload: { sort: val, direct },
+                      });
+                    }}
                   >
                     <option value="roomId">최신순</option>
                     <option value="rentPrice">월세 낮은순</option>

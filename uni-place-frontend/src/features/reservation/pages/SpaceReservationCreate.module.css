@@ -65,9 +65,10 @@
   flex: 1;
   margin: 0;
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
   color: #3a2e20;
   letter-spacing: -0.3px;
+  font-family: var(--font-body);
 }
 
 .listLink {
@@ -119,7 +120,7 @@
 .sectionTitle {
   margin: 0;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   color: #3a2e20;
   display: flex;
   align-items: center;
@@ -246,7 +247,7 @@
 .summaryTitle {
   margin: 0 0 14px;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
   color: #ba8037;
   display: flex;
   align-items: center;
@@ -294,7 +295,7 @@
   border: none;
   color: #fff;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
   padding: 12px 32px;
   border-radius: 10px;
   cursor: pointer;

@@ -1,0 +1,382 @@
+/* ═══════════════════════════════════════════════════════════
+   Company.module.css — UNI-PLACE 회사소개
+   Dark Gold Editorial × Instagram Grid
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmerGold {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── 페이지 ─────────────────────────────────────────── */
+.page {
+  min-height: 100vh;
+  background: #080808;
+  color: #fff;
+}
+
+/* ── 히어로 ─────────────────────────────────────────── */
+.pageHero {
+  padding-top: 64px;
+  background: #080808;
+  border-bottom: 1px solid #1c1c1c;
+  position: relative;
+  overflow: hidden;
+}
+
+.heroInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 24px 56px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.heroLabel {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  color: #B8945A;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #B8945A 0%, #e8c87a 45%, #B8945A 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmerGold 3s linear infinite;
+}
+
+.heroTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(52px, 9vw, 108px);
+  font-weight: 700;
+  font-style: italic;
+  color: #fff;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  margin: 0;
+  animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.heroSub {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: #666;
+  margin: 0;
+  letter-spacing: 0.02em;
+  animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+/* 우측 장식 선 */
+.heroDecor {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, #B8945A33, transparent);
+}
+
+/* ── 필터 바 ─────────────────────────────────────────── */
+.filterBar {
+  background: #080808;
+  border-bottom: 1px solid #1c1c1c;
+  position: sticky;
+  top: 64px;
+  z-index: 20;
+}
+
+.filterInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filterInner::-webkit-scrollbar { display: none; }
+
+.filterBtn {
+  flex-shrink: 0;
+  padding: 13px 18px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #555;
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s;
+  margin-bottom: -1px;
+  letter-spacing: 0.03em;
+}
+.filterBtn:hover { color: #999; }
+.filterActive {
+  color: #B8945A !important;
+  border-bottom-color: #B8945A !important;
+}
+
+/* ── 메인 ─────────────────────────────────────────── */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── Featured 래퍼 ─────────────────────────────────── */
+.featuredWrap {
+  animation: scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  margin-bottom: 2px;
+}
+
+/* ── 그리드 ─────────────────────────────────────────── */
+.gridWrap {
+  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+/* ── 카드 공통 ─────────────────────────────────────── */
+.card {
+  background: #0d0d0d;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #1a1a1a;
+  transition: border-color 0.3s, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--accent, #B8945A) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.card:hover {
+  border-color: var(--accent, #B8945A);
+  transform: translateY(-3px);
+  z-index: 2;
+}
+
+.card:hover::before {
+  opacity: 0.04;
+}
+
+.card:focus-visible {
+  outline: 1px solid var(--accent, #B8945A);
+}
+
+/* Featured — 가로 레이아웃 */
+.cardFeatured {
+  flex-direction: row;
+  height: 420px;
+  border-color: #2a2a2a;
+}
+
+.cardFeatured .cardVisual {
+  width: 54%;
+  height: 100%;
+  aspect-ratio: unset;
+}
+
+.cardFeatured .cardBody {
+  width: 46%;
+  padding: 44px 48px;
+  justify-content: center;
+}
+
+/* ── 카드 비주얼 (그라디언트 영역) ───────────────────── */
+.cardVisual {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+}
+
+/* 노이즈 텍스처 오버레이 */
+.cardNoise {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+}
+
+/* 태그 */
+.cardTag {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: rgba(255,255,255,0.85);
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(10px);
+  padding: 5px 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  text-transform: uppercase;
+}
+
+/* 통계 */
+.cardStat {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statValue {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent, #B8945A);
+  line-height: 1;
+}
+
+.statLabel {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.05em;
+}
+
+/* ── 카드 바디 ─────────────────────────────────────── */
+.cardBody {
+  padding: 20px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.cardCategory {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent, #B8945A);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cardTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: #f0f0f0;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.cardTitleFeatured {
+  font-size: clamp(26px, 3.2vw, 38px);
+  font-style: italic;
+  line-height: 1.15;
+}
+
+.cardExcerpt {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: #888;
+  margin: 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+  border-top: 1px solid #1e1e1e;
+  margin-top: auto;
+}
+
+.cardYear {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  letter-spacing: 0.1em;
+}
+
+.cardArrow {
+  font-size: 18px;
+  color: #333;
+  transition: color 0.25s, transform 0.25s;
+}
+
+.card:hover .cardArrow {
+  color: var(--accent, #B8945A);
+  transform: translate(2px, -2px);
+}
+
+/* ── 빈 상태 ─────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 80px 24px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  color: #444;
+}
+
+/* ── 반응형 ──────────────────────────────────────── */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .cardFeatured { flex-direction: column; height: auto; }
+  .cardFeatured .cardVisual { width: 100%; aspect-ratio: 16 / 9; }
+  .cardFeatured .cardBody { width: 100%; padding: 28px 24px; }
+}
+
+@media (max-width: 600px) {
+  .heroInner { padding: 56px 16px 40px; }
+  .main { padding: 32px 16px 72px; }
+  .grid { grid-template-columns: 1fr; }
+  .cardFeatured .cardVisual { aspect-ratio: 4 / 3; }
+}

@@ -1,6 +1,7 @@
 // features/admin/pages/user/AdminUserList.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { adminApi } from '../../api/adminApi';
+import ErrorActionNotice from '../../../../shared/components/ErrorActionNotice/ErrorActionNotice';
 import styles from '../reservation/AdminReservation.module.css'; // ✅ 투어 예약과 동일 스타일 사용
 
 const USER_STATUS_OPTIONS = [
@@ -32,7 +33,8 @@ function StatusBadge({ status }) {
 export default function AdminUserList() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
+  const [errorCause, setErrorCause] = useState(null);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -56,13 +58,15 @@ export default function AdminUserList() {
 
   const fetchList = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError(null);
+    setErrorCause(null);
     try {
       const res = await adminApi.users(query);
       setItems(res?.content ?? []);
       setTotalElements(res?.totalElements ?? 0);
       setTotalPages(res?.totalPages ?? 1);
     } catch (e) {
+      setErrorCause(e);
       setError(e?.message || '회원 목록 조회 실패');
     } finally {
       setLoading(false);
@@ -134,6 +138,7 @@ export default function AdminUserList() {
       (u) => normalizeRole(u.userRole) === normalizeRole(query.role)
     );
   }, [items, query.role]);
+  const guideError = errorCause ?? error;
 
   return (
     <div className={styles.mainInner}>
@@ -157,7 +162,13 @@ export default function AdminUserList() {
         </div>
       </div>
 
-      {error && <div className={styles.errorBox}>{error}</div>}
+      {guideError ? (
+        <ErrorActionNotice
+          error={guideError}
+          fallback="회원 목록을 불러오지 못했습니다."
+          onRetry={fetchList}
+        />
+      ) : null}
 
       {/* 필터 */}
       <div className={styles.filterBar}>
