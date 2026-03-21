@@ -139,4 +139,15 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
         """
     )
     List<RoomStatProjection> findTopCandidateRooms();
+    
+    @Query("""
+	    SELECT COUNT(r)
+	    FROM Room r
+	    WHERE r.roomSt = :roomSt
+	      AND r.building.buildingId = :buildingId
+	""")
+	int countByStatusAndBuilding(
+	    @Param("roomSt") RoomStatus roomSt,
+	    @Param("buildingId") Integer buildingId
+	);
 }

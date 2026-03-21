@@ -680,6 +680,10 @@ export const adminApi = {
     }),
 
   // property list/detail
+  getPropertyDashboard: (buildingId) =>
+    request(`/admin/property/dashboard?buildingId=${buildingId}`, {
+      auth: true,
+    }),
   getBuildings: ({
     page = 1,
     size = 10,
