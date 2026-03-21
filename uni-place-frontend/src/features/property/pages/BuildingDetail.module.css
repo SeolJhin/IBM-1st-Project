@@ -233,15 +233,17 @@
 .infoKicker {
   margin: 0 0 6px;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.2em;
   color: #d9ad5b;
+  font-family: var(--font-body);
 }
 .buildingNm {
   margin: 0 0 6px;
   font-size: 26px;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: -0.02em;
+  font-family: var(--font-body);
 }
 .buildingAddr {
   margin: 0 0 14px;
@@ -370,9 +372,10 @@
 }
 .sectionTitle {
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
   margin: 0;
   color: var(--text);
+  font-family: var(--font-body);
 }
 .goListBtn {
   font-size: 13px;
@@ -468,8 +471,9 @@
 .roomMiniPrice {
   margin: 0;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
+  font-family: var(--font-body);
 }
 
 /* ── 공용공간 그리드 ── */
@@ -517,7 +521,8 @@
 .spaceNm {
   margin: 0 0 8px;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
+  font-family: var(--font-body);
 }
 .spaceMeta {
   display: flex;

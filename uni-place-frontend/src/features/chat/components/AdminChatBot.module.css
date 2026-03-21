@@ -332,6 +332,10 @@
   font-size: 12px;
 }
 
+.errorNotice {
+  margin-top: 4px;
+}
+
 /* 액션 버튼 */
 .actionButtons {
   display: flex;

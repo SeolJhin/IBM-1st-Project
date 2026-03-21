@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -22,42 +23,53 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def _run_startup_warmup_tasks() -> None:
+    """heavyweight 초기화 작업을 백그라운드에서 실행 — 서버 시작 지연 방지."""
+
+    # 임베딩 모델 워밍업
+    try:
+        from app.integrations.milvus_client import embed_text
+        logger.info("[Warmup] embedding model warmup started")
+        embed_text("warmup")
+        logger.info("[Warmup] embedding model warmup finished")
+    except Exception as e:
+        logger.warning("[Warmup] embedding model warmup failed (ignored): %s", e)
+
+    # RAG 인덱싱
+    try:
+        from app.services.rag.index_pipeline import reindex_rag
+        result = reindex_rag(force=False)
+        logger.info(
+            "[RAG] reindex result: status=%s documents=%s indexed=%s",
+            result.get("status"),
+            result.get("documents"),
+            result.get("indexed"),
+        )
+    except Exception as e:
+        logger.warning("[RAG] reindex failed (ignored): %s", e)
+
+    # 건물/상품/공용공간 alias 캐시 초기화 (Spring 연결 필요 — 실패해도 무시)
+    try:
+        alias_refresh()
+        start_refresh_daemon(interval_sec=600)  # 10분마다 갱신
+        logger.info("[Startup] alias_registry initialized")
+    except Exception as e:
+        logger.debug("[Startup] alias_registry init failed (ignored): %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 서버 시작
     ensure_rag_runtime()
     start_reindex_daemon()
     start_stock_alert_daemon()
 
-    # 건물/상품/공용공간 alias 캐시 초기화 (Spring 연결 필요 — 실패해도 무시)
-    try:
-        logger.info("[Startup] alias_registry 초기화 시작...")
-        alias_refresh()
-        start_refresh_daemon(interval_sec=600)  # 10분마다 갱신
-        logger.info("[Startup] alias_registry 초기화 완료")
-    except Exception as e:
-        logger.debug("[Startup] alias_registry 초기화 실패 (무시): %s", e)
-
-    # 임베딩 모델 워밍업 — 첫 요청에서 15~20초 지연 방지
-    try:
-        from app.integrations.milvus_client import embed_text
-        logger.info("[Warmup] 임베딩 모델 로딩 시작...")
-        embed_text("warmup")
-        logger.info("[Warmup] 임베딩 모델 로딩 완료")
-    except Exception as e:
-        logger.warning("[Warmup] 임베딩 모델 로딩 실패 (무시): %s", e)
-
-    # rag_docs → Milvus 자동 인덱싱 (변경된 파일만, 로컬/배포 공통)
-    try:
-        from app.services.rag.index_pipeline import reindex_rag
-        result = reindex_rag(force=False)
-        logger.info("[RAG] 인덱싱 결과: status=%s documents=%s indexed=%s",
-                    result.get("status"), result.get("documents"), result.get("indexed"))
-    except Exception as e:
-        logger.warning("[RAG] 인덱싱 실패 (무시): %s", e)
+    threading.Thread(
+        target=_run_startup_warmup_tasks,
+        name="startup-warmup",
+        daemon=True,
+    ).start()
 
     yield
-    # 서버 종료
 
 
 app = FastAPI(title="Uniplace AI Service", version="0.1.0", lifespan=lifespan)
@@ -103,5 +115,5 @@ def health_molit() -> dict:
         "source": "settings/.env" if settings_key else ("os.environ" if env_key else "none"),
         "env_file": str(settings.model_config.get("env_file", "unknown")),
         "kakao_key_loaded": bool(getattr(settings, "kakao_map_api_key", "")),
-        "tip": ".env 파일에 MOLIT_API_KEY=발급키 추가 후 uvicorn 재시작 필요",
+        "tip": ".env set MOLIT_API_KEY then restart uvicorn",
     }

@@ -1,32 +1,366 @@
-.page {
-  min-height: 100vh;
-  background: #f6eee6;
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ✅ JOURNAL VERSION v2 — 2025 리디자인
+   이 주석이 보이면 새 파일이 적용된 것입니다
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* ═══════════════════════════════════════════════════════════════
+   About.module.css — UNI-PLACE Journal
+   인스타그램 에디토리얼 감성 × 골드 디자인 시스템
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── 페이지 기반 ──────────────────────────────────────────── */
+.page {
+  min-height: 100vh;
+  background: var(--bg, #ffffff);
+}
+
+/* ── 페이지 헤더 ─────────────────────────────────────────── */
+.pageHeader {
+  padding-top: 64px; /* 네비 높이 오프셋 */
+  background: #0d0d0d;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.pageHeaderInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 64px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pageLabel {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: var(--primary, #B8945A);
+  text-transform: uppercase;
+  /* 골드 shimmer 애니메이션 */
+  background: linear-gradient(
+    90deg,
+    var(--primary, #B8945A) 0%,
+    #e6c87a 45%,
+    var(--primary, #B8945A) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+
+.pageTitle {
+  font-family: var(--font-body);
+  font-size: clamp(36px, 6vw, 72px);
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1.0;
+  margin: 0;
+  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pageSubtitle {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 15px;
+  color: #888;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 480px;
+  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+/* ── 카테고리 필터 바 ─────────────────────────────────────── */
+.filterBar {
+  background: #0d0d0d;
+  border-bottom: 1px solid #222;
+  position: sticky;
+  top: 64px; /* 헤더 높이만큼 */
+  z-index: 10;
+}
+
+.filterInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filterInner::-webkit-scrollbar { display: none; }
+
+.filterBtn {
+  flex-shrink: 0;
+  padding: 14px 20px;
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  letter-spacing: 0.01em;
+  margin-bottom: -1px;
+}
+
+.filterBtn:hover {
+  color: #ccc;
+}
+
+.filterBtnActive {
+  color: var(--primary, #B8945A);
+  border-bottom-color: var(--primary, #B8945A);
+}
+
+/* ── 메인 레이아웃 ────────────────────────────────────────── */
 .main {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 48px 24px 72px;
+  padding: 48px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
 }
 
+/* ── Featured 섹션 ────────────────────────────────────────── */
+.featuredSection {
+  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+}
+
+/* ── 카드 그리드 ──────────────────────────────────────────── */
+.gridSection {
+  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line, #E4E1DB);
+  border: 1px solid var(--line, #E4E1DB);
+}
+
+/* ── 카드 공통 ────────────────────────────────────────────── */
 .card {
-  background: #ffffff;
-  border: 1px solid #e8ded4;
-  border-radius: 16px;
-  padding: 28px;
-  box-shadow: 0 6px 18px rgba(11, 14, 18, 0.06);
+  background: var(--bg, #fff);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  outline: none;
 }
 
-.heading {
-  margin: 0 0 12px;
-  font-size: 28px;
-  line-height: 1.2;
-  color: #0b0e12;
+.card:hover {
+  transform: translateY(-4px);
+  z-index: 2;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
-.body {
+.card:focus-visible {
+  outline: 2px solid var(--primary, #B8945A);
+  outline-offset: 2px;
+}
+
+/* Featured 카드 — 가로 레이아웃 */
+.cardFeatured {
+  flex-direction: row;
+  border: 1px solid var(--line, #E4E1DB);
+  height: 400px;
+}
+
+.cardFeatured .cardImage {
+  width: 55%;
+  height: 100%;
+  aspect-ratio: unset;
+}
+
+.cardFeatured .cardBody {
+  width: 45%;
+  padding: 40px 44px;
+  justify-content: center;
+}
+
+/* ── 카드 이미지 영역 ─────────────────────────────────────── */
+.cardImage {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+}
+
+.cardImageOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 40%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  transition: opacity 0.3s;
+}
+
+.card:hover .cardImageOverlay {
+  opacity: 0.6;
+}
+
+/* 이미지 위 태그 오버레이 */
+.cardTagOverlay {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ── 카드 바디 ────────────────────────────────────────────── */
+.cardBody {
+  padding: 20px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.cardCategory {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary, #B8945A);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.cardTitle {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text, #2A2A2A);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
   margin: 0;
-  font-size: 16px;
+  /* 2줄 clamp */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardTitleFeatured {
+  font-size: clamp(22px, 3vw, 32px);
+  -webkit-line-clamp: 3;
+}
+
+.cardExcerpt {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 14px;
   line-height: 1.7;
-  color: #362f20;
+  color: var(--text-sub, #484848);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line, #E4E1DB);
+}
+
+.cardDate {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #737373);
+}
+
+.cardReadMore {
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary, #B8945A);
+  transition: letter-spacing 0.2s;
+}
+
+.card:hover .cardReadMore {
+  letter-spacing: 0.05em;
+}
+
+/* ── 빈 상태 ──────────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--muted, #737373);
+  font-family: var(--font-body, 'Noto Sans KR', sans-serif);
+  font-size: 15px;
+}
+
+/* ── 반응형 ───────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cardFeatured {
+    flex-direction: column;
+    height: auto;
+  }
+  .cardFeatured .cardImage {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+  .cardFeatured .cardBody {
+    width: 100%;
+    padding: 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .pageHeaderInner {
+    padding: 48px 16px 36px;
+  }
+  .main {
+    padding: 32px 16px 72px;
+    gap: 32px;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .cardFeatured {
+    flex-direction: column;
+    height: auto;
+  }
+  .cardFeatured .cardImage {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+  }
+  .cardFeatured .cardBody {
+    width: 100%;
+    padding: 24px;
+  }
 }

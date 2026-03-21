@@ -1,15 +1,18 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminUserHub.module.css';
+import UserDashboard from './AdminUserDashboard';
 
 export default function AdminUserHub() {
   return (
     <div className={styles.wrap}>
       <div className={styles.topRow}>
         <h1 className={styles.title}>회원 관리</h1>
-
-        {/* (원하면) 검색 아이콘/검색창 자리 */}
         <div className={styles.right} />
+      </div>
+
+      <div className={styles.dashboardArea}>
+        <UserDashboard />
       </div>
 
       <div className={styles.tabs}>

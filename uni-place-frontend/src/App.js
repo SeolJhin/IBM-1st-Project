@@ -2,11 +2,12 @@
 import React from 'react';
 import './app/styles/globals.css';
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import ScrollToTop from './shared/components/ScrollToTop';
 import Home from './shared/pages/Home';
 import About from './shared/pages/About';
+import AboutDetail from './shared/pages/AboutDetail';
 import CompanyInfo from './shared/pages/CompanyInfo';
 import CommunityHome from './features/community/pages/CommunityHome';
 import BoardDetail from './features/community/pages/BoardDetail';
@@ -119,9 +120,17 @@ import {
 import { useAuth } from './features/user/hooks/useAuth';
 import { useEffect } from 'react';
 import { commerceApi } from './features/commerce/api/commerceApi';
+import {
+  AUTH_EXPIRED_NOTICE,
+  AUTH_SESSION_EXPIRED_EVENT,
+  getAuthResumePath,
+  restoreAuthResumeForPath,
+} from './app/auth/authResume';
 
 export default function App() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // 어느 페이지로 돌아와도 카카오페이 이탈 처리
   useEffect(() => {
@@ -143,6 +152,36 @@ export default function App() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    const handleAuthExpired = (event) => {
+      if (location.pathname === '/login') return;
+
+      const from =
+        String(event?.detail?.from || '').trim() ||
+        getAuthResumePath() ||
+        `${location.pathname}${location.search}${location.hash}`;
+
+      navigate('/login', {
+        replace: true,
+        state: {
+          from,
+          reason: 'auth_expired',
+          message: event?.detail?.message || AUTH_EXPIRED_NOTICE,
+        },
+      });
+    };
+
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handleAuthExpired);
+    return () =>
+      window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, handleAuthExpired);
+  }, [location.hash, location.pathname, location.search, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    const currentPath = `${location.pathname}${location.search}${location.hash}`;
+    restoreAuthResumeForPath(currentPath);
+  }, [location.hash, location.pathname, location.search, user]);
+
   return (
     <>
       <ScrollToTop />
@@ -153,7 +192,8 @@ export default function App() {
           path="/company_info"
           element={<CompanyInfo variant="company" />}
         />
-        <Route path="/about" element={<About variant="about" />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/about/:slug" element={<AboutDetail />} />
         <Route path="/community" element={<CommunityHome />} />
         <Route path="/community/:boardId" element={<BoardDetail />} />
         <Route path="/guide" element={<CompanyInfo variant="guide" />} />
