@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './Login.module.css';
 import { useAuth } from '../hooks/useAuth';
@@ -16,29 +16,51 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [faceModal, setFaceModal] = useState(false); // 얼굴 인식 모달
+  const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
+  const [faceModal, setFaceModal] = useState(false);
+
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
+  const errorRef = useRef(null);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const notice = location.state?.message || (location.state?.reason === 'auth_expired' ? AUTH_EXPIRED_NOTICE : '');
+  const notice =
+    location.state?.message ||
+    (location.state?.reason === 'auth_expired' ? AUTH_EXPIRED_NOTICE : '');
 
   const onChange = (e) => {
     const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const focusField = (name) => {
+    if (name === 'email') emailInputRef.current?.focus();
+    if (name === 'password') passwordInputRef.current?.focus();
+  };
+
+  const setFieldError = (name, message) => {
+    setFieldErrors({ email: '', password: '', [name]: message });
+    setError(message);
+    requestAnimationFrame(() => focusField(name));
   };
 
   const runLogin = async ({ validate = true } = {}) => {
     setError(null);
+    setFieldErrors({ email: '', password: '' });
 
     const email = form.email.trim();
     const password = form.password;
 
     if (validate && !email) {
-      setError('이메일을 입력해주세요.');
+      setFieldError('email', '이메일을 입력해주세요.');
       return;
     }
     if (validate && !password) {
-      setError('비밀번호를 입력해주세요.');
+      setFieldError('password', '비밀번호를 입력해주세요.');
       return;
     }
 
@@ -49,14 +71,18 @@ export default function Login() {
       const from = location.state?.from || getAuthResumePath() || '/';
       navigate(from, { replace: true });
     } catch (err) {
-      // 백엔드는 보안상 USER_NOT_FOUND / PASSWORD_MISMATCH / LOCKED 모두 COMMON_400으로 통일
-      const isLoginFail =
-        err?.errorCode === 'COMMON_400' || err?.status === 400;
+      const isLoginFail = err?.errorCode === 'COMMON_400' || err?.status === 400;
       if (isLoginFail) {
-        setError('이메일 또는 비밀번호를 확인해주세요.');
+        const message = '이메일 또는 비밀번호를 확인해주세요.';
+        setFieldErrors({ email: message, password: message });
+        setError(message);
+        requestAnimationFrame(() => focusField('email'));
       } else {
         const normalized = new Error(
-          toKoreanMessage(err, '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.')
+          toKoreanMessage(
+            err,
+            '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.'
+          )
         );
         normalized.status = err?.status;
         normalized.errorCode = err?.errorCode;
@@ -64,6 +90,7 @@ export default function Login() {
         normalized.data = err?.data;
         normalized.code = err?.code;
         setError(normalized);
+        requestAnimationFrame(() => errorRef.current?.focus());
       }
     } finally {
       setSubmitting(false);
@@ -77,7 +104,6 @@ export default function Login() {
 
   const backendBaseUrl = process.env.REACT_APP_BACKEND_BASE_URL || '/api';
 
-  // ✅ 버튼만 존재(기능 없음) / 나중에 연결
   const goSignup = () => navigate('/signup');
   const goFind = () => navigate('/find-account');
   const goKakao = () => {
@@ -89,8 +115,6 @@ export default function Login() {
     window.location.href = `${backendBaseUrl}/oauth2/authorization/google`;
   };
 
-  // 얼굴 인식 성공 → FaceLoginModal이 이미 localStorage에 JWT 저장
-  // → refresh(bootstrap)으로 user 상태 갱신 후 리다이렉트
   const onFaceSuccess = async () => {
     setFaceModal(false);
     try {
@@ -114,47 +138,88 @@ export default function Login() {
             <h2 className={styles.title}>로그인</h2>
           </div>
 
-          <form className={styles.form} onSubmit={onSubmit}>
-            <label className={styles.row}>
-              <span className={styles.tag}>ID</span>
-              <input
-                className={styles.input}
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={onChange}
-                placeholder="이메일을 입력해주세요."
-                autoComplete="email"
-                disabled={loading || submitting}
-                required
-              />
-            </label>
-
-            <label className={styles.row}>
-              <span className={styles.tag}>PW</span>
-              <input
-                className={styles.input}
-                type="password"
-                name="password"
-                value={form.password}
-                onChange={onChange}
-                placeholder="비밀번호를 입력해주세요."
-                autoComplete="current-password"
-                disabled={loading || submitting}
-                required
-              />
-            </label>
-
-            {notice ? <div className={styles.notice}>{notice}</div> : null}
-            {error ? (
-              <ErrorActionNotice
-                error={error}
-                fallback="로그인에 실패했습니다. 잠시 후 다시 시도해주세요."
-                onRetry={() => runLogin({ validate: false })}
-                hideTitle
-                className={styles.errorNotice}
-              />
+          <form className={styles.form} onSubmit={onSubmit} noValidate>
+            {notice ? (
+              <div className={styles.notice} role="status" aria-live="polite">
+                {notice}
+              </div>
             ) : null}
+
+            {error ? (
+              <div ref={errorRef} tabIndex={-1}>
+                <ErrorActionNotice
+                  error={error}
+                  fallback="로그인에 실패했습니다. 잠시 후 다시 시도해주세요."
+                  onRetry={() => runLogin({ validate: false })}
+                  hideTitle
+                  className={styles.errorNotice}
+                />
+              </div>
+            ) : null}
+
+            <div className={styles.row}>
+              <label className={styles.tag} htmlFor="login-email">
+                ID
+              </label>
+              <div className={styles.fieldWrap}>
+                <input
+                  id="login-email"
+                  ref={emailInputRef}
+                  className={styles.input}
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={onChange}
+                  placeholder="이메일을 입력해주세요."
+                  autoComplete="email"
+                  disabled={loading || submitting}
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={
+                    fieldErrors.email ? 'login-email-error' : undefined
+                  }
+                  required
+                />
+                {fieldErrors.email ? (
+                  <p id="login-email-error" className={styles.fieldError} role="alert">
+                    {fieldErrors.email}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className={styles.row}>
+              <label className={styles.tag} htmlFor="login-password">
+                PW
+              </label>
+              <div className={styles.fieldWrap}>
+                <input
+                  id="login-password"
+                  ref={passwordInputRef}
+                  className={styles.input}
+                  type="password"
+                  name="password"
+                  value={form.password}
+                  onChange={onChange}
+                  placeholder="비밀번호를 입력해주세요."
+                  autoComplete="current-password"
+                  disabled={loading || submitting}
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={
+                    fieldErrors.password ? 'login-password-error' : undefined
+                  }
+                  required
+                />
+                {fieldErrors.password ? (
+                  <p
+                    id="login-password-error"
+                    className={styles.fieldError}
+                    role="alert"
+                  >
+                    {fieldErrors.password}
+                  </p>
+                ) : null}
+              </div>
+            </div>
 
             <button
               className={styles.submit}
