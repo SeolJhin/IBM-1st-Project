@@ -102,12 +102,6 @@ def get_pending_alert(admin_id: str) -> Optional[str]:
 
 def _loop() -> None:
     last_checked: Optional[date] = None
-    # 시작 직후 한 번 체크 (서버 재시작 시 즉시 알림 갱신)
-    try:
-        run_check_now()
-        last_checked = date.today()
-    except Exception as exc:
-        logger.warning("[StockAlert] 초기 체크 실패: %s", exc)
 
     while True:
         now = datetime.now()
