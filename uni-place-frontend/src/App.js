@@ -6,9 +6,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 import ScrollToTop from './shared/components/ScrollToTop';
 import Home from './shared/pages/Home';
-import About from './shared/pages/About';
-import AboutDetail from './shared/pages/AboutDetail';
-import CompanyInfo from './shared/pages/CompanyInfo';
 import CommunityHome from './features/community/pages/CommunityHome';
 import BoardDetail from './features/community/pages/BoardDetail';
 
@@ -46,6 +43,14 @@ import ContractApply from './features/contract/pages/ContractApply';
 import ReviewWrite from './features/review/pages/ReviewWrite';
 import MyReviewsList from './features/review/pages/MyReviewsList';
 import MyReviewsDetail from './features/review/pages/MyReviewsDetail';
+
+// ── about ───────────────────────────────────────────────────
+import Company from './features/about/pages/Company';
+import CompanyDetail from './features/about/pages/CompanyDetail';
+import News from './features/about/pages/News';
+import NewsDetail from './features/about/pages/NewsDetail';
+import Guide from './features/about/pages/Guide';
+import GuideDetail from './features/about/pages/GuideDetail';
 
 // ── support ───────────────────────────────────────────────────
 import Support from './features/support/pages/Support';
@@ -150,16 +155,8 @@ export default function App() {
       <Routes>
         {/* ── 공통 ── */}
         <Route path="/" element={<Home />} />
-        <Route
-          path="/company_info"
-          element={<CompanyInfo variant="company" />}
-        />
-        <Route path="/about" element={<About />} />
-        <Route path="/about/:slug" element={<AboutDetail />} />
         <Route path="/community" element={<CommunityHome />} />
         <Route path="/community/:boardId" element={<BoardDetail />} />
-        <Route path="/guide" element={<CompanyInfo variant="guide" />} />
-        <Route path="/news" element={<CompanyInfo variant="news" />} />
 
         {/* ── 유저 ── */}
         <Route path="/login" element={<Login />} />
@@ -215,6 +212,14 @@ export default function App() {
         <Route path="/commerce/orders" element={<OrderList />} />
         <Route path="/commerce/orders/:orderId" element={<OrderDetail />} />
         <Route path="/commerce/checkout" element={<Checkout />} />
+
+        {/* ── about ── */}
+        <Route path="/about/company" element={<Company />} />
+        <Route path="/about/company/:id" element={<CompanyDetail />} />
+        <Route path="/about/news" element={<News />} />
+        <Route path="/about/news/:slug" element={<NewsDetail />} />
+        <Route path="/about/guide" element={<Guide />} />
+        <Route path="/about/guide/:slug" element={<GuideDetail />} />
 
         {/* ── support ── */}
         <Route path="/support" element={<Support />}>
