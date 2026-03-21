@@ -1,5 +1,6 @@
 // src/features/admin/api/adminApi.js
 import { fetchWithAuthRetry } from '../../../app/http/apiBase';
+import { toKoreanMessage } from '../../../app/http/errorMapper';
 
 let dashboardEndpointUnavailable = false;
 
@@ -55,6 +56,7 @@ function unwrapOrThrow(res, payload) {
     error.status = res.status;
     error.errorCode = api?.errorCode;
     error.data = payload;
+    error.message = toKoreanMessage(error, message);
     throw error;
   }
 

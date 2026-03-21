@@ -21,16 +21,18 @@
 .pageKicker {
   margin: 0 0 4px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.2em;
   color: var(--primary, #d9ad5b);
+  font-family: var(--font-body);
 }
 .pageTitle {
   margin: 0 0 4px;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text, #0b0e12);
   letter-spacing: -0.01em;
+  font-family: var(--font-body);
 }
 .pageSub {
   margin: 0 0 20px;
@@ -72,8 +74,9 @@
 .filterTitle {
   margin: 0;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
+  font-family: var(--font-body);
 }
 .resetBtn {
   font-size: 12px;
@@ -255,8 +258,9 @@
 .cardTitle {
   margin: 0 0 10px;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
+  font-family: var(--font-body);
 }
 .priceRow {
   display: flex;
@@ -274,8 +278,9 @@
 }
 .priceRent {
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
+  font-family: var(--font-body);
 }
 .cardMeta {
   display: flex;
@@ -462,6 +467,71 @@
 .searchField .filterInput {
   width: 100%;
   box-sizing: border-box;
+}
+
+.buildingSearchRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.searchApplyBtn {
+  border: 1px solid var(--line, #d7cebc);
+  background: var(--surface, #fff);
+  color: var(--accent, #ba8037);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.searchApplyBtn:hover {
+  border-color: var(--primary, #d9ad5b);
+  color: var(--primary, #d9ad5b);
+}
+
+.searchAssist {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--accent-soft, #9a8c70);
+}
+
+.recentSearchWrap {
+  margin-top: 10px;
+  border-top: 1px dashed var(--line, #d7cebc);
+  padding-top: 10px;
+}
+
+.recentSearchLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted, #48535f);
+  letter-spacing: 0.03em;
+  margin-bottom: 6px;
+}
+
+.recentSearchList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.recentSearchChip {
+  border: 1px solid var(--line, #d7cebc);
+  border-radius: 999px;
+  background: var(--surface, #fff);
+  color: var(--muted, #48535f);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.recentSearchChip:hover {
+  border-color: var(--primary, #d9ad5b);
+  color: var(--accent, #ba8037);
 }
 
 /* ── 방 유형 버튼 그리드 ── */

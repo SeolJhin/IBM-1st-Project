@@ -1,3 +1,5 @@
+import { notifyAuthSessionExpired } from '../auth/authResume';
+
 const API_PREFIX = '/api';
 const ABSOLUTE_URL_RE = /^https?:\/\//i;
 const STORAGE_KEYS = {
@@ -46,6 +48,12 @@ function clearTokens() {
   localStorage.removeItem(STORAGE_KEYS.refresh);
 }
 
+function failRefreshAndRedirectToLogin() {
+  clearTokens();
+  notifyAuthSessionExpired();
+  return false;
+}
+
 function isAuthPath(path) {
   const text = String(path || '');
   return text.startsWith('/auth/');
@@ -65,7 +73,7 @@ function buildAuthHeaders(headers, auth) {
 
 async function doRefresh() {
   const { refreshToken, deviceId } = getRefreshContext();
-  if (!refreshToken || !deviceId) return false;
+  if (!refreshToken || !deviceId) return failRefreshAndRedirectToLogin();
 
   const res = await fetch(withApiPrefix('/auth/refresh'), {
     method: 'POST',
@@ -75,8 +83,7 @@ async function doRefresh() {
   });
 
   if (res.status === 204) {
-    clearTokens();
-    return false;
+    return failRefreshAndRedirectToLogin();
   }
 
   const contentType = res.headers.get('content-type') || '';
@@ -90,14 +97,12 @@ async function doRefresh() {
       : null;
 
   if (!res.ok || (api && api.success === false)) {
-    clearTokens();
-    return false;
+    return failRefreshAndRedirectToLogin();
   }
 
   const data = api ? api.data : payload;
   if (!data || typeof data !== 'object' || !data.accessToken) {
-    clearTokens();
-    return false;
+    return failRefreshAndRedirectToLogin();
   }
 
   setTokens(data);

@@ -2,12 +2,10 @@
 import React from 'react';
 import './app/styles/globals.css';
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import ScrollToTop from './shared/components/ScrollToTop';
 import Home from './shared/pages/Home';
-import About from './shared/pages/About';
-import CompanyInfo from './shared/pages/CompanyInfo';
 import CommunityHome from './features/community/pages/CommunityHome';
 import BoardDetail from './features/community/pages/BoardDetail';
 
@@ -45,6 +43,14 @@ import ContractApply from './features/contract/pages/ContractApply';
 import ReviewWrite from './features/review/pages/ReviewWrite';
 import MyReviewsList from './features/review/pages/MyReviewsList';
 import MyReviewsDetail from './features/review/pages/MyReviewsDetail';
+
+// ── about ───────────────────────────────────────────────────
+import Company from './features/about/pages/Company';
+import CompanyDetail from './features/about/pages/CompanyDetail';
+import News from './features/about/pages/News';
+import NewsDetail from './features/about/pages/NewsDetail';
+import Guide from './features/about/pages/Guide';
+import GuideDetail from './features/about/pages/GuideDetail';
 
 // ── support ───────────────────────────────────────────────────
 import Support from './features/support/pages/Support';
@@ -119,9 +125,17 @@ import {
 import { useAuth } from './features/user/hooks/useAuth';
 import { useEffect } from 'react';
 import { commerceApi } from './features/commerce/api/commerceApi';
+import {
+  AUTH_EXPIRED_NOTICE,
+  AUTH_SESSION_EXPIRED_EVENT,
+  getAuthResumePath,
+  restoreAuthResumeForPath,
+} from './app/auth/authResume';
 
 export default function App() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // 어느 페이지로 돌아와도 카카오페이 이탈 처리
   useEffect(() => {
@@ -143,21 +157,44 @@ export default function App() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    const handleAuthExpired = (event) => {
+      if (location.pathname === '/login') return;
+
+      const from =
+        String(event?.detail?.from || '').trim() ||
+        getAuthResumePath() ||
+        `${location.pathname}${location.search}${location.hash}`;
+
+      navigate('/login', {
+        replace: true,
+        state: {
+          from,
+          reason: 'auth_expired',
+          message: event?.detail?.message || AUTH_EXPIRED_NOTICE,
+        },
+      });
+    };
+
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handleAuthExpired);
+    return () =>
+      window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, handleAuthExpired);
+  }, [location.hash, location.pathname, location.search, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    const currentPath = `${location.pathname}${location.search}${location.hash}`;
+    restoreAuthResumeForPath(currentPath);
+  }, [location.hash, location.pathname, location.search, user]);
+
   return (
     <>
       <ScrollToTop />
       <Routes>
         {/* ── 공통 ── */}
         <Route path="/" element={<Home />} />
-        <Route
-          path="/company_info"
-          element={<CompanyInfo variant="company" />}
-        />
-        <Route path="/about" element={<About variant="about" />} />
         <Route path="/community" element={<CommunityHome />} />
         <Route path="/community/:boardId" element={<BoardDetail />} />
-        <Route path="/guide" element={<CompanyInfo variant="guide" />} />
-        <Route path="/news" element={<CompanyInfo variant="news" />} />
 
         {/* ── 유저 ── */}
         <Route path="/login" element={<Login />} />
@@ -213,6 +250,14 @@ export default function App() {
         <Route path="/commerce/orders" element={<OrderList />} />
         <Route path="/commerce/orders/:orderId" element={<OrderDetail />} />
         <Route path="/commerce/checkout" element={<Checkout />} />
+
+        {/* ── about ── */}
+        <Route path="/about/company" element={<Company />} />
+        <Route path="/about/company/:id" element={<CompanyDetail />} />
+        <Route path="/about/news" element={<News />} />
+        <Route path="/about/news/:slug" element={<NewsDetail />} />
+        <Route path="/about/guide" element={<Guide />} />
+        <Route path="/about/guide/:slug" element={<GuideDetail />} />
 
         {/* ── support ── */}
         <Route path="/support" element={<Support />}>
