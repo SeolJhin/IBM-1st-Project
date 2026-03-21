@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import router as api_v1_router
 from app.config.settings import settings
 from app.services.monitor.stock_alert_service import start_stock_alert_daemon
+from app.services.orchestrator.alias_registry import refresh as alias_refresh, start_refresh_daemon
 from app.services.rag.index_pipeline import ensure_rag_runtime
 from app.services.rag.reindex_daemon import start_reindex_daemon
 
@@ -27,6 +28,15 @@ async def lifespan(app: FastAPI):
     ensure_rag_runtime()
     start_reindex_daemon()
     start_stock_alert_daemon()
+
+    # 건물/상품/공용공간 alias 캐시 초기화 (Spring 연결 필요 — 실패해도 무시)
+    try:
+        logger.info("[Startup] alias_registry 초기화 시작...")
+        alias_refresh()
+        start_refresh_daemon(interval_sec=600)  # 10분마다 갱신
+        logger.info("[Startup] alias_registry 초기화 완료")
+    except Exception as e:
+        logger.debug("[Startup] alias_registry 초기화 실패 (무시): %s", e)
 
     # 임베딩 모델 워밍업 — 첫 요청에서 15~20초 지연 방지
     try:
