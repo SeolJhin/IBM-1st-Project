@@ -168,11 +168,7 @@ function resolveBuildingName(inputValue, buildings = []) {
   });
 
   const threshold =
-    normalizedInput.length <= 4
-      ? 1
-      : normalizedInput.length <= 9
-        ? 2
-        : 3;
+    normalizedInput.length <= 4 ? 1 : normalizedInput.length <= 9 ? 2 : 3;
   if (best && bestDistance <= threshold) {
     return { building: best, correctedFrom: raw };
   }
@@ -534,9 +530,13 @@ function FilterPanel({
       });
 
       if (building && correctedFrom) {
-        setBuildingCorrection(`'${correctedFrom}' → '${nextBuildingNm}'로 보정됨`);
+        setBuildingCorrection(
+          `'${correctedFrom}' → '${nextBuildingNm}'로 보정됨`
+        );
       } else if (!building && input) {
-        setBuildingCorrection(`'${input}'과 일치하는 건물이 없어 입력값으로 검색`);
+        setBuildingCorrection(
+          `'${input}'과 일치하는 건물이 없어 입력값으로 검색`
+        );
       } else {
         setBuildingCorrection(null);
       }
@@ -634,23 +634,23 @@ function FilterPanel({
               </div>
             ) : null}
             <select
-            className={styles.filterSelect}
-            style={{ display: 'none' }}
-            value={query.buildingNm || ''}
-            onChange={(e) => {
-              dispatch({
-                type: 'SET_FILTER',
-                payload: { buildingNm: e.target.value || undefined },
-              });
-            }}
-          >
-            <option value="">전체 건물</option>
-            {buildings.map((b) => (
-              <option key={b.buildingId} value={b.buildingNm}>
-                {getBranchLabel(b)}
-              </option>
-            ))}
-          </select>
+              className={styles.filterSelect}
+              style={{ display: 'none' }}
+              value={query.buildingNm || ''}
+              onChange={(e) => {
+                dispatch({
+                  type: 'SET_FILTER',
+                  payload: { buildingNm: e.target.value || undefined },
+                });
+              }}
+            >
+              <option value="">전체 건물</option>
+              {buildings.map((b) => (
+                <option key={b.buildingId} value={b.buildingNm}>
+                  {getBranchLabel(b)}
+                </option>
+              ))}
+            </select>
           </>
         )}
       </section>
@@ -1028,7 +1028,9 @@ export default function RoomList() {
   const [buildings, setBldgs] = useState([]);
   const [bldgLoading, setBL] = useState(false);
   const [bldgLoaded, setBldgLoaded] = useState(false);
-  const [recentSearches, setRecentSearches] = useState(() => loadRecentSearches());
+  const [recentSearches, setRecentSearches] = useState(() =>
+    loadRecentSearches()
+  );
 
   const roomNoCandidates = useMemo(() => {
     const fromRecent = recentSearches
@@ -1090,7 +1092,7 @@ export default function RoomList() {
         })
       );
       const sorted =
-        query.sort === '_rating'
+        q.sort === '_rating'
           ? [...enriched].sort((a, b) => (b._rating ?? 0) - (a._rating ?? 0))
           : enriched;
       setRooms(sorted);
@@ -1356,9 +1358,16 @@ export default function RoomList() {
                   <select
                     className={styles.sortSelect}
                     value={query.sort}
-                    onChange={(e) =>
-                      dispatch({ type: 'SET_SORT', payload: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // 낮은순 정렬은 ASC, 최신순/별점순은 DESC
+                      const direct =
+                        val === 'roomId' || val === '_rating' ? 'DESC' : 'ASC';
+                      dispatch({
+                        type: 'SET_FILTER',
+                        payload: { sort: val, direct },
+                      });
+                    }}
                   >
                     <option value="roomId">최신순</option>
                     <option value="rentPrice">월세 낮은순</option>
