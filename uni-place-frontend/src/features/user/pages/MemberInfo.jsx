@@ -32,6 +32,7 @@ import OrderDetail from '../../commerce/pages/OrderDetail';
 import MyPaymentHistory from '../../payment/pages/MyPaymentHistory';
 
 import Modal from '../../../shared/components/Modal/Modal';
+import ErrorActionNotice from '../../../shared/components/ErrorActionNotice/ErrorActionNotice';
 import SpaceReservationCreate from '../../reservation/pages/SpaceReservationCreate';
 import SpaceReservationList from '../../reservation/pages/SpaceReservationList';
 import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
@@ -579,7 +580,14 @@ function MeTab() {
               </div>
             )}
           </Field>
-          {error && <div className={styles.error}>{error}</div>}
+          {error ? (
+            <ErrorActionNotice
+              error={error}
+              fallback="내 정보 처리 중 문제가 발생했습니다."
+              onRetry={loadMe}
+              compact
+            />
+          ) : null}
           {msg && <div className={styles.msg}>{msg}</div>}
           <div className={styles.actions}>
             <div className={styles.socialActions}>
@@ -736,11 +744,19 @@ function MeTab() {
 // ── 공용 시설 탭 (로컬) ───────────────────────────────────────
 // ── 고객센터 작성 목록 탭 ─────────────────────────────────────
 function QnaInline() {
-  const { qnas, pagination, loading, error, goToPage } = useQnas();
+  const { qnas, pagination, loading, error, goToPage, refetch } = useQnas();
   const navigate = useNavigate();
 
   if (loading) return <div className={styles.loading}>불러오는 중…</div>;
-  if (error) return <div className={styles.error}>{error}</div>;
+  if (error) {
+    return (
+      <ErrorActionNotice
+        error={error}
+        fallback="문의 목록을 불러오지 못했습니다."
+        onRetry={refetch}
+      />
+    );
+  }
 
   const STATUS_MAP = { waiting: '답변대기', complete: '답변완료' };
 
@@ -884,11 +900,20 @@ function QnaInline() {
 }
 
 function ComplainInline() {
-  const { complains, pagination, loading, error, goToPage } = useComplains();
+  const { complains, pagination, loading, error, goToPage, refetch } =
+    useComplains();
   const navigate = useNavigate(); // ✅ 위로 올림
 
   if (loading) return <div className={styles.loading}>불러오는 중…</div>;
-  if (error) return <div className={styles.error}>{error}</div>;
+  if (error) {
+    return (
+      <ErrorActionNotice
+        error={error}
+        fallback="민원 목록을 불러오지 못했습니다."
+        onRetry={refetch}
+      />
+    );
+  }
 
   const STATUS_MAP = { in_progress: '처리중', resolved: '처리완료' };
 
