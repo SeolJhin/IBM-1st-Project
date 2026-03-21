@@ -7,7 +7,7 @@ os.environ.setdefault("AI_ADMIN_API_KEY", "test-admin-key")
 os.environ.setdefault("LEGACY_EXECUTE_ENABLED", "false")
 
 from app.main import app
-
+## baby lets test again!!!!!!!!!!!!!!!!!!!!!
 
 class AiRestSmokeTest(unittest.TestCase):
     @classmethod

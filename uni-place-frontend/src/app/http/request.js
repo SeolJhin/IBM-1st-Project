@@ -1,6 +1,7 @@
 // src/app/http/request.js
 import axios from 'axios';
 import { refreshAccessTokenOnce, withApiPrefix } from './apiBase';
+import { toKoreanMessage } from './errorMapper';
 
 const instance = axios.create({
   baseURL: '',
@@ -55,7 +56,11 @@ export function unwrapApi(resData) {
   if (!resData) return resData;
   if (typeof resData === 'object' && 'success' in resData) {
     if (resData.success) return resData.data;
-    throw new Error(resData.message || 'API error');
+    const error = new Error(resData.message || 'API error');
+    error.errorCode = resData.errorCode;
+    error.data = resData;
+    error.message = toKoreanMessage(error, '요청 처리 중 오류가 발생했습니다.');
+    throw error;
   }
   return resData;
 }

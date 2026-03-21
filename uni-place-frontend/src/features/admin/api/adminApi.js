@@ -1,5 +1,6 @@
 // src/features/admin/api/adminApi.js
 import { fetchWithAuthRetry } from '../../../app/http/apiBase';
+import { toKoreanMessage } from '../../../app/http/errorMapper';
 
 let dashboardEndpointUnavailable = false;
 
@@ -55,6 +56,7 @@ function unwrapOrThrow(res, payload) {
     error.status = res.status;
     error.errorCode = api?.errorCode;
     error.data = payload;
+    error.message = toKoreanMessage(error, message);
     throw error;
   }
 
@@ -757,6 +759,10 @@ export const adminApi = {
   getFaqDetail: (faqId) => request(`/faqs/${faqId}`, { auth: true }),
   getNoticeDetail: (noticeId) =>
     request(`/notices/${noticeId}`, { auth: true }),
+  getQna: ({ page = 1, size = 50, sort = 'qnaId', direct = 'DESC' } = {}) => {
+    const q = buildQuery({ page, size, sort, direct });
+    return request(`/qna${q}`, { auth: true });
+  },
 
   // AI 방 추천 수동 갱신
   refreshRoomRecommendations: () =>

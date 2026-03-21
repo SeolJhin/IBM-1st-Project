@@ -19,16 +19,18 @@
 .pageKicker {
   margin: 0 0 8px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.2em;
   color: #d9ad5b;
+  font-family: var(--font-body);
 }
 .pageTitle {
   margin: 0 0 8px;
   font-size: 38px;
-  font-weight: 900;
+  font-weight: 700;
   color: #fff;
   letter-spacing: -0.02em;
+  font-family: var(--font-body);
 }
 .pageSub {
   margin: 0;
@@ -181,8 +183,9 @@
 .spaceNm {
   margin: 0 0 8px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
+  font-family: var(--font-body);
 }
 .spaceMeta {
   display: flex;
