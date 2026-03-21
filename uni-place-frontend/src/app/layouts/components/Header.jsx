@@ -12,8 +12,16 @@ import homeLogo from '../../../home_logo.png';
 /* 마이페이지 — 사람 윤곽선 */
 function IconUser() {
   return (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="21"
+      height="21"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="12" cy="7" r="4" />
       <path d="M5 21v-1a7 7 0 0 1 14 0v1" />
     </svg>
@@ -23,8 +31,16 @@ function IconUser() {
 /* 관리자 — 방패/보안 */
 function IconAdmin() {
   return (
-    <svg width="21" height="21" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="21"
+      height="21"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M12 2l8 4v6c0 5-4 9-8 10C8 21 4 17 4 12V6l8-4z" />
     </svg>
   );
@@ -39,16 +55,16 @@ const NAV_ITEMS = [
     label: '회사소개',
     path: '/company_info',
     children: [
-      { label: '회사소개', path: '/company_info' },
-      { label: '뉴스',     path: '/news' },
-      { label: '입주 가이드', path: '/guide' },
+      { label: '회사소개', path: '/about/company' },
+      { label: '뉴스', path: '/about/news' },
+      { label: '입주 가이드', path: '/about/guide' },
     ],
   },
   {
     label: '방찾기',
     path: '/rooms',
     children: [
-      { label: '방',      path: '/rooms' },
+      { label: '방', path: '/rooms' },
       { label: '공용공간', path: '/rooms', state: { tab: 'spaces' } },
       { label: '건물 목록', path: '/buildings' },
     ],
@@ -58,13 +74,13 @@ const NAV_ITEMS = [
     path: '/support',
     children: [
       { label: '공지사항', path: '/support/notice' },
-      { label: 'FAQ',     path: '/support/faq' },
-      { label: '민원',    path: '/support/complain' },
-      { label: 'Q&A',    path: '/support/qna' },
+      { label: 'FAQ', path: '/support/faq' },
+      { label: '민원', path: '/support/complain' },
+      { label: 'Q&A', path: '/support/qna' },
     ],
   },
   {
-    label: '커뮤니티',  // 마지막 순서
+    label: '커뮤니티', // 마지막 순서
     path: '/community',
     // children 없음 → 드롭다운 없이 바로 이동
   },
@@ -72,10 +88,10 @@ const NAV_ITEMS = [
 
 /* ── 개별 NavItem ──────────────────────────────────────────── */
 function NavItem({ item }) {
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
-  const ref      = useRef(null);
+  const ref = useRef(null);
   const timerRef = useRef(null);
 
   const hasDropdown = Boolean(item.children?.length);
@@ -83,20 +99,29 @@ function NavItem({ item }) {
   // 현재 경로가 이 메뉴(또는 서브메뉴)에 해당하는지
   const isActive =
     location.pathname === item.path ||
-    (item.children?.some((c) => location.pathname.startsWith(c.path)));
+    item.children?.some((c) => location.pathname.startsWith(c.path));
 
   // active 바는 모든 메뉴에서 제거 — 글자색만 진해짐
-  const open_ = () => { clearTimeout(timerRef.current); setOpen(true); };
-  const close_ = () => { timerRef.current = setTimeout(() => setOpen(false), 120); };
+  const open_ = () => {
+    clearTimeout(timerRef.current);
+    setOpen(true);
+  };
+  const close_ = () => {
+    timerRef.current = setTimeout(() => setOpen(false), 120);
+  };
 
   useEffect(() => {
     if (!open) return undefined;
-    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const h = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, [open]);
 
-  const handleClick      = () => { if (!hasDropdown) navigate(item.path); };
+  const handleClick = () => {
+    if (!hasDropdown) navigate(item.path);
+  };
   const handleChildClick = (child) => {
     setOpen(false);
     navigate(child.path, child.state ? { state: child.state } : undefined);
@@ -110,10 +135,9 @@ function NavItem({ item }) {
       onMouseLeave={close_}
     >
       <button
-        className={[
-          styles.linkBtn,
-          isActive ? styles.linkBtnActive : '',
-        ].filter(Boolean).join(' ')}
+        className={[styles.linkBtn, isActive ? styles.linkBtnActive : '']
+          .filter(Boolean)
+          .join(' ')}
         type="button"
         onClick={handleClick}
         aria-haspopup={hasDropdown ? 'true' : undefined}
@@ -124,7 +148,9 @@ function NavItem({ item }) {
           <span
             className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`}
             aria-hidden="true"
-          >›</span>
+          >
+            ›
+          </span>
         )}
       </button>
 
@@ -140,7 +166,9 @@ function NavItem({ item }) {
             <button
               key={child.path + (child.state?.tab || '')}
               className={`${styles.dropdownItem} ${
-                location.pathname === child.path && !child.state ? styles.dropdownItemActive : ''
+                location.pathname === child.path && !child.state
+                  ? styles.dropdownItemActive
+                  : ''
               }`}
               type="button"
               role="menuitem"
@@ -165,14 +193,24 @@ export default function Header() {
     if (e.key === 'Enter' || e.key === ' ') goHome();
   };
   const onClickLogout = useCallback(async () => {
-    try { await logout(); } finally { navigate('/', { replace: true }); }
+    try {
+      await logout();
+    } finally {
+      navigate('/', { replace: true });
+    }
   }, [logout, navigate]);
 
   function normalizeRole(u) {
     const raw =
-      u?.userRole ?? u?.role ?? u?.userRl ?? u?.user_role ??
-      u?.authority ?? u?.authorities?.[0];
-    return String(raw ?? '').toLowerCase().replace('role_', '');
+      u?.userRole ??
+      u?.role ??
+      u?.userRl ??
+      u?.user_role ??
+      u?.authority ??
+      u?.authorities?.[0];
+    return String(raw ?? '')
+      .toLowerCase()
+      .replace('role_', '');
   }
 
   const isAdmin = normalizeRole(user) === 'admin';
@@ -180,7 +218,6 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.inner}>
-
         {/* 로고 */}
         <div
           className={styles.brand}
@@ -190,7 +227,11 @@ export default function Header() {
           tabIndex={0}
           aria-label="UNI PLACE 홈으로 이동"
         >
-          <img className={styles.logoMark} src={homeLogo} alt="UNI PLACE logo" />
+          <img
+            className={styles.logoMark}
+            src={homeLogo}
+            alt="UNI PLACE logo"
+          />
           <div className={styles.brandText}>
             <div className={styles.brandName}>UNI PLACE</div>
             <div className={styles.brandSub}>Living as a Service</div>
@@ -206,7 +247,6 @@ export default function Header() {
 
         {/* 우측 — 알림벨 → 마이페이지 아이콘 → 로그아웃/로그인 */}
         <div className={styles.icons}>
-
           {/* 알림벨 — 로그인 상태일 때만 */}
           {!loading && user && (
             <div className={styles.bellWrap}>
@@ -248,7 +288,6 @@ export default function Header() {
               로그인
             </button>
           )}
-
         </div>
       </div>
     </header>

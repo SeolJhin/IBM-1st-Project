@@ -1,0 +1,277 @@
+/* GuideDetail.module.css */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page { min-height: 100vh; background: #080808; color: #fff; }
+
+.hero {
+  padding-top: 64px;
+  min-height: 500px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.78) 100%);
+}
+.heroInner {
+  position: relative;
+  z-index: 2;
+  padding: 0 24px 52px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 780px;
+  flex: 1;
+}
+.backBtn {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  color: rgba(255,255,255,0.5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-transform: uppercase;
+  transition: color 0.2s;
+  align-self: flex-start;
+}
+.backBtn:hover { color: var(--accent, #B8945A); }
+.heroMeta { display: flex; align-items: center; gap: 14px; }
+.heroTag {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  color: rgba(255,255,255,0.7);
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 4px 12px;
+  text-transform: uppercase;
+}
+.heroDate {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  color: var(--accent, #B8945A);
+}
+.heroTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(36px, 5.5vw, 64px);
+  font-weight: 700;
+  font-style: italic;
+  color: #fff;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 0;
+  animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.heroExcerpt {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: rgba(255,255,255,0.6);
+  margin: 0;
+  animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+}
+
+/* 우측 스텝 번호 */
+.heroStep {
+  position: absolute;
+  right: 48px;
+  bottom: 52px;
+  z-index: 2;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.heroStepNum {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 80px;
+  font-weight: 700;
+  color: var(--accent, #B8945A);
+  line-height: 1;
+  opacity: 0.7;
+}
+.heroStepLabel {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+}
+
+/* ── 본문 ── */
+.articleWrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 64px 24px 96px;
+}
+.article { display: flex; flex-direction: column; }
+
+.bodyBlocks {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  border-left: 1px solid #1e1e1e;
+  padding-left: 32px;
+  margin-bottom: 48px;
+}
+.lead {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(19px, 2.2vw, 23px);
+  font-style: italic;
+  color: #ccc;
+  line-height: 1.65;
+  margin: 0;
+  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.paragraph {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  color: #888;
+  line-height: 1.9;
+  margin: 0;
+  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.blockquote {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin: 8px 0;
+  animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.quoteBar { flex-shrink: 0; width: 2px; background: var(--accent, #B8945A); align-self: stretch; min-height: 44px; }
+.quoteText {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(17px, 2vw, 21px);
+  font-style: italic;
+  color: #ccc;
+  line-height: 1.6;
+}
+
+.tagRow { display: flex; gap: 8px; padding-top: 32px; border-top: 1px solid #1a1a1a; }
+.tagChip {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--accent, #B8945A);
+  border: 1px solid #2a2a2a;
+  padding: 5px 14px;
+  text-transform: uppercase;
+}
+
+/* 관련 */
+.relatedSection { margin-top: 72px; border-top: 1px solid #1a1a1a; padding-top: 40px; }
+.relatedHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.relatedLabel {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  color: #444;
+  text-transform: uppercase;
+}
+.relatedAll {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  color: var(--accent, #B8945A);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.relatedGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+.relatedCard {
+  cursor: pointer;
+  background: #0d0d0d;
+  border: 1px solid #1a1a1a;
+  transition: border-color 0.25s, transform 0.3s;
+  outline: none;
+}
+.relatedCard:hover { border-color: var(--accent, #B8945A); transform: translateY(-2px); }
+.relatedVisual {
+  position: relative;
+  aspect-ratio: 3/2;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.relatedTag {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.7);
+  background: rgba(0,0,0,0.5);
+  padding: 3px 8px;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+.relatedStepNum {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent, #B8945A);
+  align-self: flex-end;
+  opacity: 0.8;
+}
+.relatedBody { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; }
+.relatedCategory {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent, #B8945A);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.relatedTitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #d0d0d0;
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notFound {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 120px 24px;
+  color: #555;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.notFound button {
+  color: #B8945A;
+  background: none;
+  border: 1px solid #2a2a2a;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .heroInner { padding: 0 16px 40px; }
+  .heroStep { display: none; }
+  .articleWrap { padding: 48px 16px 72px; }
+  .bodyBlocks { padding-left: 20px; }
+  .relatedGrid { grid-template-columns: 1fr; }
+}
