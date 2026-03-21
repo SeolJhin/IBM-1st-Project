@@ -37,83 +37,252 @@ function getDateRange(period) {
   return dates;
 }
 
-function groupByPeriod(users, period) {
-  const range = getDateRange(period);
+function getWeekKey(date) {
+  const d = new Date(date);
 
+  const year = d.getFullYear();
+  const month = d.getMonth();
+
+  const day = d.getDay() || 7;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - day + 1);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  let count = 0;
+  for (let i = 0; i < 7; i++) {
+    const temp = new Date(monday);
+    temp.setDate(monday.getDate() + i);
+    if (temp.getMonth() === month) count++;
+  }
+
+  let targetMonth = month;
+  let targetYear = year;
+
+  if (count < 4) {
+    targetMonth -= 1;
+    if (targetMonth < 0) {
+      targetMonth = 11;
+      targetYear -= 1;
+    }
+  }
+
+  const firstDay = new Date(targetYear, targetMonth, 1);
+
+  const firstDayWeek = firstDay.getDay() || 7;
+
+  const firstMonday = new Date(firstDay);
+  firstMonday.setDate(firstDay.getDate() - firstDayWeek + 1);
+
+  const weekNo =
+    Math.floor((monday - firstMonday) / (1000 * 60 * 60 * 24 * 7)) +
+    1 -
+    (count < 4 ? 0 : 1);
+
+  return `${targetMonth + 1}월 ${weekNo}주차`;
+}
+
+function groupByPeriod(users, period) {
+  if (period === 'weekly') {
+    const today = new Date();
+
+    const weeks = [];
+    for (let i = 3; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i * 7);
+      weeks.push(getWeekKey(d));
+    }
+
+    const uniqueWeeks = [...new Set(weeks)];
+
+    const map = {};
+    uniqueWeeks.forEach((k) => {
+      map[k] = {
+        label: k,
+        newUsers: 0,
+        inactive: 0,
+        deleted: 0,
+      };
+    });
+
+    users.forEach((u) => {
+      const key = getWeekKey(u.createdAt);
+
+      if (map[key]) {
+        map[key].newUsers += 1;
+        if (u.userSt === 'inactive') map[key].inactive += 1;
+        if (u.deleteYN === 'Y') map[key].deleted += 1;
+      }
+    });
+
+    return uniqueWeeks.map((k) => map[k]);
+  }
+
+  // ✅ 기존 로직 (daily / monthly)
+  const range = getDateRange(period);
   const map = {};
 
   range.forEach((d) => {
     let key;
 
     if (period === 'daily') {
-      key = d.toISOString().slice(5, 10); // MM-DD
-    } else if (period === 'weekly') {
       key = d.toISOString().slice(5, 10);
     } else {
       key = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`;
     }
 
-    map[key] = { label: key, newUsers: 0 };
+    map[key] = {
+      label: key,
+      newUsers: 0,
+      inactive: 0,
+      deleted: 0,
+    };
   });
 
   users.forEach((u) => {
-    const d = new Date(u.createdAt);
-
     let key;
 
-    if (period === 'daily' || period === 'weekly') {
-      key = d.toISOString().slice(5, 10);
+    if (period === 'daily') {
+      key = new Date(u.createdAt).toISOString().slice(5, 10);
     } else {
+      const d = new Date(u.createdAt);
       key = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`;
     }
 
     if (map[key]) {
       map[key].newUsers += 1;
+      if (u.userSt === 'inactive') map[key].inactive += 1;
+      if (u.deleteYN === 'Y') map[key].deleted += 1;
     }
   });
 
   return Object.values(map);
 }
 
-function SimpleBarChart({ data }) {
-  const maxValue = Math.max(...data.map((d) => d.newUsers), 20);
+function GroupBarChart({ data }) {
+  const [hover, setHover] = useState(null);
 
-  const getHeight = (v) => (v / maxValue) * 160;
+  const width = 520;
+  const height = 220;
+  const padX = 40;
+  const padY = 20;
 
-  return (
-    <div className={styles.chartWrap}>
-      <YAxis max={Math.ceil(maxValue / 20) * 20} />
-
-      <div className={styles.chart}>
-        {data.map((d, i) => (
-          <div key={i} className={styles.barGroup}>
-            <div
-              className={styles.bar}
-              style={{ height: getHeight(d.newUsers) }}
-            />
-            <span>{d.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+  const rawMax = Math.max(
+    ...data.flatMap((d) => [d.newUsers, d.inactive, d.deleted]),
+    1
   );
-}
 
-function YAxis({ max }) {
+  const max = rawMax < 10 ? 20 : Math.ceil(rawMax / 10) * 10;
+
+  const groupWidth = (width - padX * 2) / data.length;
+  const barWidth = groupWidth / 4;
+
+  const getY = (v) => height - padY - (v / max) * (height - padY * 2);
+
   const ticks = [];
-  for (let i = 0; i <= max; i += 20) {
-    ticks.push(i);
-  }
+  for (let i = 0; i <= max; i += 20) ticks.push(i);
 
   return (
-    <div className={styles.yAxis}>
-      {ticks.map((t, i) => (
-        <div key={i} className={styles.yRow}>
-          <span>{t}</span>
-          <div className={styles.gridLine} />
-        </div>
-      ))}
-    </div>
+    <svg viewBox={`0 0 ${width} ${height}`} className={styles.lineSvg}>
+      {/* Y grid */}
+      {ticks.map((t, i) => {
+        const y = getY(t);
+        return (
+          <g key={i}>
+            <line x1={padX} x2={width - padX} y1={y} y2={y} stroke="#eee" />
+            <text
+              x={padX - 8}
+              y={y + 4}
+              textAnchor="end"
+              fontSize="10"
+              fill="#888"
+            >
+              {t}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* X축 */}
+      <line
+        x1={padX}
+        x2={width - padX}
+        y1={height - padY}
+        y2={height - padY}
+        stroke="#ddd"
+      />
+
+      {/* bars */}
+      {data.map((d, i) => {
+        const baseX = padX + i * groupWidth;
+
+        const values = [
+          { v: d.newUsers, color: '#86efac' },
+          { v: d.inactive, color: '#93c5fd' },
+          { v: d.deleted, color: '#fca5a5' },
+        ];
+
+        return (
+          <g key={i}>
+            {values.map((item, j) => {
+              if (item.v === 0) return null;
+
+              const x = baseX + j * barWidth + barWidth;
+              const y = getY(item.v);
+              const h = height - padY - y;
+
+              return (
+                <rect
+                  key={j}
+                  x={x}
+                  y={y}
+                  width={barWidth}
+                  height={h}
+                  fill={item.color}
+                  rx="2"
+                  onMouseEnter={() => setHover({ x, y, value: item.v })}
+                  onMouseLeave={() => setHover(null)}
+                />
+              );
+            })}
+
+            {/* X label */}
+            <text
+              x={baseX + groupWidth / 2}
+              y={height - padY + 14}
+              textAnchor="middle"
+              fontSize="10"
+              fill="#666"
+            >
+              {d.label}
+            </text>
+          </g>
+        );
+      })}
+
+      {hover && (
+        <g>
+          <rect
+            x={hover.x - 30}
+            y={hover.y - 35}
+            width="60"
+            height="22"
+            rx="6"
+            fill="#333"
+          />
+          <text
+            x={hover.x}
+            y={hover.y - 20}
+            textAnchor="middle"
+            fill="#fff"
+            fontSize="12"
+          >
+            {hover.value}명
+          </text>
+        </g>
+      )}
+    </svg>
   );
 }
 
@@ -221,7 +390,7 @@ export default function AdminUserDashboard() {
           <div className={styles.kpiCard}>
             <p>전체 회원 수</p>
             <h2>{metrics.totalUsers}</h2>
-            <p>--------------</p>
+            <div className={styles.divider} />
             <p>밴 회원 수</p>
             <h2>{metrics.bannedUsers}</h2>
           </div>
@@ -231,19 +400,53 @@ export default function AdminUserDashboard() {
           <div className={styles.chartHeader}>
             <h3>회원 현황</h3>
 
-            <div className={styles.filterGroup}>
-              <button onClick={() => setPeriod('daily')}>일</button>
-              <button onClick={() => setPeriod('weekly')}>주</button>
-              <button onClick={() => setPeriod('monthly')}>월</button>
+            <div className={styles.headerRight}>
+              <div className={styles.legend}>
+                <span>
+                  <i className={styles.new}></i>신규
+                </span>
+                <span>
+                  <i className={styles.inactive}></i>휴면
+                </span>
+                <span>
+                  <i className={styles.deleted}></i>탈퇴
+                </span>
+              </div>
+
+              <div className={styles.filterGroup}>
+                <button
+                  className={period === 'daily' ? styles.activeBtn : ''}
+                  onClick={() => setPeriod('daily')}
+                >
+                  일
+                </button>
+                <button
+                  className={period === 'weekly' ? styles.activeBtn : ''}
+                  onClick={() => setPeriod('weekly')}
+                >
+                  주
+                </button>
+                <button
+                  className={period === 'monthly' ? styles.activeBtn : ''}
+                  onClick={() => setPeriod('monthly')}
+                >
+                  월
+                </button>
+              </div>
             </div>
           </div>
 
-          <SimpleBarChart data={chartData} />
+          <GroupBarChart data={chartData} />
         </div>
 
-        <div className={styles.donutBox}>
-          <Donut percent={metrics.returnRate} label="재방문율" />
-          <Donut percent={metrics.churnRate} label="탈퇴율" />
+        <div className={styles.donutCard}>
+          <div className={styles.cardHeader}>
+            <h3>회원 유지율</h3>
+          </div>
+          <div className={styles.donutBox}>
+            <Donut percent={metrics.returnRate} label="재방문율" />
+            <Donut percent={metrics.churnRate} label="탈퇴율" />
+          </div>
         </div>
       </div>
     </div>
