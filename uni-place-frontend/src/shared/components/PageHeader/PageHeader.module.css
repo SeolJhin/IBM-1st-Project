@@ -5,7 +5,7 @@
 
 .pageHeader {
   background-color: #ffffff;
-  border-bottom: 1px solid #E8E5DF;
+  border-bottom: 1px solid #e8e5df;
   padding-top: 64px; /* 헤더 높이(64px)와 맞춤 */
 }
 
@@ -17,18 +17,17 @@
 
 .title {
   font-size: 24px;
-  font-weight: 800;
   /* 흰 배경 → 진한 검정 */
   color: #111111;
   margin: 0 0 4px;
-  font-family: var(--font-display, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   letter-spacing: -0.01em;
 }
 
 .subtitle {
   font-size: 14px;
   /* 서브도 충분히 진하게 — #6B6B6B 이상 */
-  color: #6B6B6B;
+  color: #6b6b6b;
   font-weight: 400;
   margin: 0 0 20px;
   line-height: 1.55;
@@ -50,7 +49,9 @@
   cursor: pointer;
   /* 탭 하단에 2.5px 라인 (기본은 투명) */
   border-bottom: 2.5px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
   font-family: var(--font-body, 'Noto Sans KR', sans-serif);
   /* 흰 배경 → 기본 탭 텍스트도 충분히 진하게 */
   color: #555555;
@@ -64,8 +65,8 @@
 
 /* 활성 탭 — 골드 포인트 */
 .tabActive {
-  color: var(--primary, #C9962F);
-  border-bottom-color: var(--primary, #C9962F);
+  color: var(--primary, #c9962f);
+  border-bottom-color: var(--primary, #c9962f);
 }
 
 /* 호버 탭 */
