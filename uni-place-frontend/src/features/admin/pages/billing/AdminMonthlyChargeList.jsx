@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { adminApi } from '../../api/adminApi';
+import ErrorActionNotice from '../../../../shared/components/ErrorActionNotice/ErrorActionNotice';
 import styles from '../payment/AdminPaymentTable.module.css';
 
 const CHARGE_STATUS_OPTIONS = [
@@ -113,7 +114,7 @@ export default function AdminMonthlyChargeList() {
   const [tenantUserIdByContractId, setTenantUserIdByContractId] = useState({});
   const [userNameById, setUserNameById] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [keyword, setKeyword] = useState('');
@@ -122,7 +123,7 @@ export default function AdminMonthlyChargeList() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError(null);
 
     try {
       const [chargeData, paymentData, contracts, users] = await Promise.all([
@@ -175,7 +176,7 @@ export default function AdminMonthlyChargeList() {
       setPaymentById({});
       setTenantUserIdByContractId({});
       setUserNameById({});
-      setError(e?.message || '정산 데이터를 불러오지 못했습니다.');
+      setError(e);
     } finally {
       setLoading(false);
     }
@@ -322,7 +323,13 @@ export default function AdminMonthlyChargeList() {
         </button>
       </div>
 
-      {error ? <div className={styles.errorBox}>{error}</div> : null}
+      {error ? (
+        <ErrorActionNotice
+          error={error}
+          fallback="정산 데이터를 불러오지 못했습니다."
+          onRetry={load}
+        />
+      ) : null}
 
       {!loading && rows.length === 0 ? (
         <div className={styles.empty}>조건에 맞는 정산 내역이 없습니다.</div>

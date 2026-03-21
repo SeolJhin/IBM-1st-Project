@@ -5,54 +5,74 @@ import { useAuth } from '../hooks/useAuth';
 import Header from '../../../app/layouts/components/Header';
 import { toKoreanMessage } from '../../../app/http/errorMapper';
 import FaceLoginModal from '../components/FaceLoginModal';
+import ErrorActionNotice from '../../../shared/components/ErrorActionNotice/ErrorActionNotice';
+import {
+  AUTH_EXPIRED_NOTICE,
+  getAuthResumePath,
+} from '../../../app/auth/authResume';
 
 export default function Login() {
   const { login, loading, refresh } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [faceModal, setFaceModal] = useState(false); // 얼굴 인식 모달
 
   const navigate = useNavigate();
   const location = useLocation();
-  const notice = location.state?.message || '';
+  const notice = location.state?.message || (location.state?.reason === 'auth_expired' ? AUTH_EXPIRED_NOTICE : '');
 
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((p) => ({ ...p, [name]: value }));
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  const runLogin = async ({ validate = true } = {}) => {
+    setError(null);
 
     const email = form.email.trim();
     const password = form.password;
 
-    if (!email) return setError('이메일을 입력해주세요.');
-    if (!password) return setError('비밀번호를 입력해주세요.');
+    if (validate && !email) {
+      setError('이메일을 입력해주세요.');
+      return;
+    }
+    if (validate && !password) {
+      setError('비밀번호를 입력해주세요.');
+      return;
+    }
 
     try {
       setSubmitting(true);
       await login({ email, password });
 
-      const from = location.state?.from || '/';
+      const from = location.state?.from || getAuthResumePath() || '/';
       navigate(from, { replace: true });
     } catch (err) {
       // 백엔드는 보안상 USER_NOT_FOUND / PASSWORD_MISMATCH / LOCKED 모두 COMMON_400으로 통일
       const isLoginFail =
         err?.errorCode === 'COMMON_400' || err?.status === 400;
-      setError(
-        isLoginFail
-          ? '이메일 또는 비밀번호를 확인해주세요.'
-          : toKoreanMessage(
-              err,
-              '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.'
-            )
-      );
+      if (isLoginFail) {
+        setError('이메일 또는 비밀번호를 확인해주세요.');
+      } else {
+        const normalized = new Error(
+          toKoreanMessage(err, '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.')
+        );
+        normalized.status = err?.status;
+        normalized.errorCode = err?.errorCode;
+        normalized.response = err?.response;
+        normalized.data = err?.data;
+        normalized.code = err?.code;
+        setError(normalized);
+      }
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    await runLogin({ validate: true });
   };
 
   const backendBaseUrl = process.env.REACT_APP_BACKEND_BASE_URL || '/api';
@@ -75,7 +95,7 @@ export default function Login() {
     setFaceModal(false);
     try {
       await refresh();
-      const from = location.state?.from || '/';
+      const from = location.state?.from || getAuthResumePath() || '/';
       navigate(from, { replace: true });
     } catch {
       navigate('/', { replace: true });
@@ -126,7 +146,15 @@ export default function Login() {
             </label>
 
             {notice ? <div className={styles.notice}>{notice}</div> : null}
-            {error ? <div className={styles.error}>{error}</div> : null}
+            {error ? (
+              <ErrorActionNotice
+                error={error}
+                fallback="로그인에 실패했습니다. 잠시 후 다시 시도해주세요."
+                onRetry={() => runLogin({ validate: false })}
+                hideTitle
+                className={styles.errorNotice}
+              />
+            ) : null}
 
             <button
               className={styles.submit}

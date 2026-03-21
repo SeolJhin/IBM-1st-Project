@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
+import ErrorActionNotice from '../../../../shared/components/ErrorActionNotice/ErrorActionNotice';
 import styles from './AdminPaymentTable.module.css';
 import refundStyles from './AdminRefundModal.module.css';
 
@@ -98,7 +99,7 @@ function GeneralRefundModal({ payment, userName, onClose, onSuccess }) {
   const [partialAmount, setPartialAmount] = useState('');
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const paidAmount = Number(payment?.capturedPrice ?? payment?.totalPrice ?? 0);
   const currency = payment?.currency || 'KRW';
@@ -276,7 +277,7 @@ function OrderRefundModal({ payment, userName, onClose, onSuccess }) {
   const [reason, setReason] = useState('');
   const [restoreStock, setRestoreStock] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const paidAmount = Number(payment?.capturedPrice ?? payment?.totalPrice ?? 0);
   const currency = payment?.currency || 'KRW';
@@ -639,6 +640,7 @@ export default function AdminPaymentList() {
   const [userNameById, setUserNameById] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [errorCause, setErrorCause] = useState(null);
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [providerFilter, setProviderFilter] = useState('all');
@@ -651,7 +653,8 @@ export default function AdminPaymentList() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError(null);
+    setErrorCause(null);
     try {
       const [paymentData, users] = await Promise.all([
         adminApi.getPayments(),
@@ -679,6 +682,7 @@ export default function AdminPaymentList() {
       );
     } catch (e) {
       setPayments([]);
+      setErrorCause(e);
       setError(e?.message || '결제 데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -747,6 +751,7 @@ export default function AdminPaymentList() {
     () => pageWindow(safePage, totalPages),
     [safePage, totalPages]
   );
+  const guideError = errorCause ?? error;
 
   return (
     <section className={styles.wrap}>
@@ -846,7 +851,13 @@ export default function AdminPaymentList() {
         </button>
       </div>
 
-      {error ? <div className={styles.errorBox}>{error}</div> : null}
+      {guideError ? (
+        <ErrorActionNotice
+          error={guideError}
+          fallback="결제 데이터를 불러오지 못했습니다."
+          onRetry={load}
+        />
+      ) : null}
 
       {!loading && rows.length === 0 ? (
         <div className={styles.empty}>조건에 맞는 결제 내역이 없습니다.</div>
