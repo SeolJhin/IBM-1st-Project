@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import router as api_v1_router
 from app.config.settings import settings
 from app.services.monitor.stock_alert_service import start_stock_alert_daemon
+from app.services.orchestrator.alias_registry import refresh as alias_refresh, start_refresh_daemon
 from app.services.rag.index_pipeline import ensure_rag_runtime
 from app.services.rag.reindex_daemon import start_reindex_daemon
 
@@ -23,19 +24,20 @@ logger = logging.getLogger(__name__)
 
 
 def _run_startup_warmup_tasks() -> None:
-    # Keep heavyweight startup work out of the main boot path.
+    """heavyweight 초기화 작업을 백그라운드에서 실행 — 서버 시작 지연 방지."""
+
+    # 임베딩 모델 워밍업
     try:
         from app.integrations.milvus_client import embed_text
-
         logger.info("[Warmup] embedding model warmup started")
         embed_text("warmup")
         logger.info("[Warmup] embedding model warmup finished")
     except Exception as e:
         logger.warning("[Warmup] embedding model warmup failed (ignored): %s", e)
 
+    # RAG 인덱싱
     try:
         from app.services.rag.index_pipeline import reindex_rag
-
         result = reindex_rag(force=False)
         logger.info(
             "[RAG] reindex result: status=%s documents=%s indexed=%s",
@@ -45,6 +47,14 @@ def _run_startup_warmup_tasks() -> None:
         )
     except Exception as e:
         logger.warning("[RAG] reindex failed (ignored): %s", e)
+
+    # 건물/상품/공용공간 alias 캐시 초기화 (Spring 연결 필요 — 실패해도 무시)
+    try:
+        alias_refresh()
+        start_refresh_daemon(interval_sec=600)  # 10분마다 갱신
+        logger.info("[Startup] alias_registry initialized")
+    except Exception as e:
+        logger.debug("[Startup] alias_registry init failed (ignored): %s", e)
 
 
 @asynccontextmanager
