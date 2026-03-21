@@ -323,6 +323,93 @@ def build_system_prompt_section() -> str:
 
 
 # ── 백그라운드 갱신 스레드 ────────────────────────────────────────────────────
+# ── 상품명 한글↔영문 alias (신규 상품 추가 시 여기에만 추가하면 됨) ────────────
+# 두 orchestrator가 이 목록을 공유. tool_orchestrator/admin_tool_orchestrator의
+# 중복 _PROD_NAME_ALIASES는 이 목록으로 대체됨.
+# 형식: ([키워드...], 한글명, 영문명)
+PROD_NAME_ALIASES: list[tuple[list[str], str, str]] = [
+    (["아메리카노", "americano"],                              "아메리카노",   "Americano"),
+    (["라떼", "카페라떼", "latte"],                          "라떼",         "Latte"),
+    (["샌드위치", "sandwich"],                                 "샌드위치",     "Sandwich"),
+    (["룸청소", "룸클리닝", "room cleaning", "청소서비스"],   "룸클리닝",     "Room Cleaning"),
+    (["세탁서비스", "laundry", "laundry service"],            "세탁서비스",   "Laundry Service"),
+    (["컵라면", "신라면", "라면"],                            "컵라면",       "컵라면"),
+    (["생수", "water"],                                        "생수",         "생수"),
+    (["도시락", "비빔밥"],                                     "도시락",       "도시락"),
+    (["세탁세제", "리큐"],                                     "세탁세제",     "세탁세제"),
+    (["화장지", "휴지", "toilet paper"],                      "화장지",       "화장지"),
+    (["주방세제", "퐁퐁", "dish soap"],                       "주방세제",     "주방세제"),
+    (["청소포", "물걸레"],                                     "청소포",       "청소포"),
+    # ── 신규 상품 추가 시 여기에 한 줄 추가 ──────────────────────────────────
+    # (["콜드브루", "cold brew", "coldbrew"], "콜드브루", "Cold Brew"),
+]
+
+
+def normalize_prod_query(user_input: str) -> str:
+    """
+    사용자가 입력한 상품명에서 공백 제거.
+    '카페 라떼' → '카페라떼', '룸 클리닝' → '룸클리닝'
+    LLM이 SQL 생성 전에 이 함수로 정규화된 키워드를 사용하도록 시스템 프롬프트에서 안내.
+    """
+    return user_input.replace(" ", "").strip()
+
+
+def get_dynamic_prod_aliases() -> list[tuple[list[str], str, str]]:
+    """
+    DB 상품 목록을 읽어 _normalize_prod_nm_in_sql 에 주입할 동적 alias 튜플 생성.
+    형식: ([키워드1, 키워드2, ...], 한글명, 영문명)
+
+    전략:
+    - 상품 목록을 한글 / 영문으로 분류
+    - 이름이 유사한 한글명↔영문명 쌍을 자동 매핑 (소문자 비교)
+    - 매핑된 쌍은 OR 확장, 매핑 못된 단일 상품은 단일 LIKE
+    """
+    products = _cache.snapshot()["products"]
+    if not products:
+        return []
+
+    def _is_ascii(s: str) -> bool:
+        return all(ord(c) < 128 for c in s.replace(" ", ""))
+
+    kor_prods = [p for p in products if not _is_ascii(p.get("prod_nm", ""))]
+    eng_prods = [p for p in products if _is_ascii(p.get("prod_nm", "")) and p.get("prod_nm", "")]
+
+    # 한글명 → 영문명 자동 매핑 (prod_nm 소문자 제거 공백 비교)
+    def _normalize_key(s: str) -> str:
+        import unicodedata
+        s = s.lower().replace(" ", "").replace("-", "").replace("_", "")
+        return s
+
+    # 영문 상품 키: 정규화 키 → prod_nm
+    eng_map = {_normalize_key(p["prod_nm"]): p["prod_nm"] for p in eng_prods}
+
+    result: list[tuple[list[str], str, str]] = []
+    matched_eng: set[str] = set()
+
+    for kp in kor_prods:
+        kor_nm = kp["prod_nm"]
+        kor_key = _normalize_key(kor_nm)
+        # 영문 상품과 키가 일치하는 것 찾기
+        matched = eng_map.get(kor_key)
+        if matched:
+            keywords = [kor_nm.lower(), matched.lower()]
+            result.append((keywords, kor_nm, matched))
+            matched_eng.add(matched)
+        else:
+            # 띄어쓰기 제거 버전도 키워드에 포함 (예: '콜드 브루' → ['콜드 브루', '콜드브루'])
+            kor_no_space = kor_nm.replace(' ', '')
+            keywords = list({kor_nm.lower(), kor_no_space.lower()})
+            result.append((keywords, kor_nm, kor_nm))
+
+    # 매핑 못된 영문 상품은 단독으로 추가
+    for ep in eng_prods:
+        eng_nm = ep["prod_nm"]
+        if eng_nm not in matched_eng:
+            result.append(([eng_nm.lower()], eng_nm, eng_nm))
+
+    return result
+
+
 def start_refresh_daemon(interval_sec: int = _REFRESH_INTERVAL_SEC) -> None:
     """주기적으로 alias 캐시를 갱신하는 백그라운드 스레드 시작."""
     def _loop():
