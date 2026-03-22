@@ -1,0 +1,124 @@
+.dashboard {
+  gap: 20px;
+}
+
+.topRow {
+  display: flex;
+  gap: 16px;
+}
+
+.kpiCard {
+  border: 1px solid rgba(31, 36, 48, 0.12);
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.kpiCard p {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.kpiCard h2 {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.card {
+  flex: 2;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(31, 36, 48, 0.12);
+}
+
+.divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 12px 0;
+}
+
+.filterGroup button {
+  margin-left: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.filterGroup button:hover {
+  background: #f8f8f8;
+}
+
+/* 선택된 버튼 */
+.activeBtn {
+  background: #fff8e8;
+  color: #b7791f;
+  border-color: #caa25a;
+  font-weight: 700;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #666;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legendDotGreen {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4ade80;
+}
+
+.legendDotPink {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fca5a5;
+}
+
+.filterRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.filterRow select {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(31, 36, 48, 0.2);
+  background: #fff;
+  margin-left: 6px;
+}
