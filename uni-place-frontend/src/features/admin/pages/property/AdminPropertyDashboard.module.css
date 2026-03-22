@@ -50,6 +50,12 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
+.card p {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
 .card:hover {
   transform: translateY(-2px);
   transition: 0.2s;
@@ -103,78 +109,56 @@
   margin: 12px 0;
 }
 
-.donutWrap {
+.donutBox {
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
-  margin-top: 15px;
-  margin-bottom: 20px;
+  gap: 40px;
+}
+
+.donutWrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.donut {
+  width: 140px;
+  height: 140px;
+  transform: rotate(-90deg);
+}
+
+/* 배경 */
+.donutTrack {
+  fill: none;
+  stroke: rgba(31, 36, 48, 0.1);
+  stroke-width: 3.8;
 }
 
 /* 입주율 */
-.donut {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  background: conic-gradient(#4f46e5 calc(var(--value) * 1%), #e5e7eb 0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+.donutValue {
+  fill: none;
+  stroke: #4f46e5;
+  stroke-width: 3.8;
+  stroke-linecap: round;
 }
 
-/* 안쪽 흰 원 */
-.donut::after {
-  content: '';
+/* 중앙 텍스트 */
+.donutCenter {
   position: absolute;
-  width: 75px;
-  height: 75px;
-  background: white;
-  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
 }
 
-/* 텍스트 */
-.donut span {
-  position: absolute;
-  font-weight: 700;
-  font-size: 16px;
+.donutCenter strong {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
 }
 
-.donut p {
-  position: absolute;
-  bottom: -22px;
+.donutCenter span {
   font-size: 12px;
-}
-
-/* 공실률 (회색톤) */
-.donutGray {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  background: conic-gradient(#9ca3af calc(var(--value2) * 1%), #e5e7eb 0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.donutGray::after {
-  content: '';
-  position: absolute;
-  width: 75px;
-  height: 75px;
-  background: white;
-  border-radius: 50%;
-}
-
-.donutGray span {
-  position: absolute;
-  font-weight: 700;
-  font-size: 16px;
-}
-
-.donutGray p {
-  position: absolute;
-  bottom: -22px;
-  font-size: 12px;
+  color: #666;
 }
