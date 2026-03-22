@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminPropertyHub.module.css';
 import { adminApi } from '../../api/adminApi';
+import PropertyDashboard from './AdminPropertyDashboard';
 
 export default function AdminPropertyHub() {
   const [refreshState, setRefreshState] = useState('idle'); // idle | loading | done | error
@@ -37,6 +38,10 @@ export default function AdminPropertyHub() {
         >
           {btnLabel}
         </button>
+      </div>
+
+      <div className={styles.dashboardArea}>
+        <PropertyDashboard />
       </div>
 
       <div className={styles.tabs}>
