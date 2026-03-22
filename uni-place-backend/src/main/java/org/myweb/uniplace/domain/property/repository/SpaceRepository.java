@@ -67,4 +67,5 @@ public interface SpaceRepository extends JpaRepository<CommonSpace, Integer> {
 
             Pageable pageable
     );
+    int countByBuilding_BuildingId(Integer buildingId);
 }

@@ -1,0 +1,180 @@
+.wrap {
+  border: 1px solid rgba(31, 36, 48, 0.12);
+  border-radius: 16px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.dashboardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2328;
+  margin-bottom: 14px;
+}
+
+.dashboardContainer {
+  background: #fffff9;
+  border-radius: 20px;
+  padding: 20px;
+  width: 100%;
+}
+
+.summary {
+  display: flex;
+  gap: 40px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  gap: 20px;
+  width: 100%;
+}
+
+.summary div h2 {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(31, 36, 48, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  transition: 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  transition: 0.2s;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2328;
+}
+
+.icon {
+  font-size: 16px;
+}
+
+.section {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.filter {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+.filter select {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(31, 36, 48, 0.2);
+  background: #fff;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 12px 0;
+}
+
+.donutWrap {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-top: 15px;
+  margin-bottom: 20px;
+}
+
+/* 입주율 */
+.donut {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: conic-gradient(#4f46e5 calc(var(--value) * 1%), #e5e7eb 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* 안쪽 흰 원 */
+.donut::after {
+  content: '';
+  position: absolute;
+  width: 75px;
+  height: 75px;
+  background: white;
+  border-radius: 50%;
+}
+
+/* 텍스트 */
+.donut span {
+  position: absolute;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.donut p {
+  position: absolute;
+  bottom: -22px;
+  font-size: 12px;
+}
+
+/* 공실률 (회색톤) */
+.donutGray {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: conic-gradient(#9ca3af calc(var(--value2) * 1%), #e5e7eb 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.donutGray::after {
+  content: '';
+  position: absolute;
+  width: 75px;
+  height: 75px;
+  background: white;
+  border-radius: 50%;
+}
+
+.donutGray span {
+  position: absolute;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.donutGray p {
+  position: absolute;
+  bottom: -22px;
+  font-size: 12px;
+}
