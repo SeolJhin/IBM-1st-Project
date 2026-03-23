@@ -2,8 +2,6 @@
 // src/features/chat/components/ChatBot.jsx
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
-import TourReservationList from '../../reservation/pages/TourReservationList';
 import SpaceReservationCreate from '../../reservation/pages/SpaceReservationCreate';
 import SpaceReservationList from '../../reservation/pages/SpaceReservationList';
 import Modal from '../../../shared/components/Modal/Modal';
@@ -29,13 +27,73 @@ function formatTime(ts) {
   });
 }
 
-// 챗봇 내 모달로 열어야 하는 URL 목록
-var MODAL_ROUTES = {
-  '/reservations/tour/create': 'tour_create',
-  '/reservations/tour/list': 'tour_list_modal',
-};
+function buildTourCreateUrl(params) {
+  var query = new URLSearchParams();
+  if (params.buildingId) query.set('buildingId', String(params.buildingId));
+  if (params.roomId) query.set('roomId', String(params.roomId));
+  if (params.date) query.set('date', String(params.date));
+  if (params.startAt) query.set('startAt', String(params.startAt));
+  if (params.endAt) query.set('endAt', String(params.endAt));
+  var qs = query.toString();
+  return qs ? '/reservations/tour/create?' + qs : '/reservations/tour/create';
+}
 
-function ActionButtons({ buttons, onModalRoute, onAction, allMessages }) {
+function extractLatestTourPrefill(allMessages) {
+  function toTwoDigits(value) {
+    return String(value).padStart(2, '0');
+  }
+
+  if (!Array.isArray(allMessages)) return {};
+  for (var i = allMessages.length - 1; i >= 0; i--) {
+    var msg = allMessages[i];
+    if (!msg || msg.role !== 'assistant') continue;
+    var metadata = msg.metadata || {};
+    if (metadata.recommend_type !== 'tour_reserve') continue;
+
+    var date = metadata.date || null;
+    var startAt = metadata.start_at || null;
+    var endAt = metadata.end_at || null;
+
+    // metadata에 시간이 없으면 답변 텍스트의 날짜/시간 범위를 파싱해 보완
+    var content = msg.content || '';
+    if (!date) {
+      var dateMatch = content.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+      if (dateMatch) date = dateMatch[1];
+    }
+    if ((!startAt || !endAt) && date) {
+      var rangeMatch = content.match(
+        /([01]?\d|2[0-3]):([0-5]\d)\s*[~\-]\s*([01]?\d|2[0-3]):([0-5]\d)/
+      );
+      if (rangeMatch) {
+        startAt =
+          date +
+          'T' +
+          toTwoDigits(rangeMatch[1]) +
+          ':' +
+          rangeMatch[2] +
+          ':00';
+        endAt =
+          date +
+          'T' +
+          toTwoDigits(rangeMatch[3]) +
+          ':' +
+          rangeMatch[4] +
+          ':00';
+      }
+    }
+
+    return {
+      buildingId: metadata.building_id || null,
+      roomId: metadata.room_id || null,
+      date: date,
+      startAt: startAt,
+      endAt: endAt,
+    };
+  }
+  return {};
+}
+
+function ActionButtons({ buttons, onAction, allMessages }) {
   var navigate = useNavigate();
   if (!buttons || buttons.length === 0) return null;
 
@@ -50,6 +108,29 @@ function ActionButtons({ buttons, onModalRoute, onAction, allMessages }) {
               if (!btn.url) return;
               var normalizedUrl = btn.url.trim().replace(/\/$/, '');
               var pathOnly = normalizedUrl.split('?')[0];
+              var urlParams = new URLSearchParams(
+                normalizedUrl.split('?')[1] || ''
+              );
+
+              if (pathOnly === '/reservations/tour/create') {
+                var suggested = extractLatestTourPrefill(allMessages);
+                navigate(
+                  buildTourCreateUrl({
+                    buildingId:
+                      urlParams.get('buildingId') || suggested.buildingId,
+                    roomId: urlParams.get('roomId') || suggested.roomId,
+                    date: urlParams.get('date') || suggested.date,
+                    startAt: urlParams.get('startAt') || suggested.startAt,
+                    endAt: urlParams.get('endAt') || suggested.endAt,
+                  })
+                );
+                return;
+              }
+
+              if (pathOnly === '/reservations/tour/list') {
+                navigate('/reservations/tour/list');
+                return;
+              }
 
               if (
                 normalizedUrl.startsWith('http') ||
@@ -61,8 +142,6 @@ function ActionButtons({ buttons, onModalRoute, onAction, allMessages }) {
                   ? `/api${normalizedUrl}`
                   : normalizedUrl;
                 window.open(openUrl, '_blank');
-              } else if (MODAL_ROUTES[pathOnly] && onModalRoute) {
-                onModalRoute(MODAL_ROUTES[pathOnly]);
               } else if (
                 (pathOnly === '/me' &&
                   (normalizedUrl.includes('tab=space') ||
@@ -100,9 +179,6 @@ function ActionButtons({ buttons, onModalRoute, onAction, allMessages }) {
                   }
                 }
                 // URL 파라미터에서도 시도
-                var urlParams = new URLSearchParams(
-                  normalizedUrl.split('?')[1] || ''
-                );
                 if (!extractedSpaceId && urlParams.get('spaceId'))
                   extractedSpaceId = Number(urlParams.get('spaceId'));
                 if (!extractedBuildingId && urlParams.get('buildingId'))
@@ -132,7 +208,7 @@ function ActionButtons({ buttons, onModalRoute, onAction, allMessages }) {
   );
 }
 
-function MessageBubble({ msg, onSpeak, onAction, onModalRoute, allMessages }) {
+function MessageBubble({ msg, onSpeak, onAction, allMessages }) {
   var isUser = msg.role === 'user';
   var actions = Array.isArray(msg.actions) ? msg.actions : [];
   return (
@@ -179,7 +255,6 @@ function MessageBubble({ msg, onSpeak, onAction, onModalRoute, allMessages }) {
               {msg.buttons && msg.buttons.length > 0 && (
                 <ActionButtons
                   buttons={msg.buttons}
-                  onModalRoute={onModalRoute}
                   onAction={onAction}
                   allMessages={allMessages}
                 />
@@ -259,19 +334,6 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
   var openState = React.useState(false);
   var open = openState[0];
   var setOpen = openState[1];
-
-  // ── 투어 예약 모달 상태 ─────────────────────────────────────
-  var tourModalState = React.useState(false);
-  var tourModalOpen = tourModalState[0];
-  var setTourModalOpen = tourModalState[1];
-  var tourListModalState = React.useState(false);
-  var tourListModalOpen = tourListModalState[0];
-  var setTourListModalOpen = tourListModalState[1];
-
-  // ── 투어 자동선택 파라미터 ───────────────────────────────────
-  var tourInitState = React.useState(null); // { buildingId, roomId, date, startAt, endAt }
-  var tourInit = tourInitState[0];
-  var setTourInit = tourInitState[1];
 
   // ── 공용공간 예약 모달 상태 ──────────────────────────────────
   var spaceModalState = React.useState(false);
@@ -387,22 +449,24 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
       setSpaceListModalOpen(true);
       return;
     }
-    // 투어 예약 → 모달 (기존 방식 + 자동선택)
+    // 투어 예약 → 예약 생성 페이지로 이동(사전선택 값만 전달)
     if (action.type === 'tour_reserve') {
-      setTourInit({
-        buildingId: action.buildingId || null,
-        roomId: action.roomId ? String(action.roomId) : '',
-        date: action.date || null,
-        startAt: action.startAt || null,
-        endAt: action.endAt || null,
-      });
-      setTourModalOpen(true);
+      setOpen(false);
+      navigate(
+        buildTourCreateUrl({
+          buildingId: action.buildingId || null,
+          roomId: action.roomId || null,
+          date: action.date || null,
+          startAt: action.startAt || null,
+          endAt: action.endAt || null,
+        })
+      );
       return;
     }
-    // 투어 조회 → 모달
+    // 투어 조회 → 목록 페이지로 이동
     if (action.type === 'tour_list') {
-      setTourInit(null);
-      setTourListModalOpen(true);
+      setOpen(false);
+      navigate('/reservations/tour/list');
       return;
     }
   }
@@ -583,11 +647,6 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
                     onSpeak={!isBlind ? speakMessage : null}
                     onAction={onActionClick}
                     allMessages={messages}
-                    onModalRoute={function (routeKey) {
-                      if (routeKey === 'tour_create') setTourModalOpen(true);
-                      else if (routeKey === 'tour_list_modal')
-                        setTourListModalOpen(true);
-                    }}
                   />
                 );
               })
@@ -725,61 +784,6 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
           </div>
         </div>
       )}
-      {/* ── 투어 예약 모달 ── */}
-      <Modal
-        open={tourModalOpen}
-        onClose={function () {
-          setTourModalOpen(false);
-          setTourInit(null);
-        }}
-        title="📅 사전 방문 예약"
-        size="lg"
-      >
-        <TourReservationCreate
-          inlineMode
-          initialBuildingId={tourInit?.buildingId || null}
-          initialRoomId={tourInit?.roomId || ''}
-          initialDate={tourInit?.date || null}
-          initialSlotStartAt={tourInit?.startAt || null}
-          initialSlotEndAt={tourInit?.endAt || null}
-          onSuccess={function () {
-            setTourModalOpen(false);
-            setTourInit(null);
-            setTourListModalOpen(true);
-          }}
-          onClose={function () {
-            setTourModalOpen(false);
-            setTourInit(null);
-          }}
-          onGoList={function () {
-            setTourModalOpen(false);
-            setTourInit(null);
-            setTourListModalOpen(true);
-          }}
-        />
-      </Modal>
-
-      {/* ── 투어 예약 조회 모달 ── */}
-      <Modal
-        open={tourListModalOpen}
-        onClose={function () {
-          setTourListModalOpen(false);
-        }}
-        title="📋 방문 예약 조회"
-        size="lg"
-      >
-        <TourReservationList
-          inlineMode
-          onGoCreate={function () {
-            setTourListModalOpen(false);
-            setTourModalOpen(true);
-          }}
-          onClose={function () {
-            setTourListModalOpen(false);
-          }}
-        />
-      </Modal>
-
       {/* ── 공용공간 예약 모달 (마이페이지 공용시설 탭 연결) ── */}
       <Modal
         open={spaceModalOpen}
