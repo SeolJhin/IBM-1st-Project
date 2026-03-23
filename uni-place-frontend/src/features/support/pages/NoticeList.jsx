@@ -353,7 +353,10 @@ export default function NoticeList() {
               notices.map((n) => {
                 const st = NOTICE_ST_LABEL[n.noticeSt];
                 return (
-                  <tr key={n.noticeId}>
+                  <tr
+                    key={n.noticeId}
+                    className={n.importance === 'Y' ? styles.importantRow : ''}
+                  >
                     <td style={{ textAlign: 'center', color: 'var(--muted)' }}>
                       {n.noticeId}
                     </td>

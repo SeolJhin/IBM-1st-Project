@@ -32,9 +32,7 @@ export default function Login() {
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({ ...prev, [name]: '' }));
-    }
+    if (fieldErrors[name]) setFieldErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const focusField = (name) => {
@@ -43,15 +41,14 @@ export default function Login() {
   };
 
   const setFieldError = (name, message) => {
+    // fieldErrors만 설정 — 위에 ErrorActionNotice 뜨지 않도록 setError 호출 안 함
     setFieldErrors({ email: '', password: '', [name]: message });
-    setError(message);
     requestAnimationFrame(() => focusField(name));
   };
 
   const runLogin = async ({ validate = true } = {}) => {
     setError(null);
     setFieldErrors({ email: '', password: '' });
-
     const email = form.email.trim();
     const password = form.password;
 
@@ -67,17 +64,20 @@ export default function Login() {
     try {
       setSubmitting(true);
       await login({ email, password });
-
       const from = location.state?.from || getAuthResumePath() || '/';
       navigate(from, { replace: true });
     } catch (err) {
-      const isLoginFail = err?.errorCode === 'COMMON_400' || err?.status === 400;
+      const isLoginFail =
+        err?.errorCode === 'COMMON_400' || err?.status === 400;
       if (isLoginFail) {
-        const message = '이메일 또는 비밀번호를 확인해주세요.';
-        setFieldErrors({ email: message, password: message });
-        setError(message);
+        // 필드별 개별 메시지
+        setFieldErrors({
+          email: '이메일을 확인해주세요.',
+          password: '비밀번호를 확인해주세요.',
+        });
         requestAnimationFrame(() => focusField('email'));
       } else {
+        // 서버/네트워크 오류만 ErrorActionNotice 표시
         const normalized = new Error(
           toKoreanMessage(
             err,
@@ -129,163 +129,162 @@ export default function Login() {
   return (
     <div className={styles.page}>
       <Header />
-
       <main className={styles.container}>
-        <section className={styles.card}>
-          <div className={styles.brand}>
-            <p className={styles.welcome}>WELCOME TO</p>
-            <h1 className={styles.brandName}>UNI-PLACE</h1>
-            <h2 className={styles.title}>로그인</h2>
-          </div>
-
-          <form className={styles.form} onSubmit={onSubmit} noValidate>
-            {notice ? (
-              <div className={styles.notice} role="status" aria-live="polite">
-                {notice}
-              </div>
-            ) : null}
-
-            {error ? (
-              <div ref={errorRef} tabIndex={-1}>
-                <ErrorActionNotice
-                  error={error}
-                  fallback="로그인에 실패했습니다. 잠시 후 다시 시도해주세요."
-                  onRetry={() => runLogin({ validate: false })}
-                  hideTitle
-                  className={styles.errorNotice}
-                />
-              </div>
-            ) : null}
-
-            <div className={styles.row}>
-              <label className={styles.tag} htmlFor="login-email">
-                ID
-              </label>
-              <div className={styles.fieldWrap}>
-                <input
-                  id="login-email"
-                  ref={emailInputRef}
-                  className={styles.input}
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={onChange}
-                  placeholder="이메일을 입력해주세요."
-                  autoComplete="email"
-                  disabled={loading || submitting}
-                  aria-invalid={Boolean(fieldErrors.email)}
-                  aria-describedby={
-                    fieldErrors.email ? 'login-email-error' : undefined
-                  }
-                  required
-                />
-                {fieldErrors.email ? (
-                  <p id="login-email-error" className={styles.fieldError} role="alert">
-                    {fieldErrors.email}
-                  </p>
-                ) : null}
-              </div>
+        <div className={styles.cardWrap}>
+          <section className={styles.card}>
+            {/* 브랜드 */}
+            <div className={styles.brand}>
+              <p className={styles.welcome}>WELCOME TO</p>
+              <div className={styles.brandLine} aria-hidden="true" />
+              <h1 className={styles.brandName}>UNI-PLACE</h1>
+              <h2 className={styles.title}>로그인</h2>
             </div>
 
-            <div className={styles.row}>
-              <label className={styles.tag} htmlFor="login-password">
-                PW
-              </label>
-              <div className={styles.fieldWrap}>
-                <input
-                  id="login-password"
-                  ref={passwordInputRef}
-                  className={styles.input}
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={onChange}
-                  placeholder="비밀번호를 입력해주세요."
-                  autoComplete="current-password"
-                  disabled={loading || submitting}
-                  aria-invalid={Boolean(fieldErrors.password)}
-                  aria-describedby={
-                    fieldErrors.password ? 'login-password-error' : undefined
-                  }
-                  required
-                />
-                {fieldErrors.password ? (
-                  <p
-                    id="login-password-error"
-                    className={styles.fieldError}
-                    role="alert"
-                  >
-                    {fieldErrors.password}
-                  </p>
-                ) : null}
+            <form className={styles.form} onSubmit={onSubmit} noValidate>
+              {notice ? (
+                <div className={styles.notice} role="status" aria-live="polite">
+                  {notice}
+                </div>
+              ) : null}
+
+              {error ? (
+                <div ref={errorRef} tabIndex={-1}>
+                  <ErrorActionNotice
+                    error={error}
+                    fallback="로그인에 실패했습니다. 잠시 후 다시 시도해주세요."
+                    onRetry={() => runLogin({ validate: false })}
+                    hideTitle
+                    className={styles.errorNotice}
+                  />
+                </div>
+              ) : null}
+
+              {/* ID */}
+              <div
+                className={`${styles.row} ${fieldErrors.email ? styles.rowError : ''}`}
+              >
+                <label className={styles.tag} htmlFor="login-email">
+                  Email
+                </label>
+                <div className={styles.fieldWrap}>
+                  <input
+                    id="login-email"
+                    ref={emailInputRef}
+                    className={styles.input}
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={onChange}
+                    placeholder="이메일을 입력해주세요."
+                    autoComplete="email"
+                    disabled={loading || submitting}
+                    aria-invalid={Boolean(fieldErrors.email)}
+                    required
+                  />
+                </div>
               </div>
-            </div>
+              {fieldErrors.email ? (
+                <p className={styles.fieldError} role="alert">
+                  {fieldErrors.email}
+                </p>
+              ) : null}
 
-            <button
-              className={styles.submit}
-              type="submit"
-              disabled={loading || submitting}
-            >
-              {submitting ? '로그인 중…' : '로그인'}
-            </button>
+              {/* PW */}
+              <div
+                className={`${styles.row} ${fieldErrors.password ? styles.rowError : ''}`}
+              >
+                <label className={styles.tag} htmlFor="login-password">
+                  PW
+                </label>
+                <div className={styles.fieldWrap}>
+                  <input
+                    id="login-password"
+                    ref={passwordInputRef}
+                    className={styles.input}
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={onChange}
+                    placeholder="비밀번호를 입력해주세요."
+                    autoComplete="current-password"
+                    disabled={loading || submitting}
+                    aria-invalid={Boolean(fieldErrors.password)}
+                    required
+                  />
+                </div>
+              </div>
+              {fieldErrors.password ? (
+                <p className={styles.fieldError} role="alert">
+                  {fieldErrors.password}
+                </p>
+              ) : null}
 
-            <div className={styles.actions}>
+              {/* 로그인 버튼 */}
               <button
-                className={styles.subBtn}
-                type="button"
-                onClick={goSignup}
+                className={styles.submit}
+                type="submit"
                 disabled={loading || submitting}
               >
-                회원가입
+                {submitting ? '로그인 중…' : '로그인'}
               </button>
+
+              {/* 회원가입 / 찾기 */}
+              <div className={styles.actions}>
+                <button
+                  className={styles.subBtn}
+                  type="button"
+                  onClick={goSignup}
+                  disabled={loading || submitting}
+                >
+                  회원가입
+                </button>
+                <button
+                  className={styles.subBtn}
+                  type="button"
+                  onClick={goFind}
+                  disabled={loading || submitting}
+                >
+                  ID / PW 찾기
+                </button>
+              </div>
+
+              <div className={styles.divider}>
+                <span>또는</span>
+              </div>
 
               <button
-                className={styles.subBtn}
+                className={`${styles.socialBtn} ${styles.kakao}`}
                 type="button"
-                onClick={goFind}
+                onClick={goKakao}
                 disabled={loading || submitting}
               >
-                ID/PW 찾기
+                카카오톡으로 로그인
               </button>
-            </div>
+              <button
+                className={`${styles.socialBtn} ${styles.google}`}
+                type="button"
+                onClick={goGoogle}
+                disabled={loading || submitting}
+              >
+                Google 계정으로 로그인
+              </button>
 
-            <div className={styles.divider}>
-              <span>또는</span>
-            </div>
+              <div className={styles.divider}>
+                <span>또는</span>
+              </div>
 
-            <button
-              className={`${styles.socialBtn} ${styles.kakao}`}
-              type="button"
-              onClick={goKakao}
-              disabled={loading || submitting}
-            >
-              카카오톡으로 로그인
-            </button>
-
-            <button
-              className={`${styles.socialBtn} ${styles.google}`}
-              type="button"
-              onClick={goGoogle}
-              disabled={loading || submitting}
-            >
-              Google 계정으로 로그인
-            </button>
-
-            <div className={styles.divider}>
-              <span>또는</span>
-            </div>
-
-            <button
-              className={`${styles.socialBtn} ${styles.faceBtn}`}
-              type="button"
-              onClick={() => setFaceModal(true)}
-              disabled={loading || submitting}
-            >
-              <span className={styles.faceBtnIcon}>👤</span>
-              얼굴 인식으로 로그인
-            </button>
-          </form>
-        </section>
+              <button
+                className={`${styles.socialBtn} ${styles.faceBtn}`}
+                type="button"
+                onClick={() => setFaceModal(true)}
+                disabled={loading || submitting}
+              >
+                <span className={styles.faceBtnIcon}>👤</span>
+                얼굴 인식으로 로그인
+              </button>
+            </form>
+          </section>
+        </div>
       </main>
 
       {faceModal && (
