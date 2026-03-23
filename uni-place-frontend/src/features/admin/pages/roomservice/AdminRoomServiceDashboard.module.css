@@ -1,0 +1,98 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.topRow {
+  display: flex;
+  gap: 16px;
+}
+
+.card {
+  flex: 1;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(31, 36, 48, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  transition: 0.2s;
+}
+
+.cardSmall {
+  flex: 1;
+}
+
+.cardLarge {
+  flex: 3;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.barChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 120px;
+}
+
+.barItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bar {
+  width: 14px;
+  background: #5b5bd6;
+  border-radius: 6px;
+}
+
+.chartSvg {
+  width: 100%;
+  height: 220px;
+}
+
+.filterGroup {
+  display: flex;
+  gap: 6px;
+}
+
+.filterGroup button {
+  border: 1px solid rgba(31, 36, 48, 0.2);
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.activeBtn {
+  background: #5b5bd6;
+  color: #b7791f;
+  font-weight: 700;
+}
+
+.card p {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.lowStock {
+  color: red;
+  font-weight: 600;
+}

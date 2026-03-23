@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import AdminContractList from './AdminContractList';
 import AdminRentManagement from './AdminRentManagement';
 import styles from './AdminContractHub.module.css';
+import ContractDashboard from './AdminContractDashboard';
 
 export default function AdminContractHub() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,25 +18,37 @@ export default function AdminContractHub() {
 
   return (
     <section className={styles.wrap}>
-      <div className={styles.tabRow}>
+      <div className={styles.topRow}>
+        <h1 className={styles.title}>계약 관리</h1>
+      </div>
+
+      <div className={styles.dashboardArea}>
+        <ContractDashboard />
+      </div>
+
+      <div className={styles.tabs}>
         <button
           type="button"
-          className={`${styles.tabBtn} ${view === 'contracts' ? styles.tabBtnActive : ''}`}
+          className={`${styles.tab} ${view === 'contracts' ? styles.tabActive : ''}`}
           onClick={() => switchView('contracts')}
         >
           계약 관리
         </button>
         <button
           type="button"
-          className={`${styles.tabBtn} ${view === 'monthly' ? styles.tabBtnActive : ''}`}
+          className={`${styles.tab} ${view === 'monthly' ? styles.tabActive : ''}`}
           onClick={() => switchView('monthly')}
         >
           월세 관리
         </button>
       </div>
-
-      {view === 'contracts' ? <AdminContractList /> : <AdminRentManagement />}
+      <div className={styles.panel}>
+        {view === 'contracts' ? (
+          <AdminContractList />
+        ) : (
+          <AdminRentManagement />
+        )}{' '}
+      </div>
     </section>
   );
 }
-
