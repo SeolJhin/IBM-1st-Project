@@ -278,15 +278,18 @@ def build_system_prompt_section() -> str:
 
     # 건물
     if snap["buildings"]:
-        lines.append("★ 건물 목록 (한글 입력 → 정확한 DB 영문명으로 변환해서 SQL 사용):")
+        lines.append("★ 건물 목록 (SQL LIKE 키워드는 반드시 아래 'DB명' 값 그대로 사용):")
         for b in snap["buildings"]:
             alias_str = ", ".join(b["aliases"]) if b["aliases"] else ""
             lines.append(
-                f"  - building_id={b['building_id']} | DB명: \"{b['building_nm']}\" "
-                f"| 한글 표현: {alias_str}"
+                f"  - building_id={b['building_id']} | DB명(SQL LIKE용): \"{b['building_nm']}\" "
+                f"| 사용자 입력 표현: {alias_str}"
             )
         lines.append(
-            "  → 사용자가 위 한글 표현 중 하나를 말하면 해당 building_nm으로 LIKE 검색.\n"
+            "  ★★ SQL 작성 규칙:\n"
+            "  1. 사용자가 어떤 표현을 쓰든 위 목록에서 building_id 또는 DB명을 찾아 SQL에 사용할 것.\n"
+            "  2. LIKE 키워드는 반드시 위 'DB명' 값 그대로 사용. 사용자 입력을 그대로 쓰면 0건이 나올 수 있음.\n"
+            "  3. 확실하지 않으면 building_id로 조회: WHERE b.building_id=N\n"
             "  → 목록에 없는 건물명은 query_database로 building 테이블 조회 후 확인."
         )
 

@@ -781,6 +781,26 @@ export default function AdminChatBot({ user }) {
               </p>
             </div>
             <div className={styles.statusDot} />
+            {/* 🔍 웹검색 버튼 — 클릭 시 input에 [웹검색] 프리픽스 자동 입력 */}
+            <button
+              className={styles.featureBadgeBtn}
+              title="웹검색 모드로 질문하기"
+              onClick={function () {
+                setInput(function (prev) {
+                  var base = prev.replace(/^\[웹검색\]\s*/, '');
+                  return '[웹검색] ' + base;
+                });
+                setTimeout(function () {
+                  if (textareaRef.current) {
+                    textareaRef.current.focus();
+                    var len = textareaRef.current.value.length;
+                    textareaRef.current.setSelectionRange(len, len);
+                  }
+                }, 50);
+              }}
+            >
+              🔍 웹검색
+            </button>
             <div className={styles.headerActions}>
               <button className={styles.iconBtn} onClick={clear} title="초기화">
                 <svg
