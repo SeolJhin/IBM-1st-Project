@@ -638,45 +638,6 @@
   color: #b0a898;
 }
 
-.recentSearchWrap {
-  margin-top: 10px;
-  border-top: 1px dashed #e8e2d6;
-  padding-top: 10px;
-}
-
-.recentSearchLabel {
-  font-size: 10px;
-  font-weight: 700;
-  color: #9a9080;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-
-.recentSearchList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.recentSearchChip {
-  border: 1px solid #e0dbd0;
-  border-radius: 0;
-  background: #ffffff;
-  color: #7a7060;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 10px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-
-.recentSearchChip:hover {
-  border-color: var(--primary, #b8945a);
-  color: var(--primary, #b8945a);
-}
-
 /* ── 방 유형 버튼 그리드 ── */
 .roomTypeGrid {
   display: grid;

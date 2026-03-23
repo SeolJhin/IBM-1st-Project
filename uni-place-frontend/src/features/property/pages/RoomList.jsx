@@ -69,8 +69,6 @@ function spaceReducer(state, action) {
   }
 }
 
-const RECENT_SEARCH_KEY = 'uniplace_recent_room_searches_v1';
-const MAX_RECENT_SEARCHES = 8;
 const BUILDING_TYPO_ALIASES = {
   유니플레이스: 'Uniplace',
   유니플레이스a: 'Uniplace A',
@@ -90,15 +88,6 @@ function normalizeSearchText(value) {
     .toLowerCase()
     .replace(/\s+/g, '')
     .replace(/[^0-9a-z가-힣]/gi, '');
-}
-
-function toRecentSearchLabel(item) {
-  const building = String(item?.buildingNm || '').trim();
-  const room = String(item?.roomNo || '').trim();
-  if (building && room) return `${building} ${room}호`;
-  if (building) return building;
-  if (room) return `${room}호`;
-  return '최근 검색';
 }
 
 function levenshteinDistance(a, b) {
@@ -175,46 +164,6 @@ function resolveBuildingName(inputValue, buildings = []) {
   }
 
   return { building: null, correctedFrom: '' };
-}
-
-function loadRecentSearches() {
-  try {
-    const raw = localStorage.getItem(RECENT_SEARCH_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveRecentSearches(items) {
-  try {
-    localStorage.setItem(RECENT_SEARCH_KEY, JSON.stringify(items));
-  } catch {
-    // ignore storage quota / private mode failures
-  }
-}
-
-function appendRecentSearch(prev, next) {
-  const buildingNm = String(next?.buildingNm || '').trim();
-  const roomNo = String(next?.roomNo || '').trim();
-  if (!buildingNm && !roomNo) return prev;
-
-  const nextBuilding = normalizeSearchText(buildingNm);
-  const nextRoom = normalizeSearchText(roomNo);
-  const deduped = (Array.isArray(prev) ? prev : []).filter((item) => {
-    return !(
-      normalizeSearchText(item?.buildingNm) === nextBuilding &&
-      normalizeSearchText(item?.roomNo) === nextRoom
-    );
-  });
-
-  const merged = [{ buildingNm, roomNo, at: Date.now() }, ...deduped].slice(
-    0,
-    MAX_RECENT_SEARCHES
-  );
-  return merged;
 }
 
 // ─── 별점 ────────────────────────────────────────────────────
@@ -417,9 +366,6 @@ function FilterPanel({
   buildings,
   buildingLoading,
   roomNoCandidates = [],
-  recentSearches = [],
-  onApplyRecentSearch,
-  onRecordRecentSearch,
 }) {
   const [local, setLocal] = useState({
     buildingNm: '',
@@ -494,17 +440,6 @@ function FilterPanel({
     if (e.key === 'Enter') cNum(key)();
   };
 
-  const recordRecent = useCallback(
-    (nextBuildingNm, nextRoomNo) => {
-      if (typeof onRecordRecentSearch !== 'function') return;
-      onRecordRecentSearch({
-        buildingNm: String(nextBuildingNm || '').trim(),
-        roomNo: String(nextRoomNo || '').trim(),
-      });
-    },
-    [onRecordRecentSearch]
-  );
-
   const applyBuildingFilter = useCallback(
     (rawInput) => {
       const input = String(rawInput ?? local.buildingNm ?? '').trim();
@@ -514,7 +449,6 @@ function FilterPanel({
           type: 'SET_FILTER',
           payload: { buildingNm: undefined, buildingId: undefined },
         });
-        recordRecent('', local.roomNo);
         return;
       }
 
@@ -542,9 +476,8 @@ function FilterPanel({
         setBuildingCorrection(null);
       }
 
-      recordRecent(nextBuildingNm, local.roomNo);
     },
-    [buildings, dispatch, local.buildingNm, local.roomNo, recordRecent]
+    [buildings, dispatch, local.buildingNm]
   );
 
   const applyRoomNoFilter = useCallback(
@@ -554,9 +487,8 @@ function FilterPanel({
         type: 'SET_FILTER',
         payload: { roomNo: roomNo || undefined },
       });
-      recordRecent(local.buildingNm || query.buildingNm, roomNo);
     },
-    [dispatch, local.buildingNm, local.roomNo, query.buildingNm, recordRecent]
+    [dispatch, local.roomNo]
   );
 
   return (
@@ -612,27 +544,6 @@ function FilterPanel({
             </datalist>
             {buildingCorrection ? (
               <p className={styles.searchAssist}>{buildingCorrection}</p>
-            ) : null}
-            {recentSearches.length > 0 ? (
-              <div className={styles.recentSearchWrap}>
-                <div className={styles.recentSearchLabel}>최근 검색어</div>
-                <div className={styles.recentSearchList}>
-                  {recentSearches.map((item, idx) => (
-                    <button
-                      key={`${item?.buildingNm || ''}-${item?.roomNo || ''}-${idx}`}
-                      type="button"
-                      className={styles.recentSearchChip}
-                      onClick={() => {
-                        if (typeof onApplyRecentSearch === 'function') {
-                          onApplyRecentSearch(item);
-                        }
-                      }}
-                    >
-                      {toRecentSearchLabel(item)}
-                    </button>
-                  ))}
-                </div>
-              </div>
             ) : null}
             <select
               className={styles.filterSelect}
@@ -1041,42 +952,21 @@ const TAB_IMAGES = {
   const [buildings, setBldgs] = useState([]);
   const [bldgLoading, setBL] = useState(false);
   const [bldgLoaded, setBldgLoaded] = useState(false);
-  const [recentSearches, setRecentSearches] = useState(() =>
-    loadRecentSearches()
-  );
 
   const roomNoCandidates = useMemo(() => {
-    const fromRecent = recentSearches
-      .map((item) => String(item?.roomNo || '').trim())
-      .filter(Boolean);
     const fromRooms = rooms
       .map((room) => String(room?.roomNo || '').trim())
       .filter(Boolean);
-    return [...new Set([...fromRecent, ...fromRooms])];
-  }, [recentSearches, rooms]);
+    return [...new Set(fromRooms)];
+  }, [rooms]);
 
-  const onRecordRecentSearch = useCallback((next) => {
-    setRecentSearches((prev) => {
-      const updated = appendRecentSearch(prev, next);
-      saveRecentSearches(updated);
-      return updated;
-    });
+  useEffect(() => {
+    try {
+      localStorage.removeItem('uniplace_recent_room_searches_v1');
+    } catch {
+      // ignore storage failures
+    }
   }, []);
-
-  const onApplyRecentSearch = useCallback(
-    (item) => {
-      const buildingNm = String(item?.buildingNm || '').trim();
-      const roomNo = String(item?.roomNo || '').trim();
-      dispatch({
-        type: 'SET_FILTER',
-        payload: {
-          buildingNm: buildingNm || undefined,
-          roomNo: roomNo || undefined,
-        },
-      });
-    },
-    [dispatch]
-  );
 
   /* ── 방 fetch ── */
   const fetchRooms = useCallback(async (q) => {
@@ -1296,9 +1186,6 @@ const TAB_IMAGES = {
             buildings={buildings}
             buildingLoading={bldgLoading}
             roomNoCandidates={roomNoCandidates}
-            recentSearches={recentSearches}
-            onApplyRecentSearch={onApplyRecentSearch}
-            onRecordRecentSearch={onRecordRecentSearch}
           />
         ) : activeTab === 'spaces' ? (
           <SpaceFilterPanel
