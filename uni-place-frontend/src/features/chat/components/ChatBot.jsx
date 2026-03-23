@@ -9,6 +9,8 @@ import SpaceReservationList from '../../reservation/pages/SpaceReservationList';
 import Modal from '../../../shared/components/Modal/Modal';
 import styles from './ChatBot.module.css';
 import { useChat, speakText } from '../hooks/useChat';
+import chatbotIcon from './chatbot_icon_colored.png';
+import uniplaceLogoImg from './uniplace_header_logo.png';
 import {
   SERVICE_NAME,
   BOT_AVATAR,
@@ -382,7 +384,7 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
     <>
       {/* 플로팅 버튼 */}
       <button
-        className={styles.fab}
+        className={open ? styles.fabOpen : styles.fab}
         onClick={
           open
             ? function () {
@@ -393,8 +395,10 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
         aria-label={open ? '챗봇 닫기' : 'AI 챗봇 열기'}
       >
         {open ? (
+          /* 닫기 X */
           <svg
-            className={styles.fabIcon}
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -405,16 +409,41 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         ) : (
-          <svg
-            className={styles.fabIcon}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
+          /* AI 스파클 아이콘 + 레이블 */
+          <>
+            <span className={styles.fabAiIcon}>
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path
+                  d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z"
+                  fill="currentColor"
+                  stroke="none"
+                  opacity="0.9"
+                />
+                <path
+                  d="M19 2L19.8 4.2L22 5L19.8 5.8L19 8L18.2 5.8L16 5L18.2 4.2L19 2Z"
+                  fill="currentColor"
+                  stroke="none"
+                  opacity="0.7"
+                />
+                <path
+                  d="M5 17L5.5 18.5L7 19L5.5 19.5L5 21L4.5 19.5L3 19L4.5 18.5L5 17Z"
+                  fill="currentColor"
+                  stroke="none"
+                  opacity="0.6"
+                />
+              </svg>
+            </span>
+            <span className={styles.fabLabel}>AI 챗봇</span>
+          </>
         )}
         {hasUnread && !open && <span className={styles.badge} />}
       </button>
@@ -427,7 +456,13 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
         >
           {/* 헤더 */}
           <div className={styles.header}>
-            <div className={styles.headerAvatar}>{BOT_AVATAR}</div>
+            <div className={styles.headerLogo}>
+              <img
+                src={uniplaceLogoImg}
+                alt="UniPlace"
+                className={styles.headerLogoImg}
+              />
+            </div>
             <div className={styles.headerInfo}>
               <p className={styles.headerTitle}>{SERVICE_NAME} AI</p>
               <p className={styles.headerSub}>
@@ -483,7 +518,11 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
           <div className={styles.body}>
             {messages.length === 0 ? (
               <div className={styles.welcome}>
-                <span className={styles.welcomeEmoji}>👋</span>
+                <img
+                  src={chatbotIcon}
+                  alt="UniPlace AI"
+                  className={styles.welcomeHouseImg}
+                />
                 <p className={styles.welcomeTitle}>{WELCOME_TITLE}</p>
                 <p className={styles.welcomeText}>
                   {WELCOME_TEXT.split('\n').map((line, i) => (
