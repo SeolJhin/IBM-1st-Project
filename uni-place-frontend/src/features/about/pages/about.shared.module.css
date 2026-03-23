@@ -7,6 +7,10 @@
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes lineGrow {
+  from { width: 0; opacity: 0; }
+  to   { width: 56px; opacity: 1; }
+}
 
 /* ── 페이지 기반 ── */
 .page {
@@ -15,10 +19,107 @@
   color: #2a2a2a;
 }
 
+/* ══ HERO — About 공통 ══════════════════════════════════════ */
+.heroSection {
+  position: relative;
+  height: 42vh;
+  min-height: 320px;
+  overflow: hidden;
+}
+.heroBg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 40%;
+}
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    155deg,
+    rgba(0, 0, 0, 0.72) 0%,
+    rgba(0, 0, 0, 0.38) 55%,
+    rgba(10, 8, 4, 0.65) 100%
+  );
+  z-index: 1;
+}
+.heroSideLine {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 3px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--primary, #b8945a) 30%,
+    var(--primary, #b8945a) 70%,
+    transparent
+  );
+  z-index: 2;
+}
+.heroContent {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  z-index: 3;
+}
+.heroInner {
+  max-width: 1120px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+}
+.heroEyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.38em;
+  color: var(--primary, #b8945a);
+  text-transform: uppercase;
+  animation: fadeInUp 1s 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.heroLine {
+  height: 2px;
+  background: linear-gradient(to right, var(--primary, #b8945a), rgba(184,148,90,0.1));
+  margin: 14px 0 18px;
+  width: 0;
+  animation: lineGrow 1s 0.4s ease forwards;
+}
+.heroTitle {
+  margin: 0;
+  font-size: clamp(26px, 4vw, 52px);
+  line-height: 1.08;
+  font-weight: 700;
+  font-family: var(--font-display, 'Syne', sans-serif);
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  text-shadow: 0 4px 32px rgba(0,0,0,0.2);
+  animation: fadeInUp 1.1s 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  word-break: keep-all;
+}
+.heroSub {
+  margin: 12px 0 0;
+  font-size: clamp(12px, 1.5vw, 15px);
+  color: rgba(255,255,255,0.65);
+  font-weight: 300;
+  letter-spacing: 0.03em;
+  animation: fadeInUp 1.1s 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  word-break: keep-all;
+}
+.heroFade {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 70px;
+  background: linear-gradient(to bottom, transparent, rgba(253,252,249,0.65));
+  z-index: 4;
+  pointer-events: none;
+}
+
 /* ── 카테고리 내부 필터 (뉴스·가이드 전용) ── */
 .filterBar {
   background: #fff;
-  border-bottom: 1px solid #e8e2d6;
+  border-bottom: 1px solid #E8E5DF;
 }
 .filterInner {
   max-width: 1120px;
@@ -30,25 +131,41 @@
 }
 .filterInner::-webkit-scrollbar { display: none; }
 .filterBtn {
+  position: relative;
   flex-shrink: 0;
-  padding: 12px 16px;
+  padding: 18px 28px;
   font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 400;
-  color: #aaa;
+  font-size: 13px;
+  font-weight: 600;
+  color: #999;
   background: none;
   border: none;
-  border-bottom: 1px solid transparent;
+  border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: color 0.2s;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
   margin-bottom: -1px;
+  outline: none;
+  transition: color 0.18s;
 }
-.filterBtn:hover { color: #2a2a2a; }
+.filterBtn::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  right: 50%;
+  height: 2px;
+  background: var(--primary, #B8945A);
+  transition: left 0.2s cubic-bezier(0.4,0,0.2,1), right 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+.filterBtn:hover { color: #1A1A1A; }
+.filterBtn:hover::after { left: 20%; right: 20%; }
+.filterBtn:active { transform: scale(0.97); }
 .filterActive {
-  color: var(--primary, #B8945A) !important;
+  color: #1A1A1A !important;
   border-bottom-color: var(--primary, #B8945A) !important;
-  font-weight: 600;
 }
+.filterActive::after { left: 0 !important; right: 0 !important; }
 
 /* ── 메인 콘텐츠 ── */
 .main {

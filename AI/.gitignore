@@ -14,4 +14,4 @@ chroma_db/
 *.sqlite3
 *.bin
 AI/output_docs/
-
+.milvus
