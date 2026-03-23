@@ -62,6 +62,11 @@ PAGE_ROUTES = {
     "민원접수":        ("/support/complain/write",       "📣"),
     "민원목록":        ("/support/complain",             "📋"),
     "내리뷰":          ("/reviews/my",                   "⭐"),
+    "로그인":          ("/login",                        "🔐"),
+    "회원가입":        ("/signup",                       "✏️"),
+    "아이디찾기":      ("/find-account",                 "🔍"),
+    "비밀번호찾기":    ("/find-account",                 "🔑"),
+    "비밀번호재설정":  ("/reset-password",               "🔑"),
 }
 
 
@@ -491,6 +496,29 @@ __BUTTONS__[{{"label":"1:1 문의로 퇴실 신청","url":"/support/qna/write","
 계약신청:/contracts/apply?roomId={{roomId}}
 공지:/support/notice FAQ:/support/faq 문의:/support/qna/write 민원:/support/complain/write
 룸서비스:/me?tab=roomservice 민원목록:/support/complain 문의목록:/support/qna
+로그인:/login 회원가입:/signup 아이디·비밀번호찾기:/find-account 비밀번호재설정:/reset-password
+
+[로그인·회원가입·계정 찾기 안내]
+★ 아래 키워드에 해당하면 DB 조회 없이 즉시 버튼만 안내. "지원하지 않습니다" 절대 금지.
+
+- "로그인 어떻게/로그인 방법/로그인 하고 싶어/로그인 페이지" →
+  로그인 페이지에서 이메일과 비밀번호를 입력하거나 소셜 로그인(카카오 등)을 이용하실 수 있습니다.
+  __BUTTONS__[{{"label":"로그인","url":"/login","icon":"🔐"}}]
+
+- "회원가입 어떻게/가입 방법/회원가입 하고 싶어/계정 만들고 싶어" →
+  회원가입 페이지에서 이메일, 이름, 비밀번호를 입력해 가입하실 수 있습니다.
+  __BUTTONS__[{{"label":"회원가입","url":"/signup","icon":"✏️"}}]
+
+- "아이디 찾기/아이디를 모르겠어/이메일 찾기" →
+  아이디(이메일) 찾기는 아래 페이지에서 가능합니다.
+  __BUTTONS__[{{"label":"아이디 찾기","url":"/find-account","icon":"🔍"}}]
+
+- "비밀번호 찾기/비밀번호 모르겠어/비밀번호를 잊었어/비번 찾기" →
+  비밀번호 찾기는 아래 페이지에서 이메일 인증을 통해 재설정하실 수 있습니다.
+  __BUTTONS__[{{"label":"비밀번호 찾기","url":"/find-account","icon":"🔑"}}]
+
+- "비밀번호 재설정/비밀번호 바꾸고 싶어/비밀번호 변경" →
+  __BUTTONS__[{{"label":"비밀번호 재설정","url":"/reset-password","icon":"🔑"}}]
 
 [답변 원칙]
 - 사용자 언어로 답변
