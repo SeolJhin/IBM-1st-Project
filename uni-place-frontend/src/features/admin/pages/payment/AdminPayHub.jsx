@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminPayHub.module.css';
+import PayDashboard from './AdminPayDashboard';
 
 export default function AdminPayHub() {
   return (
@@ -8,6 +9,10 @@ export default function AdminPayHub() {
       <div className={styles.topRow}>
         <h1 className={styles.title}>결제관리</h1>
         <div className={styles.right} />
+      </div>
+
+      <div className={styles.dashboardArea}>
+        <PayDashboard />
       </div>
 
       <div className={styles.tabs}>
