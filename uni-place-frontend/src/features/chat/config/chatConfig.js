@@ -1,4 +1,5 @@
 // features/chat/config/chatConfig.js
+import { getAppConfigValue } from '../../../app/config/appConfigReader';
 // ─────────────────────────────────────────────────────────────
 // 챗봇 전역 설정 — 이 파일 하나만 수정하면 전체 챗봇에 반영됩니다
 // ─────────────────────────────────────────────────────────────
@@ -8,9 +9,21 @@
 // .env 파일에 추가하세요:
 //   VITE_KAKAO_MAP_KEY=발급받은_JavaScript키
 //   VITE_KMA_KEY=공공데이터포털_Decoding키 (기상청 단기예보)
-export const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY ?? '';
-export const KAKAO_MAP_KEY = import.meta.env.VITE_KAKAO_MAP_KEY ?? '';
-export const KMA_KEY = import.meta.env.VITE_KMA_KEY ?? '';
+const ENV_GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY ?? '';
+const ENV_KAKAO_MAP_KEY =
+  import.meta.env.VITE_KAKAO_MAP_KEY ?? process.env.REACT_APP_KAKAO_MAP_KEY ?? '';
+const ENV_KMA_KEY =
+  import.meta.env.VITE_KMA_KEY ?? process.env.REACT_APP_KMA_KEY ?? '';
+
+export const GEMINI_API_KEY = getAppConfigValue(
+  'GEMINI_API_KEY',
+  ENV_GEMINI_API_KEY
+);
+export const KAKAO_MAP_KEY = getAppConfigValue(
+  'KAKAO_MAP_KEY',
+  ENV_KAKAO_MAP_KEY
+);
+export const KMA_KEY = getAppConfigValue('KMA_KEY', ENV_KMA_KEY);
 
 // ── 백엔드 사용 여부 ──────────────────────────────────────────
 // true  → Spring /api/ai/chat/agent-chatbot 호출 (권장)

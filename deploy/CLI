@@ -18,22 +18,37 @@ kubectl -n uniplace get pods -l app=ai -w
 kubectl -n uniplace get pods -l app=backend -w
 kubectl -n uniplace get pods -l app=frontend -w
 
-
-
-# 1) aws.env 로드
+# 1) 프론트용 aws.env 주입 명령어  ## 새로 테스트시 깃허브 시크릿/변수에 넣기 전 테스트용
 Get-Content "uni-place-frontend/aws.env" | ForEach-Object {
   if ($_ -match '^\s*([^#][^=]*)=(.*)$') {
     Set-Item -Path ("Env:" + $matches[1].Trim()) -Value $matches[2].Trim()
   }
 }
 
-# 2) 빌드
+# 2) 프론트 빌드
 npm --prefix uni-place-frontend ci
 npm --prefix uni-place-frontend run build
 
-# 3) S3 업로드
-aws s3 sync .\uni-place-frontend\dist s3://$env:FRONTEND_S3_BUCKET --delete
+# 3)  app-config.js 가 aws.env 를 읽도록
+$appConfigPath = Join-Path (Resolve-Path ".\uni-place-frontend\dist") "app-config.js"
+$appConfig = @"
+window.__APP_CONFIG__ = {
+  BACKEND_BASE_URL: '$($env:REACT_APP_BACKEND_BASE_URL)',
+  KAKAO_MAP_KEY: '$($env:VITE_KAKAO_MAP_KEY)',
+  KMA_KEY: '$($env:VITE_KMA_KEY)',
+  GEMINI_API_KEY: '$($env:REACT_APP_GEMINI_API_KEY)',
+};
+"@
+[System.IO.File]::WriteAllText($appConfigPath, $appConfig, [System.Text.UTF8Encoding]::new($false))
 
-# 4) index.html 캐시 무효화 성격으로 덮어쓰기 + CloudFront invalidation
+# 4) index.html 준비
+aws s3 sync .\uni-place-frontend\dist s3://$env:FRONTEND_S3_BUCKET --delete --exclude "index.html" --exclude "app-config.js" --cache-control "public,max-age=31536000,immutable"
+
+# 5) index.html 캐시 무시하고 업로드
 aws s3 cp .\uni-place-frontend\dist\index.html s3://$env:FRONTEND_S3_BUCKET/index.html --cache-control "no-cache,no-store,must-revalidate" --content-type "text/html; charset=utf-8"
-aws cloudfront create-invalidation --distribution-id $env:FRONTEND_CLOUDFRONT_DISTRIBUTION_ID --paths "/" "/index.html"
+
+# 6) Uindex.html 캐시 무시하고 업로드
+aws s3 cp .\uni-place-frontend\dist\app-config.js s3://$env:FRONTEND_S3_BUCKET/app-config.js --cache-control "no-cache,no-store,must-revalidate" --content-type "application/javascript; charset=utf-8"
+
+# 7) CloudFront
+aws cloudfront create-invalidation --distribution-id $env:FRONTEND_CLOUDFRONT_DISTRIBUTION_ID --paths "/" "/index.html" "/app-config.js"

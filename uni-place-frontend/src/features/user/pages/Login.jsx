@@ -10,6 +10,7 @@ import {
   AUTH_EXPIRED_NOTICE,
   getAuthResumePath,
 } from '../../../app/auth/authResume';
+import { getAppConfigValue } from '../../../app/config/appConfigReader';
 
 export default function Login() {
   const { login, loading, refresh } = useAuth();
@@ -102,7 +103,10 @@ export default function Login() {
     await runLogin({ validate: true });
   };
 
-  const backendBaseUrl = process.env.REACT_APP_BACKEND_BASE_URL || '/api';
+  const backendBaseUrl = getAppConfigValue(
+    'BACKEND_BASE_URL',
+    process.env.REACT_APP_BACKEND_BASE_URL || '/api'
+  );
 
   const goSignup = () => navigate('/signup');
   const goFind = () => navigate('/find-account');
