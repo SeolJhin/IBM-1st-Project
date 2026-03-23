@@ -1,6 +1,6 @@
 // dt 2
 // App.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import './app/styles/globals.css';
 
 import {
@@ -131,7 +131,6 @@ import {
   USE_BACKEND_AI,
 } from './features/chat/config/chatConfig';
 import { useAuth } from './features/user/hooks/useAuth';
-import { useEffect } from 'react';
 import { commerceApi } from './features/commerce/api/commerceApi';
 import {
   AUTH_EXPIRED_NOTICE,
@@ -140,10 +139,36 @@ import {
   restoreAuthResumeForPath,
 } from './app/auth/authResume';
 
+function normalizeViewportScaleArtifacts() {
+  if (typeof document === 'undefined') return;
+
+  if (document.body) {
+    document.body.style.transform = '';
+    document.body.style.transformOrigin = '';
+    document.body.style.zoom = '';
+  }
+
+  if (document.documentElement) {
+    document.documentElement.style.zoom = '';
+  }
+
+  const viewportMeta = document.querySelector('meta[name="viewport"]');
+  if (viewportMeta) {
+    viewportMeta.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1.0'
+    );
+  }
+}
+
 export default function App() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    normalizeViewportScaleArtifacts();
+  }, [location.hash, location.pathname, location.search]);
 
   // 어느 페이지로 돌아와도 카카오페이 이탈 처리
   useEffect(() => {
