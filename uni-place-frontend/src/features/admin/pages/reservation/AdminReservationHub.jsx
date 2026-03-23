@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminReservationHub.module.css';
+import ReservationDashboard from './AdminReservationDashboard';
 
 export default function AdminReservationHub() {
   return (
@@ -10,6 +11,10 @@ export default function AdminReservationHub() {
 
         {/* (원하면) 검색 아이콘/검색창 자리 */}
         <div className={styles.right} />
+      </div>
+
+      <div className={styles.dashboardArea}>
+        <ReservationDashboard />
       </div>
 
       <div className={styles.tabs}>

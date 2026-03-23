@@ -446,6 +446,28 @@ export default function AdminInfo() {
     return all;
   };
 
+  const fetchAllRooms = async () => {
+    let page = 1;
+    let all = [];
+
+    while (true) {
+      const res = await adminApi.getRooms({
+        page,
+        size: 50, // 넉넉하게 (성능 고려해서 50~100 추천)
+        sort: 'roomId',
+        direct: 'DESC',
+      });
+
+      const content = res?.content ?? [];
+      all = [...all, ...content];
+
+      if (page >= (res?.totalPages ?? 1)) break;
+      page++;
+    }
+
+    return all;
+  };
+
   const fetchAllQna = async () => {
     let page = 1;
     let all = [];
@@ -479,16 +501,14 @@ export default function AdminInfo() {
         .getComplains()
         .catch(() => ({ content: [] }));
       const users = await fetchAllUsers();
-      const roomsRes = await adminApi.getRooms?.().catch(() => []);
       const reservations = await fetchAllReservations();
       const qnas = await fetchAllQna().catch((e) => {
         console.error('QNA API ERROR:', e);
         return [];
       });
-
+      const rooms = await fetchAllRooms().catch(() => []);
       const payments = paymentsRes?.content ?? paymentsRes ?? [];
       const complains = complainsRes?.content ?? complainsRes ?? [];
-      const rooms = roomsRes?.content ?? roomsRes ?? [];
 
       /* ================= ALERT ================= */
 
@@ -570,14 +590,17 @@ export default function AdminInfo() {
 
       /* ================= 운영 ================= */
 
-      const vacantRooms = rooms.filter(
-        (r) => !eq(r.roomSt, 'contracted')
-      ).length;
+      const occupiedRoomIds = new Set(
+        contracts
+          .filter((c) => eq(c.contractSt ?? c.contractStatus, 'active'))
+          .map((c) => c.roomId)
+          .filter(Boolean)
+      );
 
-      const vacancyRate =
-        rooms.length > 0 ? (vacantRooms / rooms.length) * 100 : 0;
+      const occupancyRate =
+        rooms.length > 0 ? (occupiedRoomIds.size / rooms.length) * 100 : 0;
 
-      const occupancyRate = rooms.length > 0 ? 100 - vacancyRate : 0;
+      const vacancyRate = 100 - occupancyRate;
 
       const todayCheckin = contracts.filter((c) =>
         isToday(c.contractStart)
