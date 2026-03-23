@@ -1,4 +1,4 @@
-﻿-- Community board seed v2 (300 rows)
+-- Community board seed v2 (300 rows)
 -- Style: realistic community tone based on provided examples
 -- Category: BOARD_FREE 100 + BOARD_QUESTION 100 + BOARD_REVIEW 100
 
