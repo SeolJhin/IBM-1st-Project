@@ -80,9 +80,9 @@ function NotificationItem({ item, onRead, onNavigate }) {
           className={styles.readBtn}
           type="button"
           onClick={handleRead}
-          aria-label="읽음 처리"
+          aria-label="삭제"
         >
-          읽음
+          삭제
         </button>
       </div>
     </div>
@@ -140,7 +140,7 @@ export default function NotificationList({ inlineMode = false }) {
               type="button"
               onClick={markAllRead}
             >
-              모두 읽음
+              모두 삭제
             </button>
           )}
         </div>

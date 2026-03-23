@@ -32,6 +32,32 @@ function Invoke-Aws {
   }
 }
 
+function Get-EnvValue {
+  param(
+    [string[]]$Names,
+    [string]$Default = ""
+  )
+
+  foreach ($name in $Names) {
+    $value = [System.Environment]::GetEnvironmentVariable($name)
+    if (-not [string]::IsNullOrWhiteSpace($value)) {
+      return $value.Trim()
+    }
+  }
+
+  return $Default
+}
+
+function To-JsStringLiteral {
+  param([AllowNull()][string]$Value)
+  if ($null -eq $Value) {
+    return "''"
+  }
+
+  $escaped = $Value.Replace("\", "\\").Replace("'", "\'")
+  return "'" + $escaped + "'"
+}
+
 if (-not $SkipBuild) {
   Push-Location $projectRoot
   try {
@@ -57,6 +83,44 @@ $indexPath = Join-Path $distPath "index.html"
 if (-not (Test-Path $indexPath)) {
   throw "index.html not found in dist directory: $distPath"
 }
+$appConfigPath = Join-Path $distPath "app-config.js"
+
+$runtimeBackendBaseUrl = Get-EnvValue -Names @(
+  "BACKEND_BASE_URL",
+  "REACT_APP_BACKEND_BASE_URL",
+  "VITE_BACKEND_BASE_URL"
+) -Default "/api"
+$runtimeKakaoMapKey = Get-EnvValue -Names @(
+  "KAKAO_MAP_KEY",
+  "VITE_KAKAO_MAP_KEY",
+  "REACT_APP_KAKAO_MAP_KEY"
+) -Default ""
+$runtimeKmaKey = Get-EnvValue -Names @(
+  "KMA_KEY",
+  "VITE_KMA_KEY",
+  "REACT_APP_KMA_KEY"
+) -Default ""
+$runtimeGeminiApiKey = Get-EnvValue -Names @(
+  "GEMINI_API_KEY",
+  "VITE_GEMINI_API_KEY",
+  "REACT_APP_GEMINI_API_KEY"
+) -Default ""
+
+$appConfigContent = @(
+  "window.__APP_CONFIG__ = {",
+  "  BACKEND_BASE_URL: $(To-JsStringLiteral $runtimeBackendBaseUrl),",
+  "  KAKAO_MAP_KEY: $(To-JsStringLiteral $runtimeKakaoMapKey),",
+  "  KMA_KEY: $(To-JsStringLiteral $runtimeKmaKey),",
+  "  GEMINI_API_KEY: $(To-JsStringLiteral $runtimeGeminiApiKey),",
+  "};"
+) -join [System.Environment]::NewLine
+
+[System.IO.File]::WriteAllText(
+  $appConfigPath,
+  $appConfigContent,
+  [System.Text.UTF8Encoding]::new($false)
+)
+Write-Host "Generated app-config.js from environment values."
 
 $dryArgs = @()
 if ($DryRun) {
@@ -68,6 +132,7 @@ $syncArgs = @(
   "s3", "sync", "$distPath", "s3://$BucketName",
   "--delete",
   "--exclude", "index.html",
+  "--exclude", "app-config.js",
   "--cache-control", "public,max-age=31536000,immutable"
 )
 $syncArgs += $dryArgs
@@ -82,6 +147,15 @@ $copyArgs = @(
 $copyArgs += $dryArgs
 Invoke-Aws $copyArgs
 
+Write-Host "Uploading app-config.js with no-cache..."
+$appConfigCopyArgs = @(
+  "s3", "cp", "$appConfigPath", "s3://$BucketName/app-config.js",
+  "--cache-control", "no-cache,no-store,must-revalidate",
+  "--content-type", "application/javascript; charset=utf-8"
+)
+$appConfigCopyArgs += $dryArgs
+Invoke-Aws $appConfigCopyArgs
+
 if ($DryRun) {
   Write-Host "Dry run enabled. CloudFront invalidation skipped."
   exit 0
@@ -91,7 +165,7 @@ Write-Host "Creating CloudFront invalidation..."
 $invalidationId = Invoke-Aws @(
   "cloudfront", "create-invalidation",
   "--distribution-id", $DistributionId,
-  "--paths", "/", "/index.html",
+  "--paths", "/", "/index.html", "/app-config.js",
   "--query", "Invalidation.Id",
   "--output", "text"
 )

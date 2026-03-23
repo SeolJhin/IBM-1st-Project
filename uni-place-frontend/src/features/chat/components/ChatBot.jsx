@@ -9,6 +9,9 @@ import SpaceReservationList from '../../reservation/pages/SpaceReservationList';
 import Modal from '../../../shared/components/Modal/Modal';
 import styles from './ChatBot.module.css';
 import { useChat, speakText } from '../hooks/useChat';
+import chatbotIcon from './horse_only.png';
+import chatbotFabIcon from './chatbot_icon_final.png';
+import uniplaceLogoImg from './uniplace_header_logo.png';
 import {
   SERVICE_NAME,
   BOT_AVATAR,
@@ -134,7 +137,23 @@ function MessageBubble({ msg, onSpeak, onAction, onModalRoute, allMessages }) {
   var actions = Array.isArray(msg.actions) ? msg.actions : [];
   return (
     <div className={isUser ? styles.rowUser : styles.rowAssistant}>
-      {!isUser && <div className={styles.bubbleAvatar}>🤖</div>}
+      {!isUser && (
+        <div className={styles.bubbleAvatar}>
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polygon points="12,2 22,10 12,22 2,10" />
+            <line x1="2" y1="10" x2="22" y2="10" />
+          </svg>
+        </div>
+      )}
       <div>
         <div className={isUser ? styles.bubbleUser : styles.bubbleAssistant}>
           {msg.content}
@@ -189,7 +208,21 @@ function MessageBubble({ msg, onSpeak, onAction, onModalRoute, allMessages }) {
 function TypingIndicator() {
   return (
     <div className={styles.typingRow}>
-      <div className={styles.bubbleAvatar}>🤖</div>
+      <div className={styles.bubbleAvatar}>
+        <svg
+          width="11"
+          height="11"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polygon points="12,2 22,10 12,22 2,10" />
+          <line x1="2" y1="10" x2="22" y2="10" />
+        </svg>
+      </div>
       <div className={styles.typingBubble}>
         <div className={styles.dot} />
         <div className={styles.dot} />
@@ -382,7 +415,34 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
     <>
       {/* 플로팅 버튼 */}
       <button
-        className={styles.fab}
+        className={open ? styles.fabOpen : styles.fab}
+        style={
+          open
+            ? {
+                position: 'fixed',
+                bottom: '32px',
+                right: '32px',
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                border: '1.5px solid rgba(184,148,90,0.4)',
+                background: '#1a1a1a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.7)',
+                zIndex: 1000,
+              }
+            : {
+                width: '80px',
+                height: '80px',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+              }
+        }
         onClick={
           open
             ? function () {
@@ -394,27 +454,29 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
       >
         {open ? (
           <svg
-            className={styles.fabIcon}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        ) : (
-          <svg
-            className={styles.fabIcon}
+            width="16"
+            height="16"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
           >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
+        ) : (
+          <img
+            src={chatbotFabIcon}
+            alt="AI 챗봇"
+            className={styles.fabImg}
+            style={{
+              width: '80px',
+              height: '80px',
+              display: 'block',
+              pointerEvents: 'none',
+            }}
+          />
         )}
         {hasUnread && !open && <span className={styles.badge} />}
       </button>
@@ -427,7 +489,21 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
         >
           {/* 헤더 */}
           <div className={styles.header}>
-            <div className={styles.headerAvatar}>{BOT_AVATAR}</div>
+            <div className={styles.headerLogo}>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="rgba(255,255,255,0.92)"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
+                <path d="M9 22V12h6v10" />
+              </svg>
+            </div>
             <div className={styles.headerInfo}>
               <p className={styles.headerTitle}>{SERVICE_NAME} AI</p>
               <p className={styles.headerSub}>
@@ -483,7 +559,11 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
           <div className={styles.body}>
             {messages.length === 0 ? (
               <div className={styles.welcome}>
-                <span className={styles.welcomeEmoji}>👋</span>
+                <img
+                  src={chatbotIcon}
+                  alt="UniPlace AI"
+                  className={styles.welcomeHouseImg}
+                />
                 <p className={styles.welcomeTitle}>{WELCOME_TITLE}</p>
                 <p className={styles.welcomeText}>
                   {WELCOME_TEXT.split('\n').map((line, i) => (

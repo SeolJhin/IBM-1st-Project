@@ -1,17 +1,19 @@
+/* features/user/pages/Signup.module.css */
+/* Home · Support 디자인 시스템 완전 통일 */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes lineGrow {
+  from { width: 0; opacity: 0; }
+  to   { width: 48px; opacity: 1; }
+}
+
+/* ── 페이지 ─────────────────────────────────────────────── */
 .page {
   min-height: 100vh;
-  background:
-    radial-gradient(
-      1200px 600px at 25% 0%,
-      rgba(255, 205, 142, 0.25),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 500px at 80% 20%,
-      rgba(255, 224, 185, 0.35),
-      transparent 55%
-    ),
-    linear-gradient(180deg, #fdf7ec 0%, #ffffff 60%, #fdf7ec 100%);
+  background: #fdfcf9;
 }
 
 .container {
@@ -19,274 +21,419 @@
   display: grid;
   place-items: center;
   padding: 80px 20px;
+  animation: fadeInUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* 로그인과 간격 맞추려면 Login.module.css의 .card / .form에도 동일 값 적용 추천 */
-.card {
-  --card-py: 48px;
-  --card-px: 42px;
-  --blue-gap-top: 18px;
-  --blue-gap-row: 16px;
+/* ── 카드 래퍼 — 4개 모서리 골드 브라켓 ──────────────────── */
+.cardWrap {
+  position: relative;
+  padding: 3px;
+}
 
-  width: min(560px, 100%);
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(215, 206, 188, 0.9);
-  border-radius: 20px;
+.cardWrap::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 28px; height: 28px;
+  border-top: 2px solid var(--primary, #b8945a);
+  border-left: 2px solid var(--primary, #b8945a);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cardWrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 28px; height: 28px;
+  border-bottom: 2px solid var(--primary, #b8945a);
+  border-right: 2px solid var(--primary, #b8945a);
+  pointer-events: none;
+  z-index: 1;
+}
+
+
+.card {
+  --card-py: 52px;
+  --card-px: 48px;
+
+  width: min(540px, 100%);
+  background: #ffffff;
+  border: 1px solid #e8e2d6;
+  border-radius: 0;
   padding: var(--card-py) var(--card-px);
   box-shadow:
-    0 22px 48px rgba(11, 14, 18, 0.12),
-    0 2px 10px rgba(11, 14, 18, 0.06);
-  backdrop-filter: blur(10px);
+    0 24px 56px rgba(11, 14, 18, 0.08),
+    0 2px 8px rgba(11, 14, 18, 0.04);
+  position: relative;
+}
+/* 우상단 모서리 브라켓 */
+.card::before {
+  content: '';
+  position: absolute;
+  top: -3px; right: -3px;
+  width: 28px; height: 28px;
+  border-top: 2px solid var(--primary, #b8945a);
+  border-right: 2px solid var(--primary, #b8945a);
+  pointer-events: none;
 }
 
-.brand {
-  text-align: center;
+/* 좌하단 모서리 브라켓 */
+.card::after {
+  content: '';
+  position: absolute;
+  bottom: -3px; left: -3px;
+  width: 28px; height: 28px;
+  border-bottom: 2px solid var(--primary, #b8945a);
+  border-left: 2px solid var(--primary, #b8945a);
+  pointer-events: none;
 }
+
+
+
+
+
+
+/* ── 브랜드 ─────────────────────────────────────────────── */
+.brand { text-align: center; }
 
 .welcome {
   margin: 0;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  color: rgba(72, 83, 95, 0.75);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.38em;
+  color: var(--primary, #b8945a);
+  text-transform: uppercase;
+}
+
+.brandLine {
+  width: 40px;
+  height: 2px;
+  background: var(--primary, #b8945a);
+  margin: 10px auto 16px;
 }
 
 .brandName {
-  margin: 6px 0 10px;
-  font-size: 26px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  color: #0b0e12;
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #1a1a1a;
+  font-family: var(--font-display, 'Syne', sans-serif);
 }
 
 .title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  color: #48535f;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--primary, #b8945a);
 }
 
+/* ── 폼 ─────────────────────────────────────────────────── */
 .form {
-  margin-top: var(--blue-gap-top);
+  margin-top: 28px;
   display: grid;
-  gap: var(--blue-gap-row);
+  gap: 12px;
 }
 
 .row {
-  display: grid;
-  grid-template-columns: 130px minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #ddd7cc;
+  background: #ffffff;
+  transition: border-color 0.18s, box-shadow 0.18s;
 }
 
+.row:focus-within {
+  border-color: var(--primary, #b8945a);
+  box-shadow: 0 0 0 3px rgba(184, 148, 90, 0.12);
+}
+
+.row:has(.input[aria-invalid='true']) {
+  border-color: #c03030;
+  box-shadow: 0 0 0 3px rgba(192, 48, 48, 0.1);
+}
+
+/* ── 라벨 태그 — 직사각형, 다크 ────────────────────────── */
 .tag {
-  height: 46px;
-  border-radius: 14px;
-  background: #6a6a6a;
-  color: #fff;
-  font-weight: 900;
+  flex-shrink: 0;
+  width: 88px;
   display: grid;
   place-items: center;
-  letter-spacing: -0.01em;
+  background: #f5f2ec;
+  color: #6b5e45;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-right: 1px solid #ddd7cc;
+  cursor: default;
+  user-select: none;
+  text-align: center;
+  line-height: 1.35;
+  padding: 0 8px;
 }
 
+/* ── 입력창 ─────────────────────────────────────────────── */
 .input {
+  flex: 1;
   min-width: 0;
-  width: 92%;
   height: 46px;
-  border-radius: 14px;
-  border: 1px solid rgba(154, 140, 112, 0.35);
-  background: #eaf2ff;
   padding: 0 14px;
+  border: none;
+  background: transparent;
+  color: #1a1a1a;
+  font-size: 14px;
   outline: none;
-  transition:
-    box-shadow 160ms ease,
-    border-color 160ms ease;
+  box-sizing: border-box;
+  font-family: inherit;
+  width: 100%;
 }
 
-.input::placeholder {
-  color: rgba(72, 83, 95, 0.72);
-}
+.input::placeholder { color: #b0a898; }
 
-.input:focus {
-  border-color: rgba(217, 173, 91, 0.9);
-  box-shadow: 0 0 0 4px rgba(255, 205, 142, 0.35);
-}
+
 
 .input:disabled {
-  opacity: 0.75;
+  background: #f5f3ef;
+  color: rgba(26, 26, 26, 0.4);
   cursor: not-allowed;
 }
 
-.input[aria-invalid='true'] {
-  border-color: rgba(215, 104, 69, 0.9);
-  box-shadow: 0 0 0 3px rgba(215, 104, 69, 0.2);
+
+
+/* 에러 상태 row */
+.rowError {
+  border-color: #c03030 !important;
+  box-shadow: 0 0 0 3px rgba(192, 48, 48, 0.1) !important;
 }
 
+/* ── 에러 / 성공 ────────────────────────────────────────── */
 .error {
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(215, 104, 69, 0.35);
-  background: rgba(255, 224, 185, 0.45);
-  color: #0b0e12;
-  font-weight: 800;
+  padding: 11px 14px;
+  border-left: 2px solid #c03030;
+  background: rgba(255, 235, 225, 0.45);
+  color: #1a1a1a;
   font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  border-radius: 0;
 }
 
 .fieldError {
-  margin: -8px 0 2px;
-  color: #8b2f16;
+  margin: -4px 0 2px;
+  color: #c03030;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.4;
 }
 
 .successText {
-  margin: -8px 0 2px;
-  color: #18794e;
+  margin: -4px 0 2px;
+  color: #1a6635;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.4;
 }
 
+/* ── 인라인 그룹 (입력 + 버튼 나란히) ─────────────────── */
 .inlineGroup {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .inlineGroup .input {
   flex: 1;
+  border: 1px solid #ddd7cc;
+  height: 46px;
+  transition: border-color 0.18s, box-shadow 0.18s;
 }
 
+.inlineGroup .input:focus {
+  border-color: var(--primary, #b8945a);
+  box-shadow: 0 0 0 3px rgba(184, 148, 90, 0.12);
+}
+
+.inlineGroup .input[aria-invalid='true'] {
+  border-color: #c03030;
+  box-shadow: 0 0 0 3px rgba(192, 48, 48, 0.1);
+}
+
+/* 인라인 버튼 — 직사각형, 다크 → 골드 호버 */
 .inlineBtn {
-  padding: 0 14px;
-  border-radius: 10px;
-  background: #111;
+  padding: 0 12px;
+  height: 46px;
+  border-radius: 0;
+  background: #1a1a1a;
   color: #fff;
-  border: none;
+  border: 1.5px solid #1a1a1a;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
+  font-family: inherit;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
 }
 
+.inlineBtn:hover:not(:disabled) {
+  background: var(--primary, #b8945a);
+  border-color: var(--primary, #b8945a);
+  transform: translateY(-1px);
+}
+
+.inlineBtn:active { transform: scale(0.97); }
+
 .inlineBtn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
-  opacity: 0.72;
+  transform: none;
 }
 
 .inlineBtnSuccess {
-  background: #1f8a53;
+  background: #1a6635;
+  border-color: #1a6635;
+}
+
+.inlineBtnSuccess:hover:not(:disabled) {
+  background: #155228;
+  border-color: #155228;
 }
 
 .inlineBtnWarn {
-  background: #b13b2d;
+  background: #c03030;
+  border-color: #c03030;
 }
 
+/* ── 비밀번호 조건 체크 ─────────────────────────────────── */
 .pwdRules {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
-  margin: -8px 0 2px;
-  padding-left: 4px;
+  gap: 4px 12px;
+  margin: -4px 0 2px;
 }
 
 .pwdRule {
   font-size: 12px;
-  color: #6e7781;
+  color: #b0a898;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  font-weight: 600;
+  transition: color 0.18s;
 }
 
 .pwdRuleOk {
-  color: #18794e;
+  color: #1a6635;
   font-weight: 800;
 }
 
+/* ── 제출 버튼 — 다크 → 골드 호버 ────────────────────── */
 .submit {
   margin-top: 10px;
-  height: 52px;
-  border: none;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #d9ad5b 0%, #ba8037 100%);
+  height: 48px;
+  border: 1.5px solid #1a1a1a;
+  border-radius: 0;
+  background: #1a1a1a;
   color: #fff;
-  font-weight: 900;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: pointer;
-  box-shadow:
-    0 14px 26px rgba(186, 128, 55, 0.25),
-    0 2px 8px rgba(11, 14, 18, 0.08);
+  font-family: inherit;
+  transition: background 0.22s, border-color 0.22s, transform 0.15s;
 }
+
+.submit:hover:not(:disabled) {
+  background: var(--primary, #b8945a);
+  border-color: var(--primary, #b8945a);
+  transform: translateY(-1px);
+}
+
+.submit:active { transform: scale(0.98); }
 
 .submit:disabled {
-  opacity: 0.75;
+  opacity: 0.4;
   cursor: not-allowed;
-  box-shadow: none;
+  transform: none;
 }
 
+/* ── 하단 링크 ──────────────────────────────────────────── */
 .bottomLinks {
-  margin-top: 12px;
+  margin-top: 18px;
   display: flex;
   justify-content: center;
-  gap: 10px;
   align-items: center;
+  gap: 8px;
 }
 
 .hint {
-  color: rgba(72, 83, 95, 0.75);
-  font-weight: 700;
+  color: #b0a898;
   font-size: 13px;
+  font-weight: 600;
 }
 
 .link {
-  color: #ba8037;
-  font-weight: 900;
+  color: var(--primary, #b8945a);
+  font-size: 13px;
+  font-weight: 700;
   text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: color 0.18s;
 }
 
-.link:hover {
-  text-decoration: underline;
-}
+.link:hover { color: var(--accent, #9a7840); text-decoration: underline; }
 
+/* ── 완료 화면 ──────────────────────────────────────────── */
 .desc {
-  margin: 10px 0 18px;
+  margin: 12px 0 20px;
   text-align: center;
-  color: rgba(72, 83, 95, 0.85);
-  font-weight: 800;
+  color: #737373;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .primaryLink {
   display: inline-grid;
   place-items: center;
   width: 100%;
-  height: 52px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #d9ad5b 0%, #ba8037 100%);
+  height: 48px;
+  border-radius: 0;
+  border: 1.5px solid #1a1a1a;
+  background: #1a1a1a;
   color: #fff;
-  font-weight: 900;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   text-decoration: none;
+  transition: background 0.22s, border-color 0.22s, transform 0.15s;
 }
 
+.primaryLink:hover {
+  background: var(--primary, #b8945a);
+  border-color: var(--primary, #b8945a);
+  transform: translateY(-1px);
+}
+
+/* ── 포커스 접근성 ─────────────────────────────────────── */
 .input:focus-visible,
 .submit:focus-visible,
 .link:focus-visible,
-.inlineBtn:focus-visible {
-  outline: 3px solid rgba(28, 78, 216, 0.55);
+.inlineBtn:focus-visible,
+.primaryLink:focus-visible {
+  outline: 2px solid var(--primary, #b8945a);
   outline-offset: 2px;
 }
 
-@media (max-width: 640px) {
-  .card {
-    padding: 44px 18px;
-  }
-  .row {
-    grid-template-columns: 1fr;
-  }
-  .tag {
-    width: 130px;
-    justify-self: start;
-  }
+/* ── 반응형 ────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .card { padding: 36px 24px 32px; }
+
+  .tag { width: 100px; justify-self: start; }
 }
