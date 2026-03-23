@@ -1,17 +1,31 @@
+/* features/user/pages/OAuth2Success.module.css */
+/* Login · Signup 디자인 시스템 완전 통일 */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes lineGrow {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 48px;
+    opacity: 1;
+  }
+}
+
+/* ── 페이지 ─────────────────────────────────────────────── */
 .page {
   min-height: 100vh;
-  background:
-    radial-gradient(
-      1200px 600px at 25% 0%,
-      rgba(255, 205, 142, 0.25),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 500px at 80% 20%,
-      rgba(255, 224, 185, 0.35),
-      transparent 55%
-    ),
-    linear-gradient(180deg, #fdf7ec 0%, #ffffff 60%, #fdf7ec 100%);
+  background: #fdfcf9;
 }
 
 .container {
@@ -19,72 +33,144 @@
   display: grid;
   place-items: center;
   padding: 80px 20px;
+  animation: fadeInUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* ── 카드 래퍼 — 4개 모서리 골드 브라켓 ──────────────────── */
+.cardWrap {
+  position: relative;
+  padding: 3px;
+}
+
+.cardWrap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 28px;
+  height: 28px;
+  border-top: 2px solid var(--primary, #b8945a);
+  border-left: 2px solid var(--primary, #b8945a);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cardWrap::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-bottom: 2px solid var(--primary, #b8945a);
+  border-right: 2px solid var(--primary, #b8945a);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── 카드 본체 ──────────────────────────────────────────── */
 .card {
-  width: min(560px, 100%);
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(215, 206, 188, 0.9);
-  border-radius: 20px;
-  padding: 48px 42px;
+  width: min(540px, 100%);
+  background: #ffffff;
+  border: 1px solid #e8e2d6;
+  border-radius: 0;
+  padding: 52px 48px;
   box-shadow:
-    0 22px 48px rgba(11, 14, 18, 0.12),
-    0 2px 10px rgba(11, 14, 18, 0.06);
-  backdrop-filter: blur(10px);
+    0 24px 56px rgba(11, 14, 18, 0.08),
+    0 2px 8px rgba(11, 14, 18, 0.04);
+  position: relative;
 }
 
+/* 우상단 모서리 브라켓 */
+.card::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 28px;
+  height: 28px;
+  border-top: 2px solid var(--primary, #b8945a);
+  border-right: 2px solid var(--primary, #b8945a);
+  pointer-events: none;
+}
+
+/* 좌하단 모서리 브라켓 */
+.card::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: -3px;
+  width: 28px;
+  height: 28px;
+  border-bottom: 2px solid var(--primary, #b8945a);
+  border-left: 2px solid var(--primary, #b8945a);
+  pointer-events: none;
+}
+
+/* ── 브랜드 ─────────────────────────────────────────────── */
 .brand {
   text-align: center;
 }
 
 .welcome {
   margin: 0;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  color: rgba(72, 83, 95, 0.75);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.38em;
+  color: var(--primary, #b8945a);
+  text-transform: uppercase;
+}
+
+.brandLine {
+  width: 40px;
+  height: 2px;
+  background: var(--primary, #b8945a);
+  margin: 10px auto 16px;
 }
 
 .brandName {
-  margin: 6px 0 10px;
-  font-size: 26px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  color: #0b0e12;
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #1a1a1a;
+  font-family: var(--font-display, 'Syne', sans-serif);
 }
 
 .title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  color: #48535f;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--primary, #b8945a);
 }
 
 .desc {
-  margin: 14px 0 18px;
+  margin: 18px 0 20px;
   text-align: center;
-  color: rgba(72, 83, 95, 0.85);
-  font-weight: 800;
+  color: #737373;
+  font-size: 14px;
+  font-weight: 500;
 }
 
+/* ── 프로바이더 칩 ──────────────────────────────────────── */
 .providerRow {
-  margin-top: 18px;
-  margin-bottom: 12px;
+  margin: 20px 0 4px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .providerChip {
-  height: 30px;
-  border-radius: 999px;
-  padding: 0 12px;
+  height: 26px;
+  border-radius: 0;
+  padding: 0 10px;
   display: inline-flex;
   align-items: center;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.02em;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .kakaoChip {
@@ -99,141 +185,222 @@
 }
 
 .defaultChip {
-  background: #e5e7eb;
-  color: #111827;
+  background: #1a1a1a;
+  color: var(--primary, #b8945a);
 }
 
 .providerHint {
   font-size: 13px;
-  font-weight: 700;
-  color: rgba(72, 83, 95, 0.85);
+  font-weight: 500;
+  color: #737373;
 }
 
+/* ── 폼 ─────────────────────────────────────────────────── */
 .form {
-  margin-top: 10px;
+  margin-top: 20px;
   display: grid;
-  gap: 16px;
+  gap: 10px;
 }
 
+/* ── 행 — 라벨+인풋 하나의 박스 ────────────────────────── */
 .row {
-  display: grid;
-  grid-template-columns: 130px minmax(0, 1fr);
-  gap: 14px;
-  align-items: center;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #ddd7cc;
+  background: #ffffff;
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s;
 }
 
+.row:focus-within {
+  border-color: var(--primary, #b8945a);
+  box-shadow: 0 0 0 3px rgba(184, 148, 90, 0.12);
+}
+
+/* 에러 상태 row */
+.rowError {
+  border-color: #c03030 !important;
+  box-shadow: 0 0 0 3px rgba(192, 48, 48, 0.1) !important;
+}
+
+/* ── 라벨 — 박스 안 왼쪽 prefix ─────────────────────────── */
 .tag {
-  height: 46px;
-  border-radius: 14px;
-  background: #6a6a6a;
-  color: #fff;
-  font-weight: 900;
+  flex-shrink: 0;
+  width: 88px;
   display: grid;
   place-items: center;
-  letter-spacing: -0.01em;
+  background: #f5f2ec;
+  color: #6b5e45;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-right: 1px solid #ddd7cc;
+  cursor: default;
+  user-select: none;
+  text-align: center;
+  line-height: 1.35;
+  padding: 0 8px;
 }
 
+/* ── 입력창 — 테두리 제거 ───────────────────────────────── */
 .input {
+  flex: 1;
   min-width: 0;
-  width: 100%;
   height: 46px;
-  border-radius: 14px;
-  border: 1px solid rgba(154, 140, 112, 0.35);
-  background: #eaf2ff;
   padding: 0 14px;
+  border: none;
+  background: transparent;
+  color: #1a1a1a;
+  font-size: 14px;
   outline: none;
-  transition:
-    box-shadow 160ms ease,
-    border-color 160ms ease;
+  box-sizing: border-box;
+  font-family: inherit;
+  width: 100%;
 }
 
 .input::placeholder {
-  color: rgba(72, 83, 95, 0.55);
-}
-
-.input:focus {
-  border-color: rgba(217, 173, 91, 0.9);
-  box-shadow: 0 0 0 4px rgba(255, 205, 142, 0.35);
+  color: #b0a898;
 }
 
 .input:disabled {
-  opacity: 0.75;
+  background: #f5f3ef;
+  color: rgba(26, 26, 26, 0.4);
   cursor: not-allowed;
 }
 
-.nickWrap {
+/* ── 인라인 그룹 (닉네임 + 중복확인) ───────────────────── */
+.inlineGroup {
+  flex: 1;
   display: flex;
-  gap: 8px;
-  align-items: center;
+  gap: 0;
+  min-width: 0;
 }
 
-.checkBtn {
-  height: 42px;
+.inlineInput {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  padding: 0 14px;
   border: none;
-  border-radius: 10px;
-  padding: 0 12px;
-  background: #111;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
+  background: transparent;
+  color: #1a1a1a;
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
 }
 
-.checkBtn:disabled {
-  opacity: 0.75;
+.inlineInput::placeholder {
+  color: #b0a898;
+}
+
+/* 중복확인 버튼 — 다크 → 골드 호버 */
+.inlineBtn {
+  flex-shrink: 0;
+  padding: 0 14px;
+  height: 46px;
+  border-radius: 0;
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  border-left: 1px solid #ddd7cc;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: inherit;
+  transition:
+    background 0.2s,
+    transform 0.15s;
+}
+
+.inlineBtn:hover:not(:disabled) {
+  background: var(--primary, #b8945a);
+  transform: none;
+}
+
+.inlineBtn:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
-.error {
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(215, 104, 69, 0.35);
-  background: rgba(255, 224, 185, 0.45);
-  color: #0b0e12;
-  font-weight: 800;
-  font-size: 13px;
+.inlineBtnSuccess {
+  background: #1a6635;
 }
 
-.ok {
-  color: #22c55e;
-  font-size: 13px;
+.inlineBtnSuccess:hover:not(:disabled) {
+  background: #155228;
+}
+
+/* ── 에러 / 성공 텍스트 ─────────────────────────────────── */
+.fieldError {
+  margin: -4px 0 2px;
+  color: #c03030;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.successText {
+  margin: -4px 0 2px;
+  color: #1a6635;
+  font-size: 12px;
   font-weight: 700;
+  line-height: 1.4;
 }
 
+/* ── 제출 버튼 — 다크 → 골드 호버 ────────────────────── */
 .submit {
   margin-top: 10px;
-  height: 52px;
-  border: none;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #d9ad5b 0%, #ba8037 100%);
+  width: 100%;
+  height: 48px;
+  border: 1.5px solid #1a1a1a;
+  border-radius: 0;
+  background: #1a1a1a;
   color: #fff;
-  font-weight: 900;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: pointer;
-  box-shadow:
-    0 14px 26px rgba(186, 128, 55, 0.25),
-    0 2px 8px rgba(11, 14, 18, 0.08);
+  font-family: inherit;
+  transition:
+    background 0.22s,
+    border-color 0.22s,
+    transform 0.15s;
+}
+
+.submit:hover:not(:disabled) {
+  background: var(--primary, #b8945a);
+  border-color: var(--primary, #b8945a);
+  transform: translateY(-1px);
+}
+
+.submit:active {
+  transform: scale(0.98);
 }
 
 .submit:disabled {
-  opacity: 0.75;
+  opacity: 0.4;
   cursor: not-allowed;
-  box-shadow: none;
+  transform: none;
 }
 
-@media (max-width: 640px) {
+/* ── 포커스 접근성 ─────────────────────────────────────── */
+.input:focus-visible,
+.inlineInput:focus-visible,
+.submit:focus-visible,
+.inlineBtn:focus-visible {
+  outline: 2px solid var(--primary, #b8945a);
+  outline-offset: 2px;
+}
+
+/* ── 반응형 ────────────────────────────────────────────── */
+@media (max-width: 600px) {
   .card {
-    padding: 44px 18px;
+    padding: 36px 24px 32px;
   }
-
-  .row {
-    grid-template-columns: 1fr;
-  }
-
-  .tag {
-    width: 130px;
-    justify-self: start;
-  }
-
   .providerRow {
     flex-direction: column;
     align-items: flex-start;
