@@ -4,74 +4,80 @@
    Noto Sans KR: 한국어 본문/UI
    ═══════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
 
 :root {
   /* ── Raw Palette ─────────────────────────────────── */
-  --a-1: #8A8F9A;
-  --a-2: #B8945A;
-  --a-3: #E8E5DF;
-  --a-4: #F5EDD8;
-  --a-5: #FFFFFF;
+  --a-1: #8a8f9a;
+  --a-2: #b8945a;
+  --a-3: #e8e5df;
+  --a-4: #f5edd8;
+  --a-5: #ffffff;
 
-  --b-1: #1A1A1A;
-  --b-2: #B8945A;
-  --b-3: #8C7E5E;
-  --b-4: #D4B07A;
-  --b-5: #FAFAF8;
+  --b-1: #1a1a1a;
+  --b-2: #b8945a;
+  --b-3: #8c7e5e;
+  --b-4: #d4b07a;
+  --b-5: #fafaf8;
 
-  --c-1: #0D0D0D;
-  --c-2: #9A7840;
-  --c-3: #3D3525;
-  --c-4: #9A7840;
-  --c-5: #9A9090;
+  --c-1: #0d0d0d;
+  --c-2: #9a7840;
+  --c-3: #3d3525;
+  --c-4: #9a7840;
+  --c-5: #9a9090;
 
   /* ── Semantic Tokens ─────────────────────────────── */
-  --bg:        #FFFFFF;
-  --surface:   #FAFAF8;
-  --surface-2: #F5F3EF;
-  --surface-3: #EDE9E2;
+  --bg: #ffffff;
+  --surface: #fafaf8;
+  --surface-2: #f5f3ef;
+  --surface-3: #ede9e2;
 
-  --text:      #2A2A2A;
-  --text-sub:  #484848;
-  --muted:     #737373;
+  --text: #2a2a2a;
+  --text-sub: #484848;
+  --muted: #737373;
 
-  --line:      #E4E1DB;
-  --line-soft: rgba(184,148,90,0.14);
+  --line: #e4e1db;
+  --line-soft: rgba(184, 148, 90, 0.14);
 
-  --primary:       #B8945A;   /* 샴페인 골드 */
-  --primary-weak:  #D4B07A;
-  --primary-light: #F5EDD8;
-  --accent:        #9A7840;
-  --accent-soft:   #8C7E5E;
+  --primary: #b8945a; /* 샴페인 골드 */
+  --primary-weak: #d4b07a;
+  --primary-light: #f5edd8;
+  --accent: #9a7840;
+  --accent-soft: #8c7e5e;
 
-  --highlight:  #F5EDD8;
-  --ink-soft:   #484848;
-  --soft-rose:  #9A9090;
-  --steel:      #8A8F9A;
-  --cream:      #F5EDD8;
+  --highlight: #f5edd8;
+  --ink-soft: #484848;
+  --soft-rose: #9a9090;
+  --steel: #8a8f9a;
+  --cream: #f5edd8;
 
-  --radius:    12px;
+  --radius: 12px;
   --radius-sm: 8px;
   --radius-lg: 20px;
 
-  --shadow:      0 4px 24px rgba(0,0,0,0.07);
-  --shadow-sm:   0 2px 8px rgba(0,0,0,0.05);
-  --shadow-gold: 0 4px 20px rgba(184,148,90,0.16);
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-gold: 0 4px 20px rgba(184, 148, 90, 0.16);
 
-  --ease:     cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  --ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
 
-  /* Syne — 기하학적 모던, 헤드라인 전용
-     Noto Sans KR — 한국어 본문·UI           */
-  --font-display: 'Syne', 'Noto Sans KR', -apple-system, sans-serif;
-  --font-body:    'Noto Sans KR', 'Syne', -apple-system,
-                   'Apple SD Gothic Neo', system-ui, sans-serif;
+  /* Noto Sans KR — 헤드라인 + 본문·UI 전체 통일 */
+  --font-display:
+    'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --font-body:
+    'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', system-ui, sans-serif;
 }
 
 /* ── Base Reset ── */
-*, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   margin: 0;
@@ -84,18 +90,42 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-a { color: inherit; text-decoration: none; }
-a:hover { color: var(--primary); }
-button { font-family: inherit; cursor: pointer; }
-img, video { display: block; max-width: 100%; }
+a {
+  color: inherit;
+  text-decoration: none;
+}
+a:hover {
+  color: var(--primary);
+}
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-body);
   font-weight: 700;
   line-height: 1.25;
   color: var(--text);
   margin: 0;
 }
 
-p  { margin: 0; }
-ul, ol { margin: 0; padding: 0; list-style: none; }
+p {
+  margin: 0;
+}
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

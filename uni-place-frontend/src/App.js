@@ -21,6 +21,7 @@ import ResetPassword from './features/user/pages/ResetPassword';
 import RoomList from './features/property/pages/RoomList';
 import RoomDetail from './features/property/pages/RoomDetail';
 import SpaceDetail from './features/property/pages/SpaceDetail';
+import SpaceList from './features/property/pages/SpaceList';
 import BuildingDetail from './features/property/pages/BuildingDetail';
 
 // ── Commerce ──────────────────────────────────────────────────
@@ -207,6 +208,7 @@ export default function App() {
         {/* ── Property ── */}
         <Route path="/rooms" element={<RoomList />} />
         <Route path="/rooms/:roomId" element={<RoomDetail />} />
+        <Route path="/spaces" element={<SpaceList />} />
         <Route path="/spaces/:spaceId" element={<SpaceDetail />} />
         <Route path="/buildings/:buildingId" element={<BuildingDetail />} />
         <Route

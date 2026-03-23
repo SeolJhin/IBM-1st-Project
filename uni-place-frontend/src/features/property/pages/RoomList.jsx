@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
+import PageTabs from '../../../shared/components/PageTabs/PageTabs';
 import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import styles from './RoomList.module.css';
@@ -962,9 +963,21 @@ export default function RoomList() {
   const [tourListOpen, setTourListOpen] = useState(false);
   const [tourCreateOpen, setTourCreateOpen] = useState(false);
 
+
+const TAB_IMAGES = {
+  rooms:     'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1400&q=80',
+  spaces:    'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1400&q=80',
+  buildings: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1400&q=80',
+};
   const [activeTab, setActiveTab] = useState(() => {
     return location.state?.tab || 'rooms';
   });
+
+  // 헤더 드롭다운에서 navigate로 state가 바뀔 때 activeTab 동기화
+  useEffect(() => {
+    const tabFromState = location.state?.tab || 'rooms';
+    setActiveTab(tabFromState);
+  }, [location.state]);
 
   // 건물 목록 상태
   const [buildingsList, setBuildingsList] = useState([]);
@@ -1231,30 +1244,48 @@ export default function RoomList() {
     <div className={styles.page}>
       <Header />
 
-      {/* 페이지 헤더 */}
-      <div className={styles.pageHeader}>
-        <div className={styles.pageHeaderInner}>
-          <p className={styles.pageKicker}>FIND YOUR ROOM</p>
-          <h1 className={styles.pageTitle}>방 찾기</h1>
-          <p className={styles.pageSub}>
-            총{' '}
-            <strong>
-              {activeTab === 'rooms'
-                ? roomPag.totalElements
-                : activeTab === 'spaces'
-                  ? spacePag.totalElements
-                  : buildingsTotalElements}
-            </strong>
-            개의{' '}
-            {activeTab === 'rooms'
-              ? '방이'
-              : activeTab === 'spaces'
-                ? '공용공간이'
-                : '건물이'}{' '}
-            있습니다
-          </p>
-        </div>
-      </div>
+      {/* ══ HERO ════════════════════════════════════════════════ */}
+      {(() => {
+        const TAB_META = {
+          rooms:     { eyebrow: 'FIND YOUR ROOM', title: '방 찾기', sub: '라이프스타일에 맞는 최적의 공간을 지금 찾아보세요.' },
+          spaces:    { eyebrow: 'SHARED SPACE', title: '공용공간', sub: '라운지, 스터디룸, 피트니스 등 다양한 공용 공간을 확인하세요.' },
+          buildings: { eyebrow: 'BUILDINGS', title: '건물 목록', sub: 'UNI-PLACE가 운영하는 모든 하우스를 둘러보세요.' },
+        };
+        const meta = TAB_META[activeTab] ?? TAB_META.rooms;
+        const img  = TAB_IMAGES[activeTab];
+        return (
+          <section className={styles.heroSection}>
+            <div
+              className={styles.heroBg}
+              style={{ backgroundImage: `url(${img})` }}
+            />
+            <div className={styles.heroOverlay} />
+            <div className={styles.heroSideLine} aria-hidden="true" />
+            <div className={styles.heroContent}>
+              <div className={styles.heroInner}>
+                <span className={styles.heroEyebrow}>{meta.eyebrow}</span>
+                <div className={styles.heroLine} aria-hidden="true" />
+                <h1 className={styles.heroTitle}>{meta.title}</h1>
+                <p className={styles.heroSub}>{meta.sub}</p>
+              </div>
+            </div>
+            <div className={styles.heroFade} aria-hidden="true" />
+          </section>
+        );
+      })()}
+
+      <PageTabs
+        categories={[
+          { label: '방 목록', path: '/rooms', tab: 'rooms' },
+          { label: '공용공간', path: '/rooms', tab: 'spaces' },
+          { label: '건물 목록', path: '/rooms', tab: 'buildings' },
+        ]}
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          window.history.replaceState({ tab }, '');
+        }}
+      />
 
       <div className={styles.layout}>
         {/* 필터 패널 */}
@@ -1281,51 +1312,13 @@ export default function RoomList() {
             <div className={styles.filterHeader}>
               <h2 className={styles.filterTitle}>건물 목록</h2>
             </div>
-            <p
-              style={{
-                fontSize: 13,
-                color: '#9a8c70',
-                margin: 0,
-                padding: '0 4px',
-              }}
-            >
+            <p style={{ fontSize: 13, color: '#9a8c70', margin: 0, padding: '0 4px' }}>
               건물을 클릭하면 상세 정보를 확인할 수 있습니다.
             </p>
           </aside>
         )}
 
         <main className={styles.main}>
-          {/* ════ 탭 바 ════ */}
-          <div className={styles.tabBar}>
-            <button
-              type="button"
-              className={`${styles.tabBtn} ${activeTab === 'rooms' ? styles.tabBtnActive : ''}`}
-              onClick={() => setActiveTab('rooms')}
-            >
-              <span className={styles.tabIcon}>🏠</span>
-              <span className={styles.tabLabel}>방 목록</span>
-              <span className={styles.tabCount}>{roomPag.totalElements}</span>
-            </button>
-            <button
-              type="button"
-              className={`${styles.tabBtn} ${activeTab === 'spaces' ? styles.tabBtnActive : ''}`}
-              onClick={() => setActiveTab('spaces')}
-            >
-              <span className={styles.tabIcon}>🛋️</span>
-              <span className={styles.tabLabel}>공용공간</span>
-              <span className={styles.tabCount}>{spacePag.totalElements}</span>
-            </button>
-            <button
-              type="button"
-              className={`${styles.tabBtn} ${activeTab === 'buildings' ? styles.tabBtnActive : ''}`}
-              onClick={() => setActiveTab('buildings')}
-            >
-              <span className={styles.tabIcon}>🏢</span>
-              <span className={styles.tabLabel}>건물 목록</span>
-              <span className={styles.tabCount}>{buildingsTotalElements}</span>
-            </button>
-          </div>
-
           {/* ════ 방 목록 ════ */}
           {activeTab === 'rooms' && (
             <>
