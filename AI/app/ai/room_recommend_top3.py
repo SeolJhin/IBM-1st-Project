@@ -148,8 +148,8 @@ def _call_llm(prompt: str) -> str:
 
 
 def _call_gemini(prompt: str) -> str:
-    # ✅ 수정: google.genai 패키지 대신 openai 패키지로 Gemini 호출
-    # (llm_client_gemini.py 와 동일한 방식 — 배포 환경에서도 정상 동작)
+    # ✅ google.genai 패키지 대신 openai 패키지로 Gemini 호출
+    # settings.gemini_model 사용 (기본값: gemini-2.5-flash-lite)
     api_key = settings.gemini_api_key
     if not api_key:
         logger.warning("[RoomRecommend] Gemini API key 없음")
@@ -158,7 +158,7 @@ def _call_gemini(prompt: str) -> str:
         prompt,
         api_key=api_key,
         base_url=settings.gemini_base_url,
-        model="gemini-2.5-flash",
+        model=settings.gemini_model,  # ✅ 하드코딩 제거 → settings 값 사용
     )
 
 
@@ -180,9 +180,11 @@ def _call_openai_compatible(
             max_tokens=2000,
             messages=[{"role": "user", "content": prompt}],
         )
-        return resp.choices[0].message.content or ""
+        raw_text = resp.choices[0].message.content or ""
+        logger.info(f"[RoomRecommend] LLM RAW 응답: {raw_text[:300]}")  # ✅ 디버그 로그 추가
+        return raw_text
     except Exception as e:
-        logger.error(f"[RoomRecommend] OpenAI/Groq 호출 실패: {e}")
+        logger.error(f"[RoomRecommend] LLM 호출 실패: {e}")
         return ""
 
 
