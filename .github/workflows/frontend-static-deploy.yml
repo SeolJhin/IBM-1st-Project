@@ -24,23 +24,12 @@ jobs:
       AWS_REGION: ap-northeast-2
       FRONTEND_S3_BUCKET: uniplace-front-194722402714-ap-northeast-2-an
       FRONTEND_CLOUDFRONT_DISTRIBUTION_ID: E28HT3NFNRO4V1
+      APP_CONFIG_BACKEND_BASE_URL: ${{ vars.FRONTEND_BACKEND_BASE_URL || vars.REACT_APP_BACKEND_BASE_URL || '/api' }}
+      APP_CONFIG_KAKAO_MAP_KEY: ${{ vars.FRONTEND_KAKAO_MAP_KEY || vars.VITE_KAKAO_MAP_KEY || secrets.FRONTEND_KAKAO_MAP_KEY || '' }}
+      APP_CONFIG_KMA_KEY: ${{ secrets.FRONTEND_KMA_KEY || secrets.VITE_KMA_KEY || vars.FRONTEND_KMA_KEY || vars.VITE_KMA_KEY || '' }}
+      APP_CONFIG_GEMINI_API_KEY: ${{ secrets.FRONTEND_GEMINI_API_KEY || secrets.REACT_APP_GEMINI_API_KEY || vars.FRONTEND_GEMINI_API_KEY || '' }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Load frontend aws.env
-        run: |
-          while IFS= read -r line || [ -n "$line" ]; do
-            if [[ "$line" =~ ^[[:space:]]*# ]] || [[ -z "${line// /}" ]]; then
-              continue
-            fi
-            key="${line%%=*}"
-            value="${line#*=}"
-            key="$(echo "$key" | xargs)"
-            value="$(echo "$value" | sed -e 's/\r$//')"
-            if [[ -n "$key" ]]; then
-              echo "${key}=${value}" >> "$GITHUB_ENV"
-            fi
-          done < ./uni-place-frontend/aws.env
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -63,12 +52,17 @@ jobs:
 
       - name: Generate app-config.js
         run: |
+          backend_base_url="${APP_CONFIG_BACKEND_BASE_URL:-/api}"
+          kakao_map_key="${APP_CONFIG_KAKAO_MAP_KEY:-}"
+          kma_key="${APP_CONFIG_KMA_KEY:-}"
+          gemini_api_key="${APP_CONFIG_GEMINI_API_KEY:-}"
+
           cat > ./uni-place-frontend/dist/app-config.js <<EOF
           window.__APP_CONFIG__ = {
-            BACKEND_BASE_URL: '${REACT_APP_BACKEND_BASE_URL:-/api}',
-            KAKAO_MAP_KEY: '${VITE_KAKAO_MAP_KEY:-}',
-            KMA_KEY: '${VITE_KMA_KEY:-}',
-            GEMINI_API_KEY: '${REACT_APP_GEMINI_API_KEY:-}',
+            BACKEND_BASE_URL: '${backend_base_url}',
+            KAKAO_MAP_KEY: '${kakao_map_key}',
+            KMA_KEY: '${kma_key}',
+            GEMINI_API_KEY: '${gemini_api_key}',
           };
           EOF
 
