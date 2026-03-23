@@ -148,28 +148,18 @@ def _call_llm(prompt: str) -> str:
 
 
 def _call_gemini(prompt: str) -> str:
-    if not settings.gemini_api_key:
+    # ✅ 수정: google.genai 패키지 대신 openai 패키지로 Gemini 호출
+    # (llm_client_gemini.py 와 동일한 방식 — 배포 환경에서도 정상 동작)
+    api_key = settings.gemini_api_key
+    if not api_key:
         logger.warning("[RoomRecommend] Gemini API key 없음")
         return ""
-    try:
-        from google import genai
-        from google.genai import types
-        client = genai.Client(api_key=settings.gemini_api_key)
-        resp = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.3,
-                max_output_tokens=2000,
-                thinking_config=types.ThinkingConfig(thinking_budget=0),
-            ),
-        )
-        text = resp.text or ""
-        logger.info(f"[Gemini 응답 RAW]: {text[:200]}")
-        return text
-    except Exception as e:
-        logger.error(f"[RoomRecommend] Gemini 호출 실패: {e}")
-        return ""
+    return _call_openai_compatible(
+        prompt,
+        api_key=api_key,
+        base_url=settings.gemini_base_url,
+        model="gemini-2.5-flash",
+    )
 
 
 def _call_openai_compatible(
