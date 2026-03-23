@@ -273,9 +273,6 @@ export default function AdminRoomServiceDashboard() {
       .slice(0, 5);
   }, [productStocks]);
 
-  console.log('products:', products);
-  console.log('productStocks:', productStocks);
-
   return (
     <div className={styles.wrap}>
       {/* ================= TOP ================= */}
