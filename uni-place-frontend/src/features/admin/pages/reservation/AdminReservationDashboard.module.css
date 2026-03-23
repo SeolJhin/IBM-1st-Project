@@ -15,6 +15,11 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
+.kpiCard:hover {
+  transform: translateY(-2px);
+  transition: 0.2s;
+}
+
 .kpiCard p {
   font-size: 14px;
   color: #888;
@@ -32,6 +37,11 @@
   border-radius: 16px;
   padding: 20px;
   border: 1px solid rgba(31, 36, 48, 0.12);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  transition: 0.2s;
 }
 
 .divider {
@@ -99,7 +109,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #4ade80;
+  background: #86efac;
 }
 
 .legendDotPink {

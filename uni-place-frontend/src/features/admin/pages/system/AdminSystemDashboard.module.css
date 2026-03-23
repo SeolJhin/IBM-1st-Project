@@ -1,0 +1,91 @@
+.dashboard {
+  display: flex;
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.cardSmall {
+  flex: 1;
+}
+
+.cardLarge {
+  flex: 3;
+}
+
+.card h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  transition: 0.2s;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 12px 0;
+}
+
+.row {
+  justify-content: space-between;
+}
+
+.row p {
+  font-size: 14px;
+  color: #888;
+  margin-top: 20px;
+}
+
+.row strong {
+  font-size: 22px;
+}
+
+/* ===================== */
+/* 도넛 */
+/* ===================== */
+.donutRow {
+  display: flex;
+  justify-content: space-around;
+}
+
+.donutCenter strong {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.donutCenter span {
+  font-size: 12px;
+  color: #777;
+}
+
+.donutWrap {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+}
+
+.donut {
+  width: 100%;
+  height: 100%;
+}
+
+.donutCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
