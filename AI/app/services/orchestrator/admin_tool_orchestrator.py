@@ -1343,6 +1343,44 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
     if _detect_contract_anomaly_request(prompt):
         return _run_contract_anomaly_check(admin_id)
 
+    # ── 룸서비스 주문 명령 선제 감지 (LLM 호출 전) ───────────────────────────
+    # 관리자가 실수로 주문 요청을 하거나, 입주민이 어드민 챗봇에 주문 요청했을 때
+    # LLM이 "접수했습니다" 같은 오해 응답을 생성하지 않도록 차단.
+    _order_verbs = [
+        "갖다 줘", "갖다줘", "가져다 줘", "가져다줘",
+        "보내줘", "보내 줘", "배달해줘", "배달해 줘",
+        "시켜줘", "시켜 줘", "주문해줘", "주문해 줘",
+        "주문할게", "주문하고 싶어", "주문하고싶어",
+        "한 잔 줘", "한잔 줘", "한잔줘", "한 잔줘",
+        "한 개 줘", "한개 줘", "한개줘",
+        "갖다드려", "가져다드려", "가져다 드려",
+        "룸서비스 신청", "룸서비스 주문", "룸서비스 이용",
+    ]
+    _product_keywords = [
+        "아메리카노", "americano", "라떼", "latte", "카페라떼",
+        "커피", "coffee", "음료", "샌드위치", "sandwich",
+        "물", "생수", "과자", "스낵", "간식",
+        "청소", "세탁", "laundry",
+    ]
+    _prompt_lower = prompt.lower()
+    _has_verb = any(v in prompt for v in _order_verbs)
+    _has_product = any(p in _prompt_lower for p in _product_keywords)
+    _is_rs_order = (
+        (_has_verb and _has_product)
+        or (("내 방" in prompt or "방으로" in prompt) and (_has_verb or _has_product))
+    )
+    if _is_rs_order:
+        logger.info("[AdminOrchestrator] 룸서비스 주문 명령 감지 → 안내 메시지 반환")
+        return AiResponse(
+            answer=(
+                "룸서비스 주문은 어드민 챗봇에서 처리할 수 없습니다. "
+                "입주민 앱에서 직접 주문해 주세요. "
+                "주문 내역은 아래 관리자 페이지에서 확인하실 수 있습니다."
+            ),
+            confidence=1.0,
+            metadata={"action_buttons": [{"label": "룸서비스 주문 목록", "url": "/admin/roomservice/room_orders", "icon": "🛒"}]},
+        )
+
     # ── 페이지 안내 요청 강제 처리 (LLM 호출 전) ─────────────────────────────
     _page_button = _detect_page_request(prompt)
     if _page_button:
