@@ -23,6 +23,11 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
+.kpiCard:hover {
+  transform: translateY(-2px);
+  transition: 0.2s;
+}
+
 .kpiCard p {
   font-size: 14px;
   color: #888;
@@ -87,13 +92,13 @@
 
 .userLine {
   fill: none;
-  stroke: #4ade80;
+  stroke: #86efac;
   stroke-width: 3;
   stroke-dasharray: 5 5;
 }
 
 .userDot {
-  fill: #22c55e;
+  fill: #86efac;
 }
 
 /* 차트 영역 */
@@ -124,6 +129,11 @@
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.donutCard:hover {
+  transform: translateY(-2px);
+  transition: 0.2s;
 }
 
 .donutBox {
@@ -196,6 +206,11 @@
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.chartCard:hover {
+  transform: translateY(-2px);
+  transition: 0.2s;
 }
 
 /* 필터 */
