@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
-import PageHeader from '../../../shared/components/PageHeader/PageHeader';
 import styles from './about.shared.module.css';
 
 const ABOUT_CATEGORIES = [
@@ -110,13 +109,39 @@ function GuideCard({ guide, index = 0 }) {
 }
 
 export default function Guide() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [active, setActive] = useState('전체');
   const filtered = active === '전체' ? GUIDE_LIST : GUIDE_LIST.filter((g) => g.category === active);
 
   return (
     <div className={styles.page}>
       <Header />
-      <PageHeader title="About" subtitle="UNI-PLACE를 소개합니다." categories={ABOUT_CATEGORIES} />
+      <section className={styles.heroSection}>
+        <div className={styles.heroBg} style={{ backgroundImage: `url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1600&q=85')` }} />
+        <div className={styles.heroOverlay} />
+        <div className={styles.heroSideLine} aria-hidden="true" />
+        <div className={styles.heroContent}>
+          <div className={styles.heroInner}>
+            <span className={styles.heroEyebrow}>MOVE-IN GUIDE</span>
+            <div className={styles.heroLine} aria-hidden="true" />
+            <h1 className={styles.heroTitle}>입주 가이드</h1>
+            <p className={styles.heroSub}>계약부터 입주까지 필요한 절차를 단계별로 안내합니다.</p>
+          </div>
+        </div>
+        <div className={styles.heroFade} aria-hidden="true" />
+      </section>
+      <div className={styles.filterBar}>
+        <div className={styles.filterInner}>
+          {ABOUT_CATEGORIES.map((cat) => (
+            <button key={cat.path} type="button"
+              className={`${styles.filterBtn} ${location.pathname === cat.path ? styles.filterActive : ''}`}
+              onClick={() => navigate(cat.path)}>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className={styles.filterBar}>
         <div className={styles.filterInner}>
           {SUB_CATEGORIES.map((cat) => (

@@ -204,7 +204,7 @@ export default function NotificationBell() {
                     }
                   }}
                 >
-                  모두 읽음
+                  모두 삭제
                 </button>
               )}
             </div>
@@ -246,30 +246,18 @@ export default function NotificationBell() {
                           <button
                             className={styles.readBtn}
                             type="button"
-                            aria-label="읽음 처리"
+                            aria-label="삭제"
                             onClick={(e) =>
                               handleMarkRead(item.notificationId, e)
                             }
                           >
-                            읽음
+                            삭제
                           </button>
                         </div>
                       </li>
                     )
                   )}
                 </ul>
-                {!showAll && items.length > PREVIEW_COUNT && (
-                  <button
-                    className={styles.expandBtn}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowAll(true);
-                    }}
-                  >
-                    +{items.length - PREVIEW_COUNT}개 더 보기
-                  </button>
-                )}
               </>
             )}
 
@@ -279,7 +267,7 @@ export default function NotificationBell() {
                 type="button"
                 onClick={goToAll}
               >
-                알림 전체 보기
+                알림 전체 보기 {items.length > 0 && `(+${items.length}개)`}
               </button>
             </div>
           </div>

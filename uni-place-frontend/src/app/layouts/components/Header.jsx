@@ -3,7 +3,7 @@ import styles from './Header.module.css';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../features/user/hooks/useAuth';
 import NotificationBell from './NotificationBell';
-import homeLogo from '../../../home_logo.png';
+import homeLogo from '../../../logo.png';
 
 /* ─ 아이콘 SVG ─────────────────────────────────────────────────
    Feather 스타일 — 얇은 선(strokeWidth 1.5), 최소한의 형태
@@ -28,7 +28,7 @@ function IconUser() {
   );
 }
 
-/* 관리자 — 방패/보안 */
+/* 관리자 — 방패/보안 (원래 아이콘) */
 function IconAdmin() {
   return (
     <svg
@@ -65,6 +65,7 @@ const NAV_ITEMS = [
     path: '/rooms',
     children: [
       { label: '방', path: '/rooms' },
+      // 공용공간: RoomList 안의 탭(tab)으로 동작 — state로 탭 지정
       { label: '공용공간', path: '/rooms', state: { tab: 'spaces' } },
       { label: '건물 목록', path: '/buildings' },
     ],
@@ -80,9 +81,15 @@ const NAV_ITEMS = [
     ],
   },
   {
-    label: '커뮤니티', // 마지막 순서
+    label: '커뮤니티',
     path: '/community',
-    // children 없음 → 드롭다운 없이 바로 이동
+    // ✅ 드롭다운 추가 — tab 쿼리파라미터(URL ?tab=...)로 게시판 구분
+    children: [
+      { label: '전체', path: '/community' },
+      { label: '자유게시판', path: '/community', search: '?tab=FREE' },
+      { label: '질문게시판', path: '/community', search: '?tab=QUESTION' },
+      { label: '리뷰', path: '/community', search: '?tab=REVIEW' },
+    ],
   },
 ];
 
@@ -124,7 +131,11 @@ function NavItem({ item }) {
   };
   const handleChildClick = (child) => {
     setOpen(false);
-    navigate(child.path, child.state ? { state: child.state } : undefined);
+    // search: 쿼리파라미터(?tab=FREE 같은 URL 조건)도 지원
+    const to = child.search
+      ? { pathname: child.path, search: child.search }
+      : child.path;
+    navigate(to, child.state ? { state: child.state } : undefined);
   };
 
   return (
@@ -164,9 +175,9 @@ function NavItem({ item }) {
           <div className={styles.dropdownCaret} aria-hidden="true" />
           {item.children.map((child) => (
             <button
-              key={child.path + (child.state?.tab || '')}
+              key={child.path + (child.search || '') + (child.state?.tab || '')}
               className={`${styles.dropdownItem} ${
-                location.pathname === child.path && !child.state
+                location.pathname === child.path && !child.state && !child.search
                   ? styles.dropdownItemActive
                   : ''
               }`}
@@ -232,10 +243,6 @@ export default function Header() {
             src={homeLogo}
             alt="UNI PLACE logo"
           />
-          <div className={styles.brandText}>
-            <div className={styles.brandName}>UNI PLACE</div>
-            <div className={styles.brandSub}>Living as a Service</div>
-          </div>
         </div>
 
         {/* 네비게이션 */}

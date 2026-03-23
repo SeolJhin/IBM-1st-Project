@@ -25,6 +25,14 @@ function normalizeTab(value) {
   return 'ALL';
 }
 
+const COMMUNITY_IMAGES = {
+  ALL: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1400&q=80',
+  FREE: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1400&q=80',
+  QUESTION:
+    'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1400&q=80',
+  REVIEW:
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1400&q=80',
+};
 const TABS = [
   { key: 'ALL', label: '전체' },
   { key: 'FREE', label: '자유' },
@@ -44,6 +52,13 @@ const SUBTITLE_MAP = {
   FREE: '자유롭게 이야기를 나눠보세요.',
   QUESTION: '궁금한 점을 질문하고 답변을 받아보세요.',
   REVIEW: '입주 후기를 공유하고 참고해보세요.',
+};
+
+const EYEBROW_MAP = {
+  ALL: 'COMMUNITY',
+  FREE: 'FREE BOARD',
+  QUESTION: 'Q & A',
+  REVIEW: 'REVIEW',
 };
 
 function formatDate(value) {
@@ -266,6 +281,42 @@ export default function CommunityHome() {
   const [activeTab, setActiveTab] = useState(() =>
     normalizeTab(searchParams.get('tab'))
   );
+
+  /* ── 히어로 이미지 fade 전환 (Support 방식) ── */
+  const [heroImg, setHeroImg] = useState(
+    () =>
+      COMMUNITY_IMAGES[normalizeTab(searchParams.get('tab'))] ||
+      COMMUNITY_IMAGES.ALL
+  );
+  const [heroFade, setHeroFade] = useState(true);
+  const prevTab = useRef(activeTab);
+
+  // 헤더 드롭다운 등 외부 navigate로 URL이 바뀔 때 activeTab을 동기화
+  // (searchParams는 React Router가 반응형으로 업데이트 해줌)
+  useEffect(() => {
+    const tabFromUrl = normalizeTab(searchParams.get('tab'));
+    if (tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+      setPage(1);
+      setSearchKeyword('');
+      setSearchType('title');
+      setActiveSearch({ type: '', keyword: '' });
+      setShowWriter(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  /* 탭 변경 시 히어로 이미지 fade 전환 */
+  useEffect(() => {
+    if (activeTab === prevTab.current) return;
+    prevTab.current = activeTab;
+    setHeroFade(false);
+    const t = setTimeout(() => {
+      setHeroImg(COMMUNITY_IMAGES[activeTab] || COMMUNITY_IMAGES.ALL);
+      setHeroFade(true);
+    }, 320);
+    return () => clearTimeout(t);
+  }, [activeTab]);
   const [reviewModal, setReviewModal] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -289,7 +340,6 @@ export default function CommunityHome() {
   const isBanned = String(user?.userSt ?? '').toLowerCase() === 'banned';
 
   const [userStatusModalId, setUserStatusModalId] = useState(null);
-  const [hoveredTab, setHoveredTab] = useState(null);
 
   const [searchType, setSearchType] = useState(
     () => searchParams.get('searchType') || 'title'
@@ -676,43 +726,47 @@ export default function CommunityHome() {
     <div className={styles.page}>
       <Header />
 
-      {/* PageHeader 스타일 헤더 */}
-      <div className={styles.pageHeader}>
-        <div className={styles.pageHeaderInner}>
-          <h1 className={styles.pageHeaderTitle}>{TITLE_MAP[activeTab]}</h1>
-          <p className={styles.pageHeaderSubtitle}>{SUBTITLE_MAP[activeTab]}</p>
-          <div className={styles.pageHeaderTabs}>
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.key;
-              const isHovered = hoveredTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  className={[
-                    styles.pageHeaderTabBase,
-                    isActive
-                      ? styles.pageHeaderTabActive
-                      : styles.pageHeaderTabDefault,
-                    isHovered && !isActive ? styles.pageHeaderTabHover : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  onClick={() => handleTabChange(tab.key)}
-                  onMouseEnter={() => setHoveredTab(tab.key)}
-                  onMouseLeave={() => setHoveredTab(null)}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+      {/* ══ HERO — Support 동일 방식 ════════════════════════ */}
+      <section className={styles.heroSection}>
+        <div
+          className={styles.heroBg}
+          style={{
+            backgroundImage: `url(${heroImg})`,
+            opacity: heroFade ? 1 : 0,
+          }}
+        />
+        <div className={styles.heroOverlay} />
+        <div className={styles.heroSideLine} aria-hidden="true" />
+        <div className={styles.heroContent}>
+          <div className={styles.heroInner}>
+            <span className={styles.heroEyebrow}>{EYEBROW_MAP[activeTab]}</span>
+            <div className={styles.heroLine} aria-hidden="true" />
+            <h1 className={styles.heroTitle}>{TITLE_MAP[activeTab]}</h1>
+            <p className={styles.heroSub}>{SUBTITLE_MAP[activeTab]}</p>
           </div>
         </div>
-      </div>
+        <div className={styles.heroFade} aria-hidden="true" />
+      </section>
+
+      {/* ══ 탭 네비게이션 — Support 동일 방식 ══════════════ */}
+      <nav className={styles.tabBar} aria-label="커뮤니티 메뉴">
+        <div className={styles.tabInner}>
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              className={`${styles.tabBtn} ${activeTab === t.key ? styles.tabBtnActive : ''}`}
+              onClick={() => handleTabChange(t.key)}
+              aria-current={activeTab === t.key ? 'page' : undefined}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </nav>
 
       <main className={styles.main}>
-        {/* 가운데 정렬 제목 */}
+        {/* ── 페이지 제목 ── */}
         <div className={styles.pageHead}>
           <h2 className={styles.pageTitle}>{TITLE_MAP[activeTab]}</h2>
         </div>

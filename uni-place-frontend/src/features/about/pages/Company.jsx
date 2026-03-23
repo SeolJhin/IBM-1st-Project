@@ -1,7 +1,6 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
-import PageHeader from '../../../shared/components/PageHeader/PageHeader';
 import styles from './about.shared.module.css';
 
 const ABOUT_CATEGORIES = [
@@ -91,10 +90,36 @@ function CompanyCard({ card, index = 0 }) {
 }
 
 export default function Company() {
+  const navigate = useNavigate();
+  const location = useLocation();
   return (
     <div className={styles.page}>
       <Header />
-      <PageHeader title="About" subtitle="UNI-PLACE를 소개합니다." categories={ABOUT_CATEGORIES} />
+      <section className={styles.heroSection}>
+        <div className={styles.heroBg} style={{ backgroundImage: `url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&q=85')` }} />
+        <div className={styles.heroOverlay} />
+        <div className={styles.heroSideLine} aria-hidden="true" />
+        <div className={styles.heroContent}>
+          <div className={styles.heroInner}>
+            <span className={styles.heroEyebrow}>ABOUT UNI-PLACE</span>
+            <div className={styles.heroLine} aria-hidden="true" />
+            <h1 className={styles.heroTitle}>회사소개</h1>
+            <p className={styles.heroSub}>공간을 넘어 삶을 연결하는 주거 플랫폼, UNI-PLACE를 소개합니다.</p>
+          </div>
+        </div>
+        <div className={styles.heroFade} aria-hidden="true" />
+      </section>
+      <div className={styles.filterBar}>
+        <div className={styles.filterInner}>
+          {ABOUT_CATEGORIES.map((cat) => (
+            <button key={cat.path} type="button"
+              className={`${styles.filterBtn} ${location.pathname === cat.path ? styles.filterActive : ''}`}
+              onClick={() => navigate(cat.path)}>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <main className={styles.main}>
         <div className={styles.grid}>
           {COMPANY_CARDS.map((card, i) => <CompanyCard key={card.id} card={card} index={i} />)}
