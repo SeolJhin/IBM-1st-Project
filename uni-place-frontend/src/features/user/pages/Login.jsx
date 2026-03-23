@@ -5,12 +5,10 @@ import { useAuth } from '../hooks/useAuth';
 import Header from '../../../app/layouts/components/Header';
 import { toKoreanMessage } from '../../../app/http/errorMapper';
 import FaceLoginModal from '../components/FaceLoginModal';
-import ErrorActionNotice from '../../../shared/components/ErrorActionNotice/ErrorActionNotice';
 import {
   AUTH_EXPIRED_NOTICE,
   getAuthResumePath,
 } from '../../../app/auth/authResume';
-import { getAppConfigValue } from '../../../app/config/appConfigReader';
 
 export default function Login() {
   const { login, loading, refresh } = useAuth();
@@ -103,10 +101,7 @@ export default function Login() {
     await runLogin({ validate: true });
   };
 
-  const backendBaseUrl = getAppConfigValue(
-    'BACKEND_BASE_URL',
-    process.env.REACT_APP_BACKEND_BASE_URL || '/api'
-  );
+  const backendBaseUrl = process.env.REACT_APP_BACKEND_BASE_URL || '/api';
 
   const goSignup = () => navigate('/signup');
   const goFind = () => navigate('/find-account');
@@ -152,14 +147,23 @@ export default function Login() {
               ) : null}
 
               {error ? (
-                <div ref={errorRef} tabIndex={-1}>
-                  <ErrorActionNotice
-                    error={error}
-                    fallback="로그인에 실패했습니다. 잠시 후 다시 시도해주세요."
-                    onRetry={() => runLogin({ validate: false })}
-                    hideTitle
-                    className={styles.errorNotice}
-                  />
+                <div
+                  ref={errorRef}
+                  tabIndex={-1}
+                  className={styles.serverError}
+                  role="alert"
+                >
+                  {typeof error === 'string'
+                    ? error
+                    : error?.message ||
+                      '로그인에 실패했습니다. 잠시 후 다시 시도해주세요.'}
+                  <button
+                    type="button"
+                    className={styles.retryBtn}
+                    onClick={() => runLogin({ validate: false })}
+                  >
+                    다시 시도
+                  </button>
                 </div>
               ) : null}
 
@@ -168,7 +172,7 @@ export default function Login() {
                 className={`${styles.row} ${fieldErrors.email ? styles.rowError : ''}`}
               >
                 <label className={styles.tag} htmlFor="login-email">
-                  Email
+                  ID
                 </label>
                 <div className={styles.fieldWrap}>
                   <input

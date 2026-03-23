@@ -267,6 +267,47 @@
   line-height: 1.4;
 }
 
+/* 서버/네트워크 오류 배너 */
+.serverError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-left: 3px solid #c03030;
+  background: rgba(255, 248, 248, 0.8);
+  border: 1px solid rgba(192, 48, 48, 0.2);
+  border-left-width: 3px;
+  color: #1a1a1a;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  border-radius: 0;
+}
+
+.retryBtn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: 1.5px solid #1a1a1a;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 0.18s,
+    border-color 0.18s;
+}
+
+.retryBtn:hover {
+  background: var(--primary, #b8945a);
+  border-color: var(--primary, #b8945a);
+}
+
 .errorNotice {
   margin-top: 0;
 }
