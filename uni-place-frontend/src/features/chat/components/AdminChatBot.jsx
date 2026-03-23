@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../../app/http/axiosInstance';
 import ErrorActionNotice from '../../../shared/components/ErrorActionNotice/ErrorActionNotice';
 import styles from './AdminChatBot.module.css';
+import adminChatbotIcon from './chatbot_icon_admin.png';
 import { QUICK_QUESTIONS } from '../config/chatConfig';
 
 const ADMIN_HISTORY_KEY = 'uniplace_admin_chat_history';
@@ -555,7 +556,20 @@ function AdminMessageBubble({ msg }) {
   );
   return (
     <div className={styles.rowAssistant}>
-      <div className={styles.bubbleAvatar}>⚙️</div>
+      <div className={styles.bubbleAvatar}>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polygon points="12,2 21,7 21,17 12,22 3,17 3,7" />
+        </svg>
+      </div>
       <div style={{ maxWidth: '92%', minWidth: 0 }}>
         {cleanText && (
           <div className={styles.bubbleAssistant}>
@@ -580,7 +594,20 @@ function AdminMessageBubble({ msg }) {
 function TypingIndicator({ label }) {
   return (
     <div className={styles.typingRow}>
-      <div className={styles.bubbleAvatar}>⚙️</div>
+      <div className={styles.bubbleAvatar}>
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polygon points="12,2 21,7 21,17 12,22 3,17 3,7" />
+        </svg>
+      </div>
       <div className={styles.typingBubble}>
         <div className={styles.dot} />
         <div className={styles.dot} />
@@ -728,14 +755,42 @@ export default function AdminChatBot({ user }) {
     <>
       {/* 플로팅 버튼 */}
       <button
-        className={styles.fab}
+        className={open ? styles.fabOpen : styles.fab}
         onClick={open ? () => setOpen(false) : onOpen}
-        aria-label="관리자 AI"
-        title="관리자 AI 어시스턴트"
+        aria-label={open ? '챗봇 닫기' : '관리자 AI 챗봇'}
+        title="관리자 AI 챗봇"
+        style={
+          open
+            ? {
+                position: 'fixed',
+                bottom: '32px',
+                right: '32px',
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                border: '1.5px solid rgba(184,148,90,0.4)',
+                background: '#1a1a1a',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.7)',
+                zIndex: 1000,
+              }
+            : {
+                width: '80px',
+                height: '80px',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+              }
+        }
       >
         {open ? (
           <svg
-            className={styles.fabIcon}
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -746,20 +801,19 @@ export default function AdminChatBot({ user }) {
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         ) : (
-          <svg
-            className={styles.fabIcon}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          >
-            <path d="M12 2l1.5 3.5L17 4l-1 3.5 3.5 1-2.5 2.5 1.5 3.5-3.5-1L12 17l-3-3.5-3.5 1 1.5-3.5L4.5 8.5l3.5-1L7 4l3.5 1.5z" />
-            <circle cx="12" cy="10" r="2" />
-          </svg>
+          <img
+            src={adminChatbotIcon}
+            alt="관리자 AI 챗봇"
+            style={{
+              width: '80px',
+              height: '80px',
+              display: 'block',
+              pointerEvents: 'none',
+              mixBlendMode: 'multiply',
+            }}
+          />
         )}
         {hasUnread && !open && <span className={styles.badge} />}
-        {!open && <span className={styles.fabLabel}>AI</span>}
       </button>
 
       {open && (
@@ -770,7 +824,21 @@ export default function AdminChatBot({ user }) {
         >
           {/* 헤더 */}
           <div className={styles.header}>
-            <div className={styles.headerAvatar}>⚙️</div>
+            <div className={styles.headerAvatar}>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="rgba(255,255,255,0.92)"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polygon points="12,2 21,7 21,17 12,22 3,17 3,7" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
             <div className={styles.headerInfo}>
               <p className={styles.headerTitle}>관리자 AI 어시스턴트</p>
               <p className={styles.headerSub}>
