@@ -1,8 +1,15 @@
+// dt 2
 // App.js
 import React from 'react';
 import './app/styles/globals.css';
 
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 
 import ScrollToTop from './shared/components/ScrollToTop';
 import Home from './shared/pages/Home';
