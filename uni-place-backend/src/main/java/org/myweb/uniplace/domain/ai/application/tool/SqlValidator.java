@@ -26,7 +26,9 @@ public class SqlValidator {
         "product_building_stock", "service_goods",
         "orders", "order_items", "product",
         "monthly_charge",
-        "banner", "affiliate", "users"
+        "banner", "affiliate", "users",
+        // 커뮤니티 — reply/like 테이블 (댓글 수·좋아요 순 조회에 필요)
+        "reply", "reply_likes", "board_likes"
     );
 
     /**
@@ -46,9 +48,11 @@ public class SqlValidator {
      * 테이블별 비인증 SELECT 금지 컬럼 목록.
      * space_reservations에서 user_id(개인 식별자), sr_no_people(사용 인원)은
      * 공개 조회(query_database)에서 SELECT 불가.
+     * reply에서 user_id(작성자 식별자)는 공개 조회 불가.
      */
     private static final Map<String, List<String>> RESTRICTED_COLUMNS = Map.of(
-        "space_reservations", List.of("user_id", "sr_no_people")
+        "space_reservations", List.of("user_id", "sr_no_people"),
+        "reply", List.of("user_id")
     );
 
     /** 절대 허용 안 되는 키워드 */
