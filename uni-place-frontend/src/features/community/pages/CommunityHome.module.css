@@ -666,10 +666,9 @@
   padding: 14px 16px;
   background: #f5f2ec;
   text-align: left;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: #6b5e45;
   border-bottom: 2px solid rgba(184, 148, 90, 0.25);
 }
