@@ -1,15 +1,18 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminSystemHub.module.css';
+import SystemDashboard from './AdminSystemDashboard';
 
 export default function AdminSystemHub() {
   return (
     <div className={styles.wrap}>
       <div className={styles.topRow}>
         <h1 className={styles.title}>시스템 관리</h1>
-
-        {/* (원하면) 검색 아이콘/검색창 자리 */}
         <div className={styles.right} />
+      </div>
+
+      <div className={styles.dashboardArea}>
+        <SystemDashboard />
       </div>
 
       <div className={styles.tabs}>

@@ -57,3 +57,14 @@
   border-radius: 18px;
   padding: 18px;
 }
+
+.dashboardArea {
+  display: 100%;
+  gap: 8px;
+  background: #fffdf9;
+  border: 1px solid rgba(31, 35, 40, 0.12);
+  border-radius: 14px;
+  padding: 18px;
+  margin: 16px 0 24px;
+  margin-bottom: 14px;
+}
