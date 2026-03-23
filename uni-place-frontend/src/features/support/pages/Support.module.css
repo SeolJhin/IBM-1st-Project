@@ -385,15 +385,14 @@
   border-radius: 0;
 }
 
-/* 헤더 — 크림/웜 그레이 배경 (기존 노란색 제거) */
+/* 헤더 — 크림/웜 그레이 배경 */
 .table th {
   background: #f5f2ec;
   padding: 14px 16px;
   text-align: center;
   font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.04em;
   border-bottom: 2px solid rgba(184, 148, 90, 0.3);
   color: #6b5e45;
 }
@@ -416,6 +415,15 @@
 /* 행 호버 — 좌측 골드 라인 */
 .table tr:hover td {
   background: #fbf9f5;
+}
+
+/* 중요 공지 행 — 아주 연한 붉은 크림 배경으로 행 전체 구분 */
+.importantRow td {
+  background: rgba(192, 48, 48, 0.03);
+}
+
+.importantRow:hover td {
+  background: rgba(192, 48, 48, 0.06) !important;
 }
 
 .tableTitleCell {
@@ -442,18 +450,22 @@
 }
 
 /* ══ 상태 뱃지 ════════════════════════════════════════════════ */
-/* 기존 둥근 뱃지 → 직사각형, 일관된 톤 */
+/* 중요 — 실선 테두리 + 흰 배경 + 빨간 텍스트 (Notion/Linear 스타일) */
 .statusBadge {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
-  border-radius: 0;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 2px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  background: rgba(184, 148, 90, 0.1);
-  color: var(--primary, #b8945a);
-  border: 1px solid rgba(184, 148, 90, 0.25);
+  letter-spacing: 0.02em;
+  background: #fff5f5;
+  color: #c03030;
+  border: 1px solid rgba(192, 48, 48, 0.35);
+  flex-shrink: 0;
+  white-space: nowrap;
+  line-height: 1.6;
 }
 
 /* ══ 글쓰기 버튼 영역 ════════════════════════════════════════ */
