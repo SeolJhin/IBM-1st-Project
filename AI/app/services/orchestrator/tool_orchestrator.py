@@ -1451,64 +1451,44 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
     raw_content = (choice.message.content or "").strip()
 
     # ★ 일부 모델이 tool_calls 대신 텍스트에 tool call 형식을 섞어 반환하는 경우 감지
+    # 단, 실제 tool_calls가 있으면 정상이므로 스킵
     # 지원 패턴:
     #   - <function=...> / <function_calls> / <function>  (Claude/Anthropic 스타일)
     #   - {"tool_code": "print(default_api.xxx(...))"} / print(default_api. (Gemini 스타일)
+    _has_real_tool_calls = bool(choice.message.tool_calls)
     _bad_tool_patterns = [
         "<function=" in raw_content,
         "<function_calls>" in raw_content,
         "<function>" in raw_content,
         "\"tool_code\"" in raw_content,
         "print(default_api." in raw_content,
+        "Tool Call" in raw_content,
+        "tool_call" in raw_content,
     ]
-    if any(_bad_tool_patterns):
+    if not _has_real_tool_calls and any(_bad_tool_patterns):
         logger.warning("[ToolOrchestrator] 모델 %s 가 tool call을 텍스트로 반환(패턴=%s) → "
-                       "다음 fallback 모델로 재시도.", used_model,
+                       "같은 모델로 1회 재시도.", used_model,
                        [p for p, v in zip(["<function=","<function_calls>","<function>",
-                                           "tool_code","default_api"], _bad_tool_patterns) if v])
-        # 해당 모델을 fallback 목록에서 제외하고 다음 모델로 재시도
-        _skip = {used_model}
-        _candidates = [m for m in ([used_model] + GROQ_FALLBACK_MODELS) if m not in _skip][1:]
-        _retried = False
-        for _next_model in _candidates:
-            logger.info("[ToolOrchestrator] tool_code fallback → model=%s", _next_model)
-            _resp_retry, _used_retry = _call_with_fallback(
-                client, provider, _next_model, _llm_kwargs,
-            )
-            if _resp_retry is None:
-                continue
+                                           "tool_code","default_api","Tool Call","tool_call"], _bad_tool_patterns) if v])
+        # 같은 모델 + 다른 API 키로 1회 재시도 (다른 모델로 넘기지 않음)
+        _resp_retry, _used_retry = _call_with_fallback(
+            client, provider, used_model, _llm_kwargs,
+        )
+        if _resp_retry is not None:
             _choice_retry = _resp_retry.choices[0]
             _raw_retry = (_choice_retry.message.content or "").strip()
-            # 재시도 모델도 텍스트 tool call이면 다음으로
-            if any(p in _raw_retry for p in ["\"tool_code\"", "print(default_api.", "<function="]):
-                logger.warning("[ToolOrchestrator] 재시도 모델 %s 도 tool_code 반환 → 다음 모델", _next_model)
-                _skip.add(_next_model)
-                continue
-            # 정상 tool_calls 반환이면 이 응답으로 계속 진행
-            if _choice_retry.tool_calls:
+            _still_bad = any(p in _raw_retry for p in ["\"tool_code\"", "print(default_api.", "<function=", "Tool Call", "tool_call"])
+            if not _still_bad:
                 resp1 = _resp_retry
                 used_model = _used_retry
                 choice = _choice_retry
                 raw_content = _raw_retry
-                _retried = True
-                break
-            # stop으로 직접 답변했어도 tool_code 없으면 사용
-            resp1 = _resp_retry
-            used_model = _used_retry
-            choice = _choice_retry
-            raw_content = _raw_retry
-            _retried = True
-            break
-        if not _retried:
-            # 모든 fallback도 실패 → 텍스트 정리 후 반환
-            answer = _clean_function_call_text(raw_content)
-            _space_keywords = get_space_keywords()
-            if user_id and any(kw in prompt for kw in _space_keywords):
-                logger.warning("[ToolOrchestrator] fallback 전부 실패 + 공용공간 키워드 → _force_space_query")
-                return _force_space_query(user_id, prompt)
-            if not answer:
-                answer = "죄송합니다, 잠시 후 다시 시도해주세요."
-            return AiResponse(answer=answer, confidence=0.50)
+            else:
+                # 재시도도 실패 → tool call 텍스트 정리 후 반환
+                answer = _clean_function_call_text(raw_content)
+                if not answer or _is_tool_call_json(answer):
+                    answer = "죄송합니다, 잠시 후 다시 시도해주세요."
+                return AiResponse(answer=answer, confidence=0.50)
 
     # LLM이 tool 없이 직접 답변 (finish_reason="stop")
     if choice.finish_reason == "stop":
@@ -1527,9 +1507,32 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
         if not clean_answer and buttons:
             clean_answer = "아래 버튼을 이용해 주세요."
         elif not clean_answer:
-            clean_answer = raw_content
-        direct_meta = {"action_buttons": buttons} if buttons else {}
-        return AiResponse(answer=clean_answer, confidence=0.90, metadata=direct_meta)
+            fallback_text = _clean_function_call_text(raw_content)
+            if fallback_text and not _is_tool_call_json(fallback_text):
+                clean_answer = fallback_text
+            else:
+                # 빈 응답 → 같은 모델로 1회 재시도
+                logger.warning("[ToolOrchestrator] stop + 빈 응답 → 1회 재시도")
+                _resp_retry, _ = _call_with_fallback(
+                    client, provider, used_model, _llm_kwargs,
+                )
+                if _resp_retry and _resp_retry.choices:
+                    _retry_choice = _resp_retry.choices[0]
+                    _retry_content = (_retry_choice.message.content or "").strip()
+                    # 재시도에서 tool_calls가 왔으면 tool 실행 경로로 전환
+                    if _retry_choice.message.tool_calls:
+                        choice = _retry_choice
+                        raw_content = _retry_content
+                        # stop 분기를 빠져나가서 tool_calls 처리로 이동
+                    else:
+                        _retry_clean, _retry_buttons = _extract_buttons(_retry_content)
+                        clean_answer = _retry_clean or "죄송합니다, 답변을 생성하지 못했습니다. 다시 질문해 주세요."
+                        buttons = _retry_buttons or buttons
+                else:
+                    clean_answer = "죄송합니다, 답변을 생성하지 못했습니다. 다시 질문해 주세요."
+        if clean_answer:
+            direct_meta = {"action_buttons": buttons} if buttons else {}
+            return AiResponse(answer=clean_answer, confidence=0.90, metadata=direct_meta)
 
     tool_calls = choice.message.tool_calls or []
     logger.info("[ToolOrchestrator] finish_reason=%s tool_calls_count=%d",
@@ -1546,7 +1549,16 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
         if user_id and any(kw in prompt for kw in _space_keywords):
             logger.warning("[ToolOrchestrator] tool_calls 비어있음 + 공용공간 키워드 → 강제 DB 조회")
             return _force_space_query(user_id, prompt)
-        return AiResponse(answer=raw_content, confidence=0.80)
+        cleaned = _clean_function_call_text(raw_content)
+        if not cleaned or _is_tool_call_json(cleaned):
+            cleaned = "죄송합니다, 답변을 생성하지 못했습니다. 다시 질문해 주세요."
+        clean_answer, buttons = _extract_buttons(cleaned)
+        if not clean_answer and buttons:
+            clean_answer = "아래 버튼을 이용해 주세요."
+        elif not clean_answer:
+            clean_answer = "죄송합니다, 답변을 생성하지 못했습니다. 다시 질문해 주세요."
+        no_tc_meta = {"action_buttons": buttons} if buttons else {}
+        return AiResponse(answer=clean_answer, confidence=0.80, metadata=no_tc_meta)
 
     # ── Step 2: tool 실행 ──────────────────────────────────────────────────────
     all_context: list[str] = []
@@ -1778,7 +1790,7 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
     )
 
     if resp3 is None:
-        answer = "조회 결과: " + " / ".join(all_context[:3])
+        answer = "죄송합니다, 일시적으로 답변을 생성하지 못했습니다. 다시 질문해 주세요."
     else:
         answer = (resp3.choices[0].message.content or "").strip()
 
@@ -1815,8 +1827,11 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
             answer = (resp_fb.choices[0].message.content or "").strip()
             answer = _clean_function_call_text(answer)
 
-    if not answer:
-        answer = "조회 결과: " + " / ".join(all_context[:3]) if all_context else "죄송합니다, 답변을 생성하지 못했습니다."
+    # 최종 답변이 여전히 JSON이면 한 번 더 정리
+    if answer and _is_tool_call_json(answer):
+        answer = _clean_function_call_text(answer)
+    if not answer or _is_tool_call_json(answer):
+        answer = "죄송합니다, 답변을 생성하지 못했습니다. 다시 질문해 주세요."
 
     logger.info("[ToolOrchestrator] Step3 raw_answer=%s", repr(answer[:300]))
     # __BUTTONS__ 없이 이모지 링크텍스트만 있는 경우 강제 정규화
@@ -2061,7 +2076,8 @@ def _get_client(provider: str):
 # 직전 사용자 메시지에서 진행 중인 의도를 감지하는 키워드 맵
 _ONGOING_INTENT_KEYWORDS = {
     "contract_apply": ["계약 신청", "계약신청", "방 계약", "입주 계약", "계약하고 싶", "계약해줘"],
-    "tour": ["투어 예약", "투어하고 싶", "투어 보고 싶", "방 투어", "tour reservation", "투어 신청"],
+    "tour": ["투어 예약", "투어하고 싶", "투어 보고 싶", "방 투어", "tour reservation", "투어 신청",
+             "사전방문", "사전 방문", "방문 예약", "방문하고 싶", "방문 신청", "견학"],
     "complain": ["민원 접수", "민원 신청", "불편 신고"],
     "space_reservation": ["공용 공간 예약", "공용시설 예약", "헬스장 예약", "회의실 예약"],
 }
@@ -2117,6 +2133,23 @@ def _detect_ongoing_intent(history: list[dict]) -> str | None:
             content = msg.get("content", "")
             if any(sig in content for sig in _contract_assistant_signals):
                 return "contract_apply"
+
+    # ── 1.5) tour: assistant가 투어/사전방문 안내를 했으면 ongoing ─────────
+    _tour_assistant_signals = [
+        "어느 건물을 방문",
+        "어떤 방을 보고 싶",
+        "방 목록을 조회",
+        "몇 호를 보시겠",
+        "방을 선택하시겠",
+        "방 번호를 말씀",
+        "투어 가능 시간",
+        "어떤 날짜와 시간",
+    ]
+    for msg in recent:
+        if msg.get("role") == "assistant":
+            content = msg.get("content", "")
+            if any(sig in content for sig in _tour_assistant_signals):
+                return "tour"
 
     # ── 2) 사용자 메시지 키워드 매칭 (기존 로직) ─────────────────────────────
     recent_user_msgs = [
