@@ -7,6 +7,7 @@ import org.myweb.uniplace.domain.user.api.dto.response.UserTokenResponse;
 public interface AuthService {
     void signup(UserSignupRequest req);
     UserTokenResponse login(UserLoginRequest req, String userAgent, String ip);
+    UserTokenResponse issueGuestToken(String guestSid, String currentAccessToken);
     UserTokenResponse refresh(RefreshTokenRequest req, String userAgent, String ip);
     void logout(LogoutRequest req);
     void logoutAll(String userId);

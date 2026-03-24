@@ -57,6 +57,10 @@ public class AuthServiceImpl implements AuthService {
     private static final int LOGIN_FAIL_THRESHOLD = 5;
     private static final long LOGIN_FAIL_WINDOW_MINUTES = 5L;
     private static final long LOGIN_LOCK_MINUTES = 5L;
+    private static final long GUEST_ACCESS_EXP_MILLIS = 20 * 60 * 1000L;
+    private static final long GUEST_REISSUE_THRESHOLD_MINUTES = 3L;
+    private static final String GUEST_ROLE = "guest";
+    private static final String GUEST_USER_ID_PREFIX = "GUEST_";
     private static final int GLOBAL_LOGIN_FAIL_ALERT_THRESHOLD = 30;
     private static final DateTimeFormatter TS_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final Map<String, LoginAttemptState> LOGIN_ATTEMPTS = new ConcurrentHashMap<>();
@@ -207,6 +211,45 @@ public class AuthServiceImpl implements AuthService {
             .refreshToken(refreshToken)
             .deviceId(deviceId)
             .additionalInfoRequired(additionalInfoRequired)
+            .build();
+    }
+
+    @Override
+    public UserTokenResponse issueGuestToken(String guestSid, String currentAccessToken) {
+        if (guestSid == null || guestSid.isBlank()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+
+        String normalizedSid = guestSid.trim();
+        String guestUserId = buildGuestUserId(normalizedSid);
+        String tokenToUse = currentAccessToken;
+
+        if (tokenToUse != null && !tokenToUse.isBlank()) {
+            try {
+                jwtProvider.validate(tokenToUse);
+                boolean isAccessToken = "access".equals(jwtProvider.getTokenType(tokenToUse));
+                boolean isGuestRole = GUEST_ROLE.equalsIgnoreCase(jwtProvider.getRole(tokenToUse));
+                boolean isSameGuest = guestUserId.equals(jwtProvider.getSubject(tokenToUse));
+                LocalDateTime expiresAt = jwtProvider.getExpirationAsLocalDateTime(tokenToUse);
+                LocalDateTime reissueThreshold = LocalDateTime.now().plusMinutes(GUEST_REISSUE_THRESHOLD_MINUTES);
+
+                if (!(isAccessToken && isGuestRole && isSameGuest && expiresAt.isAfter(reissueThreshold))) {
+                    tokenToUse = null;
+                }
+            } catch (BusinessException ex) {
+                tokenToUse = null;
+            }
+        }
+
+        if (tokenToUse == null || tokenToUse.isBlank()) {
+            tokenToUse = jwtProvider.createAccessToken(guestUserId, GUEST_ROLE, GUEST_ACCESS_EXP_MILLIS);
+        }
+
+        return UserTokenResponse.builder()
+            .accessToken(tokenToUse)
+            .refreshToken(null)
+            .deviceId(normalizedSid)
+            .additionalInfoRequired(false)
             .build();
     }
 
@@ -444,6 +487,10 @@ public class AuthServiceImpl implements AuthService {
             return deviceId.trim();
         }
         return "WEB-" + UUID.randomUUID();
+    }
+
+    private static String buildGuestUserId(String guestSid) {
+        return GUEST_USER_ID_PREFIX + guestSid;
     }
 
     private boolean isLoginLocked(String userId, LocalDateTime now) {
