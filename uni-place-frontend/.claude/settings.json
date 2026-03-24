@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(grep -r \"createPortal\\\\|from ''react-dom''\" \"/c/uniplace/IBM-1st-Project/uni-place-frontend/src/features/admin\" --include=\"*.jsx\")"
-    ]
-  }
-}
