@@ -26,8 +26,9 @@ public interface ComplainRepository extends JpaRepository<Complain, Integer> {
                   )
             order by
               case
-                when c.importance = 'high' and c.compSt <> 'resolved' then 0
-                when c.compSt = 'resolved' then 2
+                when c.importance = org.myweb.uniplace.domain.support.domain.enums.ComplainImportance.high
+                     and c.compSt <> org.myweb.uniplace.domain.support.domain.enums.ComplainStatus.resolved then 0
+                when c.compSt = org.myweb.uniplace.domain.support.domain.enums.ComplainStatus.resolved then 2
                 else 1
               end asc,
               c.createdAt desc
