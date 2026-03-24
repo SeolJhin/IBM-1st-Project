@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { adminApi } from '../../api/adminApi';
 import FileUploader from '../../../file/components/FileUploader';
 import useFileUpload from '../../../file/hooks/useFileUpload';
@@ -28,6 +28,13 @@ export default function AdminBuildingModal({ buildingId, onClose, onSuccess }) {
   const [error, setError] = useState('');
   const fu = useFileUpload({ maxCount: 10 });
 
+  // ✅ fu.initExistingOrder를 ref로 안정화 — 배포 환경에서
+  // useEffect 의존성 배열에 fu를 넣지 않아도 항상 최신 함수를 참조
+  const initExistingOrderRef = useRef(fu.initExistingOrder);
+  useEffect(() => {
+    initExistingOrderRef.current = fu.initExistingOrder;
+  });
+
   useEffect(() => {
     if (!isEdit) return;
     setFetchLoading(true);
@@ -49,7 +56,7 @@ export default function AdminBuildingModal({ buildingId, onClose, onSuccess }) {
           buildingLessorRrn: data.buildingLessorRrn || '',
         });
         setExistingFiles(data.files || []);
-        fu.initExistingOrder(data.files || []);
+        initExistingOrderRef.current(data.files || []);
       })
       .catch((e) => setError(e?.message || '불러오기 실패'))
       .finally(() => setFetchLoading(false));
