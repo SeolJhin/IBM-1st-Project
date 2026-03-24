@@ -59,7 +59,7 @@ public class BuildingServiceImpl implements BuildingService {
         Building building = buildingRepository.findById(buildingId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.BUILDING_NOT_FOUND));
         List<FileResponse> files =
-                fileService.getAllFilesForAdmin(FileRefType.BUILDING.dbValue(), buildingId);
+                fileService.getActiveFiles(FileRefType.BUILDING.dbValue(), buildingId);
         return BuildingDetailResponse.fromEntity(building, files);
     }
 
@@ -193,6 +193,10 @@ public class BuildingServiceImpl implements BuildingService {
                     .fileParentId(buildingId)
                     .files(request.getFiles())
                     .build());
+        }
+
+        if (request.getFileOrder() != null && !request.getFileOrder().isEmpty()) {
+            fileService.updateFileOrder(FileRefType.BUILDING.dbValue(), buildingId, request.getFileOrder());
         }
 
         Building saved = buildingRepository.save(building);

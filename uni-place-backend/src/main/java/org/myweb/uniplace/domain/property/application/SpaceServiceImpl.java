@@ -174,6 +174,10 @@ public class SpaceServiceImpl implements SpaceService {
                     .build());
         }
 
+        if (request.getFileOrder() != null && !request.getFileOrder().isEmpty()) {
+            fileService.updateFileOrder(FileRefType.SPACE.dbValue(), spaceId, request.getFileOrder());
+        }
+
         CommonSpace saved = spaceRepository.save(space);
 
         List<FileResponse> files =

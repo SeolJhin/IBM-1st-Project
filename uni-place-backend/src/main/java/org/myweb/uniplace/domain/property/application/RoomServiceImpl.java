@@ -226,6 +226,10 @@ public class RoomServiceImpl implements RoomService {
                     .build());
         }
 
+        if (request.getFileOrder() != null && !request.getFileOrder().isEmpty()) {
+            fileService.updateFileOrder(FileRefType.ROOM.dbValue(), roomId, request.getFileOrder());
+        }
+
         List<FileResponse> files =
                 fileService.getActiveFiles(FileRefType.ROOM.dbValue(), roomId);
 

@@ -185,7 +185,7 @@ function RoomInfoPanel({ room, contract }) {
 }
 
 /* ─── 계약서 이미지 뷰어 모달 ────────────────────────────────── */
-function ContractImageModal({ contract, onClose }) {
+function ContractImageModal({ contract, onClose, noOverlay = false }) {
   const imgUrl =
     toApiImageUrl(contract.contractPdfUrl) ||
     withApiPrefix(`/files/${contract.contractPdfFileId}/view`);
@@ -194,7 +194,7 @@ function ContractImageModal({ contract, onClose }) {
     withApiPrefix(`/files/${contract.contractPdfFileId}/download`);
 
   return (
-    <div className={styles.imgOverlay} onClick={onClose}>
+    <div className={noOverlay ? styles.imgOverlayInline : styles.imgOverlay} onClick={noOverlay ? undefined : onClose}>
       <div className={styles.imgModal} onClick={(e) => e.stopPropagation()}>
         {/* 헤더 */}
         <div className={styles.imgModalHeader}>
@@ -242,7 +242,7 @@ function ContractImageModal({ contract, onClose }) {
 }
 
 /* ─── 비밀번호 확인 모달 ────────────────────────────────────── */
-function PasswordModal({ onConfirm, onClose }) {
+function PasswordModal({ onConfirm, onClose, noOverlay = false }) {
   const [pwdInput, setPwdInput] = useState('');
   const [pwdError, setPwdError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -271,7 +271,7 @@ function PasswordModal({ onConfirm, onClose }) {
   };
 
   return (
-    <div className={styles.overlay}>
+    <div className={noOverlay ? styles.overlayInline : styles.overlay}>
       <div className={styles.modalBox}>
         <h3 className={styles.modalTitle}>🔒 본인 확인</h3>
         <p className={styles.modalDesc}>
@@ -306,7 +306,7 @@ function PasswordModal({ onConfirm, onClose }) {
 }
 
 /* ─── 계약 카드 ──────────────────────────────────────────────── */
-function ContractCard({ contract }) {
+function ContractCard({ contract, noOverlay = false }) {
   const navigate = useNavigate();
   const [room, setRoom] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -398,6 +398,22 @@ function ContractCard({ contract }) {
             <p className={styles.roomError}>방 정보를 찾을 수 없습니다.</p>
           )}
 
+          {/* ── 비밀번호 / 계약서 인라인 패널 (버튼 위에) ── */}
+          {showPwdModal && (
+            <PasswordModal
+              onConfirm={() => { setShowPwdModal(false); setShowImgModal(true); }}
+              onClose={() => setShowPwdModal(false)}
+              noOverlay={noOverlay}
+            />
+          )}
+          {showImgModal && (
+            <ContractImageModal
+              contract={contract}
+              onClose={() => setShowImgModal(false)}
+              noOverlay={noOverlay}
+            />
+          )}
+
           {/* ── 하단 버튼 영역 ── */}
           <div className={styles.pdfRow}>
             {/* 계약서 보기 */}
@@ -431,19 +447,6 @@ function ContractCard({ contract }) {
               </button>
             )}
 
-            {/* 결제 조회 버튼 (active 계약만 표시) */}
-            {isActive && (
-              <button
-                type="button"
-                className={styles.payHistoryBtn}
-                onClick={() => {
-                  window.location.href = `/me?tab=myroom&sub=rent-payment&contractId=${contract.contractId}`;
-                }}
-              >
-                🧾 결제 조회
-              </button>
-            )}
-
             {/* 리뷰쓰기 버튼 (active 또는 ended 계약만 표시) */}
             {canWriteReview && contract.roomId && (
               <button
@@ -458,30 +461,12 @@ function ContractCard({ contract }) {
         </div>
       )}
 
-      {/* ── 비밀번호 확인 모달 ── */}
-      {showPwdModal && (
-        <PasswordModal
-          onConfirm={() => {
-            setShowPwdModal(false);
-            setShowImgModal(true);
-          }}
-          onClose={() => setShowPwdModal(false)}
-        />
-      )}
-
-      {/* ── 계약서 이미지 뷰어 ── */}
-      {showImgModal && (
-        <ContractImageModal
-          contract={contract}
-          onClose={() => setShowImgModal(false)}
-        />
-      )}
     </div>
   );
 }
 
 /* ─── 메인 컴포넌트 ───────────────────────────────────────────── */
-export default function MyContractView() {
+export default function MyContractView({ noOverlay = false }) {
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -530,7 +515,7 @@ export default function MyContractView() {
   return (
     <div className={styles.wrap}>
       {contracts.map((c) => (
-        <ContractCard key={c.contractId} contract={c} />
+        <ContractCard key={c.contractId} contract={c} noOverlay={noOverlay} />
       ))}
     </div>
   );

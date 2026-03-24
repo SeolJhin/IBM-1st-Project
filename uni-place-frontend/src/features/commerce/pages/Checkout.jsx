@@ -20,6 +20,12 @@ function fmt(price) {
 }
 
 const ORDER_SERVICE_GOODS_ID = 1;
+const PAY_METHOD_DISPLAY_NAME = {
+  card: '카드',
+  kakao: '카카오페이',
+  toss: '토스페이',
+  naver: '네이버페이',
+};
 const PAYMENT_OPTIONS = [
   {
     id: 'card',
@@ -222,8 +228,9 @@ export default function Checkout({
     setMethodModalOpen(true);
   };
 
-  const selectedPayLabel =
-    PAYMENT_OPTIONS.find((opt) => opt.id === payMethod)?.label || '선택 안됨';
+  const selectedPayMethodName =
+    PAY_METHOD_DISPLAY_NAME[payMethod] || '결제수단';
+  const selectedPayLabel = payMethod ? selectedPayMethodName : '선택 안됨';
 
   const handleConfirmPay = async () => {
     setSubmitting(true);
@@ -272,6 +279,14 @@ export default function Checkout({
             'pending_kakao_payment_id',
             String(pay.paymentId)
           );
+        }
+        if (document.body) {
+          document.body.style.transform = '';
+          document.body.style.transformOrigin = '';
+          document.body.style.zoom = '';
+        }
+        if (document.documentElement) {
+          document.documentElement.style.zoom = '';
         }
         window.location.href = url;
       }
@@ -465,8 +480,8 @@ export default function Checkout({
             ? '처리 중...'
             : payMethod === 'card'
               ? `💵 ${fmt(total)}원 만나서 결제로 주문하기`
-              : payMethod === 'kakao'
-                ? `🟡 ${fmt(total)}원 카카오페이로 결제하기`
+              : ['kakao', 'toss', 'naver'].includes(payMethod)
+                ? `💳 ${fmt(total)}원 ${selectedPayMethodName}로 결제하기`
                 : `${fmt(total)}원 결제 수단 선택 후 진행`}
         </button>
       </div>
@@ -480,12 +495,12 @@ export default function Checkout({
           title={
             payMethod === 'card'
               ? '카드 결제로 주문할까요?'
-              : '카카오페이 결제를 진행할까요?'
+              : `${selectedPayMethodName} 결제를 진행할까요?`
           }
           desc={
             payMethod === 'card'
               ? `${selectedBuildingNm} · ${form.roomNo}호 · ${form.name} · ${fmt(total)}원\n카드로 결제됩니다.`
-              : `${selectedBuildingNm} · ${form.roomNo}호 · ${form.name} · ${fmt(total)}원\n카카오페이 결제창으로 이동합니다.`
+              : `${selectedBuildingNm} · ${form.roomNo}호 · ${form.name} · ${fmt(total)}원\n${selectedPayMethodName} 결제창으로 이동합니다.`
           }
           confirmLabel={payMethod === 'card' ? '주문하기' : '결제하기'}
           cancelLabel="다시 확인"

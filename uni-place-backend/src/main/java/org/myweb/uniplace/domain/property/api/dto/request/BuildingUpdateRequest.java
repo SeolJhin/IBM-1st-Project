@@ -56,4 +56,7 @@ public class BuildingUpdateRequest {
 
     // ✅ 새로 업로드할 파일들
     private List<MultipartFile> files;
+
+    // ✅ 기존 파일 순서 (fileId 배열, 인덱스가 곧 sort_order)
+    private List<Integer> fileOrder;
 }

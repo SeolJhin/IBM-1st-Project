@@ -24,4 +24,6 @@ public interface FileService {
 
     void softDeleteFiles(List<Integer> fileIds);
     void softDeleteFilesByParent(String parentType, Integer parentId, List<Integer> fileIds);
+
+    void updateFileOrder(String parentType, Integer parentId, List<Integer> orderedFileIds);
 }
