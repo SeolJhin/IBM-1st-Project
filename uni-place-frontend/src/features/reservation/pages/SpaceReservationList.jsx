@@ -110,29 +110,6 @@ export default function SpaceReservationList({
         </button>
       </div>
 
-      {/* 페이지네이션 */}
-      <div className={styles.paginationRow}>
-        <button
-          className={styles.pageBtn}
-          type="button"
-          disabled={(myQuery.page ?? 1) <= 1}
-          onClick={() =>
-            setMyQuery((p) => ({ ...p, page: Math.max(1, p.page - 1) }))
-          }
-        >
-          이전
-        </button>
-        <span className={styles.pageInfo}>{myQuery.page}페이지</span>
-        <button
-          className={styles.pageBtn}
-          type="button"
-          disabled={items.length < (myQuery.size ?? 10)}
-          onClick={() => setMyQuery((p) => ({ ...p, page: p.page + 1 }))}
-        >
-          다음
-        </button>
-      </div>
-
       {myLoading && (
         <div className={styles.centerBox}>
           <span className={styles.spinner} />
@@ -167,6 +144,29 @@ export default function SpaceReservationList({
           ))}
         </div>
       )}
+
+      {/* 페이지네이션 */}
+      <div className={styles.paginationRow}>
+        <button
+          className={styles.pageBtn}
+          type="button"
+          disabled={(myQuery.page ?? 1) <= 1}
+          onClick={() =>
+            setMyQuery((p) => ({ ...p, page: Math.max(1, p.page - 1) }))
+          }
+        >
+          이전
+        </button>
+        <span className={styles.pageInfo}>{myQuery.page}페이지</span>
+        <button
+          className={styles.pageBtn}
+          type="button"
+          disabled={items.length < (myQuery.size ?? 10)}
+          onClick={() => setMyQuery((p) => ({ ...p, page: p.page + 1 }))}
+        >
+          다음
+        </button>
+      </div>
     </>
   );
 

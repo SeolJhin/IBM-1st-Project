@@ -3,7 +3,10 @@ package org.myweb.uniplace.domain.ai.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
+import java.util.EnumSet;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.myweb.uniplace.domain.ai.api.dto.request.AiChatRequest;
 import org.myweb.uniplace.domain.ai.api.dto.request.AiAgentChatbotRequest;
@@ -31,13 +34,17 @@ import org.myweb.uniplace.domain.ai.application.gateway.AiOrderFormDownloadProxy
 import org.myweb.uniplace.domain.ai.application.gateway.dto.AiGatewayRequest;
 import org.myweb.uniplace.domain.ai.application.gateway.dto.AiGatewayResponse;
 import org.myweb.uniplace.domain.ai.domain.AiIntent;
+import org.myweb.uniplace.global.exception.BusinessException;
+import org.myweb.uniplace.global.exception.ErrorCode;
 import org.myweb.uniplace.global.response.ApiResponse;
+import org.myweb.uniplace.global.security.AuthUser;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.ResponseEntity;
@@ -52,6 +59,18 @@ import org.springframework.web.client.RestClient;
 @RequestMapping("/ai")
 public class AiController {
 
+    private static final Set<AiIntent> GUEST_ALLOWED_INTENTS = EnumSet.of(
+        AiIntent.GENERAL_QA,
+        AiIntent.AI_AGENT_CHATBOT,
+        AiIntent.VOICE_CHATBOT,
+        AiIntent.AI_AGENT_RAG_SEARCH,
+        AiIntent.ROOM_AVAILABILITY_SEARCH,
+        AiIntent.REVIEW_INFO,
+        AiIntent.TOUR_INFO,
+        AiIntent.COMPANY_INFO,
+        AiIntent.BUILDING_LIST
+    );
+
     private final AiOrchestratorService aiOrchestratorService;
     private final ObjectMapper objectMapper;
     private final AiOrderFormDownloadProxy aiOrderFormDownloadProxy;
@@ -60,15 +79,7 @@ public class AiController {
 
     @PostMapping("/chat")
     public ApiResponse<AiChatResponse> chat(@Valid @RequestBody AiChatRequest request) {
-        AiGatewayResponse response = aiOrchestratorService.handle(
-            AiGatewayRequest.builder()
-                .intent(request.getIntent())
-                .userId(request.getUserId())
-                .userSegment(request.getUserSegment())
-                .prompt(request.getPrompt())
-                .slots(request.getSlots())
-                .build()
-        );
+        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
         return ApiResponse.ok(AiChatResponse.from(response));
     }
 
@@ -223,18 +234,7 @@ public class AiController {
 
     @PostMapping("/community/search")
     public ApiResponse<AiChatResponse> communitySearch(@RequestBody CommunityContentSearchRequest request) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userId = authentication.getName();
-
-        AiGatewayResponse response = aiOrchestratorService.handle(
-            AiGatewayRequest.builder()
-                .intent(request.getIntent())
-                .userId(userId)
-                .slots(objectMapper.convertValue(request, Map.class))
-                .build()
-        );
-
+        AiGatewayResponse response = aiOrchestratorService.handle(toGateway(request.getIntent(), request));
         return ApiResponse.ok(AiChatResponse.from(response));
     }
 
@@ -407,7 +407,10 @@ public class AiController {
     private AiGatewayRequest toGateway(AiIntent intent, Object request) {
         Map<String, Object> slots = objectMapper.convertValue(request, new TypeReference<>() { });
 
-        String userId = extractString(slots, "userId");
+        String userId = resolveAuthenticatedUserId();
+        String role = resolveAuthenticatedRole();
+        assertIntentAllowedForRole(role, intent);
+        slots.put("userId", userId);
         String userSegment = extractString(slots, "userSegment");
 
         // ✅ prompt 추출 (slots에서 꺼내서 AiGatewayRequest.prompt에 세팅)
@@ -428,5 +431,56 @@ public class AiController {
             return str;
         }
         return null;
+    }
+
+    private String resolveAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof AuthUser authUser) {
+            return authUser.getUserId();
+        }
+
+        String userId = authentication.getName();
+        if (userId == null || userId.isBlank() || "anonymousUser".equals(userId)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        return userId;
+    }
+
+    private String resolveAuthenticatedRole() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof AuthUser authUser) {
+            return authUser.getRole();
+        }
+
+        for (GrantedAuthority authority : authentication.getAuthorities()) {
+            String value = authority.getAuthority();
+            if (value != null && value.startsWith("ROLE_")) {
+                return value.substring(5).toLowerCase(Locale.ROOT);
+            }
+        }
+
+        throw new BusinessException(ErrorCode.UNAUTHORIZED);
+    }
+
+    private void assertIntentAllowedForRole(String role, AiIntent intent) {
+        if (intent == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        if ("guest".equalsIgnoreCase(role) && !GUEST_ALLOWED_INTENTS.contains(intent)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        if (!"admin".equalsIgnoreCase(role) && AiIntent.ADMIN_CHATBOT.equals(intent)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
     }
 }
