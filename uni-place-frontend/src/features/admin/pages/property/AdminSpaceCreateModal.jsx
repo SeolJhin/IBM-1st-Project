@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { adminApi } from '../../api/adminApi';
+import useBuildingOptions from '../../hooks/useBuildingOptions';
+import FileUploader from '../../../file/components/FileUploader';
+import useFileUpload from '../../../file/hooks/useFileUpload';
 import styles from './AdminCreateModal.module.css';
 
 const INITIAL = {
@@ -12,10 +15,11 @@ const INITIAL = {
 };
 
 export default function AdminSpaceCreateModal({ onClose, onSuccess }) {
+  const { buildings, loading: bldgLoading } = useBuildingOptions();
   const [form, setForm] = useState(INITIAL);
-  const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const fu = useFileUpload({ maxCount: 10 });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,12 +47,23 @@ export default function AdminSpaceCreateModal({ onClose, onSuccess }) {
       Object.entries(form).forEach(([k, v]) => {
         if (v !== '') fd.append(k, v);
       });
-      files.forEach((f) => fd.append('files', f));
+      fu.newFiles.forEach((f) => fd.append('files', f));
       await adminApi.createSpace(fd);
       onSuccess?.();
       onClose();
     } catch (e) {
-      setError(e?.message || '공용공간 등록에 실패했습니다.');
+      const msg = e?.message || '';
+      const code = e?.errorCode || '';
+      const msgLower = msg.toLowerCase();
+      if (code === 'BUILDING_409') {
+        setError('이미 같은 이름의 건물이 존재합니다.');
+      } else if (msgLower.includes('duplicate entry')) {
+        setError('같은 건물에 이미 동일한 공용공간이 존재합니다.');
+      } else if (code === 'BUILDING_404') {
+        setError('선택한 건물을 찾을 수 없습니다.');
+      } else {
+        setError(msg || '공용공간 등록에 실패했습니다.');
+      }
     } finally {
       setLoading(false);
     }
@@ -68,17 +83,26 @@ export default function AdminSpaceCreateModal({ onClose, onSuccess }) {
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>기본 정보</h3>
             <div className={styles.grid2}>
-              <label className={styles.field}>
+              <label className={styles.field} style={{ gridColumn: '1 / -1' }}>
                 <span className={styles.label}>
-                  건물명 <span className={styles.req}>*</span>
+                  건물 선택 <span className={styles.req}>*</span>
                 </span>
-                <input
-                  className={styles.input}
+                <select
+                  className={styles.select}
                   name="buildingNm"
                   value={form.buildingNm}
                   onChange={handleChange}
-                  placeholder="예: Uniplace A"
-                />
+                  disabled={bldgLoading}
+                >
+                  <option value="">
+                    {bldgLoading ? '불러오는 중...' : '건물을 선택하세요'}
+                  </option>
+                  {buildings.map((b) => (
+                    <option key={b.buildingId} value={b.buildingNm}>
+                      [{b.buildingId}] {b.buildingNm} — {b.buildingAddr}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className={styles.field}>
                 <span className={styles.label}>
@@ -141,17 +165,20 @@ export default function AdminSpaceCreateModal({ onClose, onSuccess }) {
           </div>
 
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>이미지 업로드</h3>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className={styles.fileInput}
-              onChange={(e) => setFiles(Array.from(e.target.files))}
+            <h3 className={styles.sectionTitle}>이미지</h3>
+            <FileUploader
+              existingFiles={[]}
+              newFiles={fu.newFiles}
+              previews={fu.previews}
+              deleteFileIds={fu.deleteFileIds}
+              existingOrder={fu.existingOrder}
+              addFiles={fu.addFiles}
+              removeNewFile={fu.removeNewFile}
+              moveNewFile={fu.moveNewFile}
+              toggleDeleteExisting={fu.toggleDeleteExisting}
+              moveExisting={fu.moveExisting}
+              label="공용공간 이미지"
             />
-            {files.length > 0 && (
-              <p className={styles.fileInfo}>{files.length}개 파일 선택됨</p>
-            )}
           </div>
 
           {error && <div className={styles.error}>{error}</div>}

@@ -27,4 +27,7 @@ public class SpaceUpdateRequest {
 
     // 기존 파일 삭제(soft delete)
     private List<Integer> deleteFileIds;
+
+    // ✅ 기존 파일 순서 (fileId 배열, 인덱스가 곧 sort_order)
+    private List<Integer> fileOrder;
 }

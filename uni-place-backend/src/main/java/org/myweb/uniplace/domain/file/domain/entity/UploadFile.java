@@ -55,6 +55,9 @@ public class UploadFile extends SoftDeleteEntity {
     @Column(name = "file_type", nullable = false, length = 20)
     private String fileType;
 
+    @Column(name = "sort_order", nullable = false)
+    private Integer sortOrder = 0;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
@@ -65,5 +68,6 @@ public class UploadFile extends SoftDeleteEntity {
     public void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (deleteYn == null) deleteYn = "N";
+        if (sortOrder == null) sortOrder = 0;
     }
 }

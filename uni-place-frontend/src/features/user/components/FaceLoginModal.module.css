@@ -367,3 +367,17 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ── 마이페이지 인라인 모드 (버튼 바로 아래 왼쪽 드롭다운) ── */
+.backdropInline {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 500;
+  display: flex;
+  justify-content: flex-start;
+  background: none;
+  backdrop-filter: none;
+  animation: none;
+  min-width: 360px;
+}

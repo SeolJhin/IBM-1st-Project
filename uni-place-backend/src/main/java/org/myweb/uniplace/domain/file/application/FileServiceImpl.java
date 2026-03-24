@@ -93,7 +93,7 @@ public class FileServiceImpl implements FileService {
     public List<FileResponse> getActiveFiles(String parentType, Integer parentId) {
         String normalized = normalizeParentType(parentType);
         List<UploadFile> files =
-                uploadFileRepository.findByFileParentTypeAndFileParentIdAndDeleteYnOrderByFileIdDesc(
+                uploadFileRepository.findByFileParentTypeAndFileParentIdAndDeleteYnOrderBySortOrderAscFileIdAsc(
                         normalized, parentId, NOT_DELETED);
         return files.stream().map(f -> FileResponse.fromEntity(f, storageService)).toList();
     }
@@ -124,7 +124,7 @@ public class FileServiceImpl implements FileService {
     public List<FileResponse> getAllFilesForAdmin(String parentType, Integer parentId) {
         String normalized = normalizeParentType(parentType);
         List<UploadFile> files =
-                uploadFileRepository.findByFileParentTypeAndFileParentIdOrderByFileIdDesc(normalized, parentId);
+                uploadFileRepository.findByFileParentTypeAndFileParentIdOrderBySortOrderAscFileIdAsc(normalized, parentId);
         return files.stream().map(f -> FileResponse.fromEntity(f, storageService)).toList();
     }
 
@@ -147,6 +147,16 @@ public class FileServiceImpl implements FileService {
         if (fileIds == null || fileIds.isEmpty()) return;
         String normalized = normalizeParentType(parentType);
         uploadFileRepository.softDeleteByIdsAndParent(fileIds, normalized, parentId);
+    }
+
+    @Override
+    @Transactional
+    public void updateFileOrder(String parentType, Integer parentId, List<Integer> orderedFileIds) {
+        if (orderedFileIds == null || orderedFileIds.isEmpty()) return;
+        String normalized = normalizeParentType(parentType);
+        for (int i = 0; i < orderedFileIds.size(); i++) {
+            uploadFileRepository.updateSortOrder(orderedFileIds.get(i), normalized, parentId, i);
+        }
     }
 
     // ── private ──────────────────────────────────────────────────────────────
