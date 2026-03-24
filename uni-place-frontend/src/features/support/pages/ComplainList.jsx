@@ -109,12 +109,13 @@ export default function ComplainList() {
                 };
                 const imp = IMPORTANCE_MAP[item.importance];
                 const isHigh = item.importance === 'high';
+                const isHighActive = isHigh && item.compSt !== 'resolved';
 
                 return (
                   <tr
                     key={item.compId}
                     style={
-                      isHigh
+                      isHighActive
                         ? {
                             background: '#fff5f5',
                             borderLeft: '3px solid #e55353',
@@ -125,8 +126,8 @@ export default function ComplainList() {
                     <td
                       style={{
                         textAlign: 'center',
-                        color: isHigh ? '#e55353' : '#9ca3af',
-                        fontWeight: isHigh ? 700 : 400,
+                        color: isHighActive ? '#e55353' : '#9ca3af',
+                        fontWeight: isHighActive ? 700 : 400,
                         fontSize: 13,
                       }}
                     >
@@ -144,10 +145,10 @@ export default function ComplainList() {
                         to={`/support/complain/${item.compId}`}
                         className={styles.tableLink}
                         style={
-                          isHigh ? { color: '#c0392b', fontWeight: 700 } : {}
+                          isHighActive ? { color: '#c0392b', fontWeight: 700 } : {}
                         }
                       >
-                        {isHigh && '🚨 '}
+                        {isHighActive && '🚨 '}
                         {item.compTitle}
                       </Link>
                     </td>
@@ -170,9 +171,9 @@ export default function ComplainList() {
                             borderRadius: 12,
                             fontSize: 12,
                             fontWeight: 700,
-                            color: isHigh ? '#fff' : imp.color,
-                            background: isHigh ? '#e55353' : imp.bg,
-                            boxShadow: isHigh
+                            color: isHighActive ? '#fff' : imp.color,
+                            background: isHighActive ? '#e55353' : imp.bg,
+                            boxShadow: isHighActive
                               ? '0 1px 4px rgba(229,83,83,0.4)'
                               : 'none',
                           }}
