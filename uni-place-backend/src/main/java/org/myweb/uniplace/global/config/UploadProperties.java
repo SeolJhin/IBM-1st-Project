@@ -11,7 +11,7 @@ public class UploadProperties {
     private String storageType;
 
     /** 로컬 업로드 루트 디렉토리 */
-    @Value("${file.upload-path:./storage/uploads}")
+    @Value("${file.upload-path:../uploads}")
     private String uploadDir;
 
     /** S3 버킷 이름 */

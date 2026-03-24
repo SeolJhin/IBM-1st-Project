@@ -13,7 +13,7 @@ import Header from '../../../app/layouts/components/Header';
 import { useProducts } from '../hooks/useProducts';
 import { useCart } from '../hooks/useCart';
 import { useTenantContract } from '../hooks/useTenantContract';
-import { commerceApi } from '../api/commerceApi';
+
 import { withApiPrefix } from '../../../app/http/apiBase';
 import { toApiImageUrl } from '../../file/api/fileApi';
 import styles from './ProductList.module.css';
@@ -95,7 +95,7 @@ function ProductCard({
     );
   else if (outOfStock)
     stockLabel = <span className={styles.stockOut}>품절</span>;
-  else if (stock <= 5)
+  else if (stock <= 3)
     stockLabel = <span className={styles.stockLow}>재고 {stock}개 남음</span>;
   else stockLabel = <span className={styles.stockOk}>재고 {stock}개</span>;
 
@@ -226,12 +226,7 @@ export default function ProductList({
     else navigate(path, state ? { state } : undefined);
   };
 
-  const {
-    products,
-    loading: prodLoading,
-    error: prodError,
-    refetch: refetchProducts,
-  } = useProducts();
+  const { products, loading: prodLoading, error: prodError } = useProducts();
   const {
     cart,
     addItem,
@@ -247,6 +242,8 @@ export default function ProductList({
   } = useTenantContract();
 
   const [activeTab, setActiveTab] = useState('all');
+  const [prodPage, setProdPage] = useState(1);
+  const PAGE_SIZE = 3;
   // 동적 카테고리 탭: products의 code + 공통코드 API codeValue로 생성
   const [tabs, setTabs] = useState([{ key: 'all', label: '전체' }]);
   const [codeValueMap, setCodeValueMap] = useState({});
@@ -496,7 +493,10 @@ export default function ProductList({
             <button
               key={t.key}
               className={`${styles.catTab} ${activeTab === t.key ? styles.catTabActive : ''}`}
-              onClick={() => setActiveTab(t.key)}
+              onClick={() => {
+                setActiveTab(t.key);
+                setProdPage(1);
+              }}
             >
               {t.label}
             </button>
@@ -512,29 +512,66 @@ export default function ProductList({
           {!prodLoading && !prodError && filtered.length === 0 && (
             <p className={styles.emptyMsg}>상품이 없습니다.</p>
           )}
-          {filtered.map((p) => {
-            const stock =
-              selectedBuildingId != null && p.buildingStocks
-                ? (p.buildingStocks[Number(selectedBuildingId)] ??
-                  p.buildingStocks[selectedBuildingId] ??
-                  null)
-                : null;
-            const cartQty =
-              cartMap[`${p.prodId}_${selectedBuildingId}`]?.orderQuantity ?? 0;
-            return (
-              <ProductCard
-                key={p.prodId}
-                product={p}
-                codeLabel={codeValueMap[p.code] ?? null}
-                pendingQty={pendingMap[p.prodId] ?? 0}
-                cartQty={cartQty}
-                stock={stock}
-                noBuilding={selectedBuildingId == null}
-                onSetPending={handleSetPending}
-              />
-            );
-          })}
+          {filtered
+            .slice((prodPage - 1) * PAGE_SIZE, prodPage * PAGE_SIZE)
+            .map((p) => {
+              const stock =
+                selectedBuildingId != null && p.buildingStocks
+                  ? (p.buildingStocks[Number(selectedBuildingId)] ??
+                    p.buildingStocks[selectedBuildingId] ??
+                    null)
+                  : null;
+              const cartQty =
+                cartMap[`${p.prodId}_${selectedBuildingId}`]?.orderQuantity ??
+                0;
+              return (
+                <ProductCard
+                  key={p.prodId}
+                  product={p}
+                  codeLabel={codeValueMap[p.code] ?? null}
+                  pendingQty={pendingMap[p.prodId] ?? 0}
+                  cartQty={cartQty}
+                  stock={stock}
+                  noBuilding={selectedBuildingId == null}
+                  onSetPending={handleSetPending}
+                />
+              );
+            })}
         </div>
+        {/* ── 페이지네이션 ── */}
+        {!prodLoading && !prodError && filtered.length > PAGE_SIZE && (
+          <div className={styles.pagination}>
+            <button
+              type="button"
+              className={styles.pageBtn}
+              disabled={prodPage <= 1}
+              onClick={() => setProdPage((p) => p - 1)}
+            >
+              ‹
+            </button>
+            {Array.from(
+              { length: Math.ceil(filtered.length / PAGE_SIZE) },
+              (_, i) => i + 1
+            ).map((n) => (
+              <button
+                key={n}
+                type="button"
+                className={`${styles.pageBtn} ${n === prodPage ? styles.pageBtnActive : ''}`}
+                onClick={() => setProdPage(n)}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={styles.pageBtn}
+              disabled={prodPage >= Math.ceil(filtered.length / PAGE_SIZE)}
+              onClick={() => setProdPage((p) => p + 1)}
+            >
+              ›
+            </button>
+          </div>
+        )}
         <div className={styles.bottomBar}>
           <div className={styles.barSummary}>
             {summaryText ? (

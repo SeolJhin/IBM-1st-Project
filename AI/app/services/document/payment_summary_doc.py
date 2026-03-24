@@ -9,7 +9,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from app.config.settings import settings
+from app.config.settings import resolve_runtime_path, settings
 from app.schemas.ai_request import AiRequest
 from app.services.actions.event_sink import publish_action_event
 from app.services.document.backend_file_uploader import upload_generated_file
@@ -71,7 +71,7 @@ def make_payment_summary(req: AiRequest) -> tuple[str, dict]:
 
 
 def _write_summary_xlsx(payload: dict[str, Any], user_id: str = "admin") -> Path:
-    out = Path(settings.payment_order_output_dir)
+    out = resolve_runtime_path(settings.payment_order_output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
     ts = datetime.now().strftime("%Y%m%dT%H%M%SZ")

@@ -20,6 +20,13 @@ def _find_env_file() -> str:
     return str(BASE_DIR / ".env")  # fallback
 
 
+def resolve_runtime_path(path_value: str) -> Path:
+    path = Path(path_value)
+    if not path.is_absolute():
+        path = BASE_DIR / path
+    return path.resolve()
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=_find_env_file(), env_file_encoding="utf-8", extra="ignore")
 
@@ -90,10 +97,10 @@ class Settings(BaseSettings):
     tavily_search_depth: str = "basic"   # "basic" (무료) | "advanced" (유료)
 
     # ── 문서 출력 ─────────────────────────────────────────────────
-    document_output_dir: str = str(BASE_DIR / "output_docs")
+    document_output_dir: str = "../uploads/ai/documents"
     payment_input_dir: str = str(BASE_DIR / "data" / "payments" / "raw")
     payment_order_template_path: str = str(BASE_DIR / "data" / "payments" / "raw" / "purchase_order_form.xlsx")
-    payment_order_output_dir: str = str(BASE_DIR / "output_docs" / "order_forms")
+    payment_order_output_dir: str = "../uploads/ai/order_forms"
 
     # ── 음성 ──────────────────────────────────────────────────────
     voice_input_dir: str = str(BASE_DIR / "voice_input")
