@@ -23,7 +23,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
      * (FileController /view /download 엔드포인트와 별개로 추가 제공)
      * storage.type=s3 이면 이 경로는 사용되지 않음
      */
-    @Value("${file.upload-path:./storage/uploads}")
+    @Value("${file.upload-path:../uploads}")
     private String uploadDir;
 
     @Override
