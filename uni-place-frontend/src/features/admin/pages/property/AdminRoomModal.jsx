@@ -125,8 +125,12 @@ export default function AdminRoomModal({ roomId, onClose, onSuccess }) {
         if (v !== '') fd.append(k, v);
       });
       fu.newFiles.forEach((f) => fd.append('files', f));
-      if (isEdit)
+      if (isEdit) {
         fu.deleteFileIds.forEach((id) => fd.append('deleteFileIds', id));
+        if (fu.existingOrder) {
+          fu.existingOrder.forEach((id) => fd.append('fileOrder', id));
+        }
+      }
       const result = await (isEdit
         ? adminApi.updateRoom(roomId, fd)
         : adminApi.createRoom(fd));

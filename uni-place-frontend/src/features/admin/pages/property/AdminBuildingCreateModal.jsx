@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { adminApi } from '../../api/adminApi';
+import FileUploader from '../../../file/components/FileUploader';
+import useFileUpload from '../../../file/hooks/useFileUpload';
 import styles from './AdminCreateModal.module.css';
 
 const INITIAL = {
@@ -19,9 +21,9 @@ const INITIAL = {
 
 export default function AdminBuildingCreateModal({ onClose, onSuccess }) {
   const [form, setForm] = useState(INITIAL);
-  const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const fu = useFileUpload({ maxCount: 10 });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,12 +46,18 @@ export default function AdminBuildingCreateModal({ onClose, onSuccess }) {
       Object.entries(form).forEach(([k, v]) => {
         if (v !== '') fd.append(k, v);
       });
-      files.forEach((f) => fd.append('files', f));
+      fu.newFiles.forEach((f) => fd.append('files', f));
       await adminApi.createBuilding(fd);
       onSuccess?.();
       onClose();
     } catch (e) {
-      setError(e?.message || '건물 등록에 실패했습니다.');
+      const msg = e?.message || '';
+      const code = e?.errorCode || '';
+      if (code === 'BUILDING_409') {
+        setError('이미 같은 이름의 건물이 존재합니다. 다른 건물명을 사용해주세요.');
+      } else {
+        setError(msg || '건물 등록에 실패했습니다.');
+      }
     } finally {
       setLoading(false);
     }
@@ -206,17 +214,20 @@ export default function AdminBuildingCreateModal({ onClose, onSuccess }) {
           </div>
 
           <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>이미지 업로드</h3>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className={styles.fileInput}
-              onChange={(e) => setFiles(Array.from(e.target.files))}
+            <h3 className={styles.sectionTitle}>이미지</h3>
+            <FileUploader
+              existingFiles={[]}
+              newFiles={fu.newFiles}
+              previews={fu.previews}
+              deleteFileIds={fu.deleteFileIds}
+              existingOrder={fu.existingOrder}
+              addFiles={fu.addFiles}
+              removeNewFile={fu.removeNewFile}
+              moveNewFile={fu.moveNewFile}
+              toggleDeleteExisting={fu.toggleDeleteExisting}
+              moveExisting={fu.moveExisting}
+              label="건물 이미지"
             />
-            {files.length > 0 && (
-              <p className={styles.fileInfo}>{files.length}개 파일 선택됨</p>
-            )}
           </div>
 
           {error && <div className={styles.error}>{error}</div>}
