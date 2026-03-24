@@ -11,7 +11,7 @@ from fastapi import APIRouter, Body, File, Form, UploadFile, HTTPException, Head
 from fastapi.responses import JSONResponse, Response, FileResponse
 from pydantic import BaseModel
 
-from app.config.settings import settings
+from app.config.settings import resolve_runtime_path, settings
 from app.api.v1.executor import ERROR_RESPONSES, execute_ai_request, parse_ai_request
 from app.schemas.ai_request import AiRequest
 from app.schemas.ai_response import AiResponse
@@ -162,7 +162,7 @@ def download_payment_order_form(file_name: str) -> FileResponse:
     if safe_name != file_name or not safe_name.lower().endswith(".xlsx"):
         raise HTTPException(400, "Invalid file name")
 
-    base_dir = Path(settings.payment_order_output_dir).resolve()
+    base_dir = resolve_runtime_path(settings.payment_order_output_dir)
     target = (base_dir / safe_name).resolve()
     if base_dir not in target.parents:
         raise HTTPException(400, "Invalid file path")

@@ -54,6 +54,7 @@ oauth-secret.json
 *.trace.db
 dump.rdb
 uploads/
+AI/output_docs/
 
 # ===============================
 # 테스트 & 커버리지
