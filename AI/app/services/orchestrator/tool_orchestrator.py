@@ -1374,6 +1374,8 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
                 "방을 선택", "원하시는 방", "날짜 선택", "예약 가능한 시간",
                 "계약하실 방", "건물을 계약", "방 목록을 조회", "입주 가능한 방",
                 "호실을 선택", "어느 호수", "원하시는 호실", "호실을 알려",
+                "몇 호를 보시겠", "방을 선택하시겠", "방 번호를 말씀",
+                "어느 건물을 방문", "어떤 방을 보고 싶", "어떤 날짜와 시간",
             ]
             if any(sig in msg for msg in _last_msgs for sig in _followup_signals):
                 _needs_tool = True
