@@ -170,7 +170,7 @@ export default function Footer() {
                 <li>
                   <button
                     type="button"
-                    onClick={() => navigate('/contracts/apply')}
+                    onClick={() => navigate('/rooms')}
                   >
                     계약 신청
                   </button>
