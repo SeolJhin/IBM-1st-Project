@@ -135,14 +135,18 @@
 }
 
 /* ── 빈 상태 ── */
-.emptyState {
-  padding: 48px 20px;
-  text-align: center;
-  color: #9a9080;
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 20px;
+}
+.emptyText {
+  margin: 0;
   font-size: 13.5px;
-  border: 1px dashed rgba(184,148,90,0.25);
-  background: rgba(184,148,90,0.02);
-  margin-top: 12px;
+  color: #9a9080;
+  letter-spacing: 0.03em;
+  font-weight: 500;
 }
 
 /* ── 페이지네이션 ── */

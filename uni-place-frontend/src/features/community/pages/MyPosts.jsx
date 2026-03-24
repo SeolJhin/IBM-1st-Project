@@ -145,9 +145,11 @@ export default function MyPosts() {
       )}
 
       {/* ── 헤더 ── */}
-      <div className={styles.listHeader}>
-        <span className={styles.total}>총 {totalElements}건</span>
-      </div>
+      {totalElements > 0 && (
+        <div className={styles.listHeader}>
+          <span className={styles.total}>총 {totalElements}건</span>
+        </div>
+      )}
 
       {/* ── 목록 ── */}
       {loading ? (
@@ -156,10 +158,7 @@ export default function MyPosts() {
         <div className={styles.error}>⚠️ {error}</div>
       ) : items.length === 0 ? (
         <div className={styles.empty}>
-          <span className={styles.emptyIcon}>
-            {tab === 'boards' ? '📝' : tab === 'replies' ? '💬' : '⭐'}
-          </span>
-          <p>
+          <p className={styles.emptyText}>
             작성한{' '}
             {tab === 'boards' ? '게시글' : tab === 'replies' ? '댓글' : '후기'}
             이 없습니다.
