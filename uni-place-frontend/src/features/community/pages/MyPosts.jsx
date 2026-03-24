@@ -43,6 +43,7 @@ export default function MyPosts() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [reviewModal, setReviewModal] = useState(null); // { mode, reviewId }
+  const [openReviewId, setOpenReviewId] = useState(null);
 
   const load = useCallback(async (t, cat, pg) => {
     setLoading(true);
@@ -165,123 +166,135 @@ export default function MyPosts() {
           </p>
         </div>
       ) : tab === 'reviews' ? (
-        /* ── 후기 카드 ── */
-        <div className={styles.reviewList}>
+        /* ── 후기 카드 (게시글 카드와 동일 스타일) ── */
+        <div className={styles.boardList}>
           {items.map((r) => (
-            <div
-              key={r.reviewId}
-              className={styles.reviewCard}
-              onClick={() =>
-                setReviewModal({ mode: 'detail', reviewId: r.reviewId })
-              }
-            >
-              {r.thumbnailUrl && (
-                <div className={styles.reviewThumb}>
-                  <img
-                    src={toApiImageUrl(r.thumbnailUrl)}
-                    alt="후기 이미지"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
+            <React.Fragment key={r.reviewId}>
+              <div
+                className={`${styles.boardCard} ${openReviewId === r.reviewId ? styles.boardCardOpen : ''}`}
+                onClick={() => {
+                  if (openReviewId === r.reviewId) {
+                    setOpenReviewId(null);
+                    setReviewModal(null);
+                  } else {
+                    setOpenReviewId(r.reviewId);
+                    setReviewModal({ mode: 'detail', reviewId: r.reviewId });
+                  }
+                }}
+              >
+                <div className={styles.boardCardTop}>
+                  <div className={styles.boardCardMeta}>
+                    <span className={styles.categoryTag}>후기</span>
+                    <span style={{ fontSize: 12, color: '#d9ad5b', letterSpacing: 1 }}>
+                      {'★'.repeat(Math.max(0, Math.min(5, r.rating ?? 0)))}
+                      {'☆'.repeat(Math.max(0, 5 - Math.min(5, r.rating ?? 0)))}
+                    </span>
+                    {(r.buildingNm || r.roomNo != null) && (
+                      <span className={styles.reviewRoomTag}>
+                        {r.buildingNm ?? ''}{r.roomNo != null ? ` ${r.roomNo}호` : ''}
+                      </span>
+                    )}
+                    <span className={styles.boardCardDate}>
+                      {String(r.createdAt ?? '').slice(0, 10)}
+                    </span>
+                  </div>
+                  {r.thumbnailUrl && (
+                    <div className={styles.reviewThumbSmall}>
+                      <img
+                        src={toApiImageUrl(r.thumbnailUrl)}
+                        alt="후기 이미지"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className={styles.reviewBody}>
-                <div className={styles.reviewMeta}>
-                  <Stars value={r.rating} />
-                  <span className={styles.reviewRoom}>
-                    {r.buildingNm ?? ''}
-                    {r.roomNo != null ? ` ${r.roomNo}호` : ''}
-                  </span>
-                  <span className={styles.reviewDate}>
-                    {String(r.createdAt ?? '').slice(0, 10)}
-                  </span>
-                </div>
-                <p className={styles.reviewTitle}>
+                <p className={styles.boardCardTitle}>
                   {r.reviewTitle ?? '(제목 없음)'}
                 </p>
-                <p className={styles.reviewCtnt}>
-                  {String(r.reviewCtnt ?? '').length > 80
-                    ? String(r.reviewCtnt).slice(0, 80) + '…'
-                    : (r.reviewCtnt ?? '')}
-                </p>
+                {r.reviewCtnt && (
+                  <p className={styles.reviewExcerpt}>
+                    {String(r.reviewCtnt).length > 80
+                      ? String(r.reviewCtnt).slice(0, 80) + '…'
+                      : r.reviewCtnt}
+                  </p>
+                )}
+                <div className={`${styles.boardCardArrow} ${openReviewId === r.reviewId ? styles.boardCardArrowOpen : ''}`}>›</div>
               </div>
-            </div>
+              {openReviewId === r.reviewId && reviewModal && (
+                <ReviewModal
+                  mode={reviewModal.mode}
+                  reviewId={reviewModal.reviewId}
+                  noOverlay
+                  onClose={() => { setReviewModal(null); setOpenReviewId(null); }}
+                  onSaved={() => {
+                    setReviewModal(null);
+                    setOpenReviewId(null);
+                    load(tab, category, page);
+                  }}
+                />
+              )}
+            </React.Fragment>
           ))}
         </div>
       ) : (
-        /* ── 게시글/댓글 테이블 ── */
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th className={styles.colNum}>번호</th>
-              <th className={styles.colTitle}>
-                {tab === 'replies' ? '댓글 내용' : '제목'}
-              </th>
-              <th className={styles.colDate}>날짜</th>
-              {tab !== 'replies' && <th className={styles.colView}>조회</th>}
-              <th className={styles.colLike}>❤️</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, idx) => {
-              const id = item.boardId ?? item.replyId ?? idx;
-              // 댓글은 replyCtnt, 게시글은 boardTitle
-              const title =
-                item.boardTitle ??
-                item.replyCtnt ??
-                item.replyContent ??
-                item.content ??
-                '-';
-              const date = String(item.createdAt ?? '').slice(0, 10);
-              const views = item.readCount ?? item.viewCnt ?? '-';
-              const likes = item.likeCount ?? item.likeCnt ?? 0;
-              // 댓글은 해당 게시글로 이동, 게시글은 상세로 이동
-              const targetBoardId =
-                item.boardId ?? (tab === 'boards' ? item.id : null);
-              return (
-                <tr
-                  key={id}
-                  className={styles.row}
-                  onClick={() => {
-                    if (targetBoardId) navigate(`/community/${targetBoardId}`);
-                  }}
-                  style={{
-                    cursor: targetBoardId ? 'pointer' : 'default',
-                  }}
-                >
-                  <td className={styles.colNum}>{(page - 1) * 10 + idx + 1}</td>
-                  <td className={styles.colTitle}>
+        /* ── 게시글/댓글 카드 리스트 ── */
+        <div className={styles.boardList}>
+          {items.map((item, idx) => {
+            const id = item.boardId ?? item.replyId ?? idx;
+            const title =
+              item.boardTitle ??
+              item.replyCtnt ??
+              item.replyContent ??
+              item.content ??
+              '-';
+            const date = String(item.createdAt ?? '').slice(0, 10);
+            const views = item.readCount ?? item.viewCnt ?? null;
+            const likes = item.likeCount ?? item.likeCnt ?? 0;
+            const targetBoardId =
+              item.boardId ?? (tab === 'boards' ? item.id : null);
+            const categoryLabel =
+              item.boardType === 'FREE' ? '자유' :
+              item.boardType === 'QUESTION' ? '질문' : null;
+            return (
+              <div
+                key={id}
+                className={styles.boardCard}
+                onClick={() => {
+                  if (targetBoardId) navigate(`/community/${targetBoardId}`);
+                }}
+                style={{ cursor: targetBoardId ? 'pointer' : 'default' }}
+              >
+                <div className={styles.boardCardTop}>
+                  <div className={styles.boardCardMeta}>
                     {tab === 'replies' && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: '#888',
-                          marginRight: 4,
-                          background: '#f3f4f6',
-                          borderRadius: 4,
-                          padding: '1px 5px',
-                        }}
-                      >
-                        💬 댓글
+                      <span className={styles.replyTag}>댓글</span>
+                    )}
+                    {categoryLabel && tab !== 'replies' && (
+                      <span className={styles.categoryTag}>{categoryLabel}</span>
+                    )}
+                    <span className={styles.boardCardDate}>{date}</span>
+                  </div>
+                  <div className={styles.boardCardStats}>
+                    {views !== null && tab !== 'replies' && (
+                      <span className={styles.boardCardStat}>
+                        <span className={styles.statIcon}>👁</span>{views}
                       </span>
                     )}
-                    {String(title).length > 40
-                      ? String(title).slice(0, 40) + '…'
-                      : title}
-                  </td>
-                  <td className={styles.colDate}>{date}</td>
-                  {tab !== 'replies' && (
-                    <td className={styles.colView}>{views}</td>
-                  )}
-                  <td className={styles.colLike}>
-                    <span className={styles.likeChip}>♥ {likes}</span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    <span className={`${styles.boardCardStat} ${styles.statLike}`}>
+                      ♥ {likes}
+                    </span>
+                  </div>
+                </div>
+                <p className={styles.boardCardTitle}>
+                  {String(title).length > 60
+                    ? String(title).slice(0, 60) + '…'
+                    : title}
+                </p>
+                <div className={styles.boardCardArrow}>›</div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* ── 페이징 ── */}
@@ -309,17 +322,6 @@ export default function MyPosts() {
         </div>
       )}
 
-      {reviewModal && (
-        <ReviewModal
-          mode={reviewModal.mode}
-          reviewId={reviewModal.reviewId}
-          onClose={() => setReviewModal(null)}
-          onSaved={() => {
-            setReviewModal(null);
-            load(tab, category, page);
-          }}
-        />
-      )}
     </div>
   );
 }
