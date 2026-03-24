@@ -82,17 +82,24 @@ _SPACE_KOR_MAP = {
     "parking":    ["주차장", "주차"],
 }
 
-def _space_aliases(space_nm: str) -> list[str]:
-    """DB에 저장된 space_nm으로 한글 alias 목록 생성."""
-    key = space_nm.lower().strip()
-    # 정확히 매핑된 것
+def get_space_option_aliases(space_option: str) -> list[str]:
+    """
+    공용공간 옵션 코드/이름(예: fitness, meeting, Fitness Center)에 대응하는
+    한글/동의어 alias 목록을 반환.
+    """
+    key = (space_option or "").lower().strip()
+    if not key:
+        return []
     if key in _SPACE_KOR_MAP:
-        return _SPACE_KOR_MAP[key]
-    # 부분 매핑 (예: "Fitness Center" → "fitness")
+        return list(_SPACE_KOR_MAP[key])
     for eng_key, kor_list in _SPACE_KOR_MAP.items():
         if eng_key in key:
-            return kor_list
+            return list(kor_list)
     return []
+
+def _space_aliases(space_nm: str) -> list[str]:
+    """DB에 저장된 space_nm으로 한글 alias 목록 생성."""
+    return get_space_option_aliases(space_nm)
 
 
 def _building_aliases(building_nm: str) -> list[str]:
