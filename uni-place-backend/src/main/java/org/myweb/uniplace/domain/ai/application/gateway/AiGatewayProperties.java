@@ -42,6 +42,6 @@ public class AiGatewayProperties {
     private String adminChatbotPath = "/api/v1/ai/chat/admin-chatbot";
 
     private String contractVersion = "2026-03-08.3";
-    private int connectTimeoutMillis = 3000;
-    private int readTimeoutSeconds = 30;
+    private int connectTimeoutMillis = 5000;
+    private int readTimeoutSeconds = 90;
 }

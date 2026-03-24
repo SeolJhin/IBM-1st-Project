@@ -17,6 +17,7 @@
 import json
 import logging
 import re
+import time as _time
 
 from openai import OpenAI, RateLimitError
 
@@ -683,9 +684,27 @@ def _call_with_fallback(client, provider: str, start_model: str, kwargs: dict):
         except RateLimitError as e:
             logger.warning("[AdminOrchestrator] RateLimit model=%s: %s", model, e)
             last_err = e
+            _time.sleep(0.35)
         except Exception as e:
+            err_l = str(e).lower()
+            if "decommissioned" in err_l or "model_not_found" in err_l or "400" in err_l:
+                logger.warning("[AdminOrchestrator] 모델 사용 불가 model=%s: %s", model, e)
+                last_err = e
+                _time.sleep(0.25)
+                continue
+            _transient_tokens = [
+                "timeout", "timed out", "connection reset", "connection aborted",
+                "temporarily unavailable", "service unavailable", "overloaded",
+                "upstream", "bad gateway", "502", "503", "504", "429", "rate limit",
+            ]
+            if any(t in err_l for t in _transient_tokens):
+                logger.warning("[AdminOrchestrator] 일시 오류 model=%s: %s", model, e)
+                last_err = e
+                _time.sleep(0.45)
+                continue
             logger.warning("[AdminOrchestrator] 호출 실패 model=%s: %s", model, e)
             last_err = e
+            break
     return None, start_model
 
 
@@ -1508,16 +1527,18 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
         client = OpenAI(
             api_key=settings.gemini_api_key,
             base_url=settings.gemini_base_url,
+            timeout=45.0,
         )
         primary_model = settings.gemini_model
     elif provider == "groq":
         client = OpenAI(
             api_key=settings.groq_api_key,
             base_url="https://api.groq.com/openai/v1",
+            timeout=40.0,
         )
         primary_model = settings.groq_model
     else:
-        client = OpenAI(api_key=settings.openai_api_key)
+        client = OpenAI(api_key=settings.openai_api_key, timeout=45.0)
         primary_model = settings.openai_model
 
     messages = [{"role": "system", "content": system_prompt}]
@@ -1544,6 +1565,9 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
 
     if not (choice1.finish_reason == "tool_calls" and choice1.message.tool_calls):
         answer = (choice1.message.content or "").strip()
+        answer, used_model = _sanitize_answer_with_guard(
+            client, provider, used_model, prompt, answer
+        )
 
         # ★ LLM이 tool을 호출하는 대신 텍스트로 "admin_stats(...)" 같이 출력한 경우 감지
         # → tool_choice="required"로 강제 재시도
@@ -1572,9 +1596,15 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
                 choice1 = resp1_retry.choices[0]
                 # 아래 tool_calls 처리로 fall-through
             else:
+                answer, used_model = _sanitize_answer_with_guard(
+                    client, provider, used_model, prompt, answer
+                )
                 clean, buttons = _extract_buttons(answer)
                 return AiResponse(answer=clean, confidence=0.9, metadata={"buttons": buttons, "model": used_model})
         else:
+            answer, used_model = _sanitize_answer_with_guard(
+                client, provider, used_model, prompt, answer
+            )
             clean, buttons = _extract_buttons(answer)
             return AiResponse(answer=clean, confidence=0.9, metadata={"buttons": buttons, "model": used_model})
 
@@ -1783,6 +1813,10 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
                         metadata={"tools": all_tool_names + ["nearby_property_search"], "model": used_model},
                     )
 
+            answer, used_model = _sanitize_answer_with_guard(
+                client, provider, used_model, prompt, answer, all_context
+            )
+
             if not answer:
                 # tool은 실행됐으나 LLM 최종 답변이 비어있는 경우
                 # all_context에서 결과 요약 추출
@@ -1812,6 +1846,9 @@ def _run_admin(prompt: str, history: list[dict], admin_id: str, provider: str, s
     if resp_final is None:
         return AiResponse(answer="응답 생성 오류.", confidence=0.3)
     answer = (resp_final.choices[0].message.content or "").strip()
+    answer, used_model_f = _sanitize_answer_with_guard(
+        client, provider, used_model_f, prompt, answer, all_context
+    )
     clean, buttons = _extract_buttons(answer)
     return AiResponse(
         answer=clean,
@@ -1853,6 +1890,115 @@ def _normalize_prod_nm_in_sql(sql: str) -> str:
     return pattern.sub(_wrap, sql)
 
 
+def _clean_function_call_text(text: str) -> str:
+    """LLM이 함수 호출/JSON을 텍스트로 노출한 경우 정리."""
+    import re as _re
+    if not text:
+        return ""
+    text = _re.sub(r"^\s*\[(?:UNI PLACE AI|UNI PLACE|AI|챗봇|어시스턴트)\]\s*", "", text)
+    text = _re.sub(r"<think>.*?</think>", "", text, flags=_re.DOTALL)
+    text = _re.sub(r"<function_calls>.*?</function_calls>", "", text, flags=_re.DOTALL)
+    text = _re.sub(r"<function>[^<]*</function>\s*\{.*?\}</function>", "", text, flags=_re.DOTALL)
+    text = _re.sub(r"<function=[^>]*>\s*\{.*?\}\s*</function>", "", text, flags=_re.DOTALL)
+    text = _re.sub(r"</?function[^>]*>", "", text)
+    text = _re.sub(r"```(?:json|python)?\s*\{[^`]*\"tool_code\"\s*:[^`]*\}\s*```", "", text, flags=_re.DOTALL)
+    text = _re.sub(r"\{[^{}]*\"tool_code\"\s*:\s*\"[^\"]*\"\s*\}", "", text, flags=_re.DOTALL)
+    text = _re.sub(r"print\s*\(\s*default_api\.[^)]+\)\s*\)", "", text, flags=_re.DOTALL)
+    text = _re.sub(r"print\s*\(\s*default_api\..*", "", text, flags=_re.DOTALL)
+    text = _re.sub(r"```(?:json)?\s*\[\s*\{\s*\"name\".*?\]\s*```", "", text, flags=_re.DOTALL)
+    text = _re.sub(r"^\s*\[\s*\{\s*\"name\".*?\]\s*$", "", text, flags=_re.DOTALL)
+    return text.strip()
+
+
+def _is_tool_call_json(text: str) -> bool:
+    stripped = (text or "").strip()
+    if not (stripped.startswith("[") and stripped.endswith("]")):
+        return False
+    try:
+        parsed = json.loads(stripped)
+        if isinstance(parsed, list) and parsed and isinstance(parsed[0], dict):
+            first = parsed[0]
+            if "label" in first and "url" in first:
+                return False
+            return "name" in first and ("parameters" in first or "arguments" in first)
+    except Exception:
+        pass
+    return False
+
+
+def _is_structured_tool_text(text: str) -> bool:
+    s = (text or "").strip()
+    if not s:
+        return False
+    l = s.lower()
+    return (
+        _is_tool_call_json(s)
+        or "<function=" in l
+        or "<function_calls>" in l
+        or '"tool_code"' in l
+        or "print(default_api." in l
+    )
+
+
+def _regenerate_plain_answer(
+    client,
+    provider: str,
+    model: str,
+    prompt: str,
+    all_context: list[str] | None = None,
+) -> tuple[str | None, str]:
+    context_text = "\n".join((all_context or [])[:8]).strip()
+    user_content = prompt
+    if context_text:
+        user_content = (
+            f"{prompt}\n\n[참고 데이터]\n{context_text}\n\n"
+            "위 참고 데이터를 바탕으로 답변하세요."
+        )
+    regen_messages = [
+        {
+            "role": "system",
+            "content": (
+                "당신은 UNI PLACE 관리자 AI입니다. "
+                "반드시 한국어 자연어 문장으로만 답변하세요. "
+                "JSON, 코드블록, 함수호출 텍스트(<function=...>, tool_code, [{\"name\":...}])를 절대 출력하지 마세요."
+            ),
+        },
+        {
+            "role": "user",
+            "content": user_content,
+        },
+    ]
+    resp, used_model = _call_with_fallback(
+        client,
+        provider,
+        model,
+        {"messages": regen_messages, "temperature": 0.2, "max_tokens": 1200},
+    )
+    if resp is None:
+        return None, used_model
+    answer = (resp.choices[0].message.content or "").strip()
+    answer = _clean_function_call_text(answer)
+    if not answer or _is_structured_tool_text(answer):
+        return None, used_model
+    return answer, used_model
+
+
+def _sanitize_answer_with_guard(
+    client,
+    provider: str,
+    model: str,
+    prompt: str,
+    answer: str,
+    all_context: list[str] | None = None,
+) -> tuple[str, str]:
+    cleaned = _clean_function_call_text(answer)
+    if not cleaned or _is_structured_tool_text(cleaned):
+        regen, regen_model = _regenerate_plain_answer(client, provider, model, prompt, all_context)
+        if regen:
+            return regen, regen_model
+    return cleaned, model
+
+
 def _extract_buttons(answer: str) -> tuple[str, list[dict]]:
     """일반 챗봇과 동일한 버튼 파싱 로직."""
     import re, json as _json
@@ -1864,7 +2010,8 @@ def _extract_buttons(answer: str) -> tuple[str, list[dict]]:
     match = re.search(pattern1, answer, re.DOTALL)
     if match:
         try:
-            parsed = _json.loads(match.group(1))
+            raw_buttons = match.group(1).replace("{{", "{").replace("}}", "}")
+            parsed = _json.loads(raw_buttons)
             if isinstance(parsed, list):
                 buttons = [b for b in parsed if isinstance(b, dict) and b.get("url")]
         except Exception:
@@ -1879,6 +2026,21 @@ def _extract_buttons(answer: str) -> tuple[str, list[dict]]:
             buttons.append({"label": label, "url": url, "icon": icon or "🔗"})
         clean_answer = re.sub(pattern2, '', answer, flags=re.DOTALL | re.IGNORECASE).strip()
         return clean_answer, buttons
+
+    stripped = answer.strip()
+    stripped_norm = stripped.replace("{{", "{").replace("}}", "}")
+    json_arr_pattern = r'(\[\s*\{\s*"label".*?\]\s*)$'
+    arr_match = re.search(json_arr_pattern, stripped_norm, re.DOTALL)
+    if arr_match:
+        try:
+            parsed = _json.loads(arr_match.group(1))
+            if isinstance(parsed, list):
+                buttons = [b for b in parsed if isinstance(b, dict) and b.get("url")]
+                clean_answer = stripped[:arr_match.start()].strip()
+                if buttons:
+                    return clean_answer, buttons
+        except Exception:
+            pass
 
     return answer.strip(), []
 
