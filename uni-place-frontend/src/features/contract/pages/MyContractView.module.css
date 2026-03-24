@@ -1,802 +1,157 @@
-/* MyContractView.module.css */
+/* MyContractView.module.css · VIVADE Edition */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 
-.wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 4px 0;
-}
+.wrap { display:flex; flex-direction:column; gap:16px; padding:4px 0; }
 
-/* ── 상태 박스 (로딩 / 빈 계약 / 에러) ── */
 .stateBox {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 80px 20px;
-  text-align: center;
-  color: #9a8c70;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:14px; padding:80px 20px; text-align:center;
+  border:1px dashed rgba(184,148,90,0.3); background:rgba(184,148,90,0.02);
 }
-.stateIcon {
-  font-size: 52px;
-}
-.stateMsg {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: #3a2e20;
-}
-.stateSub {
-  margin: 0;
-  font-size: 13px;
-  color: #9a8c70;
-  line-height: 1.6;
-}
-.stateError {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 700;
-  color: #c0392b;
-}
-.spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid #e8e0d4;
-  border-top-color: #d9ad5b;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+.stateIcon { font-size:36px; }
+.stateMsg { margin:0; font-size:15px; font-weight:700; color:#1a1a1a; }
+.stateSub { margin:0; font-size:13px; color:#9a9080; line-height:1.65; }
+.stateError { margin:0; font-size:13.5px; font-weight:700; color:#c03030; }
+.spinner { width:28px; height:28px; border:2px solid #e8e2d6; border-top-color:var(--primary,#b8945a); border-radius:50%; animation:spin .8s linear infinite; display:inline-block; }
 
-/* ── 계약 카드 ── */
-.contractCard {
-  background: #fff;
-  border: 1.5px solid #e8dfd0;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: 0 3px 14px rgba(58, 46, 32, 0.07);
-  transition: box-shadow 0.2s;
-}
-.contractCard:hover {
-  box-shadow: 0 6px 22px rgba(58, 46, 32, 0.11);
-}
+.contractCard { background:#fff; border:1px solid #e8e2d6; border-left:3px solid transparent; overflow:hidden; transition:border-left-color .2s, box-shadow .25s; animation:fadeInUp .5s cubic-bezier(.16,1,.3,1) both; }
+.contractCard:hover { border-left-color:var(--primary,#b8945a); box-shadow:0 6px 24px rgba(0,0,0,.07); }
 
-/* 카드 헤더 버튼 */
-.cardHeadBtn {
-  width: 100%;
-  padding: 18px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #faf7f3;
-  border: 0;
-  cursor: pointer;
-  border-bottom: 1.5px solid #f0ece5;
-  gap: 12px;
-  transition: background 0.15s;
-}
-.cardHeadBtn:hover {
-  background: #f5f0e8;
-}
+.cardHeadBtn { width:100%; padding:16px 22px; display:flex; align-items:center; justify-content:space-between; background:#f5f2ec; border:0; cursor:pointer; border-bottom:1px solid #ede8df; gap:12px; transition:background .15s; font-family:inherit; }
+.cardHeadBtn:hover { background:#ede8df; }
+.cardHeadLeft { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.cardHeadRight { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.cardIdChip { font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--primary,#b8945a); background:rgba(184,148,90,.1); border:1px solid rgba(184,148,90,.2); padding:3px 10px; }
+.cardBuilding { font-size:14px; font-weight:700; color:#1a1a1a; letter-spacing:-.01em; }
+.chevron { font-size:10px; color:#9a9080; }
 
-.cardHeadLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.cardHeadRight {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
+.statusChip { font-size:10px; font-weight:700; padding:3px 10px; letter-spacing:.04em; }
+.chipActive { background:rgba(60,130,80,.08); color:#3a7a50; border:1px solid rgba(60,130,80,.2); }
+.chipPending { background:rgba(184,148,90,.1); color:#8a6020; border:1px solid rgba(184,148,90,.25); }
+.chipExpired { background:rgba(80,80,80,.07); color:#5a5a5a; border:1px solid rgba(80,80,80,.15); }
 
-.cardIdChip {
-  font-size: 12px;
-  font-weight: 700;
-  color: #c58a3a;
-  background: rgba(197, 138, 58, 0.12);
-  border-radius: 20px;
-  padding: 4px 12px;
-}
-.cardBuilding {
-  font-size: 14px;
-  font-weight: 700;
-  color: #3a2e20;
-}
-.chevron {
-  font-size: 11px;
-  color: #9a8c70;
-}
+.cardBody { padding:24px 22px 20px; }
+.roomGrid { display:grid; grid-template-columns:1fr 340px; gap:24px; align-items:start; margin-bottom:20px; }
+@media (max-width:860px) { .roomGrid { grid-template-columns:1fr; } }
 
-/* 상태 칩 */
-.statusChip {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 20px;
-}
-.chipActive {
-  background: rgba(39, 174, 96, 0.12);
-  color: #27ae60;
-  border: 1px solid rgba(39, 174, 96, 0.25);
-}
-.chipPending {
-  background: rgba(186, 128, 55, 0.12);
-  color: #ba8037;
-  border: 1px solid rgba(186, 128, 55, 0.25);
-}
-.chipExpired {
-  background: rgba(120, 100, 70, 0.1);
-  color: #9a8c70;
-  border: 1px solid rgba(120, 100, 70, 0.2);
-}
+.galleryMain { overflow:hidden; aspect-ratio:4/3; background:#ede8df; margin-bottom:8px; }
+.galleryMain img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .6s cubic-bezier(.16,1,.3,1); }
+.galleryMain:hover img { transform:scale(1.04); }
+.galleryThumbs { display:flex; gap:6px; flex-wrap:wrap; }
+.galleryThumb { width:64px; height:48px; overflow:hidden; border:1.5px solid transparent; cursor:pointer; padding:0; background:#ede8df; transition:border-color .15s; }
+.galleryThumb img { width:100%; height:100%; object-fit:cover; display:block; }
+.galleryThumbActive { border-color:var(--primary,#b8945a); }
+.galleryEmpty { aspect-ratio:4/3; background:#f0ece4; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#9a9080; gap:8px; font-size:28px; }
+.galleryEmpty p { font-size:12px; margin:0; color:#9a9080; }
 
-/* 카드 바디 */
-.cardBody {
-  padding: 28px 28px 24px;
-}
+.roomPanel { background:#fdfcf9; border:1px solid #e8e2d6; padding:0; }
+.roomTitleRow { display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; padding:18px 18px 0; margin-bottom:6px; }
+.roomName { margin:0; font-size:17px; font-weight:700; color:#1a1a1a; letter-spacing:-.02em; font-family:var(--font-body); flex:1; }
+.statusBadge { padding:3px 10px; font-size:10px; font-weight:700; letter-spacing:.04em; white-space:nowrap; flex-shrink:0; }
+.statusAvailable { background:rgba(60,130,80,.08); color:#3a7a50; border:1px solid rgba(60,130,80,.2); }
+.statusContracted { background:rgba(192,48,48,.07); color:#c03030; border:1px solid rgba(192,48,48,.2); }
+.statusOther { background:rgba(184,148,90,.1); color:#8a6020; border:1px solid rgba(184,148,90,.2); }
+.buildingAddr { margin:0; font-size:12px; color:#9a9080; padding:0 18px 14px; }
 
-/* ── 방 정보 2단 레이아웃 ── */
-.roomGrid {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 32px;
-  align-items: start;
-  margin-bottom: 20px;
-}
-@media (max-width: 860px) {
-  .roomGrid {
-    grid-template-columns: 1fr;
-  }
-}
+.contractBanner { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:rgba(184,148,90,.06); border-top:1px solid rgba(184,148,90,.15); border-bottom:1px solid rgba(184,148,90,.15); padding:10px 18px; }
+.contractBannerLabel { font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--primary,#b8945a); }
+.contractBannerValue { font-size:12.5px; font-weight:700; color:#1a1a1a; flex:1; }
+.contractStatusChip { font-size:10px; font-weight:700; padding:2px 8px; letter-spacing:.03em; }
 
-/* ── 이미지 갤러리 ── */
-.galleryMain {
-  border-radius: 14px;
-  overflow: hidden;
-  aspect-ratio: 4 / 3;
-  background: #e8e0d4;
-  margin-bottom: 10px;
-}
-.galleryMain img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.priceBlock { padding:14px 18px; border-bottom:1px solid #f0ece4; }
+.priceType { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--primary,#b8945a); margin-bottom:4px; }
+.priceMain { font-size:18px; font-weight:400; color:#1a1a1a; margin-bottom:4px; }
+.priceMain strong { font-size:22px; font-weight:700; font-family:var(--font-body); }
+.priceSub { font-size:11.5px; color:#9a9080; }
+
+.specGrid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:#e8e2d6; border-top:1px solid #e8e2d6; }
+.specItem { display:flex; flex-direction:column; gap:3px; padding:10px 14px; background:#fdfcf9; }
+.specLabel { font-size:10px; font-weight:700; color:#9a9080; text-transform:uppercase; letter-spacing:.06em; }
+.specValue { font-size:12.5px; font-weight:600; color:#1a1a1a; }
+
+.optionBlock { padding:14px 18px; border-top:1px solid #f0ece4; }
+.optionTitle { margin:0 0 8px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#9a9080; }
+.optionTags { display:flex; flex-wrap:wrap; gap:5px; }
+.optionTag { padding:3px 10px; background:rgba(184,148,90,.08); border:1px solid rgba(184,148,90,.18); font-size:11.5px; color:#6b5028; }
+
+.descBlock { border-top:1px solid #f0ece4; padding:14px 18px; }
+.descTitle { margin:0 0 7px; font-size:10px; font-weight:700; color:#9a9080; text-transform:uppercase; letter-spacing:.06em; }
+.descText { margin:0; font-size:13px; color:#484848; line-height:1.75; }
+
+.pdfRow { border-top:1px solid #e8e2d6; padding-top:16px; margin-top:4px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.pdfBtn, .payBtn, .payHistoryBtn, .reviewBtn { position:relative; overflow:hidden; padding:9px 20px; font-size:11.5px; font-weight:700; letter-spacing:.05em; cursor:pointer; font-family:inherit; border:1.5px solid; transition:background .2s, border-color .2s, color .2s, transform .15s; }
+.pdfBtn:hover, .payBtn:hover, .payHistoryBtn:hover, .reviewBtn:hover { transform:translateY(-1px); }
+.pdfBtn:active, .payBtn:active, .payHistoryBtn:active, .reviewBtn:active { transform:scale(.97); }
+.pdfBtn { background:#1a1a1a; border-color:#1a1a1a; color:#fff; }
+.pdfBtn:hover { background:var(--primary,#b8945a); border-color:var(--primary,#b8945a); }
+.payBtn { background:transparent; border-color:var(--primary,#b8945a); color:var(--primary,#b8945a); }
+.payBtn:hover { background:var(--primary,#b8945a); color:#fff; }
+.payHistoryBtn { background:transparent; border-color:#e8e2d6; color:#484848; }
+.payHistoryBtn:hover { border-color:var(--primary,#b8945a); color:var(--primary,#b8945a); }
+.reviewBtn { background:transparent; border-color:#e8e2d6; color:#484848; }
+.reviewBtn:hover { border-color:#5a7ab8; color:#5a7ab8; }
+
+.roomLoading { display:flex; align-items:center; gap:10px; color:#9a9080; font-size:13px; padding:32px 0; }
+.roomError { color:#c03030; font-size:13.5px; font-weight:700; margin:20px 0; }
+.contractPending { padding:10px 16px; background:rgba(184,148,90,.05); border:1px dashed rgba(184,148,90,.3); font-size:12.5px; color:#8a6020; }
+
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; }
+.modalBox { background:#fff; border-top:3px solid var(--primary,#b8945a); padding:28px; box-shadow:0 24px 64px rgba(0,0,0,.2); width:min(360px,100%); animation:fadeInUp .3s cubic-bezier(.16,1,.3,1) both; }
+.modalTitle { margin:0 0 6px; font-size:16px; font-weight:700; color:#1a1a1a; font-family:var(--font-body); }
+.modalDesc { margin:0 0 18px; font-size:13px; color:#9a9080; line-height:1.6; }
+.pwdInput { width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #e8e2d6; background:#fdfcf9; font-size:14px; outline:none; border-radius:0; transition:border-color .15s; margin-bottom:6px; font-family:inherit; }
+.pwdInput:focus { border-color:var(--primary,#b8945a); background:#fff; }
+.pwdError { color:#c03030; font-size:11.5px; font-weight:700; margin:0 0 12px; }
+.modalBtns { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
+.btnCancel { min-width:72px; height:38px; border:1px solid #e8e2d6; background:#fff; color:#484848; font-weight:700; cursor:pointer; font-family:inherit; transition:background .15s; }
+.btnCancel:hover { background:#f5f2ec; }
+.btnConfirm { min-width:72px; height:38px; border:0; background:#1a1a1a; color:#fff; font-weight:700; cursor:pointer; font-family:inherit; transition:background .15s; }
+.btnConfirm:hover { background:var(--primary,#b8945a); }
+.btnConfirm:disabled { opacity:.45; cursor:not-allowed; }
+
+.imgOverlay { position:fixed; inset:0; background:rgba(0,0,0,.75); display:flex; align-items:center; justify-content:center; z-index:2000; padding:12px; }
+.imgModal { background:#fff; width:min(680px,96vw); max-height:92vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.4); border-top:3px solid var(--primary,#b8945a); animation:fadeInUp .3s cubic-bezier(.16,1,.3,1) both; }
+.imgModalHeader { display:flex; align-items:center; justify-content:space-between; padding:13px 18px; border-bottom:1px solid #e8e2d6; background:#f5f2ec; flex-shrink:0; }
+.imgModalTitle { font-size:13.5px; font-weight:700; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%; }
+.imgModalActions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.imgDownloadBtn { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; background:#1a1a1a; color:#fff; text-decoration:none; font-size:11.5px; font-weight:600; letter-spacing:.04em; transition:background .2s; }
+.imgDownloadBtn:hover { background:var(--primary,#b8945a); }
+.imgCloseBtn { width:30px; height:30px; display:flex; align-items:center; justify-content:center; background:none; border:1px solid #e8e2d6; cursor:pointer; font-size:13px; color:#9a9080; transition:background .15s, color .15s; }
+.imgCloseBtn:hover { background:#ede8df; color:#1a1a1a; }
+.imgScrollArea { overflow-y:auto; flex:1; padding:16px; background:#f5f2ec; display:flex; flex-direction:column; align-items:center; }
+.contractImg { width:100%; max-width:640px; height:auto; box-shadow:0 4px 20px rgba(0,0,0,.15); display:block; }
+.imgLoadError { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:60px 20px; color:#9a9080; font-size:13.5px; }
+.imgLoadError span { font-size:36px; }
+
+/* ── 마이페이지 인라인 모드 (배경 오버레이 없음) ── */
+.overlayInline {
   display: block;
+  margin-top: 12px;
+  border: 1px solid #e8e2d6;
+  border-top: 3px solid var(--primary,#b8945a);
+  background: #fdfcf9;
 }
-.galleryThumbs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.galleryThumb {
-  width: 72px;
-  height: 52px;
-  border-radius: 7px;
-  overflow: hidden;
-  border: 2px solid transparent;
-  cursor: pointer;
-  padding: 0;
-  background: #e8e0d4;
-  transition: border-color 0.15s;
-}
-.galleryThumb img {
+.overlayInline .modalBox {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.galleryThumbActive {
-  border-color: #d9ad5b;
-}
-.galleryEmpty {
-  aspect-ratio: 4 / 3;
-  border-radius: 14px;
-  background: #f0ece5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #9a8c70;
-  gap: 8px;
-  font-size: 42px;
-}
-.galleryEmpty p {
-  font-size: 13px;
-  margin: 0;
-}
-
-/* ── 방 정보 패널 ── */
-.roomPanel {
-  background: #fff;
-  border: 1.5px solid #f0ece5;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 16px rgba(58, 46, 32, 0.07);
-}
-
-.roomTitleRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 6px;
-  flex-wrap: wrap;
-}
-.roomName {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2d2416;
-  letter-spacing: -0.02em;
-  font-family: var(--font-body);
-  flex: 1;
-}
-.statusBadge {
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.statusAvailable {
-  background: #d9f7d9;
-  color: #1a7a1a;
-}
-.statusContracted {
-  background: #ffe8e8;
-  color: #c0392b;
-}
-.statusOther {
-  background: #fff3cc;
-  color: #a07800;
-}
-
-.buildingAddr {
-  margin: 0 0 16px;
-  font-size: 13px;
-  color: #9a8c70;
-}
-
-/* 계약 기간 배너 */
-.contractBanner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  background: #fdf8f0;
-  border: 1px solid #f0d8a0;
-  border-radius: 10px;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-}
-.contractBannerLabel {
-  font-size: 12px;
-  font-weight: 700;
-  color: #a07030;
-}
-.contractBannerValue {
-  font-size: 13px;
-  font-weight: 700;
-  color: #3a2e20;
-  flex: 1;
-}
-.contractStatusChip {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 20px;
-}
-
-/* 금액 블록 */
-.priceBlock {
-  background: #fdfaf6;
-  border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 16px;
-  border: 1px solid #f0eae0;
-}
-.priceType {
-  font-size: 11px;
-  font-weight: 700;
-  color: #ba8037;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
-}
-.priceMain {
-  font-size: 20px;
-  font-weight: 400;
-  color: #2d2416;
-  margin-bottom: 4px;
-}
-.priceMain strong {
-  font-size: 24px;
-  font-weight: 700;
-  font-family: var(--font-body);
-}
-.priceSub {
-  font-size: 12px;
-  color: #9a8c70;
-}
-
-/* 스펙 그리드 */
-.specGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-.specItem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px;
-  background: #fdfaf6;
-  border-radius: 8px;
-  border: 1px solid #f0eae0;
-}
-.specLabel {
-  font-size: 10px;
-  font-weight: 700;
-  color: #9a8c70;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.specValue {
-  font-size: 12px;
-  font-weight: 600;
-  color: #2d2416;
-}
-
-/* 옵션 태그 */
-.optionBlock {
-  margin-bottom: 12px;
-}
-.optionTitle {
-  margin: 0 0 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #9a8c70;
-}
-.optionTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.optionTag {
-  padding: 4px 10px;
-  background: #f6eee6;
-  border: 1px solid #e8e0d4;
-  border-radius: 20px;
-  font-size: 12px;
-  color: #3a2e20;
-}
-
-/* 방 설명 */
-.descBlock {
-  border-top: 1px solid #f0ece5;
-  padding-top: 14px;
-  margin-top: 4px;
-}
-.descTitle {
-  margin: 0 0 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #9a8c70;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.descText {
-  margin: 0;
-  font-size: 13px;
-  color: #7a6a50;
-  line-height: 1.7;
-}
-
-/* ── 계약서 PDF 버튼 ── */
-.pdfRow {
-  border-top: 1px solid #f0ece5;
-  padding-top: 18px;
-  margin-top: 4px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-.pdfBtn {
-  padding: 11px 22px;
-  border-radius: 10px;
-  border: 0;
-  background: linear-gradient(135deg, #c4923f, #ba8037);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 3px 10px rgba(186, 128, 55, 0.3);
-  transition: all 0.2s;
-}
-.pdfBtn:hover {
-  background: linear-gradient(135deg, #d4a24f, #ca9047);
-  box-shadow: 0 5px 16px rgba(186, 128, 55, 0.4);
-  transform: translateY(-1px);
-}
-
-/* 월세 결제 버튼 */
-.payBtn {
-  padding: 11px 22px;
-  border-radius: 10px;
-  border: 0;
-  background: linear-gradient(135deg, #4a90d9, #2f78c5);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 3px 10px rgba(47, 120, 197, 0.3);
-  transition: all 0.2s;
-}
-.payBtn:hover {
-  background: linear-gradient(135deg, #5aa0e9, #3f88d5);
-  box-shadow: 0 5px 16px rgba(47, 120, 197, 0.4);
-  transform: translateY(-1px);
-}
-
-/* 결제 조회 버튼 */
-.payHistoryBtn {
-  padding: 11px 22px;
-  border-radius: 10px;
-  border: 1.5px solid #c4923f;
-  background: #fff;
-  color: #c4923f;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.payHistoryBtn:hover {
-  background: #fdf6ec;
-  border-color: #ba8037;
-  color: #ba8037;
-  transform: translateY(-1px);
-}
-
-.reviewBtn {
-  padding: 11px 22px;
-  border-radius: 10px;
-  border: 1.5px solid #5b8dd9;
-  background: #fff;
-  color: #5b8dd9;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.reviewBtn:hover {
-  background: #eef4fd;
-  border-color: #4a7cc7;
-  color: #4a7cc7;
-  transform: translateY(-1px);
-}
-
-/* ── 로딩 / 에러 ── */
-.roomLoading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #9a8c70;
-  font-size: 13px;
-  padding: 32px 0;
-}
-.roomError {
-  color: #c0392b;
-  font-size: 14px;
-  font-weight: 700;
-  margin: 20px 0;
-}
-
-/* ── 비밀번호 모달 ── */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  max-width: none;
   padding: 20px;
+  box-shadow: none;
+  border-top: none;
 }
-.modalBox {
-  background: #fff;
-  border-radius: 16px;
-  padding: 32px 28px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  width: min(360px, 100%);
-}
-.modalTitle {
-  margin: 0 0 8px;
-  font-size: 17px;
-  font-weight: 700;
-  color: #2d2416;
-  font-family: var(--font-body);
-}
-.modalDesc {
-  margin: 0 0 18px;
-  font-size: 13px;
-  color: #7a6a50;
-  line-height: 1.5;
-}
-.pwdInput {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1.5px solid #e0d5c5;
-  background: #faf7f3;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.15s;
-  margin-bottom: 6px;
-}
-.pwdInput:focus {
-  border-color: #c58a3a;
-  background: #fff;
-}
-.pwdError {
-  color: #c0392b;
-  font-size: 12px;
-  font-weight: 700;
-  margin: 0 0 12px;
-}
-.modalBtns {
+.imgOverlayInline {
   display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 18px;
-}
-.btnCancel {
-  min-width: 76px;
-  height: 40px;
-  border-radius: 8px;
-  border: 1.5px solid #e0d5c5;
-  background: #fff;
-  color: #7a6a50;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.btnCancel:hover {
-  background: #f5f0e8;
-}
-.btnConfirm {
-  min-width: 76px;
-  height: 40px;
-  border-radius: 8px;
-  border: 0;
-  background: linear-gradient(135deg, #c4923f, #ba8037);
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.btnConfirm:hover {
-  background: linear-gradient(135deg, #d4a24f, #ca9047);
-}
-.btnConfirm:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── PDF 뷰어 ── */
-.pdfOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 1100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-.pdfModal {
-  background: #fff;
-  border-radius: 16px;
+  flex-direction: column;
+  margin-top: 12px;
+  border: 1px solid #e8e2d6;
+  border-top: 3px solid var(--primary,#b8945a);
+  background: #fdfcf9;
   overflow: hidden;
-  width: min(900px, 100%);
-  height: min(85vh, 720px);
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
-.pdfHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 20px;
-  background: #f5f0e8;
-  border-bottom: 1px solid #e0d5c5;
-  font-weight: 700;
-  font-size: 14px;
-  color: #3a2e20;
-}
-.pdfClose {
-  background: none;
-  border: 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: #7a6a50;
-  cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-.pdfClose:hover {
-  background: rgba(0, 0, 0, 0.08);
-}
-.pdfFrame {
-  flex: 1;
+.imgOverlayInline .imgModal {
   width: 100%;
-  border: 0;
-}
-.pdfDownload {
-  display: block;
-  text-align: center;
-  padding: 11px;
-  background: linear-gradient(135deg, #c4923f, #ba8037);
-  color: #fff;
-  font-weight: 700;
-  font-size: 13px;
-  text-decoration: none;
-  transition: all 0.15s;
-}
-.pdfDownload:hover {
-  background: linear-gradient(135deg, #d4a24f, #ca9047);
-}
-
-/* ════════════════════════════════════════════════════
-   ✅ 계약서 이미지 뷰어 (ContractImageModal)
-   ════════════════════════════════════════════════════ */
-
-/* 오버레이 */
-.imgOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 12px;
-}
-
-/* 모달 박스 */
-.imgModal {
-  background: #fff;
-  border-radius: 10px;
-  width: min(680px, 96vw);
-  max-height: 92vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-}
-
-/* 헤더 */
-.imgModalHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid #e8dfd0;
-  background: #faf7f2;
-  flex-shrink: 0;
-}
-
-.imgModalTitle {
-  font-size: 14px;
-  font-weight: 700;
-  color: #3a2e20;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 60%;
-}
-
-.imgModalActions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.imgDownloadBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
-  background: #3a7bd5;
-  color: #fff;
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 600;
-  transition: background 0.2s;
-}
-.imgDownloadBtn:hover {
-  background: #2c62b0;
-}
-
-.imgCloseBtn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: 1.5px solid #d0c8b8;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #7a6a55;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-.imgCloseBtn:hover {
-  background: #f0e8da;
-  color: #3a2e20;
-}
-
-/* 스크롤 영역 */
-.imgScrollArea {
-  overflow-y: auto;
-  flex: 1;
-  padding: 16px;
-  background: #f5f2ee;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* 계약서 이미지 */
-.contractImg {
-  width: 100%;
-  max-width: 640px;
-  height: auto;
-  border-radius: 6px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  display: block;
-}
-
-/* 이미지 로드 에러 */
-.imgLoadError {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 60px 20px;
-  color: #9a8c70;
-  font-size: 14px;
-}
-.imgLoadError span {
-  font-size: 40px;
-}
-
-/* ── 계약서 미발급 안내 문구 ── */
-.contractPending {
-  padding: 12px 18px;
-  background: #fef9ec;
-  border: 1.5px dashed #f0d080;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #8a6a20;
-  text-align: center;
+  max-height: 560px;
+  box-shadow: none;
+  border-radius: 0;
+  border-top: none;
 }

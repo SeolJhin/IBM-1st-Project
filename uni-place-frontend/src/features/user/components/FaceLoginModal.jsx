@@ -94,7 +94,8 @@ function averageDescriptors(descs) {
 /* ════════════════════════════════════════════════════════════
    컴포넌트
 ════════════════════════════════════════════════════════════ */
-export default function FaceLoginModal({ mode = 'login', onSuccess, onClose }) {
+export default function FaceLoginModal({
+  noOverlay = false, mode = 'login', onSuccess, onClose }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -343,9 +344,9 @@ export default function FaceLoginModal({ mode = 'login', onSuccess, onClose }) {
 
   return (
     <div
-      className={styles.backdrop}
+      className={noOverlay ? styles.backdropInline : styles.backdrop}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose?.();
+        if (!noOverlay && e.target === e.currentTarget) onClose?.();
       }}
     >
       <div className={styles.modal}>
