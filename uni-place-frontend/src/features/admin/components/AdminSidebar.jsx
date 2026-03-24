@@ -1,5 +1,4 @@
 // src/features/admin/components/AdminSidebar.jsx
-import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './AdminSidebar.module.css';
 import { adminMenu } from '../constants/adminMenu';
@@ -16,6 +15,7 @@ export default function AdminSidebar() {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.sideBox}>
+        <div className={styles.sideNavHeader}>Admin Panel</div>
         {adminMenu.map((m) => (
           <button
             key={m.key}
@@ -23,6 +23,7 @@ export default function AdminSidebar() {
             className={`${styles.sideItem} ${isActive(m.path) ? styles.sideItemActive : ''}`}
             onClick={() => navigate(m.path)}
           >
+            <span className={styles.dot} />
             {m.label}
           </button>
         ))}

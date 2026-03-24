@@ -3,14 +3,6 @@ import styles from './AdminReservationDashboard.module.css';
 import { adminApi } from '../../api/adminApi';
 
 /* ================= 유틸 ================= */
-const formatDate = (date) => {
-  return date.toISOString().slice(0, 10);
-};
-
-const getWeek = (date) => {
-  const first = new Date(date.getFullYear(), 0, 1);
-  return Math.ceil(((date - first) / 86400000 + first.getDay() + 1) / 7);
-};
 
 function ReservationLineChart({ data, multi = false }) {
   const [hover, setHover] = useState(null);
@@ -416,7 +408,7 @@ export default function AdminReservationDashboard() {
       .forEach((s) => {
         const hour = new Date(getSpaceStart(s)).getHours();
 
-        if (map.hasOwnProperty(hour)) {
+        if (map[hour] !== undefined) {
           map[hour]++;
         }
       });

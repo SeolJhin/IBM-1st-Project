@@ -40,10 +40,10 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: flex-end;
-  padding: 12px;
-  border: 1px solid rgba(31, 35, 40, 0.12);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.55);
+  padding: 12px 14px;
+  border: 1px solid #e8e2d6;
+  border-radius: 0;
+  background: #fafaf7;
 }
 
 .filterItem {
@@ -102,10 +102,11 @@
 }
 
 .tableWrap {
-  border: 1px solid rgba(31, 35, 40, 0.12);
-  border-radius: 14px;
+  border: 1px solid #e8e2d6;
+  border-top: 2px solid #b8945a;
+  border-radius: 0;
   overflow: auto;
-  background: rgba(255, 255, 255, 0.68);
+  background: #fff;
 }
 
 .table {
@@ -116,13 +117,15 @@
 
 .table thead th {
   text-align: left;
-  font-size: 12px;
-  font-weight: 800;
-  color: #6b7280;
-  padding: 12px 10px;
-  background: rgba(202, 162, 90, 0.12);
-  border-bottom: 1px solid rgba(31, 35, 40, 0.12);
+  font-size: 11px;
+  font-weight: 700;
+  color: #484848;
+  padding: 11px 10px;
+  background: #fafaf7;
+  border-bottom: 1px solid #e8e2d6;
   white-space: nowrap;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .table tbody td {

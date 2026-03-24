@@ -171,13 +171,16 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // admin inspection
-  { path: '/admin/inspections', element: <AdminInspectionList /> },
+  // admin inspection — AdminShell 안에 포함
   {
-    path: '/admin/inspections/:inspectionId',
-    element: <AdminInspectionDetail />,
+    path: '/admin/inspections',
+    element: <AdminShell />,
+    children: [
+      { index: true, element: <AdminInspectionList /> },
+      { path: 'tickets', element: <AdminOpenTickets /> },
+      { path: ':inspectionId', element: <AdminInspectionDetail /> },
+    ],
   },
-  { path: '/admin/inspections/tickets', element: <AdminOpenTickets /> },
 ]);
 
 export default router;

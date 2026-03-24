@@ -1,5 +1,6 @@
 // features/admin/pages/contract/AdminContractList.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import { withApiPrefix } from '../../../../app/http/apiBase';
@@ -23,8 +24,13 @@ const STATUS_LABELS = {
 };
 
 function StatusBadge({ status }) {
-  const key = String(status ?? '').trim().toLowerCase();
-  const s = STATUS_LABELS[key] ?? { label: status ?? '-', cls: styles.badgePending };
+  const key = String(status ?? '')
+    .trim()
+    .toLowerCase();
+  const s = STATUS_LABELS[key] ?? {
+    label: status ?? '-',
+    cls: styles.badgePending,
+  };
   return <span className={`${styles.badge} ${s.cls}`}>{s.label}</span>;
 }
 function fmtDate(v) {
@@ -52,6 +58,7 @@ function toDatetimeLocal(value) {
 
 export default function AdminContractList() {
   const [searchParams] = useSearchParams();
+  const [portalRoot, setPortalRoot] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -109,6 +116,10 @@ export default function AdminContractList() {
       setLoading(false);
     }
   }, [filter, query]);
+
+  useEffect(() => {
+    setPortalRoot(document.body);
+  }, []);
 
   useEffect(() => {
     fetchList();
@@ -460,95 +471,102 @@ export default function AdminContractList() {
       )}
 
       {/* 상세/수정 모달 */}
-      {detailModal && (
-        <div className={styles.modalOverlay} onClick={closeDetail}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>📄 계약 상세/수정</h2>
-              <button className={styles.modalClose} onClick={closeDetail}>
-                ×
-              </button>
-            </div>
+      {detailModal &&
+        portalRoot &&
+        createPortal(
+          <div className={styles.modalOverlay} onClick={closeDetail}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>📄 계약 상세/수정</h2>
+                <button className={styles.modalClose} onClick={closeDetail}>
+                  ×
+                </button>
+              </div>
 
-            <div className={styles.modalBody}>
-              {detailLoading ? (
-                <div className={styles.centerBox}>
-                  <div className={styles.spinner} />
-                  <p>불러오는 중...</p>
-                </div>
-              ) : !detail ? (
-                <div className={styles.emptyBox}>
-                  <p>계약 상세를 불러오지 못했습니다.</p>
-                </div>
-              ) : (
-                <>
-                  <p className={styles.modalDesc}>
-                    계약 <strong>#{detail.contractId}</strong> 정보를
-                    수정합니다.
-                  </p>
-
-                  {/* 상세 표시 */}
-                  <div className={styles.detailGrid}>
-                    {[
-                      [
-                        '건물',
-                        detail.buildingNm ?? detail.buildingName ?? '-',
-                      ],
-                      ['주소', detail.buildingAddr ?? '-'],
-                      [
-                        '방',
-                        `RoomNo: ${detail.roomNo ?? '-'} / RoomId: ${detail.roomId ?? '-'}`,
-                      ],
-                      [
-                        '기간',
-                        `${fmtDate(detail.contractStart)} ~ ${fmtDate(detail.contractEnd)}`,
-                      ],
-                      ['보증금', fmtMoney(detail.deposit)],
-                      ['월세/이용료', fmtMoney(detail.rentPrice)],
-                      ['관리비', fmtMoney(detail.manageFee)],
-                      ['납부일', detail.paymentDay ?? '-'],
-                      ['임대인명', detail.lessorNm ?? '-'],
-                      ['요청일', fmtDt(detail.requestedAt)],
-                      ['승인일', fmtDt(detail.approvedAt)],
-                    ].map(([label, value]) => (
-                      <div key={label} className={styles.detailRow}>
-                        <span className={styles.detailLabel}>{label}</span>
-                        <span className={styles.detailValue}>{value}</span>
-                      </div>
-                    ))}
-
-                    <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>현재 상태</span>
-                      <span className={styles.detailValue}>
-                        <StatusBadge status={detail.contractStatus} />
-                      </span>
-                    </div>
-
-                    <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>계약서</span>
-                      <span className={styles.detailValue}>
-                        {detail.contractPdfUrl ? (
-                          <a
-                            href={withApiPrefix(detail.contractPdfUrl)}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ textDecoration: 'underline' }}
-                          >
-                            다운로드
-                          </a>
-                        ) : (
-                          '-'
-                        )}
-                      </span>
-                    </div>
+              <div className={styles.modalBody}>
+                {detailLoading ? (
+                  <div className={styles.centerBox}>
+                    <div className={styles.spinner} />
+                    <p>불러오는 중...</p>
                   </div>
+                ) : !detail ? (
+                  <div className={styles.emptyBox}>
+                    <p>계약 상세를 불러오지 못했습니다.</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className={styles.modalDesc}>
+                      계약 <strong>#{detail.contractId}</strong> 정보를
+                      수정합니다.
+                    </p>
 
-                  {/* ✅ 수정 영역 */}
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>상태 변경</label>
-                    <div className={styles.statusBtnGroup}>
-                      {['requested', 'approved', 'active', 'ended', 'cancelled'].map(
-                        (v) => (
+                    {/* 상세 표시 */}
+                    <div className={styles.detailGrid}>
+                      {[
+                        [
+                          '건물',
+                          detail.buildingNm ?? detail.buildingName ?? '-',
+                        ],
+                        ['주소', detail.buildingAddr ?? '-'],
+                        [
+                          '방',
+                          `RoomNo: ${detail.roomNo ?? '-'} / RoomId: ${detail.roomId ?? '-'}`,
+                        ],
+                        [
+                          '기간',
+                          `${fmtDate(detail.contractStart)} ~ ${fmtDate(detail.contractEnd)}`,
+                        ],
+                        ['보증금', fmtMoney(detail.deposit)],
+                        ['월세/이용료', fmtMoney(detail.rentPrice)],
+                        ['관리비', fmtMoney(detail.manageFee)],
+                        ['납부일', detail.paymentDay ?? '-'],
+                        ['임대인명', detail.lessorNm ?? '-'],
+                        ['요청일', fmtDt(detail.requestedAt)],
+                        ['승인일', fmtDt(detail.approvedAt)],
+                      ].map(([label, value]) => (
+                        <div key={label} className={styles.detailRow}>
+                          <span className={styles.detailLabel}>{label}</span>
+                          <span className={styles.detailValue}>{value}</span>
+                        </div>
+                      ))}
+
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>현재 상태</span>
+                        <span className={styles.detailValue}>
+                          <StatusBadge status={detail.contractStatus} />
+                        </span>
+                      </div>
+
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>계약서</span>
+                        <span className={styles.detailValue}>
+                          {detail.contractPdfUrl ? (
+                            <a
+                              href={withApiPrefix(detail.contractPdfUrl)}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ textDecoration: 'underline' }}
+                            >
+                              다운로드
+                            </a>
+                          ) : (
+                            '-'
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* ✅ 수정 영역 */}
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>상태 변경</label>
+                      <div className={styles.statusBtnGroup}>
+                        {[
+                          'requested',
+                          'approved',
+                          'active',
+                          'ended',
+                          'cancelled',
+                        ].map((v) => (
                           <button
                             key={v}
                             type="button"
@@ -559,70 +577,70 @@ export default function AdminContractList() {
                           >
                             {STATUS_LABELS[v]?.label ?? v}
                           </button>
-                        )
-                      )}
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>
-                      입주일(moveinAt)
-                    </label>
-                    <input
-                      type="datetime-local"
-                      className={styles.searchInput}
-                      value={editMoveinAt}
-                      onChange={(e) => setEditMoveinAt(e.target.value)}
-                    />
-                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      현재: {fmtDt(detail.moveinAt)}
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>
+                        입주일(moveinAt)
+                      </label>
+                      <input
+                        type="datetime-local"
+                        className={styles.searchInput}
+                        value={editMoveinAt}
+                        onChange={(e) => setEditMoveinAt(e.target.value)}
+                      />
+                      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                        현재: {fmtDt(detail.moveinAt)}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>
-                      계약서 PDF 업로드
-                    </label>
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      onChange={(e) =>
-                        setEditPdfFile(e.target.files?.[0] ?? null)
-                      }
-                    />
-                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      선택됨: {editPdfFile?.name ?? '없음'}
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>
+                        계약서 PDF 업로드
+                      </label>
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={(e) =>
+                          setEditPdfFile(e.target.files?.[0] ?? null)
+                        }
+                      />
+                      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                        선택됨: {editPdfFile?.name ?? '없음'}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className={styles.infoBox}>
-                    저장 시: 상태 / 입주일 / PDF 중 입력된 값만 반영됩니다.
-                  </div>
-                </>
-              )}
+                    <div className={styles.infoBox}>
+                      저장 시: 상태 / 입주일 / PDF 중 입력된 값만 반영됩니다.
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className={styles.modalCancelBtn}
+                  onClick={closeDetail}
+                  disabled={saveLoading || detailLoading}
+                >
+                  닫기
+                </button>
+                <button
+                  type="button"
+                  className={styles.modalConfirmBtn}
+                  onClick={handleSave}
+                  disabled={saveLoading || detailLoading}
+                >
+                  {saveLoading ? '저장 중...' : '저장'}
+                </button>
+              </div>
             </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                type="button"
-                className={styles.modalCancelBtn}
-                onClick={closeDetail}
-                disabled={saveLoading || detailLoading}
-              >
-                닫기
-              </button>
-              <button
-                type="button"
-                className={styles.modalConfirmBtn}
-                onClick={handleSave}
-                disabled={saveLoading || detailLoading}
-              >
-                {saveLoading ? '저장 중...' : '저장'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          portalRoot
+        )}
     </div>
   );
 }

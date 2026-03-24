@@ -10,9 +10,10 @@
 }
 
 .modal {
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  background: #fdfcf9;
+  border-top: 3px solid #b8945a;
+  border-radius: 0;
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.16);
   width: 100%;
   max-width: 480px;
   max-height: 90vh;

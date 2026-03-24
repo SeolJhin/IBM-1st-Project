@@ -1,5 +1,4 @@
 // src/features/admin/components/AdminShell.jsx
-import React from 'react';
 import { Outlet } from 'react-router-dom';
 
 import Header from '../../../app/layouts/components/Header.jsx';

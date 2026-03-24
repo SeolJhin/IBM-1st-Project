@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useState, useEffect } from 'react';
 import { adminApi } from '../../api/adminApi';
 import useBuildingOptions from '../../hooks/useBuildingOptions';
@@ -166,7 +167,7 @@ export default function AdminRoomModal({ roomId, onClose, onSuccess }) {
     }
   };
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
@@ -439,5 +440,7 @@ export default function AdminRoomModal({ roomId, onClose, onSuccess }) {
         </div>
       </div>
     </div>
-  );
+  ,
+  document.body
+);
 }

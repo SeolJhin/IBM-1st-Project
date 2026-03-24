@@ -118,14 +118,15 @@
 }
 
 .btnPrimary {
-  background: #2d2d2d;
+  background: #b8945a;
   color: #fff;
-  border-color: #2d2d2d;
-  font-weight: 600;
+  border-color: #b8945a;
+  font-weight: 700;
+  border-radius: 0;
 }
 
 .btnPrimary:hover:not(:disabled) {
-  background: #444;
+  background: #a07840;
 }
 
 .btnSm {
@@ -199,8 +200,9 @@
 /* ─── 테이블 ─────────────────────────────────────────────── */
 .tableWrap {
   overflow-x: auto;
-  border: 1px solid #e8e2d4;
-  border-radius: 8px;
+  border: 1px solid #e8e2d6;
+  border-top: 2px solid #b8945a;
+  border-radius: 0;
 }
 
 .table {
@@ -211,16 +213,19 @@
 }
 
 .table thead tr {
-  background: #f5f0e8;
+  background: #fafaf7;
 }
 
 .table th {
   padding: 10px 12px;
   text-align: left;
   font-weight: 700;
-  color: #374151;
-  border-bottom: 1px solid #e8e2d4;
+  color: #484848;
+  border-bottom: 1px solid #e8e2d6;
   white-space: nowrap;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .table td {
@@ -490,9 +495,9 @@
 }
 
 .pageBtnActive {
-  background: #2d2d2d !important;
-  color: #fff !important;
-  border-color: #2d2d2d !important;
+  background: rgba(184, 148, 90, 0.18) !important;
+  color: #7c5d18 !important;
+  border-color: #b8945a !important;
   font-weight: 700;
 }
 
@@ -509,14 +514,15 @@
 }
 
 .modal {
-  background: #fff;
-  border-radius: 12px;
+  background: #fdfcf9;
+  border-top: 3px solid #b8945a;
+  border-radius: 0;
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
 }
 
 .modalHeader {

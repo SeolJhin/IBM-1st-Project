@@ -10,14 +10,15 @@
 }
 
 .modal {
-  background: #faf8f4;
-  border-radius: 20px;
+  background: #fdfcf9;
+  border-top: 3px solid #b8945a;
+  border-radius: 0;
   width: 100%;
   max-width: 680px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.16);
   overflow: hidden;
 }
 

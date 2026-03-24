@@ -1,5 +1,6 @@
 // src/features/admin/pages/inspection/AdminInspectionList.jsx
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { inspectionApi } from '../../api/inspectionApi';
 import styles from './AdminInspectionList.module.css';
@@ -270,7 +271,7 @@ export default function AdminInspectionList() {
       </div>
 
       {/* 점검 생성 모달 */}
-      {showModal && (
+      {showModal && createPortal(
         <div className={styles.overlay} onClick={closeModal}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 className={styles.modalTitle}>새 점검 등록</h3>
@@ -356,7 +357,8 @@ export default function AdminInspectionList() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -80,12 +80,17 @@
 .field input,
 .field textarea {
   width: 100%;
-  border: 1px solid rgba(31, 35, 40, 0.17);
-  border-radius: 10px;
+  border: 1px solid #e8e2d6;
+  border-radius: 0;
   background: #fff;
-  color: #1f2328;
+  color: #1a1a1a;
   font-size: 14px;
   padding: 10px 12px;
+  transition: border-color 0.18s;
+}
+.field input:focus, .field textarea:focus {
+  outline: none;
+  border-color: #b8945a;
 }
 
 .field input {
@@ -118,25 +123,27 @@
 .ghostButton,
 .primaryButton {
   height: 36px;
-  border-radius: 10px;
-  border: 1px solid rgba(31, 35, 40, 0.18);
+  border-radius: 0;
+  border: 1px solid #e8e2d6;
   font-size: 13px;
-  font-weight: 800;
-  padding: 0 12px;
+  font-weight: 700;
+  padding: 0 16px;
   cursor: pointer;
+  transition: background 0.18s;
 }
 
 .ghostButton {
-  background: rgba(255, 255, 255, 0.74);
-  color: #1f2328;
+  background: #fff;
+  color: #484848;
 }
+.ghostButton:hover { background: #f5f0e8; }
 
 .primaryButton {
-  border-color: rgba(202, 162, 90, 0.5);
-  background: rgba(202, 162, 90, 0.23);
-  color: #1f2328;
-  box-shadow: 0 8px 16px rgba(202, 162, 90, 0.18);
+  border-color: #b8945a;
+  background: #b8945a;
+  color: #fff;
 }
+.primaryButton:hover { background: #a07840; }
 
 .ghostButton:disabled,
 .primaryButton:disabled {

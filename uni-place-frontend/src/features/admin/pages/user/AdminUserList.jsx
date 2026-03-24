@@ -1,5 +1,6 @@
 // features/admin/pages/user/AdminUserList.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { adminApi } from '../../api/adminApi';
 import ErrorActionNotice from '../../../../shared/components/ErrorActionNotice/ErrorActionNotice';
 import styles from '../reservation/AdminReservation.module.css'; // ✅ 투어 예약과 동일 스타일 사용
@@ -295,7 +296,7 @@ export default function AdminUserList() {
       )}
 
       {/* ✅ 상세/수정 모달 */}
-      {detailModal && (
+      {detailModal && createPortal(
         <div className={styles.modalOverlay} onClick={closeDetail}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
@@ -393,7 +394,8 @@ export default function AdminUserList() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

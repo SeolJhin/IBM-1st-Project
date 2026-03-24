@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminPayHub.module.css';
 import PayDashboard from './AdminPayDashboard';
@@ -7,7 +6,11 @@ export default function AdminPayHub() {
   return (
     <div className={styles.wrap}>
       <div className={styles.topRow}>
-        <h1 className={styles.title}>결제관리</h1>
+        <div className={styles.titleArea}>
+          <span className={styles.eyebrow}>Payment</span>
+          <div className={styles.goldLine} />
+          <h1 className={styles.title}>결제관리</h1>
+        </div>
         <div className={styles.right} />
       </div>
 

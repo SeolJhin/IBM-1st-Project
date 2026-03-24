@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminUserHub.module.css';
 import UserDashboard from './AdminUserDashboard';
@@ -7,7 +6,11 @@ export default function AdminUserHub() {
   return (
     <div className={styles.wrap}>
       <div className={styles.topRow}>
-        <h1 className={styles.title}>회원 관리</h1>
+        <div className={styles.titleArea}>
+          <span className={styles.eyebrow}>Members</span>
+          <div className={styles.goldLine} />
+          <h1 className={styles.title}>회원 관리</h1>
+        </div>
         <div className={styles.right} />
       </div>
 

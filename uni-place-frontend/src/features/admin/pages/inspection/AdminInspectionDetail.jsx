@@ -1,5 +1,6 @@
 // src/features/admin/pages/inspection/AdminInspectionDetail.jsx
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
 import { inspectionApi } from '../../api/inspectionApi';
 import styles from './AdminInspectionDetail.module.css';
@@ -298,7 +299,7 @@ export default function AdminInspectionDetail() {
       </div>
 
       {/* 이미지 라이트박스 */}
-      {lightbox && (
+      {lightbox && createPortal(
         <div
           className={styles.lightboxOverlay}
           onClick={() => setLightbox(null)}
@@ -322,7 +323,8 @@ export default function AdminInspectionDetail() {
               className={styles.lightboxImage}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

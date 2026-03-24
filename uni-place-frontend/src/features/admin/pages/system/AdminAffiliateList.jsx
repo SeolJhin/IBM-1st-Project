@@ -1,5 +1,6 @@
 // features/admin/pages/system/AdminAffiliateList.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { adminApi } from '../../api/adminApi';
 import styles from '../reservation/AdminReservation.module.css';
 
@@ -638,534 +639,548 @@ export default function AdminAffiliateList() {
       )}
 
       {/* 등록 모달 */}
-      {createModal && (
-        <div className={styles.modalOverlay} onClick={closeCreate}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>🤝 제휴 등록</h2>
-              <button className={styles.modalClose} onClick={closeCreate}>
-                ×
-              </button>
-            </div>
-
-            <div className={styles.modalBody}>
-              <p className={styles.modalDesc}>제휴 정보를 입력합니다.</p>
-
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>건물 ID *</label>
-                <input
-                  type="number"
-                  className={styles.searchInput}
-                  value={createForm.buildingId}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, buildingId: e.target.value }))
-                  }
-                />
+      {createModal &&
+        createPortal(
+          <div className={styles.modalOverlay} onClick={closeCreate}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>🤝 제휴 등록</h2>
+                <button className={styles.modalClose} onClick={closeCreate}>
+                  ×
+                </button>
               </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>업체명 *</label>
-                <input
-                  className={styles.searchInput}
-                  value={createForm.affiliateNm}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      affiliateNm: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+              <div className={styles.modalBody}>
+                <p className={styles.modalDesc}>제휴 정보를 입력합니다.</p>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>상태</label>
-                <select
-                  className={styles.filterSelect}
-                  value={createForm.affiliateSt}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      affiliateSt: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="planned">예정</option>
-                  <option value="progress">진행</option>
-                  <option value="ended">종료</option>
-                </select>
-              </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>건물 ID *</label>
+                  <input
+                    type="number"
+                    className={styles.searchInput}
+                    value={createForm.buildingId}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        buildingId: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>전화</label>
-                <input
-                  className={styles.searchInput}
-                  value={createForm.affiliateTel}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      affiliateTel: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>업체명 *</label>
+                  <input
+                    className={styles.searchInput}
+                    value={createForm.affiliateNm}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        affiliateNm: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>대표자</label>
-                <input
-                  className={styles.searchInput}
-                  value={createForm.affiliateCeo}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      affiliateCeo: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>상태</label>
+                  <select
+                    className={styles.filterSelect}
+                    value={createForm.affiliateSt}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        affiliateSt: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="planned">예정</option>
+                    <option value="progress">진행</option>
+                    <option value="ended">종료</option>
+                  </select>
+                </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>사업자번호</label>
-                <input
-                  className={styles.searchInput}
-                  value={createForm.businessNo}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, businessNo: e.target.value }))
-                  }
-                />
-              </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>전화</label>
+                  <input
+                    className={styles.searchInput}
+                    value={createForm.affiliateTel}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        affiliateTel: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>팩스</label>
-                <input
-                  className={styles.searchInput}
-                  value={createForm.affiliateFax}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      affiliateFax: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>대표자</label>
+                  <input
+                    className={styles.searchInput}
+                    value={createForm.affiliateCeo}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        affiliateCeo: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>이메일</label>
-                <input
-                  className={styles.searchInput}
-                  value={createForm.affiliateEmail}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      affiliateEmail: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>사업자번호</label>
+                  <input
+                    className={styles.searchInput}
+                    value={createForm.businessNo}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        businessNo: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>주소</label>
-                <input
-                  className={styles.searchInput}
-                  value={createForm.affiliateAddr}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      affiliateAddr: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>팩스</label>
+                  <input
+                    className={styles.searchInput}
+                    value={createForm.affiliateFax}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        affiliateFax: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
 
-              {/* ✅ 드롭다운 적용 */}
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>분류(code)</label>
-                <select
-                  className={styles.filterSelect}
-                  value={createForm.code || ''}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, code: e.target.value }))
-                  }
-                  disabled={codeLoading}
-                >
-                  <option value="">
-                    {codeLoading ? '불러오는 중...' : '선택 안 함'}
-                  </option>
-                  {codeOptions.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.codeValue ? `${c.codeValue} (${c.code})` : c.code}
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>이메일</label>
+                  <input
+                    className={styles.searchInput}
+                    value={createForm.affiliateEmail}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        affiliateEmail: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>주소</label>
+                  <input
+                    className={styles.searchInput}
+                    value={createForm.affiliateAddr}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        affiliateAddr: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* ✅ 드롭다운 적용 */}
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>분류(code)</label>
+                  <select
+                    className={styles.filterSelect}
+                    value={createForm.code || ''}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({ ...f, code: e.target.value }))
+                    }
+                    disabled={codeLoading}
+                  >
+                    <option value="">
+                      {codeLoading ? '불러오는 중...' : '선택 안 함'}
                     </option>
-                  ))}
-                </select>
+                    {codeOptions.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.codeValue ? `${c.codeValue} (${c.code})` : c.code}
+                      </option>
+                    ))}
+                  </select>
 
-                {/* 참고용 표시 */}
-                {createForm.code ? (
-                  <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                    선택: <strong>{createForm.code}</strong>
-                    {getCodeLabel(createForm.code) ? (
-                      <> / {getCodeLabel(createForm.code)}</>
-                    ) : null}
-                  </div>
-                ) : null}
+                  {/* 참고용 표시 */}
+                  {createForm.code ? (
+                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                      선택: <strong>{createForm.code}</strong>
+                      {getCodeLabel(createForm.code) ? (
+                        <> / {getCodeLabel(createForm.code)}</>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>시작일(선택)</label>
+                  <input
+                    type="datetime-local"
+                    className={styles.searchInput}
+                    value={createForm.affiliateStartAt}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        affiliateStartAt: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>종료일(선택)</label>
+                  <input
+                    type="datetime-local"
+                    className={styles.searchInput}
+                    value={createForm.affiliateEndAt}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        affiliateEndAt: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>제휴 내용</label>
+                  <textarea
+                    className={styles.searchInput}
+                    rows={5}
+                    value={createForm.affiliateDesc}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        affiliateDesc: e.target.value,
+                      }))
+                    }
+                    placeholder="제휴 설명/혜택/유의사항 등"
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+
+                <div className={styles.infoBox}>
+                  * 필수: <strong>건물 ID</strong>, <strong>업체명</strong>
+                </div>
               </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>시작일(선택)</label>
-                <input
-                  type="datetime-local"
-                  className={styles.searchInput}
-                  value={createForm.affiliateStartAt}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      affiliateStartAt: e.target.value,
-                    }))
-                  }
-                />
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className={styles.modalCancelBtn}
+                  onClick={closeCreate}
+                  disabled={createLoading}
+                >
+                  닫기
+                </button>
+                <button
+                  type="button"
+                  className={styles.modalConfirmBtn}
+                  onClick={handleCreate}
+                  disabled={createLoading}
+                >
+                  {createLoading ? '등록 중...' : '등록'}
+                </button>
               </div>
-
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>종료일(선택)</label>
-                <input
-                  type="datetime-local"
-                  className={styles.searchInput}
-                  value={createForm.affiliateEndAt}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      affiliateEndAt: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>제휴 내용</label>
-                <textarea
-                  className={styles.searchInput}
-                  rows={5}
-                  value={createForm.affiliateDesc}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      affiliateDesc: e.target.value,
-                    }))
-                  }
-                  placeholder="제휴 설명/혜택/유의사항 등"
-                  style={{ resize: 'vertical' }}
-                />
-              </div>
-
-              <div className={styles.infoBox}>
-                * 필수: <strong>건물 ID</strong>, <strong>업체명</strong>
-              </div>
-            </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                type="button"
-                className={styles.modalCancelBtn}
-                onClick={closeCreate}
-                disabled={createLoading}
-              >
-                닫기
-              </button>
-              <button
-                type="button"
-                className={styles.modalConfirmBtn}
-                onClick={handleCreate}
-                disabled={createLoading}
-              >
-                {createLoading ? '등록 중...' : '등록'}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* 상세/수정 모달 */}
-      {detailModal && (
-        <div className={styles.modalOverlay} onClick={closeDetail}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>🤝 제휴 상세/수정</h2>
-              <button className={styles.modalClose} onClick={closeDetail}>
-                ×
-              </button>
-            </div>
+      {detailModal &&
+        createPortal(
+          <div className={styles.modalOverlay} onClick={closeDetail}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>🤝 제휴 상세/수정</h2>
+                <button className={styles.modalClose} onClick={closeDetail}>
+                  ×
+                </button>
+              </div>
 
-            <div className={styles.modalBody}>
-              {detailLoading ? (
-                <div className={styles.centerBox}>
-                  <div className={styles.spinner} />
-                  <p>불러오는 중...</p>
-                </div>
-              ) : !detail ? (
-                <div className={styles.emptyBox}>
-                  <p>제휴 상세를 불러오지 못했습니다.</p>
-                </div>
-              ) : (
-                <>
-                  <p className={styles.modalDesc}>
-                    제휴 <strong>#{detailModal}</strong> 정보를 수정합니다.
-                  </p>
+              <div className={styles.modalBody}>
+                {detailLoading ? (
+                  <div className={styles.centerBox}>
+                    <div className={styles.spinner} />
+                    <p>불러오는 중...</p>
+                  </div>
+                ) : !detail ? (
+                  <div className={styles.emptyBox}>
+                    <p>제휴 상세를 불러오지 못했습니다.</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className={styles.modalDesc}>
+                      제휴 <strong>#{detailModal}</strong> 정보를 수정합니다.
+                    </p>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>상태</label>
-                    <div className={styles.statusBtnGroup}>
-                      {[
-                        { value: 'planned', label: '예정' },
-                        { value: 'progress', label: '진행' },
-                        { value: 'ended', label: '종료' },
-                      ].map((o) => (
-                        <button
-                          key={o.value}
-                          type="button"
-                          className={`${styles.statusPickBtn} ${
-                            editForm.affiliateSt === o.value
-                              ? styles.statusPickBtnActive
-                              : ''
-                          }`}
-                          onClick={() =>
-                            setEditForm((f) => ({ ...f, affiliateSt: o.value }))
-                          }
-                        >
-                          {o.label}
-                        </button>
-                      ))}
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>상태</label>
+                      <div className={styles.statusBtnGroup}>
+                        {[
+                          { value: 'planned', label: '예정' },
+                          { value: 'progress', label: '진행' },
+                          { value: 'ended', label: '종료' },
+                        ].map((o) => (
+                          <button
+                            key={o.value}
+                            type="button"
+                            className={`${styles.statusPickBtn} ${
+                              editForm.affiliateSt === o.value
+                                ? styles.statusPickBtnActive
+                                : ''
+                            }`}
+                            onClick={() =>
+                              setEditForm((f) => ({
+                                ...f,
+                                affiliateSt: o.value,
+                              }))
+                            }
+                          >
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>건물 ID *</label>
-                    <input
-                      type="number"
-                      className={styles.searchInput}
-                      value={editForm.buildingId}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          buildingId: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>건물 ID *</label>
+                      <input
+                        type="number"
+                        className={styles.searchInput}
+                        value={editForm.buildingId}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            buildingId: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>업체명 *</label>
-                    <input
-                      className={styles.searchInput}
-                      value={editForm.affiliateNm}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          affiliateNm: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>업체명 *</label>
+                      <input
+                        className={styles.searchInput}
+                        value={editForm.affiliateNm}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            affiliateNm: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>전화</label>
-                    <input
-                      className={styles.searchInput}
-                      value={editForm.affiliateTel}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          affiliateTel: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>전화</label>
+                      <input
+                        className={styles.searchInput}
+                        value={editForm.affiliateTel}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            affiliateTel: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>대표자</label>
-                    <input
-                      className={styles.searchInput}
-                      value={editForm.affiliateCeo}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          affiliateCeo: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>대표자</label>
+                      <input
+                        className={styles.searchInput}
+                        value={editForm.affiliateCeo}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            affiliateCeo: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>사업자번호</label>
-                    <input
-                      className={styles.searchInput}
-                      value={editForm.businessNo}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          businessNo: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>사업자번호</label>
+                      <input
+                        className={styles.searchInput}
+                        value={editForm.businessNo}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            businessNo: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>팩스</label>
-                    <input
-                      className={styles.searchInput}
-                      value={editForm.affiliateFax}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          affiliateFax: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>팩스</label>
+                      <input
+                        className={styles.searchInput}
+                        value={editForm.affiliateFax}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            affiliateFax: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>이메일</label>
-                    <input
-                      className={styles.searchInput}
-                      value={editForm.affiliateEmail}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          affiliateEmail: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>이메일</label>
+                      <input
+                        className={styles.searchInput}
+                        value={editForm.affiliateEmail}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            affiliateEmail: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>주소</label>
-                    <input
-                      className={styles.searchInput}
-                      value={editForm.affiliateAddr}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          affiliateAddr: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>주소</label>
+                      <input
+                        className={styles.searchInput}
+                        value={editForm.affiliateAddr}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            affiliateAddr: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
 
-                  {/* ✅ 드롭다운 적용 */}
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>분류(code)</label>
-                    <select
-                      className={styles.filterSelect}
-                      value={editForm.code || ''}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, code: e.target.value }))
-                      }
-                      disabled={codeLoading}
-                    >
-                      <option value="">
-                        {codeLoading ? '불러오는 중...' : '선택 안 함'}
-                      </option>
-                      {codeOptions.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.codeValue ? `${c.codeValue} (${c.code})` : c.code}
+                    {/* ✅ 드롭다운 적용 */}
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>분류(code)</label>
+                      <select
+                        className={styles.filterSelect}
+                        value={editForm.code || ''}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, code: e.target.value }))
+                        }
+                        disabled={codeLoading}
+                      >
+                        <option value="">
+                          {codeLoading ? '불러오는 중...' : '선택 안 함'}
                         </option>
-                      ))}
-                    </select>
+                        {codeOptions.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.codeValue
+                              ? `${c.codeValue} (${c.code})`
+                              : c.code}
+                          </option>
+                        ))}
+                      </select>
 
-                    {/* 현재 값 표시 */}
-                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      현재: {detail?.code ?? '-'}
-                      {detail?.code && getCodeLabel(detail.code)
-                        ? ` / ${getCodeLabel(detail.code)}`
-                        : ''}
+                      {/* 현재 값 표시 */}
+                      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                        현재: {detail?.code ?? '-'}
+                        {detail?.code && getCodeLabel(detail.code)
+                          ? ` / ${getCodeLabel(detail.code)}`
+                          : ''}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>시작일(선택)</label>
-                    <input
-                      type="datetime-local"
-                      className={styles.searchInput}
-                      value={editForm.affiliateStartAt}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          affiliateStartAt: e.target.value,
-                        }))
-                      }
-                    />
-                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      현재: {fmtDt(detail.affiliateStartAt)}
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>시작일(선택)</label>
+                      <input
+                        type="datetime-local"
+                        className={styles.searchInput}
+                        value={editForm.affiliateStartAt}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            affiliateStartAt: e.target.value,
+                          }))
+                        }
+                      />
+                      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                        현재: {fmtDt(detail.affiliateStartAt)}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>종료일(선택)</label>
-                    <input
-                      type="datetime-local"
-                      className={styles.searchInput}
-                      value={editForm.affiliateEndAt}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          affiliateEndAt: e.target.value,
-                        }))
-                      }
-                    />
-                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      현재: {fmtDt(detail.affiliateEndAt)}
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>종료일(선택)</label>
+                      <input
+                        type="datetime-local"
+                        className={styles.searchInput}
+                        value={editForm.affiliateEndAt}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            affiliateEndAt: e.target.value,
+                          }))
+                        }
+                      />
+                      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                        현재: {fmtDt(detail.affiliateEndAt)}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>제휴 내용</label>
-                    <textarea
-                      className={styles.searchInput}
-                      rows={6}
-                      value={editForm.affiliateDesc}
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          affiliateDesc: e.target.value,
-                        }))
-                      }
-                      placeholder="제휴 설명/혜택/유의사항 등"
-                      style={{ resize: 'vertical' }}
-                    />
-                  </div>
-                </>
-              )}
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>제휴 내용</label>
+                      <textarea
+                        className={styles.searchInput}
+                        rows={6}
+                        value={editForm.affiliateDesc}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            affiliateDesc: e.target.value,
+                          }))
+                        }
+                        placeholder="제휴 설명/혜택/유의사항 등"
+                        style={{ resize: 'vertical' }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className={styles.modalCancelBtn}
+                  onClick={closeDetail}
+                  disabled={saveLoading || detailLoading}
+                >
+                  닫기
+                </button>
+
+                <button
+                  type="button"
+                  className={styles.modalCancelBtn}
+                  onClick={handleDelete}
+                  disabled={saveLoading || detailLoading}
+                  style={{ marginLeft: 8 }}
+                >
+                  삭제
+                </button>
+
+                <button
+                  type="button"
+                  className={styles.modalConfirmBtn}
+                  onClick={handleSave}
+                  disabled={saveLoading || detailLoading}
+                >
+                  {saveLoading ? '저장 중...' : '저장'}
+                </button>
+              </div>
             </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                type="button"
-                className={styles.modalCancelBtn}
-                onClick={closeDetail}
-                disabled={saveLoading || detailLoading}
-              >
-                닫기
-              </button>
-
-              <button
-                type="button"
-                className={styles.modalCancelBtn}
-                onClick={handleDelete}
-                disabled={saveLoading || detailLoading}
-                style={{ marginLeft: 8 }}
-              >
-                삭제
-              </button>
-
-              <button
-                type="button"
-                className={styles.modalConfirmBtn}
-                onClick={handleSave}
-                disabled={saveLoading || detailLoading}
-              >
-                {saveLoading ? '저장 중...' : '저장'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -1,10 +1,26 @@
-/* src/features/admin/pages/inspection/AdminInspectionList.module.css */
+/* ═══════════════════════════════════════════════════════════════
+   AdminInspectionList.module.css  ·  VIVADE Edition
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+:root {
+  --primary: #b8945a;
+  --border: #e8e2d6;
+}
 
 .wrap {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 24px;
+  max-width: 1100px;
+  width: 100%;
+  min-width: 0;
+  margin: 0 auto;
+  animation: fadeInUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .topRow {
@@ -12,19 +28,22 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
 }
 
 .title {
   margin: 0;
   font-size: 20px;
   font-weight: 900;
-  color: #1f2328;
+  color: #1a1a1a;
 }
 
 .sub {
   margin: 4px 0 0;
-  font-size: 13px;
-  color: #6b7280;
+  font-size: 12px;
+  color: #9a9080;
+  letter-spacing: 0.02em;
 }
 
 .actions {
@@ -32,143 +51,139 @@
   gap: 8px;
 }
 
+/* ── 버튼 ── */
 .btnCreate {
   height: 36px;
-  padding: 0 16px;
-  background: #caa25a;
+  padding: 0 18px;
+  background: var(--primary);
   color: #fff;
   font-weight: 700;
   font-size: 13px;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background 0.18s;
 }
-.btnCreate:hover {
-  background: #b8903f;
-}
+.btnCreate:hover { background: #a07840; }
 
 .btnTicket {
   height: 36px;
-  padding: 0 16px;
+  padding: 0 18px;
   background: #dc2626;
   color: #fff;
   font-weight: 700;
   font-size: 13px;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.18s;
 }
-.btnTicket:hover {
-  background: #b91c1c;
-}
+.btnTicket:hover { background: #b91c1c; }
 
+/* ── 에러 ── */
 .error {
   padding: 10px 14px;
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.06);
+  border: 1px solid rgba(220, 38, 38, 0.3);
   color: #dc2626;
   font-size: 13px;
 }
 
+/* ── 테이블 ── */
 .tableWrap {
   overflow-x: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--primary);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  background: #fff;
 }
 
 .table th {
-  background: #f9fafb;
+  background: #fafaf7;
   font-weight: 700;
-  color: #374151;
+  color: #484848;
   padding: 10px 14px;
   text-align: left;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .table td {
-  padding: 10px 14px;
-  color: #1f2328;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 11px 14px;
+  color: #1a1a1a;
+  border-bottom: 1px solid #f0ece4;
 }
 
-.table tr:last-child td {
-  border-bottom: none;
-}
+.table tr:last-child td { border-bottom: none; }
+
+.table tr:hover td { background: #fffdf9; }
 
 .center {
   text-align: center;
-  color: #6b7280;
+  color: #9a9080;
 }
 
+/* ── 뱃지 ── */
 .badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 999px;
   border: 1px solid;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  background: transparent;
 }
 
+/* ── 테이블 버튼 ── */
 .btnDetail {
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-size: 12px;
   font-weight: 700;
-  border: 1px solid rgba(202, 162, 90, 0.5);
-  background: rgba(202, 162, 90, 0.18);
-  border-radius: 8px;
+  border: 1px solid rgba(184, 148, 90, 0.5);
+  background: rgba(184, 148, 90, 0.12);
   cursor: pointer;
-  color: #1f2328;
+  color: #1a1a1a;
+  transition: background 0.15s;
 }
-.btnDetail:hover {
-  background: rgba(202, 162, 90, 0.35);
-}
+.btnDetail:hover { background: rgba(184, 148, 90, 0.28); }
 
 .btnDelete {
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-size: 12px;
   font-weight: 700;
-  border: 1px solid rgba(220, 38, 38, 0.4);
-  background: rgba(220, 38, 38, 0.08);
-  border-radius: 8px;
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.06);
   cursor: pointer;
   color: #dc2626;
+  transition: background 0.15s;
 }
-.btnDelete:hover {
-  background: rgba(220, 38, 38, 0.18);
-}
-.btnDelete:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.btnDelete:hover { background: rgba(220, 38, 38, 0.14); }
+.btnDelete:disabled { opacity: 0.35; cursor: not-allowed; }
 
+/* ── 페이징 ── */
 .paging {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  font-size: 14px;
-  color: #374151;
+  font-size: 13px;
+  color: #484848;
 }
 .paging button {
-  padding: 4px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  padding: 4px 14px;
+  border: 1px solid var(--border);
   background: #fff;
   cursor: pointer;
   font-size: 13px;
+  transition: background 0.15s;
 }
-.paging button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.paging button:hover { background: #fffdf9; }
+.paging button:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ── 모달 ── */
 .overlay {
@@ -182,8 +197,8 @@
 }
 
 .modal {
-  background: #fff;
-  border-radius: 16px;
+  background: #fdfcf9;
+  border-top: 3px solid var(--primary);
   padding: 28px 32px;
   width: 480px;
   max-width: 96vw;
@@ -198,12 +213,12 @@
   margin: 0;
   font-size: 18px;
   font-weight: 900;
-  color: #1f2328;
+  color: #1a1a1a;
 }
 .modalSub {
   margin: 0;
   font-size: 13px;
-  color: #6b7280;
+  color: #9a9080;
   line-height: 1.5;
 }
 
@@ -213,39 +228,39 @@
   gap: 6px;
 }
 .field label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: #374151;
+  color: #484848;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .field input,
 .field select,
 .field textarea {
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 0;
   font-size: 14px;
-  color: #1f2328;
-  background: #f9fafb;
+  color: #1a1a1a;
+  background: #fff;
+  transition: border-color 0.18s;
 }
-.field textarea {
-  resize: vertical;
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
 }
-.required {
-  color: #dc2626;
-}
+.field textarea { resize: vertical; }
+.required { color: #dc2626; }
 
-.fileInput {
-  padding: 4px 0;
-  background: none;
-  border: none;
-}
+.fileInput { padding: 4px 0; background: none; border: none; }
 
 .preview {
   width: 100%;
   max-height: 200px;
   object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
 }
 
 .modalActions {
@@ -258,31 +273,24 @@
 .btnCancel {
   height: 38px;
   padding: 0 18px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   background: #fff;
-  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
+  transition: background 0.15s;
 }
-.btnCancel:hover {
-  background: #f3f4f6;
-}
+.btnCancel:hover { background: #f5f0e8; }
 
 .btnSubmit {
   height: 38px;
-  padding: 0 20px;
-  background: #caa25a;
+  padding: 0 22px;
+  background: var(--primary);
   color: #fff;
   font-weight: 700;
   font-size: 14px;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.18s;
 }
-.btnSubmit:hover {
-  background: #b8903f;
-}
-.btnSubmit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+.btnSubmit:hover { background: #a07840; }
+.btnSubmit:disabled { opacity: 0.55; cursor: not-allowed; }

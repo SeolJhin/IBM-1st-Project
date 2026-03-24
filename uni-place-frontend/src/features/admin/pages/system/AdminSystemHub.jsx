@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminSystemHub.module.css';
 import SystemDashboard from './AdminSystemDashboard';
@@ -7,7 +6,11 @@ export default function AdminSystemHub() {
   return (
     <div className={styles.wrap}>
       <div className={styles.topRow}>
-        <h1 className={styles.title}>시스템 관리</h1>
+        <div className={styles.titleArea}>
+          <span className={styles.eyebrow}>System</span>
+          <div className={styles.goldLine} />
+          <h1 className={styles.title}>시스템 관리</h1>
+        </div>
         <div className={styles.right} />
       </div>
 
