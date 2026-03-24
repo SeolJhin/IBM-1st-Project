@@ -16,6 +16,7 @@ Groq 429 오류 시 TPD 한도가 별도인 모델로 자동 전환:
 """
 import json
 import logging
+import time as _time
 
 from openai import OpenAI, RateLimitError
 
@@ -29,6 +30,8 @@ from app.services.tools.tool_result_formatter import format_tool_result
 from app.integrations.milvus_client import search_vectors as _milvus_search
 from app.services.orchestrator.alias_registry import (
     get_space_keywords,
+    get_spaces,
+    get_space_option_aliases,
     build_system_prompt_section,
     get_dynamic_prod_aliases,
     get_products,
@@ -547,6 +550,24 @@ def _extract_buttons(answer: str) -> tuple[str, list[dict]]:
     buttons = []
     clean_answer = answer
 
+    # 형식 0: ```json [...] ``` 마크다운 코드블록 안의 버튼 배열
+    # LLM이 __BUTTONS__ 대신 코드블록으로 버튼 JSON을 반환하는 경우 처리
+    pattern_md = r'```(?:json)?\s*(\[.*?\])\s*```'
+    md_match = re.search(pattern_md, answer, re.DOTALL)
+    if md_match:
+        raw_md = md_match.group(1).replace('{{', '{').replace('}}', '}')
+        try:
+            parsed_md = _json.loads(raw_md)
+            if isinstance(parsed_md, list) and parsed_md and isinstance(parsed_md[0], dict):
+                first_md = parsed_md[0]
+                # 버튼 배열인지 확인 (label + url 키 존재)
+                if "label" in first_md and "url" in first_md:
+                    buttons = [b for b in parsed_md if isinstance(b, dict) and b.get("url")]
+                    clean_answer = answer[:md_match.start()].strip()
+                    return clean_answer, buttons
+        except Exception:
+            pass
+
     # 형식 1: __BUTTONS__[...]
     pattern1 = r'__BUTTONS__\s*(\[.*?\])'
     match = re.search(pattern1, answer, re.DOTALL)
@@ -645,6 +666,7 @@ def run_tool_orchestrator(req: AiRequest) -> AiResponse:
 def _force_space_query(user_id: str, prompt: str) -> "AiResponse":
     """LLM이 tool을 실행하지 않을 때 공용공간 조회를 Python에서 직접 실행."""
     import datetime as _dt
+    import difflib as _difflib
     import re as _re2
 
     # 예약 의도 감지 — 조회는 계약 없어도 허용, 예약만 계약 필요
@@ -726,6 +748,151 @@ def _force_space_query(user_id: str, prompt: str) -> "AiResponse":
     logger.info("[ToolOrchestrator] _force_space_query building=%s spaces=%d건", _building_nm, len(_s2_data))
     if not _s2_data:
         return AiResponse(answer=f"{_building_nm} 건물에 등록된 공용공간이 없습니다.", confidence=0.90)
+
+    def _norm_text(_v: str) -> str:
+        return _re2.sub(r"\s+", "", str(_v or "").lower()).strip()
+
+    _prompt_norm = _norm_text(prompt)
+    _prompt_lower = str(prompt or "").lower()
+
+    # alias_registry에서 읽은 공간명/별칭 사용
+    _dynamic_spaces = get_spaces() or []
+
+    def _aliases_for_space(_space_row: dict) -> set[str]:
+        _aliases: set[str] = set()
+        _nm = str(_space_row.get("space_nm", "") or "")
+        _opt = str(_space_row.get("space_options", "") or "").lower()
+        if _nm:
+            _aliases.add(_norm_text(_nm))
+            for _tok in _re2.split(r"[\s/,_\-()]+", _nm):
+                _tok_n = _norm_text(_tok)
+                if len(_tok_n) >= 2:
+                    _aliases.add(_tok_n)
+        for _a in get_space_option_aliases(_opt):
+            _aliases.add(_norm_text(_a))
+        for _d in _dynamic_spaces:
+            if _norm_text(_d.get("space_nm", "")) == _norm_text(_nm):
+                for _a in (_d.get("aliases") or []):
+                    _aliases.add(_norm_text(_a))
+        _aliases.discard("")
+        return _aliases
+
+    # 프롬프트에 특정 공간명이 있으면 해당 공간만 필터링
+    _matched_spaces = []
+    _space_aliases_by_id = {}
+    for _sp in _s2_data:
+        _als = _aliases_for_space(_sp)
+        _space_aliases_by_id[str(_sp.get("space_id"))] = _als
+        if any((_a and _a in _prompt_norm) for _a in _als):
+            _matched_spaces.append(_sp)
+
+    # 2차: exact 미매칭 시 fuzzy 매칭(오타 대응)
+    if not _matched_spaces:
+        _GENERIC_TOKENS = {
+            "공용공간",
+            "공용공간명",
+            "공간",
+            "공간명",
+            "시설",
+            "시설명",
+            "공용시설",
+            "예약",
+            "예약가능",
+            "예약가능한",
+            "시간",
+            "시간대",
+            "가능",
+            "가능한",
+            "언제",
+            "조회",
+            "추천",
+            "내일",
+            "오늘",
+            "이번주",
+            "다음주",
+            "해당",
+            "건물",
+            "부탁",
+            "해주세요",
+            "해줘",
+            "좀",
+        }
+
+        _prompt_tokens = []
+        for _tok in _re2.split(r"[\s/,_\-\(\)\[\]\{\}\.\?!:;\"'`~]+", _prompt_lower):
+            _n = _norm_text(_tok)
+            if len(_n) < 2:
+                continue
+            if _n in _GENERIC_TOKENS:
+                continue
+            _prompt_tokens.append(_n)
+
+        _space_scores: dict[str, int] = {}
+        _space_hit: dict[str, tuple[str, str]] = {}
+        for _sp in _s2_data:
+            _sid = str(_sp.get("space_id"))
+            _best_score = 0
+            _best_pair: tuple[str, str] | None = None
+            for _tok in _prompt_tokens:
+                for _alias in _space_aliases_by_id.get(_sid, set()):
+                    if len(_alias) < 2:
+                        continue
+                    _score = int(_difflib.SequenceMatcher(None, _tok, _alias).ratio() * 100)
+                    if _score > _best_score:
+                        _best_score = _score
+                        _best_pair = (_tok, _alias)
+            if _best_score > 0 and _best_pair:
+                _space_scores[_sid] = _best_score
+                _space_hit[_sid] = _best_pair
+
+        if _space_scores:
+            _ranked = sorted(
+                _s2_data,
+                key=lambda _sp: _space_scores.get(str(_sp.get("space_id")), 0),
+                reverse=True,
+            )
+            _top = _ranked[0]
+            _top_sid = str(_top.get("space_id"))
+            _top_score = _space_scores.get(_top_sid, 0)
+            _second_score = (
+                _space_scores.get(str(_ranked[1].get("space_id")), 0)
+                if len(_ranked) > 1
+                else 0
+            )
+
+            # 실무 기준: 84 이상이면 채택, 단 2순위와 4점 이내면 모호로 재질문
+            if _top_score >= 84 and (_second_score == 0 or (_top_score - _second_score) >= 4):
+                _matched_spaces = [_top]
+                _tok, _alias = _space_hit.get(_top_sid, ("", ""))
+                logger.info(
+                    "[_force_space_query] fuzzy 매칭 채택 building=%s space=%s score=%d token=%s alias=%s",
+                    _building_nm,
+                    _top.get("space_nm", ""),
+                    _top_score,
+                    _tok,
+                    _alias,
+                )
+            elif _top_score >= 80:
+                _cands = _ranked[:2]
+                _cand_names = [str(_c.get("space_nm", "")) for _c in _cands if _c.get("space_nm")]
+                _name_text = " / ".join(_cand_names) if _cand_names else "공간명"
+                return AiResponse(
+                    answer=(
+                        f"요청하신 공간명을 정확히 특정하지 못했습니다. "
+                        f"혹시 {_name_text} 중 어떤 공간을 말씀하셨나요?"
+                    ),
+                    confidence=0.92,
+                )
+
+    if _matched_spaces:
+        logger.info(
+            "[_force_space_query] 공간명 매칭 적용 building=%s matched=%d/%d prompt=%s",
+            _building_nm,
+            len(_matched_spaces),
+            len(_s2_data),
+            prompt,
+        )
+        _s2_data = _matched_spaces
 
     # 날짜 계산
     _target_dates = []  # 조회할 날짜 목록 (단일 또는 오늘+내일)
@@ -1044,6 +1211,20 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
     if client is None:
         return AiResponse(answer="AI 서비스 설정이 필요합니다.", confidence=0.0)
 
+    # ── 투어 시간 유효성 검사 (10:00/14:00/16:00 외 입력 시 Python이 선제 차단) ──
+    # LLM이 규칙을 무시하고 버튼만 반환하는 것을 방지
+    if _detect_ongoing_intent(history) == "tour":
+        import re as _re_time
+        _time_match = _re_time.search(r'(\d{1,2})\s*시', prompt)
+        if _time_match:
+            _hour = int(_time_match.group(1))
+            if _hour not in (10, 14, 16):
+                logger.info("[ToolOrchestrator] 투어 시간 유효성 실패 hour=%d → 재선택 유도", _hour)
+                return AiResponse(
+                    answer="투어 예약 가능 시간은 10:00, 14:00, 16:00 중 하나입니다. 어떤 시간을 선택하시겠어요?",
+                    confidence=1.0,
+                )
+
     # ── 룸서비스 주문 명령 선제 감지 (LLM 호출 전) ────────────────────────────
     # 입주민 계정 여부와 관계없이 "주문 명령"으로 판단되면 바로 페이지 이동 버튼 제공.
     # AI가 "준비해 드리겠습니다" 같은 오해 응답을 생성하는 것을 방지.
@@ -1321,6 +1502,10 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
         if not _retried:
             # 모든 fallback도 실패 → 텍스트 정리 후 반환
             answer = _clean_function_call_text(raw_content)
+            _space_keywords = get_space_keywords()
+            if user_id and any(kw in prompt for kw in _space_keywords):
+                logger.warning("[ToolOrchestrator] fallback 전부 실패 + 공용공간 키워드 → _force_space_query")
+                return _force_space_query(user_id, prompt)
             if not answer:
                 answer = "죄송합니다, 잠시 후 다시 시도해주세요."
             return AiResponse(answer=answer, confidence=0.50)
@@ -1777,15 +1962,27 @@ def _call_with_fallback(client, provider: str, start_model: str, kwargs: dict):
             except RateLimitError as e:
                 logger.warning("[ToolOrchestrator] 429 model=%s key_idx=%s → 다음 키/모델 시도", model, _ki)
                 last_error = e
+                _time.sleep(0.25)
                 continue
 
             except Exception as e:
                 err_str = str(e)
+                err_l = err_str.lower()
                 # 모델 지원 종료(400) 또는 rate limit 계열이면 다음 모델 시도
-                if "decommissioned" in err_str or "model_not_found" in err_str or "400" in err_str:
+                if "decommissioned" in err_l or "model_not_found" in err_l or "400" in err_l:
                     logger.warning("[ToolOrchestrator] 모델 사용 불가 model=%s → 다음 모델 시도", model)
                     last_error = e
                     break  # 이 모델의 모든 키 시도 종료 → 다음 모델로
+                _transient_tokens = [
+                    "timeout", "timed out", "connection reset", "connection aborted",
+                    "temporarily unavailable", "service unavailable", "overloaded",
+                    "upstream", "bad gateway", "502", "503", "504", "429", "rate limit",
+                ]
+                if any(t in err_l for t in _transient_tokens):
+                    logger.warning("[ToolOrchestrator] 일시 오류 model=%s → 재시도/다음 모델: %s", model, e)
+                    last_error = e
+                    _time.sleep(0.45)
+                    continue
                 logger.warning("[ToolOrchestrator] 오류 model=%s: %s", model, e)
                 last_error = e
                 return None, start_model  # 복구 불가 오류는 즉시 중단

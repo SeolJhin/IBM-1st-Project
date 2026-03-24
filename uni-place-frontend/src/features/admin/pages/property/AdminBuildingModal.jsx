@@ -75,8 +75,12 @@ export default function AdminBuildingModal({ buildingId, onClose, onSuccess }) {
         if (v !== '') fd.append(k, v);
       });
       fu.newFiles.forEach((f) => fd.append('files', f));
-      if (isEdit)
+      if (isEdit) {
         fu.deleteFileIds.forEach((id) => fd.append('deleteFileIds', id));
+        if (fu.existingOrder) {
+          fu.existingOrder.forEach((id) => fd.append('fileOrder', id));
+        }
+      }
       const result = await (isEdit
         ? adminApi.updateBuilding(buildingId, fd)
         : adminApi.createBuilding(fd));

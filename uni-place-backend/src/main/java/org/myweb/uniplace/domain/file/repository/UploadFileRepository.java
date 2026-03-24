@@ -15,7 +15,7 @@ public interface UploadFileRepository extends JpaRepository<UploadFile, Integer>
     // ✅ 일반(사용자) 조회: deleteYn = 'N' 조건을 "명시적으로" 건다
     // =========================
 
-    List<UploadFile> findByFileParentTypeAndFileParentIdAndDeleteYnOrderByFileIdDesc(
+    List<UploadFile> findByFileParentTypeAndFileParentIdAndDeleteYnOrderBySortOrderAscFileIdAsc(
             String fileParentType,
             Integer fileParentId,
             String deleteYn
@@ -29,9 +29,24 @@ public interface UploadFileRepository extends JpaRepository<UploadFile, Integer>
     // - 목록도 필요하면 아래 메서드 사용
     // =========================
 
-    List<UploadFile> findByFileParentTypeAndFileParentIdOrderByFileIdDesc(
+    List<UploadFile> findByFileParentTypeAndFileParentIdOrderBySortOrderAscFileIdAsc(
             String fileParentType,
             Integer fileParentId
+    );
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update UploadFile f
+           set f.sortOrder = :sortOrder
+         where f.fileId = :fileId
+           and f.fileParentType = :parentType
+           and f.fileParentId = :parentId
+    """)
+    int updateSortOrder(
+            @Param("fileId") Integer fileId,
+            @Param("parentType") String parentType,
+            @Param("parentId") Integer parentId,
+            @Param("sortOrder") int sortOrder
     );
 
     // =========================
@@ -44,7 +59,7 @@ public interface UploadFileRepository extends JpaRepository<UploadFile, Integer>
          where f.fileParentType = :parentType
            and f.fileParentId in :parentIds
            and f.deleteYn = 'N'
-         order by f.fileId desc
+         order by f.sortOrder asc, f.fileId asc
     """)
     List<UploadFile> findActiveByParentTypeAndParentIds(
             @Param("parentType") String parentType,

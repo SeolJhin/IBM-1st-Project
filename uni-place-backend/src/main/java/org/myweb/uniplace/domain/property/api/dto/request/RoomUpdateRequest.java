@@ -48,4 +48,7 @@ public class RoomUpdateRequest {
 
     private List<MultipartFile> files;
     private List<Integer> deleteFileIds;
+
+    // ✅ 기존 파일 순서 (fileId 배열, 인덱스가 곧 sort_order)
+    private List<Integer> fileOrder;
 }
