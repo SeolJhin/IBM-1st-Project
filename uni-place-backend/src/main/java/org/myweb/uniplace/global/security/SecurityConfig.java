@@ -56,6 +56,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/signup").permitAll()
                 .requestMatchers("/auth/login").permitAll()
+                .requestMatchers("/auth/guest-token").permitAll()
                 .requestMatchers("/auth/refresh").permitAll()
                 .requestMatchers("/auth/logout").permitAll()
                 .requestMatchers("/auth/check-nickname").permitAll()
@@ -63,7 +64,7 @@ public class SecurityConfig {
                 .requestMatchers("/auth/oauth2/google/complete").permitAll()
                 // AI 엔드포인트: 어드민 챗봇은 ADMIN 전용, 나머지는 permitAll
                 .requestMatchers("/ai/chat/admin-chatbot").hasRole("ADMIN")
-                .requestMatchers("/ai/**").permitAll()
+                .requestMatchers("/ai/**").authenticated()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers("/member/login").permitAll()
                 .requestMatchers("/login/**").permitAll()

@@ -51,12 +51,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throw new BusinessException(ErrorCode.TOKEN_TYPE_INVALID);
         }
 
-        // 3) User state validation (active + not deleted).
-        String userId = jwtProvider.getSubject(token);
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
-        if (!user.canLogin()) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        // 3) User state validation (guest skips DB lookup).
+        String role = jwtProvider.getRole(token);
+        boolean guestRole = role != null && "guest".equalsIgnoreCase(role);
+        if (!guestRole) {
+            String userId = jwtProvider.getSubject(token);
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
+            if (!user.canLogin()) {
+                throw new BusinessException(ErrorCode.UNAUTHORIZED);
+            }
         }
 
         // 4) Build authentication and set security context.

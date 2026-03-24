@@ -44,6 +44,14 @@ import ComplainEdit from '../../features/support/pages/ComplainEdit';
 // ── 권한 필요 ────────────────────────────────────────────────────
 import RequireAuth from '../../app/router/guards/RequireAuth';
 
+// ── about ─────────────────────────────────────────────────────
+import Company from '../../features/about/pages/Company';
+import CompanyDetail from '../../features/about/pages/CompanyDetail';
+import News from '../../features/about/pages/News';
+import NewsDetail from '../../features/about/pages/NewsDetail';
+import Guide from '../../features/about/pages/Guide';
+import GuideDetail from '../../features/about/pages/GuideDetail';
+
 // ── admin ─────────────────────────────────────────────────────
 import AdminInfo from '../../features/admin/pages/AdminInfo';
 import AdminTourReservationList from '../../features/admin/pages/reservation/AdminTourReservationList';
@@ -101,6 +109,14 @@ export const router = createBrowserRouter([
 
   // contract
   { path: '/contracts/apply', element: <ContractApply /> },
+
+  // about
+  { path: '/about/company/overview', element: <Company /> },
+  { path: '/about/company/:slug', element: <CompanyDetail /> },
+  { path: '/about/news', element: <News /> },
+  { path: '/about/news/:newsId', element: <NewsDetail /> },
+  { path: '/about/guide', element: <Guide /> },
+  { path: '/about/guide/:guideId', element: <GuideDetail /> },
 
   // support
   { path: '/support/notice', element: <NoticeList /> },

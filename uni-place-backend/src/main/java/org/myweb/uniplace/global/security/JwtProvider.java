@@ -48,15 +48,21 @@ public class JwtProvider {
         this.refreshExpMs = refreshExpMs;
     }
 
+    // createAccessToken 1(오버라이딩) : 기본 만료시간 쓰는 버전
     public String createAccessToken(String userId, String role) {
+        return createAccessToken(userId, role, accessExpMs);
+    }
+
+ // createAccessToken 2(오버라이딩) : 만료시간을 직접 넣는 확장 버전
+    public String createAccessToken(String userId, String role, long expiryMillis) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(userId)
                 .claim("role", role)          // 예: "admin" / "user" / "tenant"
                 .claim("typ", "access")
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(accessExpMs)))
-                .signWith(key, Jwts.SIG.HS256) // ✅ deprecated 아님
+                .expiration(Date.from(now.plusMillis(expiryMillis)))
+                .signWith(key, Jwts.SIG.HS256) //  deprecated 아님
                 .compact();
     }
 
