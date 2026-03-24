@@ -148,6 +148,7 @@ export default function ReviewModal({
   roomId,
   onClose,
   onSaved,
+  noOverlay = false,
 }) {
   const { user } = useAuth();
   const isAdmin = String(user?.userRole ?? '').toLowerCase() === 'admin';
@@ -553,11 +554,11 @@ export default function ReviewModal({
   };
 
   return (
-    <>
-      {/* 오버레이 */}
-      <div className={styles.overlay} onClick={onClose} />
+    <div className={noOverlay ? styles.inlineWrap : styles.portalWrap}>
+      {/* 오버레이 (인라인 모드에서는 숨김) */}
+      {!noOverlay && <div className={styles.overlay} onClick={onClose} />}
 
-      {/* 라이트박스 (오버레이 위) */}
+      {/* 라이트박스 */}
       {lightbox !== null && (
         <Lightbox
           images={imageUrls}
@@ -567,7 +568,7 @@ export default function ReviewModal({
       )}
 
       {/* 모달 패널 */}
-      <div className={styles.modal} role="dialog" aria-modal="true">
+      <div className={noOverlay ? styles.modalInline : styles.modal} role="dialog" aria-modal="true">
         {/* 헤더 */}
         <div className={styles.modalHeader}>
           {mode === 'edit' && (
@@ -602,6 +603,6 @@ export default function ReviewModal({
           ) : null}
         </div>
       </div>
-    </>
+    </div>
   );
 }

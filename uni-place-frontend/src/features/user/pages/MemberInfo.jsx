@@ -1,9 +1,7 @@
 // features/user/pages/MemberInfo.jsx
-// 마이페이지 메인 — 사이드 탭 전환 방식
-// 각 탭 컴포넌트는 해당 피처 폴더에 위치:
-//   마이룸    → features/contract/pages/MyContractView.jsx
-//   작성목록  → features/community/pages/MyPosts.jsx
-import React, { useEffect, useState } from 'react';
+// 마이페이지 메인 — VIVADE-style Edition
+// Home / Support 디자인 언어 통일: 직사각형, 크림·골드 팔레트, 스크롤 애니메이션
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import styles from './MemberInfo.module.css';
@@ -18,7 +16,6 @@ import {
   validateNickname,
 } from '../../../shared/utils/validators';
 
-// ── 탭 컴포넌트 import ────────────────────────────────────────
 import MyContractView from '../../contract/pages/MyContractView';
 import MyMonthlyCharges from '../../billing/pages/MyMonthlyCharges';
 import MyPosts from '../../community/pages/MyPosts';
@@ -50,25 +47,45 @@ const TAB = {
 };
 
 const SIDE_ITEMS = [
-  { key: TAB.ME, label: '내 정보' },
-  { key: TAB.MYROOM, label: '내 계약' },
-  { key: TAB.POSTS, label: '작성 목록' },
-  { key: TAB.SPACE, label: '공용 시설' },
-  { key: TAB.TOUR, label: '사전 방문' },
-  { key: TAB.ROOMSERVICE, label: '룸서비스' },
-  { key: TAB.PAYMENT, label: '결제 내역' },
+  { key: TAB.ME, label: '내 정보', dot: '#b8945a' },
+  { key: TAB.MYROOM, label: '내 계약', dot: '#5a7ab8' },
+  { key: TAB.POSTS, label: '작성 목록', dot: '#3a7a50' },
+  { key: TAB.SPACE, label: '공용 시설', dot: '#7a44b0' },
+  { key: TAB.TOUR, label: '사전 방문', dot: '#a85030' },
+  { key: TAB.ROOMSERVICE, label: '룸서비스', dot: '#5a8a8a' },
+  { key: TAB.PAYMENT, label: '결제 내역', dot: '#888888' },
 ];
 
 const SOCIAL_PROVIDER_ORDER = ['kakao', 'google'];
-const SOCIAL_PROVIDER_LABEL = {
-  kakao: '카카오',
-  google: '구글',
-};
+const SOCIAL_PROVIDER_LABEL = { kakao: '카카오', google: '구글' };
 
-// ── 내 정보 탭 (로컬) ─────────────────────────────────────────
-function MeTab() {
+// ── useFadeIn 훅 (Home.jsx와 동일) ────────────────────────────
+function useFadeIn(threshold = 0.08, direction = 'up') {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { threshold }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+  const animClass =
+    {
+      up: styles.fadeInUp,
+      left: styles.fadeInLeft,
+      right: styles.fadeInRight,
+    }[direction] ?? styles.fadeInUp;
+  return [ref, visible, animClass];
+}
+
+// ── 내 정보 탭 ────────────────────────────────────────────────
+function MeTab({ user }) {
   const navigate = useNavigate();
-  const { user, loading, refresh, logout } = useAuth();
+  const { refresh, logout } = useAuth();
   const [meLoading, setMeLoading] = useState(true);
   const [origin, setOrigin] = useState(null);
   const [form, setForm] = useState({
@@ -94,7 +111,7 @@ function MeTab() {
   const [faceRegModal, setFaceRegModal] = useState(false);
   const [faceMenu, setFaceMenu] = useState(false);
   const [faceDeleting, setFaceDeleting] = useState(false);
-  const [faceCount, setFaceCount] = useState(null); // null=미조회, 0=미등록, 1~5=등록수
+  const [faceCount, setFaceCount] = useState(null);
   const [nicknameChecked, setNicknameChecked] = useState(false);
   const [originalNickname, setOriginalNickname] = useState('');
   const [socialLoading, setSocialLoading] = useState(true);
@@ -103,7 +120,9 @@ function MeTab() {
     google: false,
   });
 
-  const loadMe = React.useCallback(async () => {
+  const [ref, visible, animClass] = useFadeIn(0.05, 'up');
+
+  const loadMe = useCallback(async () => {
     setError('');
     setMsg('');
     setMeLoading(true);
@@ -123,50 +142,43 @@ function MeTab() {
       });
       setOriginalNickname(me?.userNickname ?? '');
       setNicknameChecked(true);
-
-      const linkedProviderSet = new Set(
+      const linkedSet = new Set(
         (socialAccounts || [])
-          .map((item) => String(item?.provider || '').toLowerCase())
+          .map((i) => String(i?.provider || '').toLowerCase())
           .filter(Boolean)
       );
-      const nextSocialLinks = {
-        kakao: linkedProviderSet.has('kakao'),
-        google: linkedProviderSet.has('google'),
+      const nextLinks = {
+        kakao: linkedSet.has('kakao'),
+        google: linkedSet.has('google'),
       };
-      setSocialLinks(nextSocialLinks);
+      setSocialLinks(nextLinks);
 
-      const currentUrl = new URL(window.location.href);
-      const linkedProvider = String(
-        currentUrl.searchParams.get('linked') || ''
-      ).toLowerCase();
-      const linkError = String(
-        currentUrl.searchParams.get('linkError') || ''
-      ).toLowerCase();
-      if (linkedProvider) {
-        const label = SOCIAL_PROVIDER_LABEL[linkedProvider] || linkedProvider;
-        if (nextSocialLinks[linkedProvider]) {
-          setMsg(`${label} 연동이 완료되었습니다.`);
-        } else {
+      const url = new URL(window.location.href);
+      const lp = String(url.searchParams.get('linked') || '').toLowerCase();
+      const le = String(url.searchParams.get('linkError') || '').toLowerCase();
+      if (lp) {
+        const lbl = SOCIAL_PROVIDER_LABEL[lp] || lp;
+        if (nextLinks[lp]) setMsg(`${lbl} 연동이 완료되었습니다.`);
+        else
           setError(
-            `${label} 연동을 확인하지 못했습니다. 동일 이메일 계정인지 확인 후 다시 시도해주세요.`
+            `${lbl} 연동을 확인하지 못했습니다. 동일 이메일 계정인지 확인 후 다시 시도해주세요.`
           );
-        }
-        currentUrl.searchParams.delete('linked');
+        url.searchParams.delete('linked');
         window.history.replaceState(
           {},
           '',
-          `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`
+          `${url.pathname}${url.search}${url.hash}`
         );
       }
-      if (linkError) {
+      if (le) {
         setError(
           '소셜 계정 연동에 실패했습니다. 현재 비밀번호를 다시 확인하고, 이미 다른 계정에 연동된 소셜인지 확인해주세요.'
         );
-        currentUrl.searchParams.delete('linkError');
+        url.searchParams.delete('linkError');
         window.history.replaceState(
           {},
           '',
-          `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`
+          `${url.pathname}${url.search}${url.hash}`
         );
       }
     } catch (e) {
@@ -178,10 +190,10 @@ function MeTab() {
   }, []);
 
   useEffect(() => {
-    if (!loading && user) loadMe();
-  }, [loading, user, loadMe]);
+    if (user) loadMe();
+  }, [user, loadMe]);
 
-  // 드롭다운 바깥 클릭 시 닫기
+  // 드롭다운 바깥 클릭 닫기
   useEffect(() => {
     if (!faceMenu) return;
     const close = (e) => {
@@ -213,7 +225,6 @@ function MeTab() {
     setNicknameStatus('checking');
     setError('');
     try {
-      const { authApi } = await import('../api/authApi');
       const available = await authApi.checkNickname(nickname);
       if (available) {
         setNicknameStatus('ok');
@@ -228,85 +239,63 @@ function MeTab() {
     }
   };
 
-  // 변경된 필드만 payload 구성
-  const buildPayload = React.useCallback(() => {
+  const buildPayload = useCallback(() => {
     if (!origin) return null;
     const payload = {};
-    const nextNm = form.userNm?.trim() ?? '';
-    const nextEmail = form.userEmail?.trim() ?? '';
-    const nextTel = form.userTel?.trim() ?? '';
-    const nextNickname = form.userNickname?.trim() ?? '';
-    if (nextNm && nextNm !== (origin.userNm ?? '')) payload.userNm = nextNm;
-    if (nextEmail && nextEmail !== (origin.userEmail ?? ''))
-      payload.userEmail = nextEmail;
-    if (nextTel && nextTel !== (origin.userTel ?? ''))
-      payload.userTel = nextTel;
-    if (nextNickname && nextNickname !== (origin.userNickname ?? ''))
-      payload.userNickname = nextNickname;
+    const nNm = form.userNm?.trim() ?? '';
+    const nEmail = form.userEmail?.trim() ?? '';
+    const nTel = form.userTel?.trim() ?? '';
+    const nNick = form.userNickname?.trim() ?? '';
+    if (nNm && nNm !== (origin.userNm ?? '')) payload.userNm = nNm;
+    if (nEmail && nEmail !== (origin.userEmail ?? ''))
+      payload.userEmail = nEmail;
+    if (nTel && nTel !== (origin.userTel ?? '')) payload.userTel = nTel;
+    if (nNick && nNick !== (origin.userNickname ?? ''))
+      payload.userNickname = nNick;
     if (newPwd?.trim()) {
       payload.userPwd = newPwd.trim();
       payload.currentUserPwd = currentPwd.trim();
     }
     return payload;
-  }, [
-    origin,
-    form.userNm,
-    form.userEmail,
-    form.userTel,
-    form.userNickname,
-    newPwd,
-    currentPwd,
-  ]);
+  }, [origin, form, newPwd, currentPwd]);
 
   const onSubmitUpdate = async (e) => {
     e.preventDefault();
     setError('');
     setMsg('');
     if (!origin) return;
-
-    // ── 새 비밀번호: 입력한 경우 무조건 형식 검사 ──────────────
     if (newPwd.trim()) {
-      const pwdErr = validatePassword(newPwd.trim());
-      if (pwdErr) return setError(pwdErr);
+      const err = validatePassword(newPwd.trim());
+      if (err) return setError(err);
     }
-
-    // ── 전화번호: 현재 입력값 형식 검사 (변경 여부와 무관) ───────
     if (form.userTel.trim()) {
-      const telErr = validatePhone(form.userTel.trim());
-      if (telErr) return setError(telErr);
+      const err = validatePhone(form.userTel.trim());
+      if (err) return setError(err);
     }
-
-    // ── 이메일: 현재 입력값 형식 검사 ───────────────────────────
     if (form.userEmail.trim()) {
-      const emailErr = validateEmail(form.userEmail.trim());
-      if (emailErr) return setError(emailErr);
+      const err = validateEmail(form.userEmail.trim());
+      if (err) return setError(err);
     }
-
-    // ── 닉네임 변경 시 중복확인 필요 ────────────────────────────
-    const nextNickname = form.userNickname?.trim() ?? '';
-    if (nextNickname !== (origin.userNickname ?? '').trim()) {
-      const nickErr = validateNickname(nextNickname);
-      if (nickErr) return setError(nickErr);
+    const nNick = form.userNickname?.trim() ?? '';
+    if (nNick !== (origin.userNickname ?? '').trim()) {
+      const err = validateNickname(nNick);
+      if (err) return setError(err);
       if (!nicknameChecked) return setError('닉네임 중복 확인을 해주세요.');
     }
-
     const payload = buildPayload();
     if (!payload || Object.keys(payload).length === 0) {
       setMsg('변경된 내용이 없어 취소 처리되었습니다.');
       return;
     }
-
-    // ── 현재 비밀번호는 항상 필요 ────────────────────────────────
     if (!currentPwd.trim()) {
       setError('수정을 위해 현재 비밀번호를 입력해주세요.');
       return;
     }
-
     try {
       setSubmitting(true);
-      const passwordChanged = Boolean(payload.userPwd);
+      const pwdChanged = Boolean(payload.userPwd);
       await authApi.updateMe(payload);
-      if (passwordChanged) {
+      if (pwdChanged) {
         await authApi.logoutAll();
         await logout();
         navigate('/login', {
@@ -335,9 +324,7 @@ function MeTab() {
       setSubmitting(true);
       try {
         await authApi.logoutAll();
-      } catch (e) {
-        // best effort
-      }
+      } catch {}
       await authApi.deleteMe();
       await logout();
       navigate('/', { replace: true });
@@ -349,28 +336,24 @@ function MeTab() {
   };
 
   const startSocialLink = async (provider) => {
-    const normalized = String(provider || '').toLowerCase();
-    if (!SOCIAL_PROVIDER_ORDER.includes(normalized)) return;
-
-    if (socialLinks[normalized]) {
-      setMsg(
-        `${SOCIAL_PROVIDER_LABEL[normalized]} 연동이 이미 완료되어 있습니다.`
-      );
+    const p = String(provider || '').toLowerCase();
+    if (!SOCIAL_PROVIDER_ORDER.includes(p)) return;
+    if (socialLinks[p]) {
+      setMsg(`${SOCIAL_PROVIDER_LABEL[p]} 연동이 이미 완료되어 있습니다.`);
       return;
     }
     if (!currentPwd.trim()) {
       setError('소셜 연동을 위해 현재 비밀번호를 입력해주세요.');
       return;
     }
-
     setError('');
     setMsg('');
     try {
       setLinkSubmitting(true);
       const result = await authApi.startSocialLink({
-        provider: normalized,
+        provider: p,
         currentUserPwd: currentPwd.trim(),
-        returnTo: `/me?tab=me&linked=${normalized}`,
+        returnTo: `/me?tab=me&linked=${p}`,
       });
       if (!result?.authorizationUrl) {
         setError('소셜 연동 시작 URL을 가져오지 못했습니다.');
@@ -387,36 +370,28 @@ function MeTab() {
   };
 
   const unlinkSocialAccount = async (provider) => {
-    const normalized = String(provider || '').toLowerCase();
-    if (!SOCIAL_PROVIDER_ORDER.includes(normalized)) return;
-    if (!socialLinks[normalized]) {
-      setError(
-        `${SOCIAL_PROVIDER_LABEL[normalized]}은(는) 아직 연동되지 않았습니다.`
-      );
+    const p = String(provider || '').toLowerCase();
+    if (!SOCIAL_PROVIDER_ORDER.includes(p)) return;
+    if (!socialLinks[p]) {
+      setError(`${SOCIAL_PROVIDER_LABEL[p]}은(는) 아직 연동되지 않았습니다.`);
       return;
     }
     if (!currentPwd.trim()) {
       setError('소셜 연동 해제를 위해 현재 비밀번호를 입력해주세요.');
       return;
     }
-    if (
-      !window.confirm(
-        `${SOCIAL_PROVIDER_LABEL[normalized]} 연동을 해제하시겠습니까?`
-      )
-    ) {
+    if (!window.confirm(`${SOCIAL_PROVIDER_LABEL[p]} 연동을 해제하시겠습니까?`))
       return;
-    }
-
     setError('');
     setMsg('');
     try {
       setLinkSubmitting(true);
       await authApi.unlinkSocialAccount({
-        provider: normalized,
+        provider: p,
         currentUserPwd: currentPwd.trim(),
       });
       await loadMe();
-      setMsg(`${SOCIAL_PROVIDER_LABEL[normalized]} 연동이 해제되었습니다.`);
+      setMsg(`${SOCIAL_PROVIDER_LABEL[p]} 연동이 해제되었습니다.`);
     } catch (e) {
       setError(
         e?.koreanMessage || e?.message || '소셜 연동 해제에 실패했습니다.'
@@ -426,201 +401,18 @@ function MeTab() {
     }
   };
 
-  if (meLoading) return <div className={styles.loading}>불러오는 중…</div>;
-
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <h1 className={styles.title}>본인 정보</h1>
-      </div>
-      <form className={styles.form} onSubmit={onSubmitUpdate}>
-        <div className={styles.panel}>
-          <Field label="이름">
-            <input
-              className={styles.input}
-              name="userNm"
-              value={form.userNm}
-              readOnly
-              disabled
-            />
-          </Field>
-          <Field label="닉네임">
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                className={styles.input}
-                style={{ flex: 1 }}
-                name="userNickname"
-                value={form.userNickname}
-                onChange={onChange}
-                disabled={submitting}
-                placeholder="2~20자"
-                maxLength={20}
-              />
-              <button
-                type="button"
-                onClick={checkNickname}
-                disabled={submitting || nicknameStatus === 'checking'}
-                style={{
-                  padding: '0 12px',
-                  borderRadius: 8,
-                  background: nicknameChecked ? '#22c55e' : '#111',
-                  color: '#fff',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
-                  height: 40,
-                }}
-              >
-                {nicknameStatus === 'checking'
-                  ? '확인 중…'
-                  : nicknameChecked
-                    ? '✓ 확인됨'
-                    : '중복확인'}
-              </button>
+    <div ref={ref} className={visible ? animClass : styles.fadeHidden}>
+      {meLoading && <div className={styles.loading}>불러오는 중</div>}
+      {!meLoading && (
+        <>
+          {/* 헤더 */}
+          <div className={styles.sectionHead}>
+            <div className={styles.sectionTitleGroup}>
+              <span className={styles.sectionEyebrow}>My Account</span>
+              <h2 className={styles.sectionTitle}>본인 정보</h2>
             </div>
-            {nicknameStatus === 'dup' && (
-              <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
-                이미 사용 중인 닉네임입니다.
-              </div>
-            )}
-            {nicknameStatus === 'ok' && (
-              <div style={{ color: '#22c55e', fontSize: 12, marginTop: 4 }}>
-                사용 가능한 닉네임입니다.
-              </div>
-            )}
-          </Field>
-          <Field label="이메일">
-            <input
-              className={styles.input}
-              name="userEmail"
-              value={form.userEmail}
-              onChange={onChange}
-              disabled={submitting}
-            />
-          </Field>
-          <Field label="전화번호">
-            <input
-              className={styles.input}
-              name="userTel"
-              value={form.userTel}
-              onChange={onChange}
-              disabled={submitting}
-            />
-          </Field>
-          <Field label="아이디">
-            <input
-              className={styles.input}
-              name="userId"
-              value={form.userId}
-              readOnly
-              disabled
-            />
-          </Field>
-          <Field label="비밀번호">
-            <input
-              className={styles.input}
-              type="password"
-              value={currentPwd}
-              onChange={(e) => setCurrentPwd(e.target.value)}
-              placeholder="현재 비밀번호를 입력해주세요"
-              autoComplete="current-password"
-              disabled={submitting}
-            />
-          </Field>
-          <Field label="변경할 비밀번호">
-            <input
-              className={styles.input}
-              type="password"
-              value={newPwd}
-              onChange={(e) => {
-                const v = e.target.value;
-                setNewPwd(v);
-                setPwdChecks({
-                  length: v.length >= 8,
-                  letter: /[a-zA-Z]/.test(v),
-                  number: /[0-9]/.test(v),
-                  special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(v),
-                });
-              }}
-              placeholder="영문 + 숫자 + 특수기호 포함 8자 이상 (선택)"
-              autoComplete="new-password"
-              disabled={submitting}
-            />
-            {newPwd && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '4px 12px',
-                  marginTop: 6,
-                }}
-              >
-                {[
-                  { key: 'length', label: '8자 이상' },
-                  { key: 'letter', label: '영문자' },
-                  { key: 'number', label: '숫자' },
-                  { key: 'special', label: '특수기호' },
-                ].map(({ key, label }) => (
-                  <span
-                    key={key}
-                    style={{
-                      fontSize: 12,
-                      color: pwdChecks[key] ? '#22c55e' : '#9ca3af',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 3,
-                    }}
-                  >
-                    {pwdChecks[key] ? '✓' : '○'} {label}
-                  </span>
-                ))}
-              </div>
-            )}
-          </Field>
-          {error ? (
-            <ErrorActionNotice
-              error={error}
-              fallback="내 정보 처리 중 문제가 발생했습니다."
-              onRetry={loadMe}
-              compact
-            />
-          ) : null}
-          {msg && <div className={styles.msg}>{msg}</div>}
-          <div className={styles.actions}>
-            <div className={styles.socialActions}>
-              {SOCIAL_PROVIDER_ORDER.map((provider) => {
-                const linked = Boolean(socialLinks[provider]);
-                return (
-                  <button
-                    key={provider}
-                    type="button"
-                    className={styles.socialLinkBtn}
-                    onClick={() =>
-                      linked
-                        ? unlinkSocialAccount(provider)
-                        : startSocialLink(provider)
-                    }
-                    disabled={
-                      submitting || linkSubmitting || meLoading || socialLoading
-                    }
-                  >
-                    {SOCIAL_PROVIDER_LABEL[provider]}{' '}
-                    {linked ? '연동 해제' : '연동'}
-                  </button>
-                );
-              })}
-            </div>
-            <div className={styles.primaryActions}>
-              <button
-                type="submit"
-                className={styles.submitBtn}
-                disabled={submitting || meLoading}
-              >
-                {submitting ? '수정 중…' : '수정'}
-              </button>
+            <div className={styles.actionsRight} style={{ marginBottom: 0 }}>
               <div className={styles.faceMenuWrap} data-face-menu="true">
                 <button
                   type="button"
@@ -646,25 +438,29 @@ function MeTab() {
                   }}
                   disabled={submitting || meLoading}
                 >
-                  👤 페이스로그인 ▾
+                  얼굴 로그인 ▾
                 </button>
                 {faceMenu && (
-                  <div className={styles.faceDropdown}>
+                  <div
+                    className={styles.faceDropdown}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
                     <div className={styles.faceDropHeader}>
-                      등록된 얼굴&nbsp;
+                      등록된 얼굴{' '}
                       <strong>
-                        {faceCount === null ? '…' : `${faceCount} / 5`}
+                        {faceCount === null ? '조회 중…' : `${faceCount} / 5`}
                       </strong>
                     </div>
                     <button
+                      type="button"
                       className={styles.faceDropItem}
-                      disabled={faceCount >= 5}
+                      disabled={faceCount === null || faceCount >= 5}
                       onClick={() => {
                         setFaceMenu(false);
                         setFaceRegModal(true);
                       }}
                     >
-                      ✏️ 얼굴 등록
+                      얼굴 등록
                       <span className={styles.faceDropSub}>
                         {faceCount >= 5
                           ? '최대 등록 수 도달 (삭제 후 재등록)'
@@ -672,6 +468,7 @@ function MeTab() {
                       </span>
                     </button>
                     <button
+                      type="button"
                       className={`${styles.faceDropItem} ${styles.faceDropDel}`}
                       disabled={faceDeleting || faceCount === 0}
                       onClick={async () => {
@@ -700,7 +497,7 @@ function MeTab() {
                         }
                       }}
                     >
-                      🗑️ {faceDeleting ? '삭제 중…' : '얼굴 삭제'}
+                      {faceDeleting ? '삭제 중…' : '얼굴 삭제'}
                       <span className={styles.faceDropSub}>
                         {faceCount === 0
                           ? '등록된 얼굴 없음'
@@ -709,46 +506,237 @@ function MeTab() {
                     </button>
                   </div>
                 )}
+                {faceRegModal && (
+                  <FaceLoginModal
+                    mode="register"
+                    email={user?.userEmail || user?.email || ''}
+                    noOverlay
+                    onSuccess={() => {
+                      setFaceRegModal(false);
+                      setFaceCount((cnt) => (cnt ?? 0) + 1);
+                      setMsg(
+                        '얼굴 등록이 완료되었습니다. 다음 로그인부터 얼굴 인식을 사용할 수 있습니다.'
+                      );
+                    }}
+                    onClose={() => setFaceRegModal(false)}
+                  />
+                )}
               </div>
-              <button
-                type="button"
-                className={styles.withdrawBtn}
-                onClick={onWithdraw}
-                disabled={submitting || meLoading}
-              >
-                탈퇴
-              </button>
             </div>
           </div>
-        </div>
-      </form>
 
-      {faceRegModal && (
-        <FaceLoginModal
-          mode="register"
-          email={user?.userEmail || user?.email || ''}
-          onSuccess={() => {
-            setFaceRegModal(false);
-            setFaceCount((c) => (c ?? 0) + 1);
-            setMsg(
-              '얼굴 등록이 완료되었습니다. 다음 로그인부터 얼굴 인식을 사용할 수 있습니다.'
-            );
-          }}
-          onClose={() => setFaceRegModal(false)}
-        />
+          <form onSubmit={onSubmitUpdate}>
+            {/* 정보 패널 */}
+            <div className={styles.infoPanel}>
+              <InfoRow label="이름">
+                <input
+                  className={styles.infoInput}
+                  name="userNm"
+                  value={form.userNm}
+                  readOnly
+                  disabled
+                />
+              </InfoRow>
+
+              <InfoRow label="닉네임">
+                <input
+                  className={styles.infoInput}
+                  name="userNickname"
+                  value={form.userNickname}
+                  onChange={onChange}
+                  disabled={submitting}
+                  placeholder="2~20자"
+                  maxLength={20}
+                />
+                <button
+                  type="button"
+                  className={`${styles.btn} ${nicknameChecked ? styles.btnChecked : styles.btnPrimary}`}
+                  style={{ padding: '6px 14px', fontSize: '11px' }}
+                  onClick={checkNickname}
+                  disabled={submitting || nicknameStatus === 'checking'}
+                >
+                  {nicknameStatus === 'checking'
+                    ? '확인 중'
+                    : nicknameChecked
+                      ? '✓ 확인됨'
+                      : '중복확인'}
+                </button>
+              </InfoRow>
+              {nicknameStatus === 'dup' && (
+                <p className={`${styles.fieldHelper} ${styles.fieldErr}`}>
+                  이미 사용 중인 닉네임입니다.
+                </p>
+              )}
+              {nicknameStatus === 'ok' && !nicknameChecked && (
+                <p className={`${styles.fieldHelper} ${styles.fieldOk}`}>
+                  사용 가능한 닉네임입니다.
+                </p>
+              )}
+
+              <InfoRow label="이메일">
+                <input
+                  className={styles.infoInput}
+                  name="userEmail"
+                  value={form.userEmail}
+                  onChange={onChange}
+                  disabled={submitting}
+                />
+              </InfoRow>
+
+              <InfoRow label="전화번호">
+                <input
+                  className={styles.infoInput}
+                  name="userTel"
+                  value={form.userTel}
+                  onChange={onChange}
+                  disabled={submitting}
+                />
+              </InfoRow>
+
+              <InfoRow label="아이디">
+                <input
+                  className={styles.infoInput}
+                  name="userId"
+                  value={form.userId}
+                  readOnly
+                  disabled
+                />
+              </InfoRow>
+
+              <InfoRow label="현재 비밀번호">
+                <input
+                  className={styles.infoInput}
+                  type="password"
+                  value={currentPwd}
+                  onChange={(e) => setCurrentPwd(e.target.value)}
+                  placeholder="수정 시 현재 비밀번호 필요"
+                  autoComplete="current-password"
+                  disabled={submitting}
+                />
+              </InfoRow>
+
+              <InfoRow label="새 비밀번호">
+                <input
+                  className={styles.infoInput}
+                  type="password"
+                  value={newPwd}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setNewPwd(v);
+                    setPwdChecks({
+                      length: v.length >= 8,
+                      letter: /[a-zA-Z]/.test(v),
+                      number: /[0-9]/.test(v),
+                      special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(v),
+                    });
+                  }}
+                  placeholder="영문 + 숫자 + 특수기호 8자 이상 (선택)"
+                  autoComplete="new-password"
+                  disabled={submitting}
+                />
+              </InfoRow>
+              {newPwd && (
+                <div className={styles.pwdChecks}>
+                  {[
+                    { key: 'length', label: '8자 이상' },
+                    { key: 'letter', label: '영문자' },
+                    { key: 'number', label: '숫자' },
+                    { key: 'special', label: '특수기호' },
+                  ].map(({ key, label }) => (
+                    <span
+                      key={key}
+                      className={`${styles.pwdCheck} ${pwdChecks[key] ? styles.pwdCheckOn : ''}`}
+                    >
+                      {pwdChecks[key] ? '✓' : '○'} {label}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <InfoRow label="소셜 연동">
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {SOCIAL_PROVIDER_ORDER.map((provider) => {
+                    const linked = Boolean(socialLinks[provider]);
+                    return (
+                      <button
+                        key={provider}
+                        type="button"
+                        className={`${styles.socialBadge} ${linked ? styles.socialLinked : styles.socialUnlinked}`}
+                        onClick={() =>
+                          linked
+                            ? unlinkSocialAccount(provider)
+                            : startSocialLink(provider)
+                        }
+                        disabled={
+                          submitting ||
+                          linkSubmitting ||
+                          meLoading ||
+                          socialLoading
+                        }
+                      >
+                        {linked
+                          ? `✓ ${SOCIAL_PROVIDER_LABEL[provider]} 연동됨`
+                          : `${SOCIAL_PROVIDER_LABEL[provider]} 계정 연동`}
+                      </button>
+                    );
+                  })}
+                </div>
+              </InfoRow>
+            </div>
+
+            {error && (
+              <div
+                className={`${styles.msgBox} ${styles.msgError}`}
+                style={{ marginTop: 12 }}
+              >
+                {error}
+              </div>
+            )}
+            {msg && (
+              <div
+                className={`${styles.msgBox} ${styles.msgSuccess}`}
+                style={{ marginTop: 12 }}
+              >
+                {msg}
+              </div>
+            )}
+
+            <div className={styles.actionsBar}>
+              <p className={styles.actionsHint}>
+                변경 사항은 현재 비밀번호 입력 후 저장됩니다.
+              </p>
+              <div className={styles.actionsRight}>
+                <button
+                  type="button"
+                  className={`${styles.btn} ${styles.btnDanger}`}
+                  onClick={onWithdraw}
+                  disabled={submitting || meLoading}
+                >
+                  회원 탈퇴
+                </button>
+                <button
+                  type="submit"
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                  disabled={submitting || meLoading}
+                >
+                  {submitting ? '저장 중…' : '수정 저장'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </>
       )}
     </div>
   );
 }
 
-// ── 공용 시설 탭 (로컬) ───────────────────────────────────────
-// ── 고객센터 작성 목록 탭 ─────────────────────────────────────
+// ── QnA 인라인 ────────────────────────────────────────────────
 function QnaInline() {
   const { qnas, pagination, loading, error, goToPage, refetch } = useQnas();
   const navigate = useNavigate();
-
-  if (loading) return <div className={styles.loading}>불러오는 중…</div>;
-  if (error) {
+  const STATUS_MAP = { waiting: '답변대기', complete: '답변완료' };
+  if (loading) return <div className={styles.loading}>불러오는 중</div>;
+  if (error)
     return (
       <ErrorActionNotice
         error={error}
@@ -756,106 +744,51 @@ function QnaInline() {
         onRetry={refetch}
       />
     );
-  }
-
-  const STATUS_MAP = { waiting: '답변대기', complete: '답변완료' };
-
   return (
     <div>
-      <table
-        style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}
-      >
+      <table className={styles.listTable}>
         <thead>
-          <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.10)' }}>
-            {['번호', '제목', '상태', '날짜'].map((h) => (
-              <th
-                key={h}
-                style={{
-                  padding: '10px 12px',
-                  textAlign: 'left',
-                  fontSize: 13,
-                  fontWeight: 800,
-                  color: 'rgba(0,0,0,0.55)',
-                }}
-              >
-                {h}
-              </th>
-            ))}
+          <tr>
+            <th style={{ width: 56 }}>번호</th>
+            <th>제목</th>
+            <th style={{ width: 100 }}>상태</th>
+            <th style={{ width: 96 }}>날짜</th>
           </tr>
         </thead>
         <tbody>
           {qnas.length === 0 ? (
             <tr>
-              <td
-                colSpan={4}
-                style={{
-                  padding: 32,
-                  textAlign: 'center',
-                  color: 'rgba(0,0,0,0.4)',
-                  fontSize: 14,
-                }}
-              >
-                작성된 문의가 없습니다.
+              <td colSpan={4}>
+                <div className={styles.emptyState}>작성된 문의가 없습니다.</div>
               </td>
             </tr>
           ) : (
             qnas.map((q) => (
               <tr
                 key={q.qnaId}
+                data-clickable="true"
                 onClick={() => navigate(`/support/qna/${q.qnaId}`)}
-                style={{
-                  borderBottom: '1px solid rgba(0,0,0,0.06)',
-                  cursor: 'pointer',
-                }}
               >
+                <td style={{ color: '#9a9080', fontSize: 12 }}>{q.qnaId}</td>
                 <td
                   style={{
-                    padding: '12px',
-                    fontSize: 13,
-                    color: 'rgba(0,0,0,0.4)',
-                    width: 60,
-                  }}
-                >
-                  {q.qnaId}
-                </td>
-                <td
-                  style={{
-                    padding: '12px',
-                    fontSize: 14,
                     fontWeight: 600,
-                    maxWidth: 0,
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
                     textOverflow: 'ellipsis',
+                    maxWidth: 0,
                   }}
                 >
                   {q.qnaTitle}
                 </td>
-                <td style={{ padding: '12px', width: 100 }}>
+                <td>
                   <span
-                    style={{
-                      display: 'inline-block',
-                      padding: '3px 10px',
-                      borderRadius: 20,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      background:
-                        q.qnaSt === 'complete' ? '#FFCD8E' : 'rgba(0,0,0,0.08)',
-                      color:
-                        q.qnaSt === 'complete' ? '#362F20' : 'rgba(0,0,0,0.6)',
-                    }}
+                    className={`${styles.badge} ${q.qnaSt === 'complete' ? styles.badgeGold : styles.badgeGray}`}
                   >
                     {STATUS_MAP[q.qnaSt] ?? q.qnaSt}
                   </span>
                 </td>
-                <td
-                  style={{
-                    padding: '12px',
-                    fontSize: 13,
-                    color: 'rgba(0,0,0,0.4)',
-                    width: 100,
-                  }}
-                >
+                <td style={{ fontSize: 12, color: '#9a9080' }}>
                   {q.createdAt ? q.createdAt.slice(0, 10) : '-'}
                 </td>
               </tr>
@@ -863,31 +796,20 @@ function QnaInline() {
           )}
         </tbody>
       </table>
-
       {pagination.totalPages > 1 && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: 16,
-            marginTop: 20,
-          }}
-        >
+        <div className={styles.pagination}>
           <button
-            className={styles.cancelBtn}
-            style={{ minWidth: 60, height: 36 }}
+            className={styles.pageBtn}
             disabled={pagination.isFirst}
             onClick={() => goToPage(pagination.page - 1)}
           >
             이전
           </button>
-          <span style={{ fontSize: 13, fontWeight: 700 }}>
+          <span className={styles.pageInfo}>
             {pagination.page} / {pagination.totalPages}
           </span>
           <button
-            className={styles.cancelBtn}
-            style={{ minWidth: 60, height: 36 }}
+            className={styles.pageBtn}
             disabled={pagination.isLast}
             onClick={() => goToPage(pagination.page + 1)}
           >
@@ -899,13 +821,20 @@ function QnaInline() {
   );
 }
 
+// ── 민원 인라인 ───────────────────────────────────────────────
 function ComplainInline() {
   const { complains, pagination, loading, error, goToPage, refetch } =
     useComplains();
-  const navigate = useNavigate(); // ✅ 위로 올림
-
-  if (loading) return <div className={styles.loading}>불러오는 중…</div>;
-  if (error) {
+  const navigate = useNavigate();
+  const STATUS_MAP = {
+    received: '접수됨',
+    in_progress: '처리중',
+    resolved: '처리완료',
+    closed: '완료',
+    pending: '대기중',
+  };
+  if (loading) return <div className={styles.loading}>불러오는 중</div>;
+  if (error)
     return (
       <ErrorActionNotice
         error={error}
@@ -913,110 +842,53 @@ function ComplainInline() {
         onRetry={refetch}
       />
     );
-  }
-
-  const STATUS_MAP = { in_progress: '처리중', resolved: '처리완료' };
-
   return (
     <div>
-      <table
-        style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}
-      >
+      <table className={styles.listTable}>
         <thead>
-          <tr style={{ borderBottom: '2px solid rgba(0,0,0,0.10)' }}>
-            {['번호', '제목', '상태', '날짜'].map((h) => (
-              <th
-                key={h}
-                style={{
-                  padding: '10px 12px',
-                  textAlign: 'left',
-                  fontSize: 13,
-                  fontWeight: 800,
-                  color: 'rgba(0,0,0,0.55)',
-                }}
-              >
-                {h}
-              </th>
-            ))}
+          <tr>
+            <th style={{ width: 56 }}>번호</th>
+            <th>제목</th>
+            <th style={{ width: 100 }}>상태</th>
+            <th style={{ width: 96 }}>날짜</th>
           </tr>
         </thead>
         <tbody>
           {complains.length === 0 ? (
             <tr>
-              <td
-                colSpan={4}
-                style={{
-                  padding: 32,
-                  textAlign: 'center',
-                  color: 'rgba(0,0,0,0.4)',
-                  fontSize: 14,
-                }}
-              >
-                접수된 민원이 없습니다.
+              <td colSpan={4}>
+                <div className={styles.emptyState}>접수된 민원이 없습니다.</div>
               </td>
             </tr>
           ) : (
             complains.map((item) => (
               <tr
                 key={item.compId}
+                data-clickable="true"
                 onClick={() => navigate(`/support/complain/${item.compId}`)}
-                style={{
-                  borderBottom: '1px solid rgba(0,0,0,0.06)',
-                  cursor: 'pointer',
-                }}
               >
-                <td
-                  style={{
-                    padding: '12px',
-                    fontSize: 13,
-                    color: 'rgba(0,0,0,0.4)',
-                    width: 60,
-                  }}
-                >
+                <td style={{ color: '#9a9080', fontSize: 12 }}>
                   {item.compId}
                 </td>
                 <td
                   style={{
-                    padding: '12px',
-                    fontSize: 14,
                     fontWeight: 600,
-                    maxWidth: 0,
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
                     textOverflow: 'ellipsis',
+                    maxWidth: 0,
                   }}
                 >
                   {item.compTitle}
                 </td>
-                <td style={{ padding: '12px', width: 100 }}>
+                <td>
                   <span
-                    style={{
-                      display: 'inline-block',
-                      padding: '3px 10px',
-                      borderRadius: 20,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      background:
-                        item.compSt === 'resolved'
-                          ? '#FFCD8E'
-                          : 'rgba(0,0,0,0.08)',
-                      color:
-                        item.compSt === 'resolved'
-                          ? '#362F20'
-                          : 'rgba(0,0,0,0.6)',
-                    }}
+                    className={`${styles.badge} ${item.compSt === 'resolved' ? styles.badgeGold : styles.badgeGray}`}
                   >
                     {STATUS_MAP[item.compSt] ?? item.compSt}
                   </span>
                 </td>
-                <td
-                  style={{
-                    padding: '12px',
-                    fontSize: 13,
-                    color: 'rgba(0,0,0,0.4)',
-                    width: 100,
-                  }}
-                >
+                <td style={{ fontSize: 12, color: '#9a9080' }}>
                   {item.createdAt ? item.createdAt.slice(0, 10) : '-'}
                 </td>
               </tr>
@@ -1024,31 +896,20 @@ function ComplainInline() {
           )}
         </tbody>
       </table>
-
       {pagination.totalPages > 1 && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: 16,
-            marginTop: 20,
-          }}
-        >
+        <div className={styles.pagination}>
           <button
-            className={styles.cancelBtn}
-            style={{ minWidth: 60, height: 36 }}
+            className={styles.pageBtn}
             disabled={pagination.isFirst}
             onClick={() => goToPage(pagination.page - 1)}
           >
             이전
           </button>
-          <span style={{ fontSize: 13, fontWeight: 700 }}>
+          <span className={styles.pageInfo}>
             {pagination.page} / {pagination.totalPages}
           </span>
           <button
-            className={styles.cancelBtn}
-            style={{ minWidth: 60, height: 36 }}
+            className={styles.pageBtn}
             disabled={pagination.isLast}
             onClick={() => goToPage(pagination.page + 1)}
           >
@@ -1060,40 +921,38 @@ function ComplainInline() {
   );
 }
 
+// ── 고객센터 탭 ───────────────────────────────────────────────
 function SupportPostsTab() {
-  const [supportSub, setSupportSub] = React.useState('qna');
-
+  const [sub, setSub] = useState('qna');
   return (
     <div>
-      <div className={styles.subTabRow} style={{ marginTop: 8 }}>
+      <div className={styles.subTabRow}>
         <button
           type="button"
-          className={`${styles.subTab} ${supportSub === 'qna' ? styles.subTabActive : ''}`}
-          onClick={() => setSupportSub('qna')}
+          className={`${styles.subTab} ${sub === 'qna' ? styles.subTabActive : ''}`}
+          onClick={() => setSub('qna')}
         >
           1:1 문의
         </button>
         <button
           type="button"
-          className={`${styles.subTab} ${supportSub === 'complain' ? styles.subTabActive : ''}`}
-          onClick={() => setSupportSub('complain')}
+          className={`${styles.subTab} ${sub === 'complain' ? styles.subTabActive : ''}`}
+          onClick={() => setSub('complain')}
         >
           민원
         </button>
       </div>
-
-      {supportSub === 'qna' && <QnaInline />}
-      {supportSub === 'complain' && <ComplainInline />}
+      {sub === 'qna' && <QnaInline />}
+      {sub === 'complain' && <ComplainInline />}
     </div>
   );
 }
 
-// ── 룸서비스 탭 (서브뷰: product → cart → checkout → orders → orderDetail) ─
+// ── 룸서비스 탭 ───────────────────────────────────────────────
 function RoomServiceTab() {
-  const [view, setView] = React.useState('product'); // 'product'|'cart'|'checkout'|'orders'|'orderDetail'
-  const [navState, setNavState] = React.useState({});
-  const [toastMsg, setToastMsg] = React.useState('');
-
+  const [view, setView] = useState('product');
+  const [navState, setNavState] = useState({});
+  const [toastMsg, setToastMsg] = useState('');
   const handleNav = (path, state = {}) => {
     setNavState(state);
     if (
@@ -1107,12 +966,13 @@ function RoomServiceTab() {
       if (state?.toastMsg) setToastMsg(state.toastMsg);
       setView('orders');
     } else if (path.startsWith('/commerce/orders/')) {
-      const id = Number(path.split('/').pop());
-      setNavState((prev) => ({ ...prev, orderId: id }));
+      setNavState((prev) => ({
+        ...prev,
+        orderId: Number(path.split('/').pop()),
+      }));
       setView('orderDetail');
     }
   };
-
   return (
     <div>
       {view === 'product' && (
@@ -1148,6 +1008,7 @@ function RoomServiceTab() {
   );
 }
 
+// ── 공용 시설 탭 ──────────────────────────────────────────────
 function SpaceTab({
   spaceSubTab,
   setSpaceSubTab,
@@ -1156,9 +1017,12 @@ function SpaceTab({
   clearAiSpaceInit,
 }) {
   return (
-    <div className={styles.card}>
-      <div className={styles.cardHeader}>
-        <h1 className={styles.title}>🛋️ 공용 시설 예약</h1>
+    <div>
+      <div className={styles.sectionHead} style={{ marginBottom: 20 }}>
+        <div className={styles.sectionTitleGroup}>
+          <span className={styles.sectionEyebrow}>Facilities</span>
+          <h2 className={styles.sectionTitle}>공용 시설 예약</h2>
+        </div>
       </div>
       <div className={styles.subTabRow}>
         <button
@@ -1210,7 +1074,31 @@ function SpaceTab({
   );
 }
 
-// ── 메인 컴포넌트 ─────────────────────────────────────────────
+// ── 섹션 헤더 컴포넌트 ────────────────────────────────────────
+function SectionHeader({ eyebrow, title }) {
+  return (
+    <div className={styles.sectionHead} style={{ marginBottom: 20 }}>
+      <div className={styles.sectionTitleGroup}>
+        <span className={styles.sectionEyebrow}>{eyebrow}</span>
+        <h2 className={styles.sectionTitle}>{title}</h2>
+      </div>
+    </div>
+  );
+}
+
+// ── InfoRow 헬퍼 ──────────────────────────────────────────────
+function InfoRow({ label, children }) {
+  return (
+    <div className={styles.infoRow}>
+      <div className={styles.infoLabel}>{label}</div>
+      <div className={styles.infoVal}>{children}</div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+//  메인 컴포넌트
+// ══════════════════════════════════════════════════════════════
 export default function MemberInfo() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1234,12 +1122,10 @@ export default function MemberInfo() {
   const [tourCreateOpen, setTourCreateOpen] = useState(false);
   const [tourListOpen, setTourListOpen] = useState(false);
 
-  // 로그인 체크
   useEffect(() => {
     if (!loading && !user) navigate('/login', { replace: true });
   }, [loading, user, navigate]);
 
-  // URL → 탭 동기화
   useEffect(() => {
     const tab = searchParams.get('tab') || TAB.ME;
     const sub = searchParams.get('sub') || '';
@@ -1266,52 +1152,123 @@ export default function MemberInfo() {
     goTab(key);
   };
 
-  // 로딩 중이거나 미인증이면 자식 탭(SpaceReservationCreate 등) 렌더 차단
-  // → contractApi/reservationApi가 401로 터져서 에러페이지+흰화면 되는 것 방지
   if (loading || !user) {
     return (
       <div className={styles.page}>
         <Header />
-        <div className={styles.loading}>불러오는 중…</div>
+        <div className={styles.loading}>불러오는 중</div>
       </div>
     );
   }
+
+  // 유저 이니셜
+  const initials = (user?.userNm || user?.name || 'U')
+    .slice(0, 1)
+    .toUpperCase();
+
+  // 역할 한국어 라벨
+  const getRoleLabel = (u) => {
+    const raw =
+      u?.userRole ??
+      u?.role ??
+      u?.userRl ??
+      u?.authority ??
+      u?.authorities?.[0] ??
+      '';
+    const normalized = String(raw).toLowerCase().replace('role_', '');
+    const roleMap = {
+      admin: '관리자',
+      tenant: '입주자',
+      user: '일반 회원',
+      guest: '게스트',
+    };
+    return roleMap[normalized] || '회원';
+  };
 
   return (
     <div className={styles.page}>
       <Header />
 
-      <main className={styles.container}>
-        {/* ── 사이드 메뉴 ── */}
+      {/* ── HERO ── */}
+      <div className={styles.hero}>
+        <div className={styles.heroBg} />
+        <div className={styles.heroSideLine} />
+        <div className={styles.heroContent}>
+          <div className={styles.heroInner}>
+            <p className={styles.heroEyebrow}>UNI-PLACE · MY PAGE</p>
+            <div className={styles.heroLine} />
+            <h1 className={styles.heroTitle}>마이페이지</h1>
+            <p className={styles.heroSub}>
+              계약, 결제, 예약 등 나의 모든 활동을 한 곳에서 관리하세요.
+            </p>
+          </div>
+        </div>
+        <div className={styles.heroFade} />
+      </div>
+
+      {/* ── 레이아웃 ── */}
+      <div className={styles.container}>
+        {/* ── 사이드바 ── */}
         <aside className={styles.side}>
-          <div className={styles.sideBox}>
+          {/* 프로필 카드 */}
+          <div className={styles.profileCard}>
+            <div className={styles.avatarWrap}>
+              <div className={styles.avatar}>{initials}</div>
+              <div>
+                <div className={styles.profileName}>
+                  {user?.userNm || user?.name || '사용자'}
+                </div>
+                <div className={styles.profileEmail}>
+                  {user?.userEmail || ''}
+                </div>
+              </div>
+            </div>
+            <div className={styles.profileStats}>
+              <div className={styles.profileStat}>
+                <div className={`${styles.profileStatVal} ${styles.gold}`}>
+                  {getRoleLabel(user)}
+                </div>
+                <div className={styles.profileStatLbl}>회원 등급</div>
+              </div>
+              {user?.userNickname && (
+                <div className={styles.profileStat}>
+                  <div className={styles.profileStatVal}>
+                    {user.userNickname}
+                  </div>
+                  <div className={styles.profileStatLbl}>닉네임</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 내비게이션 */}
+          <nav className={styles.sideNav}>
+            <div className={styles.sideNavHeader}>Navigation</div>
             {SIDE_ITEMS.map((item) => (
               <button
                 key={item.key}
                 type="button"
-                className={`${styles.sideItem} ${
-                  activeTab === item.key && item.key !== TAB.TOUR
-                    ? styles.sideItemActive
-                    : ''
-                }`}
+                className={`${styles.sideItem} ${activeTab === item.key && item.key !== TAB.TOUR ? styles.sideItemActive : ''}`}
                 onClick={() => handleSideClick(item.key)}
               >
-                {item.label}
+                <span
+                  className={styles.sideItemDot}
+                  style={{ background: item.dot }}
+                />
+                <span className={styles.sideItemLabel}>{item.label}</span>
+                <span className={styles.sideItemArrow}>›</span>
               </button>
             ))}
-          </div>
+          </nav>
         </aside>
 
-        {/* ── 콘텐츠 영역 ── */}
+        {/* ── 콘텐츠 ── */}
         <section className={styles.content}>
-          {activeTab === TAB.ME && <MeTab />}
+          {activeTab === TAB.ME && <MeTab user={user} />}
 
           {activeTab === TAB.MYROOM && (
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h1 className={styles.title}>{'\uB0B4 \uACC4\uC57D'}</h1>
-              </div>
-
+            <div>
+              <SectionHeader eyebrow="Contract" title="내 계약" />
               <div className={styles.subTabRow}>
                 <button
                   type="button"
@@ -1321,7 +1278,7 @@ export default function MemberInfo() {
                     setSearchParams({ tab: TAB.MYROOM, sub: 'contracts' });
                   }}
                 >
-                  {'\uB0B4 \uACC4\uC57D'}
+                  내 계약
                 </button>
                 <button
                   type="button"
@@ -1331,11 +1288,10 @@ export default function MemberInfo() {
                     setSearchParams({ tab: TAB.MYROOM, sub: 'rent-payment' });
                   }}
                 >
-                  {'\uC6D4\uC138 \uACB0\uC81C'}
+                  월세 결제
                 </button>
               </div>
-
-              {myRoomSubTab === 'contracts' && <MyContractView />}
+              {myRoomSubTab === 'contracts' && <MyContractView noOverlay />}
               {myRoomSubTab === 'rent-payment' && (
                 <MyMonthlyCharges
                   focusContractId={searchParams.get('contractId')}
@@ -1345,12 +1301,8 @@ export default function MemberInfo() {
           )}
 
           {activeTab === TAB.POSTS && (
-            <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h1 className={styles.title}>📝 작성 목록</h1>
-              </div>
-
-              {/* 1단계 서브탭: 커뮤니티 | 고객센터 */}
+            <div>
+              <SectionHeader eyebrow="Posts" title="작성 목록" />
               <div className={styles.subTabRow}>
                 <button
                   type="button"
@@ -1373,7 +1325,6 @@ export default function MemberInfo() {
                   고객센터
                 </button>
               </div>
-
               {postsSubTab === 'community' && <MyPosts />}
               {postsSubTab === 'support' && <SupportPostsTab />}
             </div>
@@ -1390,24 +1341,26 @@ export default function MemberInfo() {
           )}
 
           {activeTab === TAB.ROOMSERVICE && (
-            <div className={styles.card}>
+            <div>
+              <SectionHeader eyebrow="Room Service" title="룸서비스" />
               <RoomServiceTab />
             </div>
           )}
 
           {activeTab === TAB.PAYMENT && (
-            <div className={styles.card}>
-              <MyPaymentHistory />
+            <div>
+              <SectionHeader eyebrow="Payment" title="결제 내역" />
+              <MyPaymentHistory inlineMode />
             </div>
           )}
         </section>
-      </main>
+      </div>
 
-      {/* ── 사전 방문 예약 생성 팝업 ── */}
+      {/* ── 사전 방문 팝업 ── */}
       <Modal
         open={tourCreateOpen}
         onClose={() => setTourCreateOpen(false)}
-        title="📅 사전 방문 예약"
+        title="사전 방문 예약"
         size="lg"
       >
         <TourReservationCreate
@@ -1423,12 +1376,10 @@ export default function MemberInfo() {
           onClose={() => setTourCreateOpen(false)}
         />
       </Modal>
-
-      {/* ── 사전 방문 예약 조회 팝업 ── */}
       <Modal
         open={tourListOpen}
         onClose={() => setTourListOpen(false)}
-        title="📋 방문 예약 조회"
+        title="방문 예약 조회"
         size="lg"
       >
         <TourReservationList
@@ -1440,15 +1391,30 @@ export default function MemberInfo() {
           onClose={() => setTourListOpen(false)}
         />
       </Modal>
-    </div>
-  );
-}
 
-function Field({ label, children }) {
-  return (
-    <label className={styles.row}>
-      <div className={styles.rowLabel}>{label}</div>
-      <div className={styles.rowInput}>{children}</div>
-    </label>
+      {/* ── 모바일 하단 탭바 (1024px 이하에서 표시) ── */}
+      <nav className={styles.mobileTabBar}>
+        {SIDE_ITEMS.map((item) => (
+          <button
+            key={item.key}
+            type="button"
+            className={`${styles.mobileTabItem} ${
+              activeTab === item.key && item.key !== TAB.TOUR
+                ? styles.mobileTabItemActive
+                : ''
+            }`}
+            onClick={() => handleSideClick(item.key)}
+          >
+            <span
+              className={styles.mobileTabDot}
+              style={{
+                background: activeTab === item.key ? item.dot : undefined,
+              }}
+            />
+            {item.label}
+          </button>
+        ))}
+      </nav>
+    </div>
   );
 }

@@ -39,7 +39,7 @@ const YEAR_OPTIONS = Array.from({ length: 3 }, (_, i) => now.getFullYear() - i);
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 // ── 상세 모달 ─────────────────────────────────────────────────
-function PaymentDetailModal({ payment, onClose }) {
+function PaymentDetailModal({ payment, onClose, inlineMode }) {
   if (!payment) return null;
 
   const rows = [
@@ -71,67 +71,75 @@ function PaymentDetailModal({ payment, onClose }) {
     },
   ];
 
+  const inner = (
+    <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modalHeader}>
+        <h3 className={styles.modalTitle}>결제 상세</h3>
+        <button className={styles.modalClose} onClick={onClose}>
+          ✕
+        </button>
+      </div>
+      <div className={styles.modalBody}>
+        <div
+          className={styles.detailBadge}
+          style={{
+            background: PAYMENT_ST_COLOR[payment.paymentSt] + '20',
+            color: PAYMENT_ST_COLOR[payment.paymentSt],
+          }}
+        >
+          {PAYMENT_ST_LABEL[payment.paymentSt] ?? payment.paymentSt}
+        </div>
+        <table className={styles.detailTable}>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.label}>
+                <th>{r.label}</th>
+                <td>{r.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* 룸서비스 주문 상품 목록 */}
+        {payment.targetType === 'order' &&
+          payment.orderItems &&
+          payment.orderItems.length > 0 && (
+            <div className={styles.orderItemsWrap}>
+              <p className={styles.orderItemsTitle}>주문 상품</p>
+              <ul className={styles.orderItemsList}>
+                {payment.orderItems.map((item, i) => (
+                  <li key={i} className={styles.orderItem}>
+                    <span className={styles.orderItemName}>
+                      {item.productName}
+                    </span>
+                    <span className={styles.orderItemQty}>
+                      ×{item.quantity}
+                    </span>
+                    <span className={styles.orderItemPrice}>
+                      {Number(item.price ?? 0).toLocaleString()}원
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+      </div>
+    </div>
+  );
+
+  if (inlineMode) {
+    return <div className={styles.inlinePanel}>{inner}</div>;
+  }
+
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h3 className={styles.modalTitle}>결제 상세</h3>
-          <button className={styles.modalClose} onClick={onClose}>
-            ✕
-          </button>
-        </div>
-        <div className={styles.modalBody}>
-          <div
-            className={styles.detailBadge}
-            style={{
-              background: PAYMENT_ST_COLOR[payment.paymentSt] + '20',
-              color: PAYMENT_ST_COLOR[payment.paymentSt],
-            }}
-          >
-            {PAYMENT_ST_LABEL[payment.paymentSt] ?? payment.paymentSt}
-          </div>
-          <table className={styles.detailTable}>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.label}>
-                  <th>{r.label}</th>
-                  <td>{r.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* 룸서비스 주문 상품 목록 */}
-          {payment.targetType === 'order' &&
-            payment.orderItems &&
-            payment.orderItems.length > 0 && (
-              <div className={styles.orderItemsWrap}>
-                <p className={styles.orderItemsTitle}>주문 상품</p>
-                <ul className={styles.orderItemsList}>
-                  {payment.orderItems.map((item, i) => (
-                    <li key={i} className={styles.orderItem}>
-                      <span className={styles.orderItemName}>
-                        {item.productName}
-                      </span>
-                      <span className={styles.orderItemQty}>
-                        ×{item.quantity}
-                      </span>
-                      <span className={styles.orderItemPrice}>
-                        {Number(item.price ?? 0).toLocaleString()}원
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-        </div>
-      </div>
+      {inner}
     </div>
   );
 }
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────
-export default function MyPaymentHistory() {
+export default function MyPaymentHistory({ inlineMode = false }) {
   const [targetType, setTargetType] = useState('');
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -145,6 +153,7 @@ export default function MyPaymentHistory() {
   const [error, setError] = useState('');
 
   const [detail, setDetail] = useState(null);
+  const [openPaymentId, setOpenPaymentId] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
   const fetch = useCallback(async () => {
@@ -187,6 +196,14 @@ export default function MyPaymentHistory() {
   };
 
   const openDetail = async (paymentId) => {
+    // 같은 항목 클릭 시 닫기 (토글)
+    if (openPaymentId === paymentId) {
+      setOpenPaymentId(null);
+      setDetail(null);
+      return;
+    }
+    setOpenPaymentId(paymentId);
+    setDetail(null);
     setDetailLoading(true);
     try {
       const res = await paymentApi.getMyPaymentDetail(paymentId);
@@ -305,6 +322,18 @@ export default function MyPaymentHistory() {
         )}
       </div>
 
+      {/* ── 일반 모드: 오버레이 로딩 ── */}
+      {detailLoading && !inlineMode && (
+        <div className={styles.overlay}>
+          <div className={styles.modal} style={{ display:'flex', alignItems:'center', justifyContent:'center' }}>
+            로딩 중...
+          </div>
+        </div>
+      )}
+      {!inlineMode && detail && (
+        <PaymentDetailModal payment={detail} onClose={() => { setDetail(null); setOpenPaymentId(null); }} inlineMode={false} />
+      )}
+
       {/* ── 목록 ── */}
       {loading ? (
         <div className={styles.stateBox}>불러오는 중...</div>
@@ -317,37 +346,46 @@ export default function MyPaymentHistory() {
       ) : (
         <ul className={styles.list}>
           {items.map((p) => (
-            <li
-              key={p.paymentId}
-              className={styles.item}
-              onClick={() => openDetail(p.paymentId)}
-            >
-              <div className={styles.itemLeft}>
-                <span className={styles.itemType}>
-                  {TARGET_TYPE_LABEL[p.targetType] ?? p.targetType}
-                </span>
-                <span className={styles.itemDate}>
-                  {p.paidAt
-                    ? new Date(p.paidAt).toLocaleDateString('ko-KR')
-                    : '날짜없음'}
-                </span>
-              </div>
-              <div className={styles.itemRight}>
-                <span className={styles.itemAmount}>
-                  {Number(
-                    p.capturedPrice ?? p.totalPrice ?? 0
-                  ).toLocaleString()}
-                  원
-                </span>
-                <span
-                  className={styles.itemStatus}
-                  style={{ color: PAYMENT_ST_COLOR[p.paymentSt] ?? '#555' }}
-                >
-                  {PAYMENT_ST_LABEL[p.paymentSt] ?? p.paymentSt}
-                </span>
-                <span className={styles.itemArrow}>›</span>
-              </div>
-            </li>
+            <React.Fragment key={p.paymentId}>
+              <li
+                className={`${styles.item} ${openPaymentId === p.paymentId ? styles.itemOpen : ''}`}
+                onClick={() => openDetail(p.paymentId)}
+              >
+                <div className={styles.itemLeft}>
+                  <span className={styles.itemType}>
+                    {TARGET_TYPE_LABEL[p.targetType] ?? p.targetType}
+                  </span>
+                  <span className={styles.itemDate}>
+                    {p.paidAt
+                      ? new Date(p.paidAt).toLocaleDateString('ko-KR')
+                      : '날짜없음'}
+                  </span>
+                </div>
+                <div className={styles.itemRight}>
+                  <span className={styles.itemAmount}>
+                    {Number(
+                      p.capturedPrice ?? p.totalPrice ?? 0
+                    ).toLocaleString()}
+                    원
+                  </span>
+                  <span
+                    className={styles.itemStatus}
+                    style={{ color: PAYMENT_ST_COLOR[p.paymentSt] ?? '#555' }}
+                  >
+                    {PAYMENT_ST_LABEL[p.paymentSt] ?? p.paymentSt}
+                  </span>
+                  <span className={`${styles.itemArrow} ${openPaymentId === p.paymentId ? styles.itemArrowOpen : ''}`}>›</span>
+                </div>
+              </li>
+              {/* 클릭한 항목 바로 아래 인라인 패널 */}
+              {inlineMode && openPaymentId === p.paymentId && (
+                detailLoading
+                  ? <li className={styles.itemDetailLoading}>불러오는 중…</li>
+                  : detail && <li className={styles.itemDetailWrap}>
+                      <PaymentDetailModal payment={detail} onClose={() => { setDetail(null); setOpenPaymentId(null); }} inlineMode={true} />
+                    </li>
+              )}
+            </React.Fragment>
           ))}
         </ul>
       )}
@@ -384,24 +422,6 @@ export default function MyPaymentHistory() {
         </div>
       )}
 
-      {/* ── 상세 모달 ── */}
-      {detailLoading && (
-        <div className={styles.overlay}>
-          <div
-            className={styles.modal}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            로딩 중...
-          </div>
-        </div>
-      )}
-      {detail && (
-        <PaymentDetailModal payment={detail} onClose={() => setDetail(null)} />
-      )}
     </div>
   );
 }
