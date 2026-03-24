@@ -34,17 +34,12 @@ public class ComplainController {
             @AuthenticationPrincipal AuthUser authUser,
             @ModelAttribute ComplainSearchRequest request,
             @RequestParam(name = "page", defaultValue = "1") int page,
-            @RequestParam(name = "size", defaultValue = "20") int size,
-            @RequestParam(name = "sort", defaultValue = "compId") String sort,
-            @RequestParam(name = "direct", defaultValue = "DESC") String direct
+            @RequestParam(name = "size", defaultValue = "20") int size
     ) {
         if (page < 1) page = 1;
         if (size < 1) size = 20;
 
-        Sort.Direction direction =
-                "ASC".equalsIgnoreCase(direct) ? Sort.Direction.ASC : Sort.Direction.DESC;
-
-        Pageable pageable = PageRequest.of(page - 1, size, direction, sort);
+        Pageable pageable = PageRequest.of(page - 1, size);
         if (!isAdmin(authUser)) {
             request.setUserId(requireUserId(authUser));
         }
