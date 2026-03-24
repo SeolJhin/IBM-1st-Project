@@ -95,7 +95,7 @@ function ProductCard({
     );
   else if (outOfStock)
     stockLabel = <span className={styles.stockOut}>품절</span>;
-  else if (stock <= 5)
+  else if (stock <= 3)
     stockLabel = <span className={styles.stockLow}>재고 {stock}개 남음</span>;
   else stockLabel = <span className={styles.stockOk}>재고 {stock}개</span>;
 
@@ -243,7 +243,7 @@ export default function ProductList({
 
   const [activeTab, setActiveTab] = useState('all');
   const [prodPage, setProdPage] = useState(1);
-  const PAGE_SIZE = 5;
+  const PAGE_SIZE = 3;
   // 동적 카테고리 탭: products의 code + 공통코드 API codeValue로 생성
   const [tabs, setTabs] = useState([{ key: 'all', label: '전체' }]);
   const [codeValueMap, setCodeValueMap] = useState({});
