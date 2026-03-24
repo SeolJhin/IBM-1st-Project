@@ -120,6 +120,25 @@ def clean_function_call_text(text: str) -> str:
     if re.match(r"^\s*```(?:sql)?\s*SELECT\b.*```\s*$", text, flags=re.DOTALL | re.IGNORECASE):
         text = ""
 
+    # ── 버튼 JSON 배열이 raw 텍스트로 노출된 경우 __BUTTONS__ 형식으로 변환 ──
+    # 예: [{"label":"예약","url":"/book"}] → __BUTTONS__[{"label":"예약","url":"/book"}]
+    # __BUTTONS__ 마커 없이 노출된 버튼 JSON만 변환 (이미 마커 있으면 스킵)
+    if "__BUTTONS__" not in text:
+        def _convert_raw_button_json(m: re.Match) -> str:
+            try:
+                parsed = json.loads(m.group(0))
+                if (isinstance(parsed, list) and parsed
+                        and isinstance(parsed[0], dict)
+                        and "label" in parsed[0] and "url" in parsed[0]):
+                    return f"__BUTTONS__{m.group(0)}"
+            except Exception:
+                pass
+            return m.group(0)
+        text = re.sub(
+            r'\[\s*\{[^]]*"label"[^]]*"url"[^]]*\}\s*\]',
+            _convert_raw_button_json, text,
+        )
+
     return text.strip()
 
 
