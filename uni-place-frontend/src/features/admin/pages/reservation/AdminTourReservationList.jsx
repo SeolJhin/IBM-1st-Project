@@ -1,5 +1,6 @@
 // features/admin/pages/reservation/AdminTourReservationList.jsx
 import React, { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import styles from './AdminReservation.module.css';
@@ -75,7 +76,9 @@ export default function AdminTourReservationList() {
     const raw = params.get('tourId');
     const tourId = Number(raw);
     if (!Number.isFinite(tourId) || tourId <= 0) return;
-    const found = items.find((item) => Number(item.tourId) === Math.trunc(tourId));
+    const found = items.find(
+      (item) => Number(item.tourId) === Math.trunc(tourId)
+    );
     if (found) openStatusModal(found);
   }, [items, searchKey]);
 
@@ -233,61 +236,64 @@ export default function AdminTourReservationList() {
       )}
 
       {/* 상태 변경 모달 */}
-      {statusModal && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setStatusModal(null)}
-        >
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>투어예약 상태 변경</h2>
-              <button
-                className={styles.modalClose}
-                onClick={() => setStatusModal(null)}
-              >
-                ×
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              <p className={styles.modalDesc}>
-                예약 <strong>#{statusModal.tourId}</strong>의 상태를 변경합니다.
-              </p>
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>변경할 상태</label>
-                <div className={styles.statusBtnGroup}>
-                  {TOUR_STATUS_OPTIONS.map((o) => (
-                    <button
-                      key={o.value}
-                      type="button"
-                      className={`${styles.statusPickBtn} ${statusValue === o.value ? styles.statusPickBtnActive : ''}`}
-                      onClick={() => setStatusValue(o.value)}
-                    >
-                      {o.label}
-                    </button>
-                  ))}
+      {statusModal &&
+        createPortal(
+          <div
+            className={styles.modalOverlay}
+            onClick={() => setStatusModal(null)}
+          >
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>투어예약 상태 변경</h2>
+                <button
+                  className={styles.modalClose}
+                  onClick={() => setStatusModal(null)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className={styles.modalBody}>
+                <p className={styles.modalDesc}>
+                  예약 <strong>#{statusModal.tourId}</strong>의 상태를
+                  변경합니다.
+                </p>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>변경할 상태</label>
+                  <div className={styles.statusBtnGroup}>
+                    {TOUR_STATUS_OPTIONS.map((o) => (
+                      <button
+                        key={o.value}
+                        type="button"
+                        className={`${styles.statusPickBtn} ${statusValue === o.value ? styles.statusPickBtnActive : ''}`}
+                        onClick={() => setStatusValue(o.value)}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className={styles.modalCancelBtn}
+                  onClick={() => setStatusModal(null)}
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  className={styles.modalConfirmBtn}
+                  onClick={handleStatusChange}
+                  disabled={statusLoading}
+                >
+                  {statusLoading ? '저장 중...' : '저장'}
+                </button>
+              </div>
             </div>
-            <div className={styles.modalFooter}>
-              <button
-                type="button"
-                className={styles.modalCancelBtn}
-                onClick={() => setStatusModal(null)}
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                className={styles.modalConfirmBtn}
-                onClick={handleStatusChange}
-                disabled={statusLoading}
-              >
-                {statusLoading ? '저장 중...' : '저장'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import AdminContractList from './AdminContractList';
 import AdminRentManagement from './AdminRentManagement';
@@ -19,7 +18,11 @@ export default function AdminContractHub() {
   return (
     <section className={styles.wrap}>
       <div className={styles.topRow}>
-        <h1 className={styles.title}>계약 관리</h1>
+        <div className={styles.titleArea}>
+          <span className={styles.eyebrow}>Contract</span>
+          <div className={styles.goldLine} />
+          <h1 className={styles.title}>계약 관리</h1>
+        </div>
       </div>
 
       <div className={styles.dashboardArea}>

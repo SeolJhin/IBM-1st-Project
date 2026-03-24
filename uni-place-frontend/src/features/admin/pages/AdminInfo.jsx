@@ -698,14 +698,14 @@ export default function AdminInfo() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1>관리자 운영 대시보드</h1>
+          <h1>운영 대시보드</h1>
           <p>공유주거 플랫폼의 운영 상태를 한눈에 확인합니다.</p>
         </div>
-        <button onClick={load}>{loading ? '갱신 중...' : '새로고침'}</button>
+        <button onClick={load} disabled={loading}>{loading ? '갱신 중...' : '새로고침'}</button>
       </div>
 
       <div className={styles.meta}>
-        마지막 갱신: {lastUpdated?.toLocaleString('ko-KR')}
+        마지막 갱신: {lastUpdated?.toLocaleString('ko-KR') ?? '-'}
       </div>
 
       <section className={styles.section}>

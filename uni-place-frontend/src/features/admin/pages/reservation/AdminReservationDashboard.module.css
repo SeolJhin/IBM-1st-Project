@@ -1,102 +1,120 @@
-.dashboard {
-  gap: 20px;
+/* ═══════════════════════════════════════════════════════════════
+   AdminReservationDashboard.module.css  ·  VIVADE Edition
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --primary: #b8945a;
+  --border: #e8e2d6;
 }
 
-.topRow {
+.dashboard {
   display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-.kpiCard {
-  border: 1px solid rgba(31, 36, 48, 0.12);
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+/* ── 상단 행: KPI + 예약흐름 ── */
+.topRow {
+  display: flex;
+  gap: 14px;
+  min-width: 0;
 }
 
-.kpiCard:hover {
-  transform: translateY(-2px);
-  transition: 0.2s;
+/* KPI 카드 */
+.kpiCard {
+  flex-shrink: 0;
+  width: 140px;
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--primary);
+  background: #fffdf9;
+  padding: 18px 16px;
 }
 
 .kpiCard p {
-  font-size: 14px;
-  color: #888;
-  margin-bottom: 8px;
+  font-size: 12px;
+  color: #9a9080;
+  margin-bottom: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .kpiCard h2 {
-  font-size: 28px;
-  font-weight: 700;
-}
-
-.card {
-  flex: 2;
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(31, 36, 48, 0.12);
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  transition: 0.2s;
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
 }
 
 .divider {
   height: 1px;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--border);
   margin: 12px 0;
 }
 
-.filterGroup button {
-  margin-left: 6px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  background: #fff;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.2s ease;
-}
-
-.filterGroup button:hover {
-  background: #f8f8f8;
-}
-
-/* 선택된 버튼 */
-.activeBtn {
-  background: #fff8e8;
-  color: #b7791f;
-  border-color: #caa25a;
-  font-weight: 700;
+/* 그래프 카드 (예약 흐름 + 시간대별) */
+.card {
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--primary);
+  padding: 16px 18px;
 }
 
 .cardTitle {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0;
+  letter-spacing: 0.02em;
 }
 
 .cardHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .headerRight {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
+/* 필터 버튼 그룹 */
+.filterGroup button {
+  margin-left: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+  border-radius: 0;
+}
+
+.filterGroup button:hover {
+  background: #f5f0e8;
+}
+
+.activeBtn {
+  background: rgba(184, 148, 90, 0.14) !important;
+  color: #7c5d18 !important;
+  border-color: var(--primary) !important;
+  font-weight: 700 !important;
+}
+
+/* 범례 */
 .legend {
   display: flex;
-  justify-content: center;
   gap: 10px;
-  font-size: 12px;
-  color: #666;
+  font-size: 11px;
+  color: #9a9080;
 }
 
 .legendItem {
@@ -106,29 +124,53 @@
 }
 
 .legendDotGreen {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: #86efac;
+  background: #4ade80;
 }
 
 .legendDotPink {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #fca5a5;
 }
 
+/* 시간대 필터 select */
 .filterRow {
   display: flex;
-  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .filterRow select {
-  height: 36px;
-  padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(31, 36, 48, 0.2);
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
   background: #fff;
-  margin-left: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 0;
+}
+.filterRow select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* SVG 차트 영역 */
+.lineWrap {
+  width: 100%;
+  overflow: hidden;
+}
+
+.lineSvg {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  display: block;
+}
+
+.lineDot {
+  cursor: pointer;
 }

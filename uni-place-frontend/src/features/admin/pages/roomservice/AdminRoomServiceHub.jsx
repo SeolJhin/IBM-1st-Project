@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminRoomServiceHub.module.css';
 import RoomServiceDashboard from './AdminRoomServiceDashboard';
@@ -7,7 +6,11 @@ export default function AdminServiceHub() {
   return (
     <div className={styles.wrap}>
       <div className={styles.topRow}>
-        <h1 className={styles.title}>룸서비스 관리</h1>
+        <div className={styles.titleArea}>
+          <span className={styles.eyebrow}>Room Service</span>
+          <div className={styles.goldLine} />
+          <h1 className={styles.title}>룸서비스 관리</h1>
+        </div>
         <div className={styles.right} />
       </div>
 

@@ -1,5 +1,6 @@
 // features/admin/pages/system/AdminBannerList.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { adminApi } from '../../api/adminApi';
 import { toApiImageUrl } from '../../../file/api/fileApi';
 import styles from '../reservation/AdminReservation.module.css';
@@ -477,334 +478,350 @@ export default function AdminBannerList() {
       )}
 
       {/* 등록 모달 */}
-      {createModal && (
-        <div className={styles.modalOverlay} onClick={closeCreate}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>🖼️ 배너 등록</h2>
-              <button className={styles.modalClose} onClick={closeCreate}>
-                ×
-              </button>
-            </div>
-
-            <div className={styles.modalBody}>
-              <p className={styles.modalDesc}>배너 정보를 입력합니다.</p>
-
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>배너 제목</label>
-                <input
-                  className={styles.searchInput}
-                  value={createForm.banTitle}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, banTitle: e.target.value }))
-                  }
-                />
+      {createModal &&
+        createPortal(
+          <div className={styles.modalOverlay} onClick={closeDetail}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>🖼️ 배너 등록</h2>
+                <button className={styles.modalClose} onClick={closeCreate}>
+                  ×
+                </button>
               </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>이동 URL</label>
-                <input
-                  className={styles.searchInput}
-                  value={createForm.banUrl}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, banUrl: e.target.value }))
-                  }
-                  placeholder="https://..."
-                />
-              </div>
+              <div className={styles.modalBody}>
+                <p className={styles.modalDesc}>배너 정보를 입력합니다.</p>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>정렬 순서</label>
-                <input
-                  type="number"
-                  className={styles.searchInput}
-                  value={createForm.banOrder}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, banOrder: e.target.value }))
-                  }
-                />
-              </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>배너 제목</label>
+                  <input
+                    className={styles.searchInput}
+                    value={createForm.banTitle}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({ ...f, banTitle: e.target.value }))
+                    }
+                  />
+                </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>시작일</label>
-                <input
-                  type="datetime-local"
-                  className={styles.searchInput}
-                  value={createForm.startAt}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, startAt: e.target.value }))
-                  }
-                />
-              </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>이동 URL</label>
+                  <input
+                    className={styles.searchInput}
+                    value={createForm.banUrl}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({ ...f, banUrl: e.target.value }))
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>종료일</label>
-                <input
-                  type="datetime-local"
-                  className={styles.searchInput}
-                  value={createForm.endAt}
-                  onChange={(e) =>
-                    setCreateForm((f) => ({ ...f, endAt: e.target.value }))
-                  }
-                />
-              </div>
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>정렬 순서</label>
+                  <input
+                    type="number"
+                    className={styles.searchInput}
+                    value={createForm.banOrder}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({ ...f, banOrder: e.target.value }))
+                    }
+                  />
+                </div>
 
-              <div className={styles.modalField}>
-                <label className={styles.modalLabel}>배너 이미지(선택)</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      file: e.target.files?.[0] ?? null,
-                    }))
-                  }
-                />
-                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                  선택됨: {createForm.file?.name ?? '없음'}
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>시작일</label>
+                  <input
+                    type="datetime-local"
+                    className={styles.searchInput}
+                    value={createForm.startAt}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({ ...f, startAt: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>종료일</label>
+                  <input
+                    type="datetime-local"
+                    className={styles.searchInput}
+                    value={createForm.endAt}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({ ...f, endAt: e.target.value }))
+                    }
+                  />
+                </div>
+
+                <div className={styles.modalField}>
+                  <label className={styles.modalLabel}>배너 이미지(선택)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        file: e.target.files?.[0] ?? null,
+                      }))
+                    }
+                  />
+                  <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                    선택됨: {createForm.file?.name ?? '없음'}
+                  </div>
+                </div>
+
+                <div className={styles.infoBox}>
+                  등록 시 기본 상태는 <strong>active</strong>로 저장됩니다.
                 </div>
               </div>
 
-              <div className={styles.infoBox}>
-                등록 시 기본 상태는 <strong>active</strong>로 저장됩니다.
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className={styles.modalCancelBtn}
+                  onClick={closeCreate}
+                  disabled={createLoading}
+                >
+                  닫기
+                </button>
+                <button
+                  type="button"
+                  className={styles.modalConfirmBtn}
+                  onClick={handleCreate}
+                  disabled={createLoading}
+                >
+                  {createLoading ? '등록 중...' : '등록'}
+                </button>
               </div>
-            </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                type="button"
-                className={styles.modalCancelBtn}
-                onClick={closeCreate}
-                disabled={createLoading}
-              >
-                닫기
-              </button>
-              <button
-                type="button"
-                className={styles.modalConfirmBtn}
-                onClick={handleCreate}
-                disabled={createLoading}
-              >
-                {createLoading ? '등록 중...' : '등록'}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* 상세/수정 모달 */}
-      {detailModal && (
-        <div className={styles.modalOverlay} onClick={closeDetail}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>🖼️ 배너 상세/수정</h2>
-              <button className={styles.modalClose} onClick={closeDetail}>
-                ×
-              </button>
-            </div>
+      {detailModal &&
+        createPortal(
+          <div className={styles.modalOverlay} onClick={closeDetail}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>🖼️ 배너 상세/수정</h2>
+                <button className={styles.modalClose} onClick={closeDetail}>
+                  ×
+                </button>
+              </div>
 
-            <div className={styles.modalBody}>
-              {detailLoading ? (
-                <div className={styles.centerBox}>
-                  <div className={styles.spinner} />
-                  <p>불러오는 중...</p>
-                </div>
-              ) : !detail ? (
-                <div className={styles.emptyBox}>
-                  <p>배너 상세를 불러오지 못했습니다.</p>
-                </div>
-              ) : (
-                <>
-                  <p className={styles.modalDesc}>
-                    배너 <strong>#{detail.banId}</strong> 정보를 수정합니다.
-                  </p>
-
-                  {/* 상태: 폼만 변경, 저장 시 반영 */}
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>상태 변경</label>
-                    <div className={styles.statusBtnGroup}>
-                      {[
-                        { value: 'active', label: '활성' },
-                        { value: 'inactive', label: '비활성' },
-                      ].map((o) => (
-                        <button
-                          key={o.value}
-                          type="button"
-                          className={`${styles.statusPickBtn} ${
-                            editForm.banSt === o.value
-                              ? styles.statusPickBtnActive
-                              : ''
-                          }`}
-                          onClick={() =>
-                            setEditForm((f) => ({ ...f, banSt: o.value }))
-                          }
-                        >
-                          {o.label}
-                        </button>
-                      ))}
-                    </div>
+              <div className={styles.modalBody}>
+                {detailLoading ? (
+                  <div className={styles.centerBox}>
+                    <div className={styles.spinner} />
+                    <p>불러오는 중...</p>
                   </div>
+                ) : !detail ? (
+                  <div className={styles.emptyBox}>
+                    <p>배너 상세를 불러오지 못했습니다.</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className={styles.modalDesc}>
+                      배너 <strong>#{detail.banId}</strong> 정보를 수정합니다.
+                    </p>
 
-                  {/* 이미지 */}
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>이미지</label>
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt="banner"
-                        style={{
-                          width: '100%',
-                          maxWidth: 520,
-                          borderRadius: 12,
-                          border: '1px solid rgba(0,0,0,0.08)',
-                        }}
-                      />
-                    ) : (
-                      <div className={styles.infoBox}>
-                        등록된 이미지가 없습니다.
+                    {/* 상태: 폼만 변경, 저장 시 반영 */}
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>상태 변경</label>
+                      <div className={styles.statusBtnGroup}>
+                        {[
+                          { value: 'active', label: '활성' },
+                          { value: 'inactive', label: '비활성' },
+                        ].map((o) => (
+                          <button
+                            key={o.value}
+                            type="button"
+                            className={`${styles.statusPickBtn} ${
+                              editForm.banSt === o.value
+                                ? styles.statusPickBtnActive
+                                : ''
+                            }`}
+                            onClick={() =>
+                              setEditForm((f) => ({ ...f, banSt: o.value }))
+                            }
+                          >
+                            {o.label}
+                          </button>
+                        ))}
                       </div>
-                    )}
-                  </div>
-
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>배너 제목</label>
-                    <input
-                      className={styles.searchInput}
-                      value={editForm.banTitle}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, banTitle: e.target.value }))
-                      }
-                    />
-                  </div>
-
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>이동 URL</label>
-                    <input
-                      className={styles.searchInput}
-                      value={editForm.banUrl}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, banUrl: e.target.value }))
-                      }
-                      placeholder="https://..."
-                    />
-                  </div>
-
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>정렬 순서</label>
-                    <input
-                      type="number"
-                      className={styles.searchInput}
-                      value={editForm.banOrder}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, banOrder: e.target.value }))
-                      }
-                    />
-                  </div>
-
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>시작일</label>
-                    <input
-                      type="datetime-local"
-                      className={styles.searchInput}
-                      value={editForm.startAt}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, startAt: e.target.value }))
-                      }
-                    />
-                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      현재: {fmtDt(detail.startAt)}
                     </div>
-                  </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>종료일</label>
-                    <input
-                      type="datetime-local"
-                      className={styles.searchInput}
-                      value={editForm.endAt}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, endAt: e.target.value }))
-                      }
-                    />
-                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      현재: {fmtDt(detail.endAt)}
+                    {/* 이미지 */}
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>이미지</label>
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt="banner"
+                          style={{
+                            width: '100%',
+                            maxWidth: 520,
+                            borderRadius: 12,
+                            border: '1px solid rgba(0,0,0,0.08)',
+                          }}
+                        />
+                      ) : (
+                        <div className={styles.infoBox}>
+                          등록된 이미지가 없습니다.
+                        </div>
+                      )}
                     </div>
-                  </div>
 
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>이미지 교체</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          file: e.target.files?.[0] ?? null,
-                        }))
-                      }
-                    />
-                    <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
-                      선택됨: {editForm.file?.name ?? '없음'}
-                    </div>
-                  </div>
-
-                  <div className={styles.modalField}>
-                    <label className={styles.modalLabel}>
-                      기존 이미지 삭제
-                    </label>
-                    <label
-                      style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-                    >
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>배너 제목</label>
                       <input
-                        type="checkbox"
-                        checked={editForm.deleteImage}
+                        className={styles.searchInput}
+                        value={editForm.banTitle}
                         onChange={(e) =>
                           setEditForm((f) => ({
                             ...f,
-                            deleteImage: e.target.checked,
+                            banTitle: e.target.value,
                           }))
                         }
                       />
-                      체크 시 저장하면 기존 이미지가 삭제됩니다.
-                    </label>
-                  </div>
-                </>
-              )}
+                    </div>
+
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>이동 URL</label>
+                      <input
+                        className={styles.searchInput}
+                        value={editForm.banUrl}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, banUrl: e.target.value }))
+                        }
+                        placeholder="https://..."
+                      />
+                    </div>
+
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>정렬 순서</label>
+                      <input
+                        type="number"
+                        className={styles.searchInput}
+                        value={editForm.banOrder}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            banOrder: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>시작일</label>
+                      <input
+                        type="datetime-local"
+                        className={styles.searchInput}
+                        value={editForm.startAt}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            startAt: e.target.value,
+                          }))
+                        }
+                      />
+                      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                        현재: {fmtDt(detail.startAt)}
+                      </div>
+                    </div>
+
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>종료일</label>
+                      <input
+                        type="datetime-local"
+                        className={styles.searchInput}
+                        value={editForm.endAt}
+                        onChange={(e) =>
+                          setEditForm((f) => ({ ...f, endAt: e.target.value }))
+                        }
+                      />
+                      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                        현재: {fmtDt(detail.endAt)}
+                      </div>
+                    </div>
+
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>이미지 교체</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            file: e.target.files?.[0] ?? null,
+                          }))
+                        }
+                      />
+                      <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+                        선택됨: {editForm.file?.name ?? '없음'}
+                      </div>
+                    </div>
+
+                    <div className={styles.modalField}>
+                      <label className={styles.modalLabel}>
+                        기존 이미지 삭제
+                      </label>
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editForm.deleteImage}
+                          onChange={(e) =>
+                            setEditForm((f) => ({
+                              ...f,
+                              deleteImage: e.target.checked,
+                            }))
+                          }
+                        />
+                        체크 시 저장하면 기존 이미지가 삭제됩니다.
+                      </label>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className={styles.modalCancelBtn}
+                  onClick={closeDetail}
+                  disabled={saveLoading || detailLoading}
+                >
+                  닫기
+                </button>
+
+                <button
+                  type="button"
+                  className={styles.modalCancelBtn}
+                  onClick={handleDelete}
+                  disabled={saveLoading || detailLoading}
+                  style={{ marginLeft: 8 }}
+                >
+                  삭제
+                </button>
+
+                <button
+                  type="button"
+                  className={styles.modalConfirmBtn}
+                  onClick={handleSave}
+                  disabled={saveLoading || detailLoading}
+                >
+                  {saveLoading ? '저장 중...' : '저장'}
+                </button>
+              </div>
             </div>
-
-            <div className={styles.modalFooter}>
-              <button
-                type="button"
-                className={styles.modalCancelBtn}
-                onClick={closeDetail}
-                disabled={saveLoading || detailLoading}
-              >
-                닫기
-              </button>
-
-              <button
-                type="button"
-                className={styles.modalCancelBtn}
-                onClick={handleDelete}
-                disabled={saveLoading || detailLoading}
-                style={{ marginLeft: 8 }}
-              >
-                삭제
-              </button>
-
-              <button
-                type="button"
-                className={styles.modalConfirmBtn}
-                onClick={handleSave}
-                disabled={saveLoading || detailLoading}
-              >
-                {saveLoading ? '저장 중...' : '저장'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

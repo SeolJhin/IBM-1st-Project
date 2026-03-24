@@ -1,5 +1,6 @@
 // features/admin/pages/contract/AdminResidentList.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { adminApi } from '../../api/adminApi';
 import styles from '../reservation/AdminReservation.module.css';
 
@@ -314,7 +315,7 @@ export default function AdminResidentList() {
       )}
 
       {/* 상세 모달 */}
-      {detailModal && (
+      {detailModal && createPortal(
         <div className={styles.modalOverlay} onClick={closeDetail}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
@@ -372,7 +373,8 @@ export default function AdminResidentList() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

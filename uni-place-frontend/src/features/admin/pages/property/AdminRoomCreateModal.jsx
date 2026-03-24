@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useState } from 'react';
 import { adminApi } from '../../api/adminApi';
 import FileUploader from '../../../file/components/FileUploader';
@@ -104,7 +105,7 @@ export default function AdminRoomCreateModal({ onClose, onSuccess }) {
     }
   };
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
@@ -370,5 +371,7 @@ export default function AdminRoomCreateModal({ onClose, onSuccess }) {
         </div>
       </div>
     </div>
-  );
+  ,
+  document.body
+);
 }

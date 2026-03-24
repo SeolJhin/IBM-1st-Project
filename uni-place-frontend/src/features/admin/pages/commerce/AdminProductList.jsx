@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { adminApi } from '../../api/adminApi';
 import { toApiImageUrl } from '../../../file/api/fileApi';
 import styles from './AdminProductList.module.css';
@@ -370,7 +371,7 @@ function ProductFormModal({
   );
   const totalImageCount = activeExisting.length + newFiles.length;
 
-  return (
+  return createPortal(
     <div
       className={styles.modalOverlay}
       onClick={(e) => {
@@ -591,7 +592,7 @@ function ProductFormModal({
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }
 
 // ─── DeleteConfirmModal ────────────────────────────────────────────────────
@@ -612,7 +613,7 @@ function DeleteConfirmModal({ product, onClose, onDeleted }) {
     }
   };
 
-  return (
+  return createPortal(
     <div
       className={styles.modalOverlay}
       onClick={(e) => {
@@ -658,7 +659,7 @@ function DeleteConfirmModal({ product, onClose, onDeleted }) {
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }
 
 // ─── 메인 컴포넌트 ─────────────────────────────────────────────────────────

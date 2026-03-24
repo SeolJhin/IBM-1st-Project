@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styles from './AdminPropertyHub.module.css';
 import { adminApi } from '../../api/adminApi';
@@ -30,7 +30,11 @@ export default function AdminPropertyHub() {
   return (
     <div className={styles.wrap}>
       <div className={styles.topRow}>
-        <h1 className={styles.title}>시설 관리</h1>
+        <div className={styles.titleArea}>
+          <span className={styles.eyebrow}>Property</span>
+          <div className={styles.goldLine} />
+          <h1 className={styles.title}>시설 관리</h1>
+        </div>
         <button
           className={`${styles.refreshBtn} ${styles[refreshState]}`}
           onClick={handleRefresh}

@@ -1,5 +1,6 @@
 // features/admin/pages/reservation/AdminSpaceReservationList.jsx
 import React, { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import styles from './AdminReservation.module.css';
@@ -72,7 +73,9 @@ export default function AdminSpaceReservationList() {
     let canceled = false;
     async function loadDetail() {
       try {
-        const res = await adminApi.spaceReservationDetail(Math.trunc(reservationId));
+        const res = await adminApi.spaceReservationDetail(
+          Math.trunc(reservationId)
+        );
         if (canceled) return;
         setDetailModal(res);
         setCancelReason('');
@@ -289,93 +292,95 @@ export default function AdminSpaceReservationList() {
         </div>
       )}
 
-      {detailModal && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setDetailModal(null)}
-        >
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>🛋️ 공용공간 예약 관리</h2>
-              <button
-                className={styles.modalClose}
-                onClick={() => setDetailModal(null)}
-              >
-                ×
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              <div className={styles.detailGrid}>
-                {[
-                  ['예약 ID', `#${detailModal.reservationId}`],
-                  ['건물명', detailModal.buildingNm ?? '-'],
-                  ['공간명', detailModal.spaceNm ?? '-'],
-                  ['예약자', detailModal.userNm ?? '-'],
-                  ['이용 시작', fmtDt(detailModal.srStartAt)],
-                  ['이용 종료', fmtDt(detailModal.srEndAt)],
-                  ['이용 인원', `${detailModal.srNoPeople ?? '-'}명`],
-                ].map(([label, value]) => (
-                  <div key={label} className={styles.detailRow}>
-                    <span className={styles.detailLabel}>{label}</span>
-                    <span className={styles.detailValue}>{value}</span>
+      {detailModal &&
+        createPortal(
+          <div
+            className={styles.modalOverlay}
+            onClick={() => setDetailModal(null)}
+          >
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2 className={styles.modalTitle}>🛋️ 공용공간 예약 관리</h2>
+                <button
+                  className={styles.modalClose}
+                  onClick={() => setDetailModal(null)}
+                >
+                  ×
+                </button>
+              </div>
+              <div className={styles.modalBody}>
+                <div className={styles.detailGrid}>
+                  {[
+                    ['예약 ID', `#${detailModal.reservationId}`],
+                    ['건물명', detailModal.buildingNm ?? '-'],
+                    ['공간명', detailModal.spaceNm ?? '-'],
+                    ['예약자', detailModal.userNm ?? '-'],
+                    ['이용 시작', fmtDt(detailModal.srStartAt)],
+                    ['이용 종료', fmtDt(detailModal.srEndAt)],
+                    ['이용 인원', `${detailModal.srNoPeople ?? '-'}명`],
+                  ].map(([label, value]) => (
+                    <div key={label} className={styles.detailRow}>
+                      <span className={styles.detailLabel}>{label}</span>
+                      <span className={styles.detailValue}>{value}</span>
+                    </div>
+                  ))}
+                  <div className={styles.detailRow}>
+                    <span className={styles.detailLabel}>현재 상태</span>
+                    <span className={styles.detailValue}>
+                      <StatusBadge status={detailModal.srSt} />
+                    </span>
                   </div>
-                ))}
-                <div className={styles.detailRow}>
-                  <span className={styles.detailLabel}>현재 상태</span>
-                  <span className={styles.detailValue}>
-                    <StatusBadge status={detailModal.srSt} />
-                  </span>
+                </div>
+                <div className={styles.cancelSection}>
+                  <label className={styles.modalLabel}>
+                    취소 사유 (취소 시 입력)
+                  </label>
+                  <textarea
+                    className={styles.cancelTextarea}
+                    rows={3}
+                    placeholder="취소 사유를 입력하세요..."
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                  />
                 </div>
               </div>
-              <div className={styles.cancelSection}>
-                <label className={styles.modalLabel}>
-                  취소 사유 (취소 시 입력)
-                </label>
-                <textarea
-                  className={styles.cancelTextarea}
-                  rows={3}
-                  placeholder="취소 사유를 입력하세요..."
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                />
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className={styles.modalCancelBtn}
+                  onClick={() => setDetailModal(null)}
+                >
+                  닫기
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnConfirm}
+                  onClick={() => handleAction('confirm')}
+                  disabled={actionLoading}
+                >
+                  ✅ 확정
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnEnd}
+                  onClick={() => handleAction('end')}
+                  disabled={actionLoading}
+                >
+                  🏁 종료
+                </button>
+                <button
+                  type="button"
+                  className={styles.btnCancel}
+                  onClick={() => handleAction('cancel')}
+                  disabled={actionLoading}
+                >
+                  ❌ 취소
+                </button>
               </div>
             </div>
-            <div className={styles.modalFooter}>
-              <button
-                type="button"
-                className={styles.modalCancelBtn}
-                onClick={() => setDetailModal(null)}
-              >
-                닫기
-              </button>
-              <button
-                type="button"
-                className={styles.btnConfirm}
-                onClick={() => handleAction('confirm')}
-                disabled={actionLoading}
-              >
-                ✅ 확정
-              </button>
-              <button
-                type="button"
-                className={styles.btnEnd}
-                onClick={() => handleAction('end')}
-                disabled={actionLoading}
-              >
-                🏁 종료
-              </button>
-              <button
-                type="button"
-                className={styles.btnCancel}
-                onClick={() => handleAction('cancel')}
-                disabled={actionLoading}
-              >
-                ❌ 취소
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
