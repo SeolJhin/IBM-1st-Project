@@ -115,10 +115,10 @@
 .paginationRow {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  padding: 14px 28px;
-  background: #fff;
-  border-bottom: 1px solid #f0ece5;
+  padding: 16px 28px 20px;
+  background: transparent;
 }
 
 .pageBtn {
@@ -302,7 +302,7 @@
 
 /* ── 인라인 래퍼 ── */
 .inlineWrap {
-  padding: 0;
+  padding: 20px 24px 8px;
 }
 
 /* ── 인라인 상단 액션 ── */
@@ -310,7 +310,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 0 0 12px;
+  padding: 0 0 16px;
 }
 
 /* ── 독립 페이지 상단 액션 (topBar 안) ── */

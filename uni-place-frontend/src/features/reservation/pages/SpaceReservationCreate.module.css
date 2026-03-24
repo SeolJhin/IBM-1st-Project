@@ -103,7 +103,7 @@
   padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   box-shadow: 0 2px 8px rgba(58, 46, 32, 0.04);
   transition: box-shadow 0.2s;
 }
@@ -273,7 +273,8 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding-top: 4px;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 .cancelBtn {
   background: none;
@@ -336,10 +337,10 @@
 
 /* ── 인라인 모드 (마이페이지 탭 내부) ── */
 .formInline {
-  padding: 4px 0 0;
+  padding: 24px 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 /* ── 제출 에러 메세지 ── */
 .submitError {
