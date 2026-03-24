@@ -56,7 +56,18 @@ function isAuthError(error) {
 
 function timeAgo(dateStr) {
   if (!dateStr) return '';
-  const diff = Date.now() - new Date(dateStr).getTime();
+  let parsed;
+  if (Array.isArray(dateStr)) {
+    const [y, mo, d, h = 0, mi = 0, s = 0] = dateStr;
+    parsed = new Date(y, mo - 1, d, h, mi, s);
+  } else {
+    const str = String(dateStr);
+    parsed = str.includes('T') && !str.includes('Z') && !str.includes('+')
+      ? new Date(str + '+09:00')
+      : new Date(str);
+  }
+  const diff = Date.now() - parsed.getTime();
+  if (isNaN(diff) || diff < 0) return '방금';
   const min = Math.floor(diff / 60000);
   if (min < 1) return '방금';
   if (min < 60) return `${min}분 전`;

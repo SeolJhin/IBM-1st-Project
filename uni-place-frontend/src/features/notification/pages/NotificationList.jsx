@@ -39,7 +39,18 @@ function getNotificationLabel(item) {
 
 function timeAgo(dateStr) {
   if (!dateStr) return '';
-  const diff = Date.now() - new Date(dateStr).getTime();
+  let parsed;
+  if (Array.isArray(dateStr)) {
+    const [y, mo, d, h = 0, mi = 0, s = 0] = dateStr;
+    parsed = new Date(y, mo - 1, d, h, mi, s);
+  } else {
+    const str = String(dateStr);
+    parsed = str.includes('T') && !str.includes('Z') && !str.includes('+')
+      ? new Date(str + '+09:00')
+      : new Date(str);
+  }
+  const diff = Date.now() - parsed.getTime();
+  if (isNaN(diff) || diff < 0) return '방금';
   const min = Math.floor(diff / 60000);
   if (min < 1) return '방금';
   if (min < 60) return `${min}분 전`;
@@ -47,7 +58,7 @@ function timeAgo(dateStr) {
   if (h < 24) return `${h}시간 전`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}일 전`;
-  return new Date(dateStr).toLocaleDateString('ko-KR');
+  return parsed.toLocaleDateString('ko-KR');
 }
 
 function NotificationItem({ item, onRead, onNavigate }) {

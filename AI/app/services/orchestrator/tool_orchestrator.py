@@ -2370,11 +2370,11 @@ def _clean_function_call_text(text: str) -> str:
 
 
 def _is_tool_call_json(text: str) -> bool:
-    """답변이 tool call JSON(배열 또는 단일 객체)인지 감지 (버튼 JSON은 제외)."""
+    """답변이 tool call JSON 또는 raw 데이터 JSON인지 감지 (버튼 JSON은 제외)."""
     import json as _j
     stripped = text.strip()
 
-    # 배열 형태 [{"name": ...}]
+    # 배열 형태 [{"name": ...}] 또는 raw 데이터 배열 [{"building_nm": ...}]
     if stripped.startswith("[") and stripped.endswith("]"):
         try:
             parsed = _j.loads(stripped)
@@ -2382,7 +2382,11 @@ def _is_tool_call_json(text: str) -> bool:
                 first = parsed[0]
                 if "label" in first and "url" in first:
                     return False  # 버튼 JSON
-                return "name" in first and ("parameters" in first or "arguments" in first)
+                # tool call JSON
+                if "name" in first and ("parameters" in first or "arguments" in first):
+                    return True
+                # raw 데이터 JSON (DB 조회 결과가 그대로 노출된 경우)
+                return True
         except Exception:
             pass
 
