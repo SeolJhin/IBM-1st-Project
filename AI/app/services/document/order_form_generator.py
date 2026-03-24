@@ -11,7 +11,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.config.settings import settings
+from app.config.settings import resolve_runtime_path, settings
 from app.schemas.ai_request import AiRequest
 from app.services.actions.event_sink import publish_action_event
 from app.services.document.backend_file_uploader import upload_generated_file
@@ -90,7 +90,7 @@ LIMIT 500""".strip()
 
     # ── xlsx 생성 ─────────────────────────────────────────────────────────
     fname = _billing_file_name(month, building_nm, admin_id)
-    out   = Path(settings.payment_order_output_dir)
+    out   = resolve_runtime_path(settings.payment_order_output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
     wb = Workbook()
@@ -380,7 +380,7 @@ def create_order_form_from_suggestion(req: AiRequest) -> tuple[str, dict[str, An
 
 
 def _build_output_path(req: AiRequest) -> Path:
-    base = Path(settings.payment_order_output_dir)
+    base = resolve_runtime_path(settings.payment_order_output_dir)
     ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
     user = _safe(req.user_id or "admin")
     building = _safe(str(req.get_slot("building_id") or "all"))
