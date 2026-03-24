@@ -38,6 +38,12 @@ from app.services.orchestrator.alias_registry import (
     PROD_NAME_ALIASES as _PROD_NAME_ALIASES,
     is_initialized,
 )
+from app.services.orchestrator.llm_sanitizer import (
+    has_bad_tool_patterns as _has_bad_tool_patterns,
+    clean_function_call_text as _clean_function_call_text,
+    is_tool_call_json as _is_tool_call_json,
+    is_structured_tool_text as _is_structured_tool_text,
+)
 
 def execute_rag_search(query: str) -> dict:
     from app.schemas.ai_request import AiRequest
@@ -1458,20 +1464,9 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
     #   - <function=...> / <function_calls> / <function>  (Claude/Anthropic 스타일)
     #   - {"tool_code": "print(default_api.xxx(...))"} / print(default_api. (Gemini 스타일)
     _has_real_tool_calls = bool(choice.message.tool_calls)
-    _bad_tool_patterns = [
-        "<function=" in raw_content,
-        "<function_calls>" in raw_content,
-        "<function>" in raw_content,
-        "\"tool_code\"" in raw_content,
-        "print(default_api." in raw_content,
-        "Tool Call" in raw_content,
-        "tool_call" in raw_content,
-    ]
-    if not _has_real_tool_calls and any(_bad_tool_patterns):
-        logger.warning("[ToolOrchestrator] 모델 %s 가 tool call을 텍스트로 반환(패턴=%s) → "
-                       "같은 모델로 1회 재시도.", used_model,
-                       [p for p, v in zip(["<function=","<function_calls>","<function>",
-                                           "tool_code","default_api","Tool Call","tool_call"], _bad_tool_patterns) if v])
+    if not _has_real_tool_calls and _has_bad_tool_patterns(raw_content):
+        logger.warning("[ToolOrchestrator] 모델 %s 가 tool call을 텍스트로 반환 → "
+                       "같은 모델로 1회 재시도.", used_model)
         # 같은 모델 + 다른 API 키로 1회 재시도 (다른 모델로 넘기지 않음)
         _resp_retry, _used_retry = _call_with_fallback(
             client, provider, used_model, _llm_kwargs,
@@ -1479,7 +1474,7 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
         if _resp_retry is not None:
             _choice_retry = _resp_retry.choices[0]
             _raw_retry = (_choice_retry.message.content or "").strip()
-            _still_bad = any(p in _raw_retry for p in ["\"tool_code\"", "print(default_api.", "<function=", "Tool Call", "tool_call"])
+            _still_bad = _has_bad_tool_patterns(_raw_retry)
             if not _still_bad:
                 resp1 = _resp_retry
                 used_model = _used_retry
@@ -2296,112 +2291,3 @@ def _to_openai_tools(tool_defs: list[dict]) -> list[dict]:
 
 
 import re as _re
-
-def _clean_function_call_text(text: str) -> str:
-    """
-    LLM이 tool call을 텍스트로 섞어 반환한 경우 해당 부분을 제거.
-    """
-    if not text:
-        return text
-
-    # [UNI PLACE AI] / [AI] / [챗봇] 등 접두어 제거
-    text = _re.sub(r"^\s*\[(?:UNI PLACE AI|UNI PLACE|AI|챗봇|어시스턴트)\]\s*", "", text)
-
-    # <think>...</think> reasoning 블록 제거 (DeepSeek, QwQ 등 reasoning 모델)
-    text = _re.sub(r"<think>.*?</think>", "", text, flags=_re.DOTALL)
-
-    # "버튼:" / "버튼 :" / "Button:" 등 __BUTTONS__ 앞의 레이블 텍스트 제거
-    text = _re.sub(r'(?i)(버튼\s*:|button\s*:|링크\s*:)\s*', '', text)
-
-    # <function_calls>...</function_calls> 블록 전체 제거
-    text = _re.sub(r"<function_calls>.*?</function_calls>", "", text, flags=_re.DOTALL)
-
-    # <function>이름</function>{...}</function> 형식 제거
-    text = _re.sub(r"<function>[^<]*</function>\s*\{.*?\}</function>", "", text, flags=_re.DOTALL)
-
-    # <function=이름>{...}</function> 형식 제거
-    text = _re.sub(r"<function=[^>]*>\s*\{.*?\}\s*</function>", "", text, flags=_re.DOTALL)
-
-    # 남은 <function...> 태그 제거
-    text = _re.sub(r"</?function[^>]*>", "", text)
-
-    # [{"response": "..."}] 형태의 단순 응답 JSON 제거 후 텍스트 추출
-    resp_match = _re.search(r'\[\s*\{\s*"response"\s*:\s*"([^"]*)"\s*\}\s*\]', text)
-    if resp_match:
-        text = resp_match.group(1)
-
-    # JSON 배열 형태 tool call 텍스트 제거
-    text = _re.sub(r"```(?:json)?\s*\[\s*\{\s*\"name\".*?\]\s*```", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"^\s*\[\s*\{\s*\"name\"\s*:\s*\"(?:query_database|query_my_data|get_tour_available_slots|classify_complain_priority|rag_search)\".*?\]\s*$", "", text, flags=_re.DOTALL | _re.MULTILINE)
-
-    # ── Gemini가 단일 JSON 객체로 tool call을 반환하는 패턴 ──────────────────
-    # 형식: {"sql": "SELECT ...", "description": "..."}
-    # 형식: {"name": "query_database", "parameters": {...}}
-    # 형식: ```json\n{"sql": ...}\n```
-    text = _re.sub(r"```(?:json)?\s*\{\s*\"(?:sql|name|query|description|tool)\"\s*:.*?\}\s*```", "", text, flags=_re.DOTALL)
-
-    # 순수 JSON 객체 전체가 답변인 경우 (앞뒤에 다른 텍스트 없음)
-    stripped = text.strip()
-    if stripped.startswith("{") and stripped.endswith("}"):
-        try:
-            import json as _json_check
-            parsed = _json_check.loads(stripped)
-            # tool call 관련 키가 있으면 제거
-            _tool_keys = {"sql", "name", "parameters", "arguments", "tool_code",
-                          "query", "description", "function", "tool"}
-            if isinstance(parsed, dict) and _tool_keys & set(parsed.keys()):
-                text = ""
-        except Exception:
-            pass
-
-    # ── Gemini/일부 모델이 출력하는 tool_code 패턴 제거 ──────────────────────
-    text = _re.sub(r"```(?:json|python)?\s*\{[^`]*\"tool_code\"\s*:[^`]*\}\s*```", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"\{[^{}]*\"tool_code\"\s*:\s*\"[^\"]*\"\s*\}", "", text, flags=_re.DOTALL)
-
-    # ── print(default_api.xxx(...)) 패턴 단독 제거 ──────────────────────────
-    text = _re.sub(r"print\s*\(\s*default_api\.[^)]+\)\s*\)", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"print\s*\(\s*default_api\..*", "", text, flags=_re.DOTALL)
-
-    # ── 마크다운 코드블록 내 순수 SQL 제거 (답변이 SQL만인 경우) ─────────────
-    if _re.match(r"^\s*```(?:sql)?\s*SELECT\b.*```\s*$", text, flags=_re.DOTALL | _re.IGNORECASE):
-        text = ""
-
-    return text.strip()
-
-
-def _is_tool_call_json(text: str) -> bool:
-    """답변이 tool call JSON 또는 raw 데이터 JSON인지 감지 (버튼 JSON은 제외)."""
-    import json as _j
-    stripped = text.strip()
-
-    # 배열 형태 [{"name": ...}] 또는 raw 데이터 배열 [{"building_nm": ...}]
-    if stripped.startswith("[") and stripped.endswith("]"):
-        try:
-            parsed = _j.loads(stripped)
-            if isinstance(parsed, list) and parsed and isinstance(parsed[0], dict):
-                first = parsed[0]
-                if "label" in first and "url" in first:
-                    return False  # 버튼 JSON
-                # tool call JSON
-                if "name" in first and ("parameters" in first or "arguments" in first):
-                    return True
-                # raw 데이터 JSON (DB 조회 결과가 그대로 노출된 경우)
-                return True
-        except Exception:
-            pass
-
-    # 단일 객체 형태 {"sql": ..., "description": ...} 또는 {"name": ...}
-    if stripped.startswith("{") and stripped.endswith("}"):
-        try:
-            parsed = _j.loads(stripped)
-            if isinstance(parsed, dict):
-                _tool_keys = {"sql", "name", "parameters", "arguments",
-                              "tool_code", "query", "description", "function"}
-                # tool 관련 키가 있고 자연어 답변 키가 없으면 tool call JSON으로 판단
-                _text_keys = {"answer", "message", "content", "text", "response"}
-                if (_tool_keys & set(parsed.keys())) and not (_text_keys & set(parsed.keys())):
-                    return True
-        except Exception:
-            pass
-
-    return False

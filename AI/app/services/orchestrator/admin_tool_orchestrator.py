@@ -42,6 +42,12 @@ from app.services.orchestrator.alias_registry import (
     PROD_NAME_ALIASES as _PROD_NAME_ALIASES,
     is_initialized,
 )
+from app.services.orchestrator.llm_sanitizer import (
+    has_bad_tool_patterns as _has_bad_tool_patterns,
+    clean_function_call_text as _clean_function_call_text,
+    is_tool_call_json as _is_tool_call_json,
+    is_structured_tool_text as _is_structured_tool_text,
+)
 
 # Milvus 기반 RAG 도구 정의
 RAG_SEARCH_TOOL_DEFINITION = {
@@ -1908,66 +1914,9 @@ def _normalize_prod_nm_in_sql(sql: str) -> str:
     return pattern.sub(_wrap, sql)
 
 
-def _clean_function_call_text(text: str) -> str:
-    """LLM이 함수 호출/JSON을 텍스트로 노출한 경우 정리."""
-    import re as _re
-    if not text:
-        return ""
-    text = _re.sub(r"^\s*\[(?:UNI PLACE AI|UNI PLACE|AI|챗봇|어시스턴트)\]\s*", "", text)
-    text = _re.sub(r"<think>.*?</think>", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"<function_calls>.*?</function_calls>", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"<function>[^<]*</function>\s*\{.*?\}</function>", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"<function=[^>]*>\s*\{.*?\}\s*</function>", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"</?function[^>]*>", "", text)
-    text = _re.sub(r"```(?:json|python)?\s*\{[^`]*\"tool_code\"\s*:[^`]*\}\s*```", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"\{[^{}]*\"tool_code\"\s*:\s*\"[^\"]*\"\s*\}", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"print\s*\(\s*default_api\.[^)]+\)\s*\)", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"print\s*\(\s*default_api\..*", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"```(?:json)?\s*\[\s*\{\s*\"name\".*?\]\s*```", "", text, flags=_re.DOTALL)
-    text = _re.sub(r"^\s*\[\s*\{\s*\"name\".*?\]\s*$", "", text, flags=_re.DOTALL)
-    return text.strip()
 
-
-def _is_tool_call_json(text: str) -> bool:
-    stripped = (text or "").strip()
-    # 배열 형태 JSON 감지
-    if stripped.startswith("[") and stripped.endswith("]"):
-        try:
-            parsed = json.loads(stripped)
-            if isinstance(parsed, list) and parsed and isinstance(parsed[0], dict):
-                first = parsed[0]
-                if "label" in first and "url" in first:
-                    return False  # 버튼 JSON
-                return True  # tool call 또는 raw 데이터 JSON
-        except Exception:
-            pass
-    # 단일 객체 형태 JSON 감지
-    if stripped.startswith("{") and stripped.endswith("}"):
-        try:
-            parsed = json.loads(stripped)
-            if isinstance(parsed, dict):
-                _tool_keys = {"sql", "name", "parameters", "arguments",
-                              "tool_code", "query", "function"}
-                _text_keys = {"answer", "message", "content", "text", "response"}
-                if (_tool_keys & set(parsed.keys())) and not (_text_keys & set(parsed.keys())):
-                    return True
-        except Exception:
-            pass
-    return False
-
-
-def _is_structured_tool_text(text: str) -> bool:
-    s = (text or "").strip()
-    if not s:
-        return False
-    l = s.lower()
-    return (
-        _is_tool_call_json(s)
-        or "<function=" in l
-        or "<function_calls>" in l
-        or '"tool_code"' in l
-        or "print(default_api." in l
-    )
+# _clean_function_call_text, _is_tool_call_json, _is_structured_tool_text
+# → llm_sanitizer.py로 분리됨 (import는 파일 상단 참조)
 
 
 def _regenerate_plain_answer(
