@@ -70,6 +70,9 @@ export default function ComplainDetail() {
 
   const loadDetail = async () => {
     setLoading(true);
+    setReplyCtnt('');
+    setReplyStatus('resolved');
+    setPendingImages([]);
     try {
       const [res, files] = await Promise.all([
         supportApi.getComplainDetail(id),
