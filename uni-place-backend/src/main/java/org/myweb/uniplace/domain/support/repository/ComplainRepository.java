@@ -25,11 +25,10 @@ public interface ComplainRepository extends JpaRepository<Complain, Integer> {
                     or lower(coalesce(c.compCtnt, '')) like lower(concat('%', :keyword, '%'))
                   )
             order by
-              case c.importance
-                when 'high'   then 1
-                when 'medium' then 2
-                when 'low'    then 3
-                else               4
+              case
+                when c.importance = 'high' and c.compSt <> 'resolved' then 0
+                when c.compSt = 'resolved' then 2
+                else 1
               end asc,
               c.createdAt desc
             """)
