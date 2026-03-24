@@ -109,7 +109,6 @@ function ProductCard({
     <div
       className={`${styles.card} ${pendingQty > 0 || cartQty > 0 ? styles.cardActive : ''} ${outOfStock || unavailable ? styles.cardDim : ''}`}
     >
-      {cartQty > 0 && <div className={styles.cardBadge}>{cartQty}</div>}
       <div className={styles.cardImg}>
         {product.images && product.images.length > 0 ? (
           <img
@@ -145,17 +144,24 @@ function ProductCard({
           <p className={styles.cardDesc}>{product.prodDesc}</p>
         )}
         <div className={styles.stockRow}>{stockLabel}</div>
-        {cartQty > 0 && (
-          <p className={styles.cartQtyNotice}>장바구니에 {cartQty}개 담김</p>
-        )}
         <div className={styles.qtyRow}>
           <div className={styles.qtyControl}>
             <button
-              className={`${styles.qtyBtn} ${pendingQty === 0 ? styles.qtyBtnDisabled : ''}`}
-              onClick={() => pendingQty > 0 && setPending(pendingQty - 1)}
-              disabled={pendingQty === 0}
+              className={`${styles.qtyBtn} ${atMax || !canInteract ? styles.qtyBtnDisabled : ''}`}
+              onClick={() => {
+                if (!canInteract) {
+                  if (noBuilding) alert('먼저 빌딩을 선택해주세요.');
+                  return;
+                }
+                if (atMax) {
+                  alert(`재고가 부족합니다. (최대 ${maxAddable}개 추가 가능)`);
+                  return;
+                }
+                setPending(pendingQty + 1);
+              }}
+              disabled={atMax || !canInteract}
             >
-              −
+              +
             </button>
             <input
               className={styles.qtyInput}
@@ -182,21 +188,11 @@ function ProductCard({
               disabled={!canInteract}
             />
             <button
-              className={`${styles.qtyBtn} ${atMax || !canInteract ? styles.qtyBtnDisabled : ''}`}
-              onClick={() => {
-                if (!canInteract) {
-                  if (noBuilding) alert('먼저 빌딩을 선택해주세요.');
-                  return;
-                }
-                if (atMax) {
-                  alert(`재고가 부족합니다. (최대 ${maxAddable}개 추가 가능)`);
-                  return;
-                }
-                setPending(pendingQty + 1);
-              }}
-              disabled={atMax || !canInteract}
+              className={`${styles.qtyBtn} ${pendingQty === 0 ? styles.qtyBtnDisabled : ''}`}
+              onClick={() => pendingQty > 0 && setPending(pendingQty - 1)}
+              disabled={pendingQty === 0}
             >
-              +
+              −
             </button>
             {pendingQty > 0 && (
               <span className={styles.qtyPrice}>
