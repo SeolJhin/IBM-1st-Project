@@ -201,7 +201,6 @@ export default function SpaceReservationCreate({
     setSelectedSlot(null);
   }, [spaceId]);
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const canSubmit = useMemo(() => {
     if (!selectedBuilding?.buildingId) return false;
@@ -238,7 +237,7 @@ export default function SpaceReservationCreate({
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!canSubmit) return;
-    setConfirmOpen(true);
+    doCreateReservation();
   };
 
   // ── 폼 내용 (공통) ──────────────────────────────────────────
@@ -396,93 +395,6 @@ export default function SpaceReservationCreate({
         </button>
       </div>
 
-      {/* 예약 확인 다이얼로그 */}
-      {confirmOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.45)',
-            zIndex: 2000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: '16px',
-              padding: '32px 28px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
-              minWidth: '300px',
-              textAlign: 'center',
-            }}
-          >
-            <p
-              style={{
-                margin: '0 0 8px',
-                fontSize: '16px',
-                fontWeight: '800',
-                color: '#2d2416',
-              }}
-            >
-              예약을 확정하시겠습니까?
-            </p>
-            {selectedSlot && currentSpace && (
-              <p
-                style={{
-                  margin: '0 0 20px',
-                  fontSize: '13px',
-                  color: '#7a6a50',
-                }}
-              >
-                {currentSpace.spaceNm} · {selectedSlot.startAt?.slice(11, 16)}~
-                {selectedSlot.endAt?.slice(11, 16)} · {srNoPeople}명
-              </p>
-            )}
-            <div
-              style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}
-            >
-              <button
-                type="button"
-                style={{
-                  minWidth: '80px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  border: '1.5px solid #ccc',
-                  background: '#fff',
-                  color: '#666',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                }}
-                onClick={() => setConfirmOpen(false)}
-              >
-                아니오
-              </button>
-              <button
-                type="button"
-                style={{
-                  minWidth: '80px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  border: 0,
-                  background: '#c58a3a',
-                  color: '#fff',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                }}
-                onClick={() => {
-                  setConfirmOpen(false);
-                  doCreateReservation();
-                }}
-              >
-                예
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </form>
   );
 
