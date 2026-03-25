@@ -151,7 +151,7 @@ public class RoomRecommendationService {
     private List<RoomRecommendationResponse> getPersonalizedTop3(String userQuery) {
         log.info("[RoomRecommendation] 개인화 추천 요청: query='{}'", userQuery);
 
-        List<Map<String, Object>> stats = fetchRoomStats();
+        List<Map<String, Object>> stats = fetchAllRoomStats();
         if (stats.isEmpty()) {
             log.warn("[RoomRecommendation] 집계 가능한 방이 없습니다.");
             return List.of();
@@ -237,6 +237,67 @@ public class RoomRecommendationService {
 
         recRepository.saveAll(toSave);
         log.info("[RoomRecommendation] Top3 저장 완료: {}건", toSave.size());
+    }
+
+    // ──────────────────────────────────────────
+    // Native Query: 개인화용 전체 후보 (다양한 방 포함)
+    // ──────────────────────────────────────────
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> fetchAllRoomStats() {
+        String sql = """
+            SELECT
+                r.room_id, b.building_nm, b.building_addr,
+                r.room_type, r.floor, r.room_size,
+                r.rent_price, r.manage_fee, r.deposit, r.rent_min,
+                r.sun_direction, r.pet_allowed_yn,
+                r.room_options, r.room_desc, r.room_capacity,
+                COALESCE(AVG(rv.rating), 0)      AS avg_rating,
+                COUNT(DISTINCT rv.review_id)     AS review_count,
+                COUNT(DISTINCT c.contract_id)    AS contract_count
+            FROM rooms r
+            INNER JOIN building b ON b.building_id = r.building_id
+            LEFT  JOIN reviews rv ON rv.room_id = r.room_id
+            LEFT  JOIN contract c ON c.room_id  = r.room_id
+                                 AND c.contract_st = 'active'
+            WHERE r.delete_yn = 'N'
+              AND b.delete_yn = 'N'
+              AND r.room_st   = 'available'
+            GROUP BY
+                r.room_id, b.building_nm, b.building_addr,
+                r.room_type, r.floor, r.room_size,
+                r.rent_price, r.manage_fee, r.deposit, r.rent_min,
+                r.sun_direction, r.pet_allowed_yn,
+                r.room_options, r.room_desc, r.room_capacity
+            ORDER BY RAND()
+            LIMIT 50
+            """;
+
+        List<Object[]> rows = em.createNativeQuery(sql).getResultList();
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (Object[] row : rows) {
+            result.add(Map.ofEntries(
+                    Map.entry("room_id",        row[0]),
+                    Map.entry("building_nm",    row[1]  != null ? row[1]  : ""),
+                    Map.entry("building_addr",  row[2]  != null ? row[2]  : ""),
+                    Map.entry("room_type",      row[3]  != null ? row[3]  : ""),
+                    Map.entry("floor",          row[4]  != null ? row[4]  : 0),
+                    Map.entry("room_size",      row[5]  != null ? ((BigDecimal) row[5]).doubleValue() : 0.0),
+                    Map.entry("rent_price",     row[6]  != null ? ((BigDecimal) row[6]).intValue() : 0),
+                    Map.entry("manage_fee",     row[7]  != null ? ((BigDecimal) row[7]).intValue() : 0),
+                    Map.entry("deposit",        row[8]  != null ? ((BigDecimal) row[8]).intValue() : 0),
+                    Map.entry("rent_min",       row[9]  != null ? row[9]  : 0),
+                    Map.entry("sun_direction",  row[10] != null ? row[10] : ""),
+                    Map.entry("pet_allowed_yn", row[11] != null ? row[11] : "N"),
+                    Map.entry("room_options",   row[12] != null ? row[12] : ""),
+                    Map.entry("room_desc",      row[13] != null ? row[13] : ""),
+                    Map.entry("room_capacity",  row[14] != null ? row[14] : 1),
+                    Map.entry("avg_rating",     row[15] != null ? ((Number) row[15]).doubleValue() : 0.0),
+                    Map.entry("review_count",   row[16] != null ? ((Number) row[16]).intValue() : 0),
+                    Map.entry("contract_count", row[17] != null ? ((Number) row[17]).intValue() : 0)
+            ));
+        }
+        return result;
     }
 
     // ──────────────────────────────────────────
