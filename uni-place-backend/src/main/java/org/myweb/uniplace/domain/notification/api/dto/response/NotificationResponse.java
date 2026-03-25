@@ -13,7 +13,8 @@ import lombok.Getter;
 @Builder
 public class NotificationResponse {
 
-    private static final ZoneId SERVER_ZONE = ZoneId.systemDefault();
+    // JDBC serverTimezone=Asia/Seoul → LocalDateTime은 KST 값
+    private static final ZoneId DB_ZONE = ZoneId.of("Asia/Seoul");
 
     private Integer notificationId;
     private String receiverId;
@@ -49,6 +50,6 @@ public class NotificationResponse {
 
     private static Long toEpochMs(LocalDateTime ldt) {
         if (ldt == null) return null;
-        return ldt.atZone(SERVER_ZONE).toInstant().toEpochMilli();
+        return ldt.atZone(DB_ZONE).toInstant().toEpochMilli();
     }
 }
