@@ -488,7 +488,6 @@ export default function AdminAffiliateList() {
             className={styles.actionBtn}
             onClick={openCreate}
             disabled={loading}
-            style={{ marginLeft: 8 }}
           >
             제휴등록
           </button>
@@ -887,7 +886,8 @@ export default function AdminAffiliateList() {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
       {/* 상세/수정 모달 */}

@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { adminApi } from '../../api/adminApi';
 import AdminPropertyListTable from './AdminPropertyListTable';
 import AdminBuildingModal from './AdminBuildingModal';
+import styles from './AdminPropertyListTable.module.css';
 
 export default function AdminBuildingList() {
   const [createModal, setCreateModal] = useState(false);
@@ -31,18 +32,10 @@ export default function AdminBuildingList() {
       render: (row) => (
         <button
           type="button"
+          className={styles.btnEdit}
           onClick={(e) => {
             e.stopPropagation();
             setEditId(row.buildingId);
-          }}
-          style={{
-            padding: '4px 10px',
-            fontSize: 12,
-            fontWeight: 700,
-            border: '1px solid rgba(202,162,90,0.5)',
-            background: 'rgba(202,162,90,0.18)',
-            borderRadius: 8,
-            cursor: 'pointer',
           }}
         >
           수정
