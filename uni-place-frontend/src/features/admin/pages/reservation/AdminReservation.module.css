@@ -94,18 +94,20 @@
 }
 
 .refreshBtn {
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 8px;
-  border: 1px solid #111;
-  background: #f3eadc;
-  cursor: pointer;
-  font-weight: 700;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(202, 162, 90, 0.5);
+  background: rgba(202, 162, 90, 0.22);
+  color: #1f2328;
   font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(202, 162, 90, 0.2);
 }
 
 .refreshBtn:disabled {
-  opacity: 0.55;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 

@@ -701,7 +701,7 @@ export default function AdminInfo() {
           <h1>운영 대시보드</h1>
           <p>공유주거 플랫폼의 운영 상태를 한눈에 확인합니다.</p>
         </div>
-        <button onClick={load} disabled={loading}>{loading ? '갱신 중...' : '새로고침'}</button>
+        <button type="button" className={styles.refreshBtn} onClick={load} disabled={loading}>{loading ? '갱신 중...' : '새로고침'}</button>
       </div>
 
       <div className={styles.meta}>

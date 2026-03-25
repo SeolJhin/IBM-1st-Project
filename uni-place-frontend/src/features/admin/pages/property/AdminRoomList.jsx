@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { adminApi } from '../../api/adminApi';
 import AdminPropertyListTable from './AdminPropertyListTable';
 import AdminRoomModal from './AdminRoomModal';
+import styles from './AdminPropertyListTable.module.css';
 
 const ROOM_ST_LABEL = {
   available: '입주가능',
@@ -56,18 +57,10 @@ export default function AdminRoomList() {
       render: (row) => (
         <button
           type="button"
+          className={styles.btnEdit}
           onClick={(e) => {
             e.stopPropagation();
             setEditId(row.roomId);
-          }}
-          style={{
-            padding: '4px 10px',
-            fontSize: 12,
-            fontWeight: 700,
-            border: '1px solid rgba(202,162,90,0.5)',
-            background: 'rgba(202,162,90,0.18)',
-            borderRadius: 8,
-            cursor: 'pointer',
           }}
         >
           수정

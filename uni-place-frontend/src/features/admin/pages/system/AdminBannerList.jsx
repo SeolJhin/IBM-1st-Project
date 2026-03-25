@@ -353,7 +353,6 @@ export default function AdminBannerList() {
             className={styles.actionBtn}
             onClick={openCreate}
             disabled={loading}
-            style={{ marginLeft: 8 }}
           >
             배너등록
           </button>
@@ -592,7 +591,8 @@ export default function AdminBannerList() {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
       {/* 상세/수정 모달 */}

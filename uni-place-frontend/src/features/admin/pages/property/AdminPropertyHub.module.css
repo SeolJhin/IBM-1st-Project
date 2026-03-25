@@ -129,33 +129,37 @@
 /* ── AI 갱신 버튼 ── */
 .refreshBtn {
   height: 36px;
-  padding: 0 18px;
-  border: 1.5px solid rgba(184, 148, 90, 0.55);
-  background: #fff;
-  color: #1a1a1a;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(202, 162, 90, 0.5);
+  background: rgba(202, 162, 90, 0.22);
+  color: #1f2328;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
+  box-shadow: 0 8px 18px rgba(202, 162, 90, 0.2);
   transition: all 0.18s;
 }
 
 .refreshBtn:hover:not(:disabled) {
-  background: rgba(184, 148, 90, 0.1);
+  background: rgba(202, 162, 90, 0.32);
 }
 
 .refreshBtn:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .refreshBtn.done {
-  border-color: #2da44e;
-  color: #2da44e;
-  background: rgba(45, 164, 78, 0.06);
+  border-color: rgba(45, 164, 78, 0.5);
+  background: rgba(45, 164, 78, 0.15);
+  color: #1a5c2a;
+  box-shadow: 0 8px 18px rgba(45, 164, 78, 0.15);
 }
 
 .refreshBtn.error {
-  border-color: #cf222e;
-  color: #cf222e;
-  background: rgba(207, 34, 46, 0.06);
+  border-color: rgba(207, 34, 46, 0.5);
+  background: rgba(207, 34, 46, 0.1);
+  color: #8c2e2e;
+  box-shadow: none;
 }
