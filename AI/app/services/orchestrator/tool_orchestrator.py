@@ -50,8 +50,49 @@ def execute_rag_search(query: str) -> dict:
     req = AiRequest(prompt=query, intent="RAG_SEARCH", user_id=None)
     results = _milvus_search(req)
     if not results:
+        # Milvus 실패 시 rag_docs 파일에서 키워드 직접 검색 (fallback)
+        results = _fallback_text_search(query)
+    if not results:
         return {"found": False, "message": "관련 문서를 찾지 못했습니다.", "results": []}
-    return {"found": True, "count": len(results), "results": [{"content": r} for r in results]}
+    return {"found": True, "count": len(results), "results": [{"text": r, "content": r} for r in results]}
+
+
+def _fallback_text_search(query: str) -> list[str]:
+    """Milvus 검색 실패 시 rag_docs 폴더에서 키워드 기반 텍스트 검색."""
+    from pathlib import Path
+    source_dir = Path(settings.rag_source_dir)
+    if not source_dir.exists():
+        return []
+    query_lower = query.lower().replace(" ", "")
+    results = []
+    for path in sorted(source_dir.rglob("*")):
+        if not path.is_file() or path.suffix.lower() not in (".txt", ".md"):
+            continue
+        try:
+            content = path.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        content_lower = content.lower().replace(" ", "")
+        # 파일명 또는 내용에 쿼리 키워드가 포함되면 매칭
+        stem_lower = path.stem.replace(" ", "").lower()
+        query_tokens = [t for t in query_lower if len(t) > 1] if len(query_lower) < 4 else [query_lower]
+        # 쿼리에서 의미 있는 키워드 추출 (조사 제거)
+        import re
+        _stopwords = {'궁금', '해요', '알려', '주세요', '싶어요', '있나요', '없나요', '뭐야', '뭔가요', '인가요', '인지'}
+        _particles = re.compile(r'(이|가|은|는|을|를|에|의|도|로|으로|에서|과|와|하고|이랑|란|이란)$')
+        raw_words = re.findall(r'[가-힣a-zA-Z]{2,}', query)
+        keywords = []
+        for w in raw_words:
+            cleaned = _particles.sub('', w)
+            if cleaned and len(cleaned) >= 2 and cleaned not in _stopwords:
+                keywords.append(cleaned)
+        if not keywords:
+            continue
+        matched = any(kw.replace(" ", "") in content_lower or kw.replace(" ", "") in stem_lower for kw in keywords)
+        if matched:
+            # 매칭된 파일에서 관련 섹션 추출 (최대 1500자)
+            results.append(content[:1500])
+    return results[:3]
 
 # 페이지 라우트 맵 — AI가 링크 버튼을 생성할 때 참고
 PAGE_ROUTES = {
@@ -1476,17 +1517,19 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
         rag_result = execute_rag_search(prompt)
         rag_context = rag_result.get("results", [])
 
-        # RAG 결과가 비어있으면 (Milvus 미연결 등) tool_choice 복원
+        # RAG 결과가 비어있으면 (임베딩 실패, Milvus 미연결 등)
+        # → LLM이 rag_search tool을 직접 호출하거나 자체 답변하도록 tool_choice 복원
         if not rag_context:
-            logger.warning("[ToolOrchestrator] RAG 결과 없음 → tool_choice 복원 (needs_tool=%s)", _needs_tool)
-            _tool_choice = "required" if _needs_tool else "auto"
-        
+            logger.warning("[ToolOrchestrator] RAG 결과 없음 → tool_choice=auto 복원 (LLM 자체 판단)")
+            _tool_choice = "auto"
+            forced_tool = None
+
     if rag_context:
         texts = []
 
         for item in rag_context[:5]:
             if isinstance(item, dict):
-                texts.append(item.get("text", ""))
+                texts.append(item.get("text", "") or item.get("content", ""))
             else:
                 texts.append(str(item))
 
@@ -1499,17 +1542,6 @@ def _run(prompt: str, history: list[dict], user_id: str | None, provider: str) -
                 f"{context_text}\n\n"
                 "★ 위 내용을 근거로 UNI PLACE 서비스에 맞게 한국어로 답변하세요. "
                 "위 내용에 없는 정보(통신사, 금융, 부동산 등 외부 계약)는 절대 언급하지 마세요."
-            )
-        })
-    elif forced_tool == "rag_search":
-        # RAG를 시도했지만 결과가 없는 경우 — LLM이 임의로 정책/규정을 만들지 못하도록 명시
-        messages.append({
-            "role": "system",
-            "content": (
-                "[참고 정보 없음] 현재 이 질문에 대한 내부 문서를 찾을 수 없습니다. "
-                "입주 규칙, 계약 절차, 정책 등 구체적인 정보를 임의로 만들어내지 마세요. "
-                "반드시 '현재 해당 정보를 찾을 수 없습니다. 정확한 안내는 고객센터(앱 내 QnA)를 이용해 주세요.' 라고 안내하고 "
-                "아래 버튼을 제공하세요: __BUTTONS__[{\"label\":\"1대1 문의하기\",\"url\":\"/support/qna/write\",\"icon\":\"💬\"}]"
             )
         })
     
