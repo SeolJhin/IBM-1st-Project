@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { adminApi } from '../../api/adminApi';
 import AdminPropertyListTable from './AdminPropertyListTable';
 import AdminSpaceModal from './AdminSpaceModal';
+import styles from './AdminPropertyListTable.module.css';
 
 export default function AdminSpaceList() {
   const [createModal, setCreateModal] = useState(false);
@@ -37,15 +38,7 @@ export default function AdminSpaceList() {
             e.stopPropagation();
             setEditId(row.spaceId);
           }}
-          style={{
-            padding: '4px 10px',
-            fontSize: 12,
-            fontWeight: 700,
-            border: '1px solid rgba(202,162,90,0.5)',
-            background: 'rgba(202,162,90,0.18)',
-            borderRadius: 8,
-            cursor: 'pointer',
-          }}
+          className={styles.btnEdit}
         >
           수정
         </button>

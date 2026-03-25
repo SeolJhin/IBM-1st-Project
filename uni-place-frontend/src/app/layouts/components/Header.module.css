@@ -238,7 +238,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: none; /* border 제거 */
+  border: none;
   background: transparent;
   color: #888888;
   display: flex;
@@ -257,6 +257,32 @@
 }
 
 .iconCircle:active {
+  transform: scale(0.93);
+}
+
+/* 관리자 아이콘 — 연한 검정 베이스, 호버 시 골드 */
+.iconCircleAdmin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  color: #C4A882;
+  cursor: pointer;
+  transition: color 0.18s, transform 0.15s;
+  margin-left: 2px;
+}
+
+.iconCircleAdmin:hover {
+  color: #B8945A;
+  transform: scale(1.08);
+}
+
+.iconCircleAdmin:active {
   transform: scale(0.93);
 }
 

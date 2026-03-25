@@ -183,7 +183,7 @@ export default function AdminCompanyInfoDetail() {
         <div className={styles.headerActions}>
           <button
             type="button"
-            className={styles.ghostButton}
+            className={styles.refreshBtn}
             onClick={load}
             disabled={loading || saving}
           >

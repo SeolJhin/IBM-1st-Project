@@ -120,6 +120,20 @@
   gap: 8px;
 }
 
+.refreshBtn {
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(202, 162, 90, 0.5);
+  background: rgba(202, 162, 90, 0.22);
+  color: #1f2328;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 12px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(202, 162, 90, 0.2);
+}
+.refreshBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 .ghostButton,
 .primaryButton {
   height: 36px;
