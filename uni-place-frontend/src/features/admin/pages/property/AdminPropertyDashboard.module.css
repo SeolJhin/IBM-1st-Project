@@ -1,6 +1,8 @@
+/* AdminPropertyDashboard.module.css  ·  VIVADE Edition */
+
 .wrap {
-  border: 1px solid rgba(31, 36, 48, 0.12);
-  border-radius: 16px;
+  border: 1px solid #e8e2d6;
+  border-top: 2px solid #b8945a;
   width: 100%;
   margin-bottom: 20px;
 }
@@ -12,101 +14,75 @@
 }
 
 .dashboardTitle {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1f2328;
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a1a;
   margin-bottom: 14px;
+  letter-spacing: 0.02em;
 }
 
 .dashboardContainer {
-  background: #fffff9;
-  border-radius: 20px;
+  background: #fafaf7;
   padding: 20px;
   width: 100%;
 }
 
-.summary {
-  display: flex;
-  gap: 40px;
-}
+.summary { display: flex; gap: 40px; }
 
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr 2fr;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
 }
 
 .summary div h2 {
   font-size: 24px;
-  font-weight: bold;
+  font-weight: 800;
+  color: #1a1a1a;
 }
 
 .card {
   background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(31, 36, 48, 0.12);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 18px;
+  border: 1px solid #e8e2d6;
+  border-top: 2px solid rgba(184, 148, 90, 0.45);
 }
-
-.card p {
-  font-size: 14px;
-  color: #888;
-  margin-bottom: 8px;
-}
-
+.card p { font-size: 13px; color: #9a9080; margin-bottom: 8px; }
 .card:hover {
-  transform: translateY(-2px);
-  transition: 0.2s;
+  box-shadow: 0 4px 14px rgba(184, 148, 90, 0.12);
+  transition: box-shadow 0.18s;
 }
-
 .card h2 {
-  font-size: 28px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
 }
 
-.cardHeader {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-.title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1f2328;
-}
-
-.icon {
-  font-size: 16px;
-}
+.cardHeader { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.title      { font-size: 14px; font-weight: 800; color: #1a1a1a; }
+.icon       { font-size: 16px; }
 
 .section {
-  background: #fff;
-  padding: 20px;
-  border-radius: 12px;
+  background: #fafaf7;
+  padding: 18px;
+  border: 1px solid #e8e2d6;
 }
 
-.filter {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 14px;
-}
-
+.filter { display: flex; justify-content: flex-end; margin-bottom: 14px; }
 .filter select {
-  height: 36px;
+  height: 34px;
   padding: 0 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(31, 36, 48, 0.2);
+  border: 1px solid #e8e2d6;
   background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
 }
+.filter select:focus { border-color: #b8945a; }
 
-.divider {
-  height: 1px;
-  background: rgba(0, 0, 0, 0.1);
-  margin: 12px 0;
-}
+.divider { height: 1px; background: #e8e2d6; margin: 12px 0; }
 
 .donutBox {
   display: flex;
@@ -127,22 +103,9 @@
   transform: rotate(-90deg);
 }
 
-/* 배경 */
-.donutTrack {
-  fill: none;
-  stroke: rgba(31, 36, 48, 0.1);
-  stroke-width: 3.8;
-}
+.donutTrack { fill: none; stroke: #e8e2d6; stroke-width: 3.8; }
+.donutValue { fill: none; stroke: #b8945a; stroke-width: 3.8; stroke-linecap: butt; }
 
-/* 입주율 */
-.donutValue {
-  fill: none;
-  stroke: #4f46e5;
-  stroke-width: 3.8;
-  stroke-linecap: round;
-}
-
-/* 중앙 텍스트 */
 .donutCenter {
   position: absolute;
   top: 50%;
@@ -150,14 +113,5 @@
   transform: translate(-50%, -50%);
   text-align: center;
 }
-
-.donutCenter strong {
-  display: block;
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.donutCenter span {
-  font-size: 12px;
-  color: #666;
-}
+.donutCenter strong { display: block; font-size: 20px; font-weight: 800; color: #1a1a1a; }
+.donutCenter span   { font-size: 11px; color: #9a9080; text-transform: uppercase; letter-spacing: 0.04em; }

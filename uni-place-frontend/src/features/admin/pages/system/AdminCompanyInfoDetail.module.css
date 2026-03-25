@@ -37,9 +37,9 @@
 }
 
 .form {
-  border: 1px solid rgba(31, 35, 40, 0.13);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #e8e2d6;
+  border-top: 2px solid #b8945a;
+  background: #fafaf7;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -167,7 +167,6 @@
 
 .errorBox {
   border: 1px solid rgba(190, 60, 60, 0.34);
-  border-radius: 12px;
   background: rgba(190, 60, 60, 0.1);
   color: #852e2e;
   font-size: 13px;
