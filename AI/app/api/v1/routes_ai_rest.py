@@ -146,14 +146,24 @@ def payment_status(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONResp
 
 @router.post("/payments/order-suggestions", response_model=AiResponse, responses=ERROR_RESPONSES)
 def payment_order_suggest(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONResponse:
-    _set_intent(payload, "PAYMENT_ORDER_SUGGESTION")
-    return _run(payload)
+    from app.services.document.payment_order_suggestion import suggest_order_from_payment
+    parsed = parse_ai_request(payload)
+    if isinstance(parsed, JSONResponse):
+        return parsed
+    parsed.intent = "PAYMENT_ORDER_SUGGESTION"
+    answer, metadata = suggest_order_from_payment(parsed)
+    return AiResponse(answer=answer, confidence=0.85, metadata=metadata)
 
 
 @router.post("/payments/order-forms", response_model=AiResponse, responses=ERROR_RESPONSES)
 def payment_order_form(payload: Dict[str, Any] = Body(...)) -> AiResponse | JSONResponse:
-    _set_intent(payload, "PAYMENT_ORDER_FORM_CREATE")
-    return _run(payload)
+    from app.services.document.order_form_generator import create_order_form_from_suggestion
+    parsed = parse_ai_request(payload)
+    if isinstance(parsed, JSONResponse):
+        return parsed
+    parsed.intent = "PAYMENT_ORDER_FORM_CREATE"
+    answer, metadata = create_order_form_from_suggestion(parsed)
+    return AiResponse(answer=answer, confidence=0.85, metadata=metadata)
 
 
 @router.get("/payments/order-forms/downloads/{file_name}", responses=ERROR_RESPONSES)
