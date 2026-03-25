@@ -247,7 +247,6 @@ def complaint_priority(payload: Dict[str, Any] = Body(...)):
 def room_recommendation(payload: Dict[str, Any] = Body(...)):
     try:
         from app.ai.room_recommend_top3 import recommend_rooms
-        import asyncio
 
         rooms = payload.get("rooms") or []
         logger.info(f"[ROOM_RECOMMEND] 후보 방 수: {len(rooms)}")
@@ -255,7 +254,7 @@ def room_recommendation(payload: Dict[str, Any] = Body(...)):
         if not rooms:
             return []
 
-        result = asyncio.run(recommend_rooms(payload))
+        result = recommend_rooms(payload)
         logger.info(f"[ROOM_RECOMMEND] Top3 결과: {result}")
         return result
 
