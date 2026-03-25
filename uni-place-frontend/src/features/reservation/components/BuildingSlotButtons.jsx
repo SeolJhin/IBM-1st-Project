@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatBuildingDisplay } from '../../../shared/utils/branchLabel';
 
 /**
  * buildings: [{ buildingId, buildingNm, ... }]
@@ -29,9 +30,9 @@ export default function BuildingSlotButtons({
               color: active ? '#fff' : '#111',
               cursor: 'pointer',
             }}
-            title={b.buildingNm ?? ''}
+            title={formatBuildingDisplay(b)}
           >
-            {b.buildingNm ?? `빌딩#${id}`}
+            {formatBuildingDisplay(b)}
           </button>
         );
       })}

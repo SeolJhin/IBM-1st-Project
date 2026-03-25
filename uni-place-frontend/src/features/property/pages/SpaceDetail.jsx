@@ -65,7 +65,7 @@ export default function SpaceDetail() {
       return;
     }
     if (String(user.userRole ?? '').toLowerCase() !== 'tenant') {
-      setPermError('공용공간 예약은 입주자(TENANT) 권한이 필요합니다.');
+      setPermError('공용공간 예약은 현재 입주 중인 분만 이용하실 수 있어요.');
       return;
     }
     // 같은 건물 active 계약 여부 확인
@@ -78,7 +78,7 @@ export default function SpaceDetail() {
       );
       if (!hasActiveHere) {
         setPermError(
-          '계약 중인 건물이 아닙니다. 해당 건물에 활성 계약이 있어야 예약할 수 있습니다.'
+          '이 건물에 거주 중인 분만 예약하실 수 있어요. 현재 계약 중인 건물의 공용공간을 이용해주세요.'
         );
         return;
       }
@@ -346,7 +346,7 @@ export default function SpaceDetail() {
                   gap: '8px',
                 }}
               >
-                🚫 {permError}
+                🔒 {permError}
               </div>
             )}
           </div>
