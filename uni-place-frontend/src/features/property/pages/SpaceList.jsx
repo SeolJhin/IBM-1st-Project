@@ -6,6 +6,7 @@ import Footer from '../../../app/layouts/components/Footer';
 import { propertyApi } from '../api/propertyApi';
 import styles from './SpaceList.module.css';
 import { toApiImageUrl } from '../../file/api/fileApi';
+import { formatBuildingDisplay } from '../../../shared/utils/branchLabel';
 
 const INIT_QUERY = {
   page: 1,
@@ -55,7 +56,7 @@ function SpaceCard({ space, onClick }) {
         )}
       </div>
       <div className={styles.cardBody}>
-        <p className={styles.buildingName}>{space.buildingNm}</p>
+        <p className={styles.buildingName}>{formatBuildingDisplay(space)}</p>
         <h3 className={styles.spaceNm}>{space.spaceNm}</h3>
         <div className={styles.spaceMeta}>
           <span>📍 {space.spaceFloor}층</span>
@@ -213,7 +214,7 @@ export default function SpaceList() {
                 <option value="">전체 건물</option>
                 {buildings.map((b) => (
                   <option key={b.buildingId} value={b.buildingId}>
-                    {b.buildingNm}
+                    {formatBuildingDisplay(b)}
                   </option>
                 ))}
               </select>

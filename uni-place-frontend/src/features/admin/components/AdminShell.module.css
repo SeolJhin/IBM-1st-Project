@@ -3,10 +3,18 @@
    ═══════════════════════════════════════════════════════════════ */
 
 @keyframes floatOrb {
-  0%   { transform: translate(0, 0) scale(1); }
-  33%  { transform: translate(24px, -18px) scale(1.06); }
-  66%  { transform: translate(-18px, 12px) scale(0.96); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(24px, -18px) scale(1.06);
+  }
+  66% {
+    transform: translate(-18px, 12px) scale(0.96);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
 }
 
 :root {
@@ -62,10 +70,10 @@
 }
 
 .body {
-  /* grid 1fr은 컨텐츠 크기와 무관하게 남은 공간만 차지 — 사이드바 밀림 원천 차단 */
   display: grid;
-  grid-template-columns: 256px 1fr;
-  position: relative;
+  grid-template-columns: 220px 1fr;
+  max-width: 1320px; /* 220px(sidebar) + 1100px(콘텐츠) */
+  margin: 0 auto; /* body 전체를 가운데 정렬 */
 }
 
 .main {
