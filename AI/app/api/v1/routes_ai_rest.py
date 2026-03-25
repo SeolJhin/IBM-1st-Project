@@ -162,10 +162,15 @@ def download_payment_order_form(file_name: str) -> FileResponse:
     if safe_name != file_name or not safe_name.lower().endswith(".xlsx"):
         raise HTTPException(400, "Invalid file name")
 
+    # 1. AI output 디렉토리에서 찾기
     base_dir = resolve_runtime_path(settings.payment_order_output_dir)
     target = (base_dir / safe_name).resolve()
-    if base_dir not in target.parents:
-        raise HTTPException(400, "Invalid file path")
+
+    # 2. 없으면 백엔드 storage/order_forms에서 찾기
+    if not target.exists():
+        backend_dir = Path(__file__).resolve().parents[4] / "uni-place-backend" / "storage" / "order_forms"
+        target = (backend_dir / safe_name).resolve()
+
     if not target.exists() or not target.is_file():
         raise HTTPException(404, "File not found")
 

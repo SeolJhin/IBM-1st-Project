@@ -331,10 +331,23 @@ def _billing_file_name(month: str, building_nm: str | None, user_id: str) -> str
 
 
 def create_order_form_from_suggestion(req: AiRequest) -> tuple[str, dict[str, Any]]:
+    logger.info("[OrderForm] slots keys: %s", list((req.slots or {}).keys()))
+    logger.info("[OrderForm] building_nm=%s building_addr=%s lessor_tel=%s",
+                req.get_slot("building_nm"), req.get_slot("building_addr"), req.get_slot("lessor_tel"))
+    logger.info("[OrderForm] approved=%s", req.get_slot("approved"))
+    logger.info("[OrderForm] building_nm=%s lessor_nm=%s lessor_tel=%s building_addr=%s",
+                req.get_slot("building_nm"), req.get_slot("lessor_nm"),
+                req.get_slot("lessor_tel"), req.get_slot("building_addr"))
+    logger.info("[OrderForm] approved_items count=%s", len(req.get_slot("approved_items") or req.get_slot("approvedItems") or []))
+    logger.info("[OrderForm] items count=%s", len(req.get_slot("items") or []))
+
     if req.get_slot("approved") is False:
         return "Order form generation skipped because admin approval is false.", {"approved": False}
 
     items = _collect_items(req)
+    logger.info("[OrderForm] _collect_items result: %d items", len(items))
+    if items:
+        logger.info("[OrderForm] first item: %s", items[0])
     if not items:
         return "No approved items were provided for order form generation.", {"approved": True, "items": []}
 
@@ -355,24 +368,41 @@ def create_order_form_from_suggestion(req: AiRequest) -> tuple[str, dict[str, An
         wb.close()
 
     building_id = _to_int(req.get_slot("building_id"))
+
+    # Spring 백엔드 storage에 복사본 저장 (로컬 환경용, 배포에서는 스킵)
+    try:
+        import shutil
+        backend_order_dir = Path(__file__).resolve().parents[4] / "uni-place-backend" / "storage" / "order_forms"
+        backend_order_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(output_path, backend_order_dir / output_path.name)
+        logger.info("[OrderForm] 백엔드 storage 복사 완료: %s", backend_order_dir / output_path.name)
+    except Exception as copy_err:
+        logger.debug("[OrderForm] 백엔드 storage 복사 스킵 (배포 환경): %s", copy_err)
+
     try:
         uploaded = upload_generated_file(
             output_path,
             file_parent_type="AI_DOCUMENT",
             file_parent_id=building_id if building_id is not None else 0,
         )
-    finally:
-        output_path.unlink(missing_ok=True)
+    except Exception as upload_err:
+        logger.warning("[OrderForm] 파일 업로드 실패 (로컬 파일 유지): %s", upload_err)
+        uploaded = {
+            "file_id": None,
+            "file_name": output_path.name,
+            "download_url": f"/api/ai/payment/order-form/download/{output_path.name}",
+            "view_url": f"/api/ai/payment/order-form/download/{output_path.name}",
+        }
 
     payload = {
         "approved": True,
         "building_id": building_id,
         "month": str(req.get_slot("month") or req.get_slot("billing_month") or ""),
         "item_count": len(items),
-        "file_id": uploaded["file_id"],
-        "file_name": uploaded["file_name"],
-        "download_url": uploaded["download_url"],
-        "view_url": uploaded["view_url"],
+        "file_id": uploaded.get("file_id"),
+        "file_name": uploaded.get("file_name") or output_path.name,
+        "download_url": uploaded.get("download_url") or f"/api/ai/payment/order-form/download/{output_path.name}",
+        "view_url": uploaded.get("view_url") or f"/api/ai/payment/order-form/download/{output_path.name}",
     }
     event = publish_action_event("payment_order_form_created", {"user_id": req.user_id, **payload})
     payload["event_status"] = event
@@ -391,6 +421,11 @@ def _build_output_path(req: AiRequest) -> Path:
 def _select_sheet(sheets: list[Worksheet]) -> Worksheet:
     if not sheets:
         raise ValueError("No worksheet in template")
+    # "발주서" 시트 (상세 양식) 우선 사용
+    for ws in sheets:
+        if ws.title == "발주서":
+            return ws
+    return sheets[0]
     best = sheets[0]
     best_score = -1
     for ws in sheets:
@@ -410,17 +445,19 @@ def _select_sheet(sheets: list[Worksheet]) -> Worksheet:
 
 def _fill_header(ws: Worksheet, req: AiRequest) -> None:
     today = str(req.get_slot("order_date") or datetime.now().date().isoformat())
-    order_no = str(req.get_slot("order_no") or req.get_slot("payment_id") or uuid4().hex[:8].upper())
-    buyer_name = str(req.get_slot("buyer_name") or "유니플레이스")
-    buyer_tel = str(req.get_slot("buyer_tel") or req.get_slot("contact") or "")
-    supplier_name = str(req.get_slot("supplier_name") or req.get_slot("affiliate_name") or "")
-    supplier_tel = str(req.get_slot("supplier_contact") or req.get_slot("supplier_tel") or "")
+    building_nm = str(req.get_slot("building_nm") or "")
+    building_addr = str(req.get_slot("building_addr") or "")
+    lessor_nm = str(req.get_slot("lessor_nm") or "")
+    lessor_tel = str(req.get_slot("lessor_tel") or "")
 
-    _put_after_label(ws, {"발 주 일", "발주일", "발주일자"}, today)
-    _put_after_label(ws, {"NO.", "NO", "NO. "}, order_no)
-    _put_after_label(ws, {"상 호 명", "상호명", "외주처"}, supplier_name)
-    _put_after_label(ws, {"연 락 처", "연락처", "전화번호"}, supplier_tel or buyer_tel)
-    _put_after_label(ws, {"발 주 자", "발주자"}, buyer_name)
+    # "발주서" 시트 — 직접 셀 좌표 기입 (병합 유지)
+    ws.cell(6, 2).value = f"발 주 일 :  {today}"                          # 발주일 (병합 첫셀에 라벨+값)
+    ws.cell(7, 23).value = building_nm or "유니플레이스"                   # 상호명
+    ws.cell(7, 34).value = lessor_nm                                      # 대표자
+    ws.cell(8, 23).value = building_addr                                  # 주소
+    ws.cell(9, 23).value = "코리빙 주거 서비스업"                          # 업태
+    ws.cell(9, 34).value = "주거임대 및 생활서비스"                         # 종목
+    ws.cell(10, 23).value = lessor_tel                                    # 연락처
 
 
 def _fill_items(ws: Worksheet, items: list[dict[str, Any]]) -> None:
@@ -428,13 +465,21 @@ def _fill_items(ws: Worksheet, items: list[dict[str, Any]]) -> None:
     if header_row == 0:
         return
 
+    # 헤더 아래에서 실제 쓰기 가능한 첫 행 찾기 (병합 셀 건너뜀)
+    name_col = cols.get("name", 3)
     row_idx = header_row + 1
+    for r in range(header_row + 1, header_row + 5):
+        cell = ws.cell(r, name_col)
+        if cell.__class__.__name__ != 'MergedCell':
+            row_idx = r
+            break
+    logger.info("[OrderForm] _fill_items: header_row=%d, data_start_row=%d, items=%d", header_row, row_idx, len(items))
     total_supply = 0
     total_tax = 0
     total_amount = 0
     for idx, item in enumerate(items, start=1):
         qty = _to_int(item.get("order_qty") or item.get("qty")) or _suggest_order_qty(item)
-        unit_price = _to_int(item.get("unit_price") or item.get("paid_amount")) or 0
+        unit_price = _to_int(item.get("unit_price") or item.get("prod_price")) or 0
         supply = _to_int(item.get("supply_amount") or item.get("amount"))
         if supply is None:
             supply = qty * unit_price
@@ -443,12 +488,20 @@ def _fill_items(ws: Worksheet, items: list[dict[str, Any]]) -> None:
             tax = int(supply * 0.1)
         amount = supply + tax
 
-        _set_cell(ws, row_idx, cols.get("no"), idx)
+        # NO는 이미 채워져 있으면 건너뜀
+        no_col = cols.get("no")
+        if no_col and ws.cell(row_idx, no_col).value is None:
+            _set_cell(ws, row_idx, no_col, idx)
         _set_cell(ws, row_idx, cols.get("name"), item.get("prod_nm") or "")
         _set_cell(ws, row_idx, cols.get("spec"), item.get("spec") or "")
         _set_cell(ws, row_idx, cols.get("qty"), qty)
         _set_cell(ws, row_idx, cols.get("unit_price"), unit_price)
-        _set_cell(ws, row_idx, cols.get("supply_amount") or cols.get("amount"), supply)
+        # 수식이 있는 셀(공급가액)은 덮어쓰지 않음 — 수량*단가로 자동 계산
+        sa_col = cols.get("supply_amount") or cols.get("amount")
+        if sa_col:
+            existing = ws.cell(row_idx, sa_col).value
+            if existing is None or (isinstance(existing, (int, float)) and existing == 0):
+                _set_cell(ws, row_idx, sa_col, supply)
         _set_cell(ws, row_idx, cols.get("tax_amount"), tax)
         _set_cell(ws, row_idx, cols.get("note"), item.get("note") or "")
 
@@ -457,12 +510,12 @@ def _fill_items(ws: Worksheet, items: list[dict[str, Any]]) -> None:
         total_amount += amount
         row_idx += 1
 
-    _put_after_label(ws, {"합계", "합 계", "합      계"}, total_supply)
-    _put_after_label(ws, {"발주금액", "총액", "합계금액"}, total_amount)
+    _put_after_label(ws, {"합계", "합 계", "합      계"}, total_amount)
+    _put_after_label(ws, {"발주금액", "총액", "합계금액", "총 액"}, total_amount)
 
 
 def _collect_items(req: AiRequest) -> list[dict[str, Any]]:
-    raw_items = req.get_slot("approved_items") or req.get_slot("items") or []
+    raw_items = req.get_slot("approved_items") or req.get_slot("approvedItems") or req.get_slot("items") or []
     if not isinstance(raw_items, list):
         return []
     items: list[dict[str, Any]] = []
@@ -493,7 +546,7 @@ def _find_item_header(ws: Worksheet) -> tuple[int, dict[str, int]]:
             continue
         mapping: dict[str, int] = {}
         for col, val in enumerate(values, start=1):
-            if val in {"NO", "NO.", "번호"}:
+            if val.upper() in {"NO", "NO.", "번호"}:
                 mapping["no"] = col
             elif val == "품명":
                 mapping["name"] = col
@@ -527,7 +580,10 @@ def _put_after_label(ws: Worksheet, labels: set[str], value: Any) -> None:
                 if target_col > ws.max_column:
                     break
                 target = ws.cell(row, target_col)
-                # Skip merged/title labels and write to first writable cell.
+                # Skip merged cells (read-only)
+                if hasattr(target, 'column') and target.__class__.__name__ == 'MergedCell':
+                    continue
+                # Write to first writable cell.
                 if step == 1 or target.value in (None, "", "(", ")"):
                     target.value = value
                     return
@@ -536,7 +592,12 @@ def _put_after_label(ws: Worksheet, labels: set[str], value: Any) -> None:
 def _set_cell(ws: Worksheet, row: int, col: int | None, value: Any) -> None:
     if col is None:
         return
-    ws.cell(row=row, column=col).value = value
+    cell = ws.cell(row=row, column=col)
+    if cell.__class__.__name__ == 'MergedCell':
+        logger.warning("[OrderForm] _set_cell SKIPPED merged: row=%d col=%d value=%s", row, col, value)
+        return
+    cell.value = value
+    logger.info("[OrderForm] _set_cell OK: row=%d col=%d value=%s", row, col, value)
 
 
 def _suggest_order_qty(item: dict[str, Any]) -> int:

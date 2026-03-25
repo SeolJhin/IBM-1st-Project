@@ -66,6 +66,41 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 8px;
+}
+.buildingSelect {
+  padding: 8px 12px;
+  border: 1.5px solid #d6cfc0;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  color: #4a4033;
+  cursor: pointer;
+  min-width: 140px;
+}
+.buildingSelect:focus {
+  border-color: #b8945a;
+  outline: none;
+}
+.orderFormBtn {
+  padding: 8px 18px;
+  border: 1.5px solid #b8945a;
+  border-radius: 8px;
+  background: #b8945a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.orderFormBtn:hover:not(:disabled) {
+  background: #a07a3a;
+  border-color: #a07a3a;
+}
+.orderFormBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .tabs {

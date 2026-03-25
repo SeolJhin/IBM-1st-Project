@@ -17,6 +17,8 @@ import org.myweb.uniplace.domain.commerce.api.dto.response.ProductWithBuildingSt
 import org.myweb.uniplace.domain.commerce.application.ProductService;
 import org.myweb.uniplace.domain.payment.domain.entity.Payment;
 import org.myweb.uniplace.domain.payment.repository.PaymentRepository;
+import org.myweb.uniplace.domain.property.domain.entity.Building;
+import org.myweb.uniplace.domain.property.repository.BuildingRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,15 +29,18 @@ public class PaymentOrderSuggestionUseCase extends AbstractForwardUseCase {
 
     private final ProductService productService;
     private final PaymentRepository paymentRepository;
+    private final BuildingRepository buildingRepository;
 
     public PaymentOrderSuggestionUseCase(
         AiGateway aiGateway,
         ProductService productService,
-        PaymentRepository paymentRepository
+        PaymentRepository paymentRepository,
+        BuildingRepository buildingRepository
     ) {
         super(aiGateway);
         this.productService = productService;
         this.paymentRepository = paymentRepository;
+        this.buildingRepository = buildingRepository;
     }
 
     @Override
@@ -55,6 +60,16 @@ public class PaymentOrderSuggestionUseCase extends AbstractForwardUseCase {
         }
         if (!hasSlot(slots, "items")) {
             slots.put("items", loadOrderItems(userId, buildingId, month));
+        }
+
+        // 빌딩 정보 주입
+        if (buildingId != null && !hasSlot(slots, "building_nm")) {
+            buildingRepository.findById(buildingId).ifPresent(b -> {
+                slots.put("building_nm", b.getBuildingNm());
+                slots.put("building_addr", b.getBuildingAddr());
+                slots.put("lessor_nm", b.getBuildingLessorNm());
+                slots.put("lessor_tel", b.getBuildingLessorTel());
+            });
         }
 
         AiGatewayRequest enrichedRequest = AiGatewayRequest.builder()
@@ -89,6 +104,7 @@ public class PaymentOrderSuggestionUseCase extends AbstractForwardUseCase {
                 item.put("building_id", currentBuildingId);
                 item.put("prod_id", product.getProdId());
                 item.put("prod_nm", product.getProdNm());
+                item.put("prod_price", product.getProdPrice() != null ? product.getProdPrice().intValue() : 0);
                 item.put("prod_stock", stock.getValue());
                 item.put("affiliate_id", product.getAffiliateId());
                 item.put("paid_amount", monthlyPaidTotal.intValue());

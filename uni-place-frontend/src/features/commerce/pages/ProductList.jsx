@@ -434,9 +434,18 @@ export default function ProductList({
   };
 
   const filtered = useMemo(() => {
-    if (activeTab === 'all') return products;
-    return products.filter((p) => p.code === activeTab);
-  }, [products, activeTab]);
+    const list = activeTab === 'all' ? products : products.filter((p) => p.code === activeTab);
+    if (selectedBuildingId == null) return list;
+    // 재고 있는 상품 앞, 없는 상품 뒤로 정렬
+    return [...list].sort((a, b) => {
+      const sa = a.buildingStocks?.[Number(selectedBuildingId)] ?? a.buildingStocks?.[selectedBuildingId] ?? -1;
+      const sb = b.buildingStocks?.[Number(selectedBuildingId)] ?? b.buildingStocks?.[selectedBuildingId] ?? -1;
+      // 재고 있음(>0) > 품절(0) > 미판매(-1)
+      if (sa > 0 && sb <= 0) return -1;
+      if (sb > 0 && sa <= 0) return 1;
+      return sb - sa; // 재고 많은 순
+    });
+  }, [products, activeTab, selectedBuildingId]);
 
   const pendingTotal = useMemo(
     () => Object.values(pendingMap).reduce((s, v) => s + (v || 0), 0),
