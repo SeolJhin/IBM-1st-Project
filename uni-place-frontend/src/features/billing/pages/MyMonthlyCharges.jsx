@@ -459,7 +459,11 @@ export default function MyMonthlyCharges({ focusContractId = null }) {
                     <td>{row.roomNo}호</td>
                     <td>{row.monthProgress}</td>
                     <td>{row.billingMonth}</td>
-                    <td>{row.statusLabel}</td>
+                    <td style={
+                      row.statusKey === 'overdue' ? { color: '#dc2626', fontWeight: 700 }
+                      : row.statusKey === 'unpaid' ? { color: '#d97706', fontWeight: 600 }
+                      : {}
+                    }>{row.statusLabel}</td>
                     <td>
                       <div className={styles.stepper}>
                         <button

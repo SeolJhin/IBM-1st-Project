@@ -82,7 +82,11 @@ export default function TourReservationList({
   const [tourTel, setTourTel] = useState('');
   const [tourPwd, setTourPwd] = useState('');
 
-  const items = lookupPage?.content ?? [];
+  const [statusFilter, setStatusFilter] = useState('all');
+  const allItems = lookupPage?.content ?? [];
+  const items = statusFilter === 'all'
+    ? allItems
+    : allItems.filter((it) => (it.tourSt ?? it.status) === statusFilter);
 
   const onLookup = async (page = 1) => {
     if (!tourTel.trim()) return alert('연락처를 입력해주세요.');
@@ -169,9 +173,29 @@ export default function TourReservationList({
       {/* 결과 */}
       {lookupPage && (
         <>
+          <div className={styles.filterRow}>
+            {[
+              { value: 'all', label: '전체' },
+              { value: 'requested', label: '대기' },
+              { value: 'confirmed', label: '확정' },
+              { value: 'cancelled', label: '취소' },
+              { value: 'ended', label: '완료' },
+            ].map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                className={`${styles.filterChip} ${statusFilter === f.value ? styles.filterChipActive : ''}`}
+                onClick={() => setStatusFilter(f.value)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
           <div className={styles.resultHeader}>
             <span className={styles.resultCount}>
-              총 <strong>{lookupPage.totalElements ?? items.length}</strong>건
+              {statusFilter === 'all'
+                ? <>총 <strong>{lookupPage.totalElements ?? allItems.length}</strong>건</>
+                : <>총 <strong>{items.length}</strong>건</>}
             </span>
             <div className={styles.paging}>
               <button

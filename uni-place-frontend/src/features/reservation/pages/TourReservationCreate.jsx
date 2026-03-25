@@ -1,5 +1,5 @@
 // features/reservation/pages/TourReservationCreate.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { propertyApi } from '../../property/api/propertyApi';
@@ -226,7 +226,13 @@ export default function TourReservationCreate({
     return '';
   };
 
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const submitRef = useRef(false);
+
   const doCreateTourReservation = async () => {
+    if (submitRef.current) return;
+    submitRef.current = true;
+    setSubmitLoading(true);
     try {
       await reservationApi.createTourReservation({
         buildingId: Number(selectedBuilding.buildingId),
@@ -244,6 +250,9 @@ export default function TourReservationCreate({
       }
     } catch (e) {
       setSubmitError(toKoreanMessage(e));
+    } finally {
+      submitRef.current = false;
+      setSubmitLoading(false);
     }
   };
 
@@ -551,12 +560,13 @@ export default function TourReservationCreate({
                     fontWeight: '700',
                     cursor: 'pointer',
                   }}
+                  disabled={submitLoading}
                   onClick={() => {
                     setConfirmOpen(false);
                     doCreateTourReservation();
                   }}
                 >
-                  예
+                  {submitLoading ? '신청 중…' : '예'}
                 </button>
               </div>
             </div>
@@ -853,12 +863,13 @@ export default function TourReservationCreate({
                     fontWeight: '700',
                     cursor: 'pointer',
                   }}
+                  disabled={submitLoading}
                   onClick={() => {
                     setConfirmOpen(false);
                     doCreateTourReservation();
                   }}
                 >
-                  예
+                  {submitLoading ? '신청 중…' : '예'}
                 </button>
               </div>
             </div>

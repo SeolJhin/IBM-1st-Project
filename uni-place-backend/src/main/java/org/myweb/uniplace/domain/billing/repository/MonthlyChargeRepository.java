@@ -15,4 +15,6 @@ public interface MonthlyChargeRepository extends JpaRepository<MonthlyCharge, In
             String billingDt,
             String chargeType
     );
+
+    List<MonthlyCharge> findByChargeSt(String chargeSt);
 }

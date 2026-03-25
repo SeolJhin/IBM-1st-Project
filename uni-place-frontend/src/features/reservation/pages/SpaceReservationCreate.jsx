@@ -1,5 +1,5 @@
 // features/reservation/pages/SpaceReservationCreate.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { propertyApi } from '../../property/api/propertyApi';
@@ -210,10 +210,18 @@ export default function SpaceReservationCreate({
     return true;
   }, [selectedBuilding, spaceId, selectedSlot, srNoPeople]);
 
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const submitRef = useRef(false);
+
   const doCreateReservation = async () => {
+    if (submitRef.current) return;
+    submitRef.current = true;
+    setSubmitLoading(true);
     const maxCap = currentSpace?.spaceCapacity;
     if (maxCap && Number(srNoPeople) > maxCap) {
       setSubmitError(`예약 인원이 최대 수용 인원(${maxCap}명)을 초과합니다.`);
+      submitRef.current = false;
+      setSubmitLoading(false);
       return;
     }
     try {
@@ -231,13 +239,16 @@ export default function SpaceReservationCreate({
       }
     } catch (e) {
       setSubmitError(toKoreanMessage(e));
+    } finally {
+      submitRef.current = false;
+      setSubmitLoading(false);
     }
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!canSubmit) return;
-    doCreateReservation();
+    if (!canSubmit || submitRef.current) return;
+    await doCreateReservation();
   };
 
   // ── 폼 내용 (공통) ──────────────────────────────────────────
@@ -389,9 +400,9 @@ export default function SpaceReservationCreate({
         <button
           type="submit"
           className={styles.submitBtn}
-          disabled={!canSubmit}
+          disabled={!canSubmit || submitLoading}
         >
-          📅 예약 확정
+          {submitLoading ? '예약 중…' : '📅 예약 확정'}
         </button>
       </div>
 

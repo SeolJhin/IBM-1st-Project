@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import { useCart } from '../hooks/useCart';
@@ -232,7 +232,10 @@ export default function Checkout({
     PAY_METHOD_DISPLAY_NAME[payMethod] || '결제수단';
   const selectedPayLabel = payMethod ? selectedPayMethodName : '선택 안됨';
 
+  const submittingRef = useRef(false);
   const handleConfirmPay = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setSubmitting(true);
     setError('');
     try {
@@ -293,6 +296,7 @@ export default function Checkout({
     } catch (e) {
       setError(e.message || '결제 중 오류가 발생했습니다.');
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

@@ -153,7 +153,39 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 0 28px 14px;
+}
+.filterRow {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px 16px;
+  border-bottom: 1px solid #ebe5d9;
+  margin-bottom: 12px;
+}
+.filterChip {
+  padding: 6px 18px;
+  border: 1.5px solid #d6cfc0;
+  border-radius: 20px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #7a6e58;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filterChip:hover {
+  border-color: #b8945a;
+  color: #b8945a;
+  background: rgba(184, 148, 90, 0.06);
+}
+.filterChipActive {
+  background: #b8945a;
+  border-color: #b8945a;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(184, 148, 90, 0.3);
 }
 .resultCount {
   font-size: 13px;

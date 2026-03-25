@@ -22,6 +22,7 @@ public class MonthlyCharge {
 
     public static final String ST_UNPAID = "unpaid";
     public static final String ST_PAID = "paid";
+    public static final String ST_OVERDUE = "overdue";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,5 +65,9 @@ public class MonthlyCharge {
     public void markUnpaid() {
         this.chargeSt = ST_UNPAID;
         this.paymentId = null;
+    }
+
+    public void markOverdue() {
+        this.chargeSt = ST_OVERDUE;
     }
 }
