@@ -55,7 +55,6 @@ export default function ComplainDetail() {
 
   // 관리자 답변
   const [replyCtnt, setReplyCtnt] = useState('');
-  const [replyStatus, setReplyStatus] = useState('resolved');
   const [replySubmitting, setReplySubmitting] = useState(false);
 
   const role = normalizeRole(user);
@@ -71,7 +70,6 @@ export default function ComplainDetail() {
   const loadDetail = async () => {
     setLoading(true);
     setReplyCtnt('');
-    setReplyStatus('resolved');
     setPendingImages([]);
     try {
       const [res, files] = await Promise.all([
@@ -83,7 +81,6 @@ export default function ComplainDetail() {
       setStatusValue(res?.compSt ?? 'received');
       // 기존 답변 내용이 있으면 입력창에 채워두기
       if (res?.replyCtnt) setReplyCtnt(res.replyCtnt);
-      if (res?.compSt) setReplyStatus(res.compSt);
     } catch (err) {
       if (Number(err?.status) === 404) {
         navigate(complainListPath, { replace: true });
@@ -181,14 +178,14 @@ export default function ComplainDetail() {
     try {
       const updated = await supportApi.createComplainReply(id, {
         replyCtnt,
-        compSt: replyStatus,
+        compSt: data.compSt,
       });
       setData((prev) => ({
         ...prev,
         ...(updated ?? {}),
         replyCk: 'Y',
         replyCtnt: updated?.replyCtnt ?? replyCtnt,
-        compSt: updated?.compSt ?? replyStatus,
+        compSt: updated?.compSt ?? data.compSt,
       }));
       alert('답변이 등록되었습니다.');
     } catch (e) {
@@ -527,18 +524,6 @@ export default function ComplainDetail() {
           >
             {hasReply ? '✏️ 답변 수정' : '💬 답변 등록'}
           </h3>
-
-          <label className={styles.formLabel}>처리 완료 상태</label>
-          <select
-            className={styles.formSelect}
-            value={replyStatus}
-            onChange={(e) => setReplyStatus(e.target.value)}
-            disabled={replySubmitting}
-            style={{ maxWidth: 200 }}
-          >
-            <option value="in_progress">처리중</option>
-            <option value="resolved">처리완료</option>
-          </select>
 
           <label className={styles.formLabel}>답변 내용</label>
           <textarea

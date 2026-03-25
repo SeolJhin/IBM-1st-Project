@@ -17,14 +17,14 @@
 }
 
 .sidebar {
-  width: 256px;
+  width: 220px; /* sideBox 크기와 동일하게 맞춤 */
   flex-shrink: 0;
   padding: 92px 0 0 0;
 }
 
 .sideBox {
-  margin-left: 260px;
-  width: 220px;
+  /* margin-left: 260px; ← 완전 제거 */
+  width: 100%; /* sidebar 너비를 그대로 채움 */
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--border);
   border-top: 3px solid var(--primary);

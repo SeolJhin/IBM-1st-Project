@@ -11,6 +11,7 @@ import BuildingSlotButtons from '../components/BuildingSlotButtons';
 import TimeSlotButtons from '../components/TimeSlotButtons';
 import styles from './TourReservationCreate.module.css';
 import { toKoreanMessage } from '../../../app/http/errorMapper';
+import { formatBuildingDisplay } from '../../../shared/utils/branchLabel';
 import {
   validatePhone,
   validateTourName,
@@ -310,7 +311,7 @@ export default function TourReservationCreate({
           />
           {selectedBuilding && (
             <p className={styles.selectedHint}>
-              선택됨: <strong>{selectedBuilding.buildingNm}</strong>
+              선택됨: <strong>{formatBuildingDisplay(selectedBuilding)}</strong>
             </p>
           )}
         </section>
@@ -439,7 +440,7 @@ export default function TourReservationCreate({
             <p className={styles.summaryTitle}>📋 예약 요약</p>
             <div className={styles.summaryGrid}>
               <span>건물</span>
-              <span>{selectedBuilding.buildingNm}</span>
+              <span>{formatBuildingDisplay(selectedBuilding)}</span>
               <span>방</span>
               <span>{`${selectedRoomInfo.roomNo}호`}</span>
               <span>날짜</span>
@@ -519,7 +520,7 @@ export default function TourReservationCreate({
                     color: '#7a6a50',
                   }}
                 >
-                  {selectedBuilding?.buildingNm ?? '-'} {'>'}{' '}
+                  {formatBuildingDisplay(selectedBuilding) || '-'} {'>'}{' '}
                   {`${selectedRoomInfo.roomNo}호`} · {date} ·{' '}
                   {selectedSlot.startAt?.slice(11, 16)}~
                   {selectedSlot.endAt?.slice(11, 16)}
@@ -621,7 +622,7 @@ export default function TourReservationCreate({
           />
           {selectedBuilding && (
             <p className={styles.selectedHint}>
-              선택됨: <strong>{selectedBuilding.buildingNm}</strong>
+              선택됨: <strong>{formatBuildingDisplay(selectedBuilding)}</strong>
             </p>
           )}
         </section>
@@ -750,7 +751,7 @@ export default function TourReservationCreate({
             <p className={styles.summaryTitle}>📋 예약 요약</p>
             <div className={styles.summaryGrid}>
               <span>건물</span>
-              <span>{selectedBuilding.buildingNm}</span>
+              <span>{formatBuildingDisplay(selectedBuilding)}</span>
               <span>방</span>
               <span>{`${selectedRoomInfo.roomNo}호`}</span>
               <span>날짜</span>
@@ -822,7 +823,7 @@ export default function TourReservationCreate({
                     color: '#7a6a50',
                   }}
                 >
-                  {selectedBuilding?.buildingNm ?? '-'} {'>'}{' '}
+                  {formatBuildingDisplay(selectedBuilding) || '-'} {'>'}{' '}
                   {`${selectedRoomInfo.roomNo}호`} · {date} ·{' '}
                   {selectedSlot.startAt?.slice(11, 16)}~
                   {selectedSlot.endAt?.slice(11, 16)}
