@@ -744,10 +744,10 @@ export default function AdminChatBot({ user }) {
 
   const quickQuestions = QUICK_QUESTIONS?.admin || [
     '미납 현황 요약해줘',
+    '이번 달 룸서비스 매출 알려줘',
     '민원 처리 현황 알려줘',
-    '계약 이상 감지 결과',
     '룸서비스 재고 현황은?',
-    '각 건물 이번달 결제 내역 문서 만들어줘',
+    '3개월 이내 만료 예정 계약 알려줘',
     'C건물 120호 적정 월세 추천해줘',
   ];
 

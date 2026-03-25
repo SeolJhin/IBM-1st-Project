@@ -16,8 +16,8 @@ def suggest_order_from_payment(req: AiRequest) -> tuple[str, dict[str, Any]]:
 
     candidates: list[dict[str, Any]] = []
     for item in items:
+        item_building = _to_int(_item_value(item, "building_id", "buildingId"))
         if building_id is not None:
-            item_building = _to_int(_item_value(item, "building_id", "buildingId"))
             if item_building != building_id:
                 continue
 
@@ -33,6 +33,8 @@ def suggest_order_from_payment(req: AiRequest) -> tuple[str, dict[str, Any]]:
         if priority <= 0:
             continue
 
+        unit_price = _to_int(_item_value(item, "prod_price", "unit_price")) or 0
+
         candidates.append(
             {
                 "building_id": item_building or 0,
@@ -42,6 +44,7 @@ def suggest_order_from_payment(req: AiRequest) -> tuple[str, dict[str, Any]]:
                 "affiliate_id": affiliate_id or 0,
                 "priority": priority,
                 "order_qty": _suggest_order_qty(stock),
+                "unit_price": unit_price,
             }
         )
 

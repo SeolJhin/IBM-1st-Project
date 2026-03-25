@@ -19,6 +19,12 @@ public class PaymentOrderFormCreateRequest {
     private String supplierName;
     private String supplierContact;
 
+    // 빌딩 정보 (프론트에서 전달)
+    private String building_nm;
+    private String building_addr;
+    private String lessor_nm;
+    private String lessor_tel;
+
     public AiIntent getIntent() {
         return AiIntent.PAYMENT_ORDER_FORM_CREATE;
     }
