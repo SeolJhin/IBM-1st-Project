@@ -36,6 +36,69 @@ ROOM_TYPE_KO = {
 SUN_KO = {"n": "북향", "s": "남향", "e": "동향", "w": "서향"}
 
 
+# ── 사전 필터링 ───────────────────────────────────────────────────────────────
+
+def _prefilter_rooms(rooms: list[dict], user_query: str) -> list[dict]:
+    """사용자 쿼리에서 조건을 추출하여 매칭되는 방을 우선 선별 (최대 12개)."""
+    q = user_query.lower().replace(" ", "")
+    scored = []
+
+    for r in rooms:
+        score = 0
+        room_text = " ".join([
+            str(r.get("room_desc", "") or ""),
+            str(r.get("room_options", "") or ""),
+            ROOM_TYPE_KO.get(r.get("room_type", ""), ""),
+            SUN_KO.get(r.get("sun_direction", ""), ""),
+        ]).lower()
+
+        # 방 타입 매칭
+        if "원룸" in q and r.get("room_type") == "one_room": score += 3
+        if "투룸" in q and r.get("room_type") == "two_room": score += 3
+        if "쓰리룸" in q and r.get("room_type") == "three_room": score += 3
+        if ("복층" in q or "로프트" in q) and r.get("room_type") == "loft": score += 3
+        if ("쉐어" in q or "셰어" in q) and r.get("room_type") == "share": score += 3
+
+        # 방향 매칭
+        if "남향" in q and r.get("sun_direction") == "s": score += 2
+        if "북향" in q and r.get("sun_direction") == "n": score += 2
+        if "동향" in q and r.get("sun_direction") == "e": score += 2
+        if "서향" in q and r.get("sun_direction") == "w": score += 2
+
+        # 반려동물 매칭
+        if ("반려동물" in q or "펫" in q or "애완" in q) and r.get("pet_allowed_yn") == "Y": score += 2
+
+        # 가격 매칭 (N만원 이하)
+        import re as _re
+        price_match = _re.search(r"(\d+)\s*만\s*원?\s*이하", user_query)
+        if price_match:
+            max_price = int(price_match.group(1)) * 10000
+            if int(r.get("rent_price", 0)) <= max_price: score += 3
+
+        # 옵션 키워드 매칭
+        option_keywords = ["에어컨", "세탁기", "냉장고", "인덕션", "풀옵션", "침대", "책상", "TV"]
+        for kw in option_keywords:
+            if kw in q and kw.lower() in room_text: score += 1
+
+        # 분위기 키워드
+        if "조용" in q: score += 0.5
+        if "넓" in q and float(r.get("room_size", 0)) > 25: score += 1
+        if "채광" in q and r.get("sun_direction") == "s": score += 1
+
+        scored.append((score, r))
+
+    # 점수순 정렬 → 상위 12개
+    scored.sort(key=lambda x: x[0], reverse=True)
+    result = [r for _, r in scored[:12]]
+
+    # 최소 5개 확보 (점수 0이어도)
+    if len(result) < 5:
+        result = [r for _, r in scored[:5]]
+
+    logger.info("[RoomRecommend] 사전필터: query='%s' → %d/%d개 선별", user_query, len(result), len(rooms))
+    return result
+
+
 # ── LLM 프롬프트 구성 ─────────────────────────────────────────────────────────
 
 def _build_room_summary(r: dict) -> str:
@@ -77,20 +140,13 @@ def _build_prompt_personalized(rooms: list[dict], user_query: str) -> str:
 - 요청사항에 없는 조건은 방의 옵션·면적·채광·월세 등 객관적 특징을 참고하세요.
 - 평점·리뷰가 없는 신규 방도 조건에 맞으면 적극 추천하세요. 리뷰 유무로 차별하지 마세요.
 - 각 방의 추천 이유는 반드시 해당 입주자의 요청사항과 연결하여 구체적으로 작성하세요.
-- 이유는 "~때문에", "~으로" 같은 구체적 근거를 포함한 2문장 이내 한국어로 작성하세요.
+- 이유는 60~90자 한국어 2문장으로 작성하세요. 각 방마다 다른 관점(가격, 옵션, 채광, 위치, 면적 등)에서 차별화된 매력을 설명하세요. 3개 방의 이유가 비슷한 패턴이면 안 됩니다.
 
 [출력 규칙]
-- 반드시 순수 JSON 배열만 출력하세요. 마크다운 없이.
-- 정확히 3개 항목, rank는 1·2·3.
-- score는 0.0~1.0 소수점 2자리.
-- room_id는 위 목록에 있는 값만 사용.
+반드시 순수 JSON 배열만 출력. 마크다운·코드블록 금지. 정확히 3개. room_id는 위 목록 값만 사용.
 
 [출력 형식]
-[
-  {{"room_id": 1, "rank": 1, "reason": "남향 채광과 반려동물 허용 조건을 모두 충족하며, 평점 4.8점으로 입주자 만족도가 검증된 방입니다.", "score": 0.91}},
-  {{"room_id": 3, "rank": 2, "reason": "요청하신 월세 범위 내에서 에어컨·세탁기 옵션이 완비되어 추가 지출 없이 입주 가능합니다.", "score": 0.78}},
-  {{"room_id": 5, "rank": 3, "reason": "조용한 북향 배치와 넓은 면적으로 재택근무 환경에 적합합니다.", "score": 0.65}}
-]"""
+[{{"room_id":1,"rank":1,"reason":"60~90자 차별화된 이유","score":0.9}},{{"room_id":2,"rank":2,"reason":"60~90자 차별화된 이유","score":0.8}},{{"room_id":3,"rank":3,"reason":"60~90자 차별화된 이유","score":0.7}}]"""
 
 
 def _build_prompt_default(rooms: list[dict]) -> str:
@@ -106,20 +162,13 @@ def _build_prompt_default(rooms: list[dict]) -> str:
 - 방의 특장점(옵션·면적·위치·채광·월세·반려동물 여부)을 가장 중요하게 고려하세요.
 - 평점·리뷰가 없는 신규 방도 조건이 좋으면 적극 추천하세요. 리뷰 유무로 차별하지 마세요.
 - 각 방이 어떤 입주자에게 특히 어울리는지 관점에서 추천 이유를 작성하세요.
-- 이유는 방의 구체적 특징(옵션, 채광, 월세 등)을 언급한 2문장 이내 한국어로 작성하세요.
+- 이유는 60~90자 한국어 2문장으로 작성하세요. 각 방마다 다른 관점(가격, 옵션, 채광, 위치, 면적 등)에서 차별화된 매력을 설명하세요. 3개 방의 이유가 비슷한 패턴이면 안 됩니다.
 
 [출력 규칙]
-- 반드시 순수 JSON 배열만 출력하세요. 마크다운 없이.
-- 정확히 3개 항목, rank는 1·2·3.
-- score는 0.0~1.0 소수점 2자리.
-- room_id는 위 목록에 있는 값만 사용.
+반드시 순수 JSON 배열만 출력. 마크다운·코드블록 금지. 정확히 3개. room_id는 위 목록 값만 사용.
 
 [출력 형식]
-[
-  {{"room_id": 1, "rank": 1, "reason": "리뷰 12건 평점 4.8의 압도적 만족도와 남향 채광이 결합된 프리미엄 원룸으로, 쾌적한 주거를 원하는 1인 가구에게 최적입니다.", "score": 0.91}},
-  {{"room_id": 3, "rank": 2, "reason": "반려동물 허용에 에어컨·세탁기·냉장고가 모두 갖춰져 추가 비용 없이 즉시 입주 가능한 실속형 방입니다.", "score": 0.78}},
-  {{"room_id": 5, "rank": 3, "reason": "장기 계약 이력 8건으로 검증된 안정적인 환경과 합리적인 월세가 균형을 이루는 방입니다.", "score": 0.65}}
-]"""
+[{{"room_id":1,"rank":1,"reason":"60~90자 차별화된 이유","score":0.9}},{{"room_id":2,"rank":2,"reason":"60~90자 차별화된 이유","score":0.8}},{{"room_id":3,"rank":3,"reason":"60~90자 차별화된 이유","score":0.7}}]"""
 
 
 # ── LLM 호출 ─────────────────────────────────────────────────────────────────
@@ -148,17 +197,16 @@ def _call_llm(prompt: str) -> str:
 
 
 def _call_gemini(prompt: str) -> str:
-    # ✅ google.genai 패키지 대신 openai 패키지로 Gemini 호출
-    # settings.gemini_model 사용 (기본값: gemini-2.5-flash-lite)
     api_key = settings.gemini_api_key
     if not api_key:
         logger.warning("[RoomRecommend] Gemini API key 없음")
         return ""
+    # 방 추천은 빠른 응답이 중요 → lite 모델 사용
     return _call_openai_compatible(
         prompt,
         api_key=api_key,
         base_url=settings.gemini_base_url,
-        model=settings.gemini_model,  # ✅ 하드코딩 제거 → settings 값 사용
+        model="gemini-2.5-flash-lite",
     )
 
 
@@ -170,14 +218,14 @@ def _call_openai_compatible(
         return ""
     try:
         from openai import OpenAI
-        kwargs: dict = {"api_key": api_key, "timeout": 30.0}
+        kwargs: dict = {"api_key": api_key, "timeout": 60.0, "max_retries": 0}
         if base_url:
             kwargs["base_url"] = base_url
         client = OpenAI(**kwargs)
         resp = client.chat.completions.create(
             model=model,
             temperature=0.3,
-            max_tokens=2000,
+            max_tokens=4096,
             messages=[{"role": "user", "content": prompt}],
         )
         raw_text = resp.choices[0].message.content or ""
@@ -283,7 +331,7 @@ def _parse_result(raw: str, rooms: list[dict], user_query: str = "") -> list[dic
 
 # ── 메인 진입점 ──────────────────────────────────────────────────────────────
 
-async def recommend_rooms(payload: dict[str, Any]) -> list[dict]:
+def recommend_rooms(payload: dict[str, Any]) -> list[dict]:
     rooms: list[dict] = payload.get("rooms", [])
     user_query: str = payload.get("user_query", "").strip()
 
@@ -295,12 +343,12 @@ async def recommend_rooms(payload: dict[str, Any]) -> list[dict]:
         logger.warning("[RoomRecommend] 후보 방이 3개 미만(%d개). 폴백 사용.", len(rooms))
         return _fallback_top3(rooms, user_query)
 
-    # LLM 추천 (Milvus 제거 — 직접 전체 후보를 LLM에 전달)
-    candidate_rooms = rooms[:20]  # 최대 20개로 제한
-
     if user_query:
+        # 사용자 쿼리에서 키워드 추출 → 조건 매칭 방을 우선 선별
+        candidate_rooms = _prefilter_rooms(rooms, user_query)
         prompt = _build_prompt_personalized(candidate_rooms, user_query)
     else:
+        candidate_rooms = rooms[:15]
         prompt = _build_prompt_default(candidate_rooms)
 
     raw    = _call_llm(prompt)
