@@ -861,7 +861,7 @@ export default function AdminProductList() {
           </select>
           <button
             type="button"
-            className={`${styles.btn} ${styles.btnPrimary}`}
+            className={styles.refreshBtn}
             onClick={fetchProducts}
             disabled={loading}
           >

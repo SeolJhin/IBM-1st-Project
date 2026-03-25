@@ -1,9 +1,9 @@
-/* features/admin/pages/user/AdminUserDashboard.module.css */
+/* features/admin/pages/user/AdminUserDashboard.module.css  ·  VIVADE Edition */
 
 .topRow {
   display: flex;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -11,32 +11,36 @@
 .kpiRow {
   display: flex;
   min-width: 60px;
-  gap: 16px;
+  gap: 12px;
 }
 
 .kpiCard {
   flex: 1;
-  border: 1px solid rgba(31, 36, 48, 0.12);
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e8e2d6;
+  border-top: 2px solid #b8945a;
+  background: #fafaf7;
+  padding: 18px;
 }
 
 .kpiCard:hover {
-  transform: translateY(-2px);
-  transition: 0.2s;
+  box-shadow: 0 4px 16px rgba(184, 148, 90, 0.14);
+  transition: box-shadow 0.18s;
 }
 
 .kpiCard p {
-  font-size: 14px;
-  color: #888;
+  font-size: 11px;
+  color: #9a9080;
   margin-bottom: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .kpiCard h2 {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
 }
 
 /* 오른쪽 영역 */
@@ -52,7 +56,7 @@
   align-items: center;
   gap: 10px;
   font-size: 12px;
-  color: #555;
+  color: #9a9080;
 }
 
 .legend span {
@@ -61,79 +65,43 @@
   gap: 4px;
 }
 
-/* 색상 박스 */
 .legend i {
   width: 10px;
   height: 10px;
   display: inline-block;
-  border-radius: 2px;
 }
 
-.new {
-  background: #86efac;
-}
+.new    { background: #b8945a; }
+.inactive { background: #94a3b8; }
+.deleted  { background: #ef9e9e; }
 
-.inactive {
-  background: #93c5fd;
-}
-
-.deleted {
-  background: #fca5a5;
-}
-
-.lineWrap {
-  width: 100%;
-}
-
-.lineSvg {
-  width: 100%;
-  height: 240px;
-}
+.lineWrap { width: 100%; }
+.lineSvg  { width: 100%; height: 240px; }
 
 .userLine {
   fill: none;
-  stroke: #86efac;
-  stroke-width: 3;
+  stroke: #b8945a;
+  stroke-width: 2.5;
   stroke-dasharray: 5 5;
 }
-
-.userDot {
-  fill: #86efac;
-}
+.userDot { fill: #b8945a; }
 
 /* 차트 영역 */
-.chartRow {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.chartHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.cardHeader {
-  margin-bottom: 10px;
-}
-
-.cardHeader h3 {
-  font-size: 16px;
-  font-weight: 700;
-}
+.chartRow   { display: flex; justify-content: flex-end; }
+.chartHeader { display: flex; justify-content: space-between; align-items: center; }
+.cardHeader  { margin-bottom: 10px; }
+.cardHeader h3 { font-size: 14px; font-weight: 800; color: #1a1a1a; }
 
 .donutCard {
   flex: 1;
-  background: #fff;
-  border: 1px solid rgba(31, 36, 48, 0.12);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: #fafaf7;
+  border: 1px solid #e8e2d6;
+  border-top: 2px solid #b8945a;
+  padding: 18px;
 }
-
 .donutCard:hover {
-  transform: translateY(-2px);
-  transition: 0.2s;
+  box-shadow: 0 4px 14px rgba(184, 148, 90, 0.12);
+  transition: box-shadow 0.18s;
 }
 
 .donutBox {
@@ -155,23 +123,8 @@
   transform: rotate(-90deg);
 }
 
-.donutTrack,
-.donutValue {
-  fill: none;
-}
-
-.donutTrack {
-  fill: none;
-  stroke: rgba(31, 36, 48, 0.1);
-  stroke-width: 14;
-}
-
-.donutValue {
-  fill: none;
-  stroke: #4f46e5;
-  stroke-width: 14;
-  stroke-linecap: round;
-}
+.donutTrack { fill: none; stroke: #e8e2d6; stroke-width: 14; }
+.donutValue { fill: none; stroke: #b8945a; stroke-width: 14; stroke-linecap: butt; }
 
 .donutCenter {
   position: absolute;
@@ -180,110 +133,70 @@
   transform: translate(-50%, -50%);
   text-align: center;
 }
+.donutCenter strong { display: block; font-size: 20px; font-weight: 900; color: #1a1a1a; }
+.donutCenter span   { font-size: 11px; color: #9a9080; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 
-.donutCenter strong {
-  display: block;
-  font-size: 20px;
-}
-
-.donutCenter span {
-  font-size: 12px;
-  color: #666;
-}
-
-.mainRow {
-  display: flex;
-  gap: 20px;
-  align-items: stretch;
-}
+.mainRow { display: flex; gap: 16px; align-items: stretch; }
 
 /* 그래프 */
 .chartCard {
   flex: 2;
   width: 160px;
-  background: #fff;
-  border: 1px solid rgba(31, 36, 48, 0.12);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: #fafaf7;
+  border: 1px solid #e8e2d6;
+  border-top: 2px solid #b8945a;
+  padding: 18px;
 }
-
 .chartCard:hover {
-  transform: translateY(-2px);
-  transition: 0.2s;
+  box-shadow: 0 4px 14px rgba(184, 148, 90, 0.12);
+  transition: box-shadow 0.18s;
 }
 
 /* 필터 */
 .filterGroup button {
-  margin-left: 6px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+  margin-left: 4px;
+  padding: 4px 12px;
+  border: 1px solid #e8e2d6;
   background: #fff;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
+  transition: all 0.15s;
 }
+.filterGroup button:hover { background: #f5f0e8; }
 
 .activeBtn {
-  background: #556ee6;
-  color: #b7791f;
-  border-color: #caa25a;
-  font-weight: 700;
+  background: rgba(184, 148, 90, 0.16) !important;
+  color: #7c5d18 !important;
+  border-color: #b8945a !important;
+  font-weight: 700 !important;
 }
 
 /* 차트 */
-
 .chart {
   display: flex;
   align-items: flex-end;
   gap: 14px;
   height: 160px;
   flex: 1;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 1px solid #e8e2d6;
   padding-bottom: 6px;
 }
 
-.barGroup {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.bar {
-  width: 8px;
-  background: #4ade80;
-}
-
-.barInactive {
-  width: 8px;
-  background: #93c5fd;
-}
-
-.barDeleted {
-  width: 8px;
-  background: #fca5a5;
-}
-
-.barWrapper {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  width: 20px;
-}
+.barGroup { display: flex; flex-direction: column; align-items: center; }
+.bar         { width: 8px; background: #b8945a; }
+.barInactive { width: 8px; background: #94a3b8; }
+.barDeleted  { width: 8px; background: #ef9e9e; }
+.barWrapper  { display: flex; align-items: flex-end; justify-content: center; width: 20px; }
 
 .xAxis {
   display: flex;
   justify-content: space-between;
   margin-top: 6px;
   font-size: 12px;
-  color: #666;
+  color: #9a9080;
 }
 
-.chartWrap {
-  position: relative;
-  display: flex;
-  gap: 10px;
-}
+.chartWrap { position: relative; display: flex; gap: 10px; }
 
 .yAxis {
   display: flex;
@@ -292,11 +205,7 @@
   height: 160px;
 }
 
-.yRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+.yRow    { display: flex; align-items: center; gap: 6px; }
 
 .gridOverlay {
   position: absolute;
@@ -306,15 +215,6 @@
   bottom: 0;
   pointer-events: none;
 }
+.gridLine { width: 100%; height: 1px; background: #f0ece4; }
 
-.gridLine {
-  width: 100%;
-  height: 1px;
-  background: #e5e7eb;
-}
-
-.divider {
-  height: 1px;
-  background: rgba(0, 0, 0, 0.1);
-  margin: 12px 0;
-}
+.divider { height: 1px; background: #e8e2d6; margin: 12px 0; }
