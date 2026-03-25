@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     # ── Embedding ─────────────────────────────────────────────────
     embedding_provider: str = "watsonx"
     top_k: int = 5
-    similarity_threshold: float = 0.2
+    similarity_threshold: float = 0.15
     default_model: str = "ibm/granite-3-8b-instruct"
 
     # ── RAG 파이프라인 ────────────────────────────────────────────
