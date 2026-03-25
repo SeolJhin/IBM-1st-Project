@@ -13,10 +13,11 @@ import TourReservationCreate from '../../reservation/pages/TourReservationCreate
 import TourReservationList from '../../reservation/pages/TourReservationList';
 
 const STATUS = {
-  ordered: { text: '주문 완료', color: '#c58a3a', bg: 'rgba(197,138,58,0.1)' },
+  ordered: { text: '결제 대기', color: '#c58a3a', bg: 'rgba(197,138,58,0.1)' },
   paid: { text: '결제 완료', color: '#2e7d32', bg: 'rgba(46,125,50,0.1)' },
   ended: { text: '완료', color: '#888', bg: 'rgba(0,0,0,0.06)' },
   cancelled: { text: '취소됨', color: '#c0392b', bg: 'rgba(192,57,43,0.1)' },
+  failed: { text: '결제 실패', color: '#e74c3c', bg: 'rgba(231,76,60,0.1)' },
 };
 function fmt(price) {
   return price == null ? '0' : Number(price).toLocaleString('ko-KR');

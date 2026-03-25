@@ -29,6 +29,7 @@ public class Payment {
     private static final String ST_READY = "ready";
     private static final String ST_PAID = "paid";
     private static final String ST_CANCELLED = "cancelled";
+    private static final String ST_FAILED = "failed";
     private static final String ST_PENDING = "pending";
     private static final String ST_DISPUTED = "disputed";
 
@@ -91,6 +92,9 @@ public class Payment {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     public void markPaid(LocalDateTime paidAt, BigDecimal capturedPrice) {
         this.paymentSt = ST_PAID;
         this.paidAt = paidAt;
@@ -109,6 +113,10 @@ public class Payment {
 
     public void markPending() {
         this.paymentSt = ST_PENDING;
+    }
+
+    public void markFailed() {
+        this.paymentSt = ST_FAILED;
     }
 
     public void markDisputed() {

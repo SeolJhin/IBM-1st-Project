@@ -54,19 +54,9 @@ function isAuthError(error) {
   return status === 401 || status === 403;
 }
 
-function timeAgo(dateStr) {
-  if (!dateStr) return '';
-  let parsed;
-  if (Array.isArray(dateStr)) {
-    const [y, mo, d, h = 0, mi = 0, s = 0] = dateStr;
-    parsed = new Date(y, mo - 1, d, h, mi, s);
-  } else {
-    const str = String(dateStr);
-    parsed = str.includes('T') && !str.includes('Z') && !str.includes('+')
-      ? new Date(str + '+09:00')
-      : new Date(str);
-  }
-  const diff = Date.now() - parsed.getTime();
+function timeAgo(ms) {
+  if (!ms) return '';
+  const diff = Date.now() - Number(ms);
   if (isNaN(diff) || diff < 0) return '방금';
   const min = Math.floor(diff / 60000);
   if (min < 1) return '방금';
@@ -249,7 +239,7 @@ export default function NotificationBell() {
                             {localizeNotificationMessage(item)}
                           </p>
                           <span className={styles.dropTime}>
-                            {timeAgo(item.createdAt)}
+                            {timeAgo(item.createdAtMs)}
                           </span>
                         </div>
                         <div className={styles.dropItemRight}>
