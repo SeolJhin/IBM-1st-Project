@@ -13,6 +13,7 @@ import BuildingSlotButtons from '../components/BuildingSlotButtons';
 import TimeSlotButtons from '../components/TimeSlotButtons';
 import styles from './SpaceReservationCreate.module.css';
 import { toKoreanMessage } from '../../../app/http/errorMapper';
+import { formatBuildingDisplay } from '../../../shared/utils/branchLabel';
 
 /**
  * inlineMode=true  → Header/Footer/topBar 없이 컨텐츠만 렌더 (마이페이지 탭 용)
@@ -272,7 +273,7 @@ export default function SpaceReservationCreate({
         />
         {selectedBuilding && (
           <p className={styles.selectedHint}>
-            선택됨: <strong>{selectedBuilding.buildingNm}</strong>
+            선택됨: <strong>{formatBuildingDisplay(selectedBuilding)}</strong>
           </p>
         )}
       </section>
@@ -359,7 +360,7 @@ export default function SpaceReservationCreate({
           <p className={styles.summaryTitle}>📋 예약 요약</p>
           <div className={styles.summaryGrid}>
             <span>건물</span>
-            <span>{selectedBuilding.buildingNm}</span>
+            <span>{formatBuildingDisplay(selectedBuilding)}</span>
             <span>공용공간</span>
             <span>{currentSpace.spaceNm}</span>
             <span>날짜</span>

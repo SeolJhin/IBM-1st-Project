@@ -10,6 +10,7 @@ import Modal from '../../../shared/components/Modal/Modal';
 import TourReservationList from '../../reservation/pages/TourReservationList';
 import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
 import { toApiImageUrl } from '../../../shared/utils/imageUrl';
+import { getBranchLabel, formatBuildingDisplay } from '../../../shared/utils/branchLabel';
 
 // ─── 방 쿼리 ──────────────────────────────────────────────────
 const INIT_QUERY = {
@@ -231,7 +232,7 @@ function RoomCard({ room, onClick }) {
       </div>
       <div className={styles.cardBody}>
         <div className={styles.cardTop}>
-          <p className={styles.buildingName}>{room.buildingNm}</p>
+          <p className={styles.buildingName}>{formatBuildingDisplay(room)}</p>
           <span className={styles.roomNo}>
             {room.roomNo}호 · {room.floor}층
           </span>
@@ -297,7 +298,7 @@ function SpaceCard({ space, onClick }) {
         )}
       </div>
       <div className={styles.cardBody}>
-        <p className={styles.buildingName}>{space.buildingNm}</p>
+        <p className={styles.buildingName}>{formatBuildingDisplay(space)}</p>
         <h3 className={styles.cardTitle}>{space.spaceNm}</h3>
         <div className={styles.cardMeta}>
           <span>📍 {space.spaceFloor}층</span>
@@ -321,43 +322,7 @@ function SpaceCard({ space, onClick }) {
   );
 }
 
-// ─── 주소 → 지점명 변환 ───────────────────────────────────────
-// 예) '서울특별시 강남구 테헤란로 427'  → '강남점'
-//     '경기도 수원시 영통구 광교중앙로 145' → '수원점'
-//     '경기도 성남시 분당구 판교역로 235' → '판교점'
-function getBranchLabel(building) {
-  const addr = building.buildingAddr || '';
-
-  // 1) 서울: 구 단위 추출  (강남구 → 강남점)
-  if (addr.includes('서울')) {
-    const m = addr.match(/([가-힣]+)구/);
-    if (m) return `${m[1]}점`;
-  }
-
-  // 2) 도로명에 '역'이 포함된 경우  (판교역로 → 판교점)
-  const roadM = addr.match(/([가-힣]+)역/);
-  if (roadM) return `${roadM[1]}점`;
-
-  // 3) 시 단위 추출  (수원시 → 수원점)
-  //    특별시·광역시·특별자치시는 제외
-  const siM = addr.match(/([가-힣]{2,5})시/);
-  const METRO = [
-    '서울특별',
-    '부산광역',
-    '인천광역',
-    '대구광역',
-    '광주광역',
-    '대전광역',
-    '울산광역',
-    '세종특별자치',
-  ];
-  if (siM && !METRO.some((ex) => siM[1].includes(ex))) {
-    return `${siM[1]}점`;
-  }
-
-  // 4) fallback: 건물명 그대로
-  return building.buildingNm;
-}
+// getBranchLabel / formatBuildingDisplay → shared/utils/branchLabel.js 에서 import
 
 // ─── 방 필터 패널 ─────────────────────────────────────────────
 function FilterPanel({
@@ -559,7 +524,7 @@ function FilterPanel({
               <option value="">전체 건물</option>
               {buildings.map((b) => (
                 <option key={b.buildingId} value={b.buildingNm}>
-                  {getBranchLabel(b)}
+                  {formatBuildingDisplay(b)}
                 </option>
               ))}
             </select>
@@ -856,7 +821,7 @@ function SpaceFilterPanel({ query, dispatch, buildings, buildingLoading }) {
             <option value="">전체 건물</option>
             {buildings.map((b) => (
               <option key={b.buildingId} value={b.buildingId}>
-                {getBranchLabel(b)}
+                {formatBuildingDisplay(b)}
               </option>
             ))}
           </select>
