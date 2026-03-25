@@ -306,11 +306,40 @@
 }
 
 /* ── 인라인 상단 액션 ── */
-.topActions {
+/* ── 상단 행 (필터 + 액션) ── */
+.topRow {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 0 0 16px;
+}
+.filterChips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.filterChip {
+  padding: 5px 14px;
+  border: 1.5px solid #d6cfc0;
+  border-radius: 20px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #7a6e58;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filterChip:hover {
+  border-color: #b8945a;
+  color: #b8945a;
+  background: rgba(184, 148, 90, 0.06);
+}
+.filterChipActive {
+  background: #b8945a;
+  border-color: #b8945a;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(184, 148, 90, 0.3);
 }
 
 /* ── 독립 페이지 상단 액션 (topBar 안) ── */

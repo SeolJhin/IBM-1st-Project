@@ -1,5 +1,5 @@
 // features/reservation/pages/SpaceReservationList.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSpaceReservations from '../hooks/useSpaceReservations';
 import Header from '../../../app/layouts/components/Header';
@@ -74,7 +74,11 @@ export default function SpaceReservationList({
   const nav = useNavigate();
   const { myQuery, setMyQuery, myPage, myLoading, myError, reloadMy, cancel } =
     useSpaceReservations();
-  const items = myPage?.content ?? [];
+  const [statusFilter, setStatusFilter] = useState('all');
+  const allItems = myPage?.content ?? [];
+  const items = statusFilter === 'all'
+    ? allItems
+    : allItems.filter((it) => (it.srSt ?? it.status) === statusFilter);
 
   const onCancel = async (reservationId) => {
     if (!window.confirm('예약을 취소하시겠습니까?')) return;
@@ -89,25 +93,45 @@ export default function SpaceReservationList({
 
   const listContent = (
     <>
-      {/* 상단 액션 */}
-      <div className={styles.topActions}>
-        <button
-          className={styles.refreshBtn}
-          type="button"
-          onClick={reloadMy}
-          disabled={myLoading}
-        >
-          새로고침
-        </button>
-        <button
-          className={styles.createLink}
-          type="button"
-          onClick={() =>
-            inlineMode && onGoCreate ? onGoCreate() : nav('/me?tab=space')
-          }
-        >
-          + 예약 생성
-        </button>
+      {/* 상단: 필터 + 액션 같은 행 */}
+      <div className={styles.topRow}>
+        <div className={styles.filterChips}>
+          {[
+            { value: 'all', label: '전체' },
+            { value: 'requested', label: '대기' },
+            { value: 'confirmed', label: '확정' },
+            { value: 'cancelled', label: '취소' },
+            { value: 'ended', label: '완료' },
+          ].map((f) => (
+            <button
+              key={f.value}
+              type="button"
+              className={`${styles.filterChip} ${statusFilter === f.value ? styles.filterChipActive : ''}`}
+              onClick={() => setStatusFilter(f.value)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <div className={styles.topActions}>
+          <button
+            className={styles.refreshBtn}
+            type="button"
+            onClick={reloadMy}
+            disabled={myLoading}
+          >
+            새로고침
+          </button>
+          <button
+            className={styles.createLink}
+            type="button"
+            onClick={() =>
+              inlineMode && onGoCreate ? onGoCreate() : nav('/me?tab=space')
+            }
+          >
+            + 예약 생성
+          </button>
+        </div>
       </div>
 
       {myLoading && (

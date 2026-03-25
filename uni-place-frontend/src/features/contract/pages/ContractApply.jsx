@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '../../../app/layouts/components/Header';
 import Footer from '../../../app/layouts/components/Footer';
+import Modal from '../../../shared/components/Modal/Modal';
 import { propertyApi } from '../../property/api/propertyApi';
 import { contractApi } from '../api/contractApi';
 import { useAuth } from '../../user/hooks/useAuth';
@@ -75,6 +76,12 @@ export default function ContractApply() {
   const [signFile, setSignFile] = useState(null);
   const [signPreview, setSignPreview] = useState(null);
   const signInputRef = useRef(null);
+
+  /* 약관 동의 */
+  const [agreeContract, setAgreeContract] = useState(false);
+  const [agreePersonal, setAgreePersonal] = useState(false);
+  const [contractTermsOpen, setContractTermsOpen] = useState(false);
+  const [personalTermsOpen, setPersonalTermsOpen] = useState(false);
 
   /* 제출 */
   const [submitting, setSubmitting] = useState(false);
@@ -243,6 +250,12 @@ export default function ContractApply() {
     // 서명 파일
     if (!signFile) {
       setSubmitError('서명 이미지를 첨부해주세요.');
+      return;
+    }
+
+    // 약관 동의
+    if (!agreeContract || !agreePersonal) {
+      setSubmitError('임대차 계약 특약사항 및 개인정보 수집·이용에 동의해주세요.');
       return;
     }
 
@@ -807,6 +820,28 @@ export default function ContractApply() {
               </div>
             </section>
 
+            {/* ══ 7. 동의 ══ */}
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>5. 계약 동의</h2>
+              <div className={styles.agreeSection}>
+                <label className={styles.agreeRow}>
+                  <input type="checkbox" checked={agreeContract && agreePersonal} onChange={(e) => { setAgreeContract(e.target.checked); setAgreePersonal(e.target.checked); }} />
+                  <span className={styles.agreeAll}>전체 동의</span>
+                </label>
+                <div className={styles.agreeDivider} />
+                <label className={styles.agreeRow}>
+                  <input type="checkbox" checked={agreeContract} onChange={(e) => setAgreeContract(e.target.checked)} />
+                  <span>[필수] 임대차 계약 특약사항 및 확인사항 동의</span>
+                  <button type="button" className={styles.agreeViewBtn} onClick={() => setContractTermsOpen(true)}>보기</button>
+                </label>
+                <label className={styles.agreeRow}>
+                  <input type="checkbox" checked={agreePersonal} onChange={(e) => setAgreePersonal(e.target.checked)} />
+                  <span>[필수] 개인정보 수집·이용 동의 (계약 목적)</span>
+                  <button type="button" className={styles.agreeViewBtn} onClick={() => setPersonalTermsOpen(true)}>보기</button>
+                </label>
+              </div>
+            </section>
+
             {/* 에러 */}
             {submitError && (
               <div className={styles.errorBox}>⚠️ {submitError}</div>
@@ -824,7 +859,7 @@ export default function ContractApply() {
               <button
                 type="submit"
                 className={styles.submitBtn}
-                disabled={submitting}
+                disabled={submitting || !agreeContract || !agreePersonal}
               >
                 {submitting ? '신청 중...' : '📝 계약 신청하기'}
               </button>
@@ -834,6 +869,93 @@ export default function ContractApply() {
       </div>
 
       <Footer />
+
+      {/* 임대차 계약 특약사항 모달 */}
+      <Modal open={contractTermsOpen} onClose={() => setContractTermsOpen(false)} title="임대차 계약 특약사항" size="lg">
+        <div className={styles.termsContent}>
+          <h3>임대차 계약 특약사항 및 확인사항</h3>
+          <p className={styles.termsDate}>UNI PLACE 표준 임대차 계약 기준</p>
+
+          <h4>제1조 (용도 제한 및 전대 금지)</h4>
+          <p>임차인은 임대인의 사전 서면 동의 없이 임차 부동산의 용도나 구조를 변경할 수 없으며, 전대(재임대), 임차권 양도 또는 담보 제공을 하지 못합니다. 임대차 목적(주거) 이외의 용도로 사용할 수 없습니다.</p>
+
+          <h4>제2조 (계약의 해지)</h4>
+          <ul>
+            <li>임차인이 제1조를 위반한 경우 임대인은 즉시 본 계약을 해지할 수 있습니다.</li>
+            <li>월세를 2회 이상 연체한 경우 임대인은 계약 해지를 통보할 수 있습니다.</li>
+            <li>임차인의 귀책 사유로 인한 중도 해지 시 위약금이 발생할 수 있습니다.</li>
+          </ul>
+
+          <h4>제3조 (원상회복 의무)</h4>
+          <p>임대차 계약이 종료된 경우 임차인은 임차 부동산을 원상으로 회복하여 임대인에게 반환하여야 합니다. 임차인의 귀책 사유로 발생한 파손·훼손에 대한 수리 비용은 임차인이 부담합니다.</p>
+
+          <h4>제4조 (보증금 반환)</h4>
+          <ul>
+            <li>임대차 계약 종료 시 임대인은 임차 부동산을 인도받은 날로부터 14일 이내에 보증금을 반환합니다.</li>
+            <li>미납 월세, 관리비, 원상복구 비용 등이 있는 경우 보증금에서 공제 후 반환합니다.</li>
+            <li>공제 내역은 퇴실 시 서면으로 안내합니다.</li>
+          </ul>
+
+          <h4>제5조 (시설물 관리)</h4>
+          <ul>
+            <li>임차인은 임차 부동산의 시설물을 선량한 관리자의 주의 의무로 사용하여야 합니다.</li>
+            <li>입주 시 제공된 옵션(에어컨, 세탁기 등)의 고장은 즉시 관리사무소에 신고하여야 하며, 임차인의 과실이 아닌 경우 임대인이 수리합니다.</li>
+            <li>입주 후 7일 이내 발견된 기존 하자는 민원 접수를 통해 신고하여야 합니다.</li>
+          </ul>
+
+          <h4>제6조 (공용 시설 이용)</h4>
+          <p>공용 시설(헬스장, 라운지, 회의실 등)은 관리 규정에 따라 이용하며, 독점 사용·파손 시 원상복구 비용을 부담합니다.</p>
+
+          <h4>제7조 (채무불이행과 손해배상)</h4>
+          <p>임대인 또는 임차인이 본 계약상의 내용에 대하여 불이행이 있을 경우 그 상대방은 계약을 해제할 수 있으며, 손해배상의 기준은 계약 보증금으로 합니다.</p>
+
+          <h4>제8조 (특약사항)</h4>
+          <ul>
+            <li>심야 시간(오후 11시~오전 7시) 소음 행위를 금지합니다.</li>
+            <li>건물 내부 전면 금연이며, 실내 흡연 적발 시 원상복구(도배·청소) 비용이 청구됩니다.</li>
+            <li>반려동물은 해당 방의 반려동물 허용 여부에 따르며, 허용되지 않는 방에 무단 동반 시 계약이 해지될 수 있습니다.</li>
+            <li>장기 방문객(7일 이상)은 관리사무소에 사전 신고하여야 합니다.</li>
+          </ul>
+
+          <h4>확인사항</h4>
+          <p className={styles.clauseWarning}>임차인은 본 부동산에 존재하는 선순위 권리(근저당권, 임차권 등)로 인하여 경매 등이 실행될 경우 임차보증금의 전부 또는 일부를 반환받지 못할 수 있음을 확인합니다.</p>
+        </div>
+      </Modal>
+
+      {/* 개인정보 수집·이용 동의 모달 */}
+      <Modal open={personalTermsOpen} onClose={() => setPersonalTermsOpen(false)} title="개인정보 수집·이용 동의" size="lg">
+        <div className={styles.termsContent}>
+          <h3>개인정보 수집·이용 동의서 (임대차 계약)</h3>
+          <p className={styles.termsDate}>「개인정보 보호법」 제15조 및 제17조에 따라 아래와 같이 개인정보 수집·이용에 대해 안내드립니다.</p>
+
+          <h4>1. 수집 항목</h4>
+          <ul>
+            <li><strong>필수 항목</strong>: 성명, 주민등록번호, 연락처(휴대전화), 주소</li>
+            <li><strong>자동 수집</strong>: 계약 일시, 서명 이미지, 접속 IP</li>
+          </ul>
+
+          <h4>2. 수집·이용 목적</h4>
+          <ul>
+            <li>임대차 계약 체결 및 이행, 본인 확인</li>
+            <li>계약서(전자문서) 작성 및 보관</li>
+            <li>월세·관리비 청구 및 결제 처리</li>
+            <li>보증금 반환 처리</li>
+            <li>분쟁 발생 시 증빙 자료 활용</li>
+          </ul>
+
+          <h4>3. 보유 및 이용 기간</h4>
+          <ul>
+            <li>계약 종료일로부터 <strong>5년</strong> (「전자상거래 등에서의 소비자보호에 관한 법률」)</li>
+            <li>주민등록번호: 계약 체결 확인 후 즉시 암호화 처리, 계약 종료 후 5년 보관 후 파기</li>
+          </ul>
+
+          <h4>4. 동의 거부 권리 및 불이익</h4>
+          <p>귀하는 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다. 다만, 필수 항목에 대한 동의를 거부하실 경우 임대차 계약 체결이 불가합니다.</p>
+
+          <h4>5. 제3자 제공</h4>
+          <p>수집된 개인정보는 원칙적으로 제3자에게 제공하지 않습니다. 단, 법령에 의한 요청이 있는 경우 및 결제 처리를 위한 PG사 제공(결제 정보에 한함)은 예외로 합니다.</p>
+        </div>
+      </Modal>
     </div>
   );
 }

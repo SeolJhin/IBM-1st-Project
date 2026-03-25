@@ -52,6 +52,12 @@ function normalizeByCode(item, code, message) {
         : '룸서비스 주문 상태가 변경되었습니다.';
     case 'BILL_NEW':
       return hasKorean(message) ? message : '새 청구서가 등록되었습니다.';
+    case 'BILL_OVERDUE':
+      return hasKorean(message) ? message : '월세가 연체되었습니다. 빠른 납부 부탁드립니다.';
+    case 'BILL_DUE_TODAY':
+      return hasKorean(message) ? message : '오늘은 월세 납부일입니다.';
+    case 'BILL_REMINDER':
+      return hasKorean(message) ? message : '월세 납부일이 3일 남았습니다.';
     case 'BRD_LIKE':
       return '작성하신 게시글에 좋아요가 눌렸습니다.';
     case 'RPL_LIKE':
