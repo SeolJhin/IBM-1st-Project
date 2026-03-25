@@ -66,6 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
     private static final String ST_PENDING = "pending";
     private static final String ST_PAID = "paid";
     private static final String ST_CANCELLED = "cancelled";
+    private static final String ST_FAILED = "failed";
 
     private static final String TARGET_TYPE_ORDER = "order";
     private static final String TARGET_TYPE_MONTHLY_CHARGE = "monthly_charge";
@@ -423,13 +424,13 @@ public class PaymentServiceImpl implements PaymentService {
                 null
             ));
 
-        payment.markCanceled();
+        payment.markFailed();
         paymentRepository.save(payment);
         paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
         notifyPaymentFailKor(payment, trimMessage(failMessage));
 
-        // 연결된 Order/RoomServiceOrder도 취소 처리
-        cancelLinkedOrder(payment);
+        // 연결된 Order/RoomServiceOrder도 실패 처리
+        failLinkedOrder(payment);
     }
 
     private PaymentResponse approveInternal(String requesterUserId, PaymentApproveRequest request) {
@@ -541,9 +542,10 @@ public class PaymentServiceImpl implements PaymentService {
         if (ST_PAID.equalsIgnoreCase(payment.getPaymentSt())) {
             return; // 이미 결제 완료된 경우 무시
         }
-        if (ST_CANCELLED.equalsIgnoreCase(payment.getPaymentSt())) {
-            // 이미 취소됐어도 Order 취소는 멱등성 보장
-            cancelLinkedOrder(payment);
+        if (ST_CANCELLED.equalsIgnoreCase(payment.getPaymentSt())
+                || ST_FAILED.equalsIgnoreCase(payment.getPaymentSt())) {
+            // 이미 취소/실패된 경우 Order 실패 처리 멱등성 보장
+            failLinkedOrder(payment);
             return;
         }
 
@@ -551,11 +553,11 @@ public class PaymentServiceImpl implements PaymentService {
             .findTopByPaymentIdOrderByPaymentIntentIdDesc(payment.getPaymentId())
             .ifPresent(intent -> intent.markCanceled());
 
-        payment.markCanceled();
+        payment.markFailed();
         paymentRepository.save(payment);
         paymentAttemptService.recordAttemptSt(payment.getPaymentId(), PaymentAttempt.AttemptSt.failed);
 
-        cancelLinkedOrder(payment);
+        failLinkedOrder(payment);
     }
 
     @Override
@@ -652,6 +654,20 @@ public class PaymentServiceImpl implements PaymentService {
             orderService.cancelOrder(userId, payment.getTargetId());
         } catch (Exception e) {
             log.warn("[PAYMENT][CANCEL_ORDER] paymentId={} reason={}", payment.getPaymentId(), e.getMessage());
+        }
+    }
+
+    private void failLinkedOrder(Payment payment) {
+        if (!TARGET_TYPE_ORDER.equals(payment.getTargetType()) || payment.getTargetId() == null) {
+            return;
+        }
+        try {
+            Order order = orderRepository.findById(payment.getTargetId()).orElse(null);
+            if (order == null) return;
+            order.markFailed();
+            orderRepository.save(order);
+        } catch (Exception e) {
+            log.warn("[PAYMENT][FAIL_ORDER] paymentId={} reason={}", payment.getPaymentId(), e.getMessage());
         }
     }
 

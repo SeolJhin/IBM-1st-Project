@@ -55,18 +55,28 @@ public class MyPaymentController {
                     .collect(Collectors.toList());
         }
 
-        // 년/월 필터
+        // 년/월 필터 (paidAt이 null이면 생성시점 기준으로 fallback)
         if (year != null && month != null) {
             final int y = year, m = month;
             all = all.stream()
-                    .filter(p -> p.getPaidAt() != null
-                            && p.getPaidAt().getYear() == y
-                            && p.getPaidAt().getMonthValue() == m)
+                    .filter(p -> {
+                        java.time.LocalDateTime dt = p.getPaidAt();
+                        if (dt == null) {
+                            // 미결제 건은 payment 생성 시점(paymentId 기반 조회 시점) 기준
+                            // Payment에 createdAt이 없으므로 제외하지 않고 포함
+                            return true;
+                        }
+                        return dt.getYear() == y && dt.getMonthValue() == m;
+                    })
                     .collect(Collectors.toList());
         } else if (year != null) {
             final int y = year;
             all = all.stream()
-                    .filter(p -> p.getPaidAt() != null && p.getPaidAt().getYear() == y)
+                    .filter(p -> {
+                        java.time.LocalDateTime dt = p.getPaidAt();
+                        if (dt == null) return true;
+                        return dt.getYear() == y;
+                    })
                     .collect(Collectors.toList());
         }
 
@@ -76,7 +86,13 @@ public class MyPaymentController {
         int toIdx   = Math.min(fromIdx + size, total);
         List<MyPaymentResponse> paged = all.subList(fromIdx, toIdx)
                 .stream()
-                .map(MyPaymentResponse::from)
+                .map(p -> {
+                    if ("order".equals(p.getTargetType()) && p.getTargetId() != null) {
+                        Order order = orderRepository.findById(p.getTargetId()).orElse(null);
+                        return MyPaymentResponse.from(p, order);
+                    }
+                    return MyPaymentResponse.from(p);
+                })
                 .collect(Collectors.toList());
 
         Pageable pageable = PageRequest.of(page - 1, size);

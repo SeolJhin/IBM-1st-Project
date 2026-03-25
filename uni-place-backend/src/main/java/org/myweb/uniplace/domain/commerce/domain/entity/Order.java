@@ -85,6 +85,10 @@ public class Order {
         this.orderSt = OrderStatus.cancelled;
     }
 
+    public void markFailed() {
+        this.orderSt = OrderStatus.failed;
+    }
+
     public void updateTotalPrice(BigDecimal totalPrice) {
         this.totalPrice = totalPrice;
     }

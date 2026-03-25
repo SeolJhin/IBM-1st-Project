@@ -2,6 +2,7 @@
 package org.myweb.uniplace.domain.notification.api.dto.response;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 import org.myweb.uniplace.domain.notification.domain.entity.Notification;
 
@@ -11,6 +12,8 @@ import lombok.Getter;
 @Getter
 @Builder
 public class NotificationResponse {
+
+    private static final ZoneId SERVER_ZONE = ZoneId.systemDefault();
 
     private Integer notificationId;
     private String receiverId;
@@ -25,8 +28,8 @@ public class NotificationResponse {
     private String urlPath;
 
     private String isRead;
-    private LocalDateTime isReadAt;
-    private LocalDateTime createdAt;
+    private Long isReadAtMs;
+    private Long createdAtMs;
 
     public static NotificationResponse from(Notification n) {
         return NotificationResponse.builder()
@@ -39,8 +42,13 @@ public class NotificationResponse {
                 .targetId(n.getTargetId())
                 .urlPath(n.getUrlPath())
                 .isRead(n.getIsRead())
-                .isReadAt(n.getIsReadAt())
-                .createdAt(n.getCreatedAt())
+                .isReadAtMs(toEpochMs(n.getIsReadAt()))
+                .createdAtMs(toEpochMs(n.getCreatedAt()))
                 .build();
+    }
+
+    private static Long toEpochMs(LocalDateTime ldt) {
+        if (ldt == null) return null;
+        return ldt.atZone(SERVER_ZONE).toInstant().toEpochMilli();
     }
 }

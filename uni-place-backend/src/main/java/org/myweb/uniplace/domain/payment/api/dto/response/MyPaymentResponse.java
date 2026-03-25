@@ -26,6 +26,7 @@ public class MyPaymentResponse {
     private String  merchantUid;
     private String  providerPaymentId;
     private LocalDateTime paidAt;
+    private LocalDateTime createdAt;
 
     /** targetType = "order" 일 때만 채워짐 */
     private List<OrderItemInfo> orderItems;
@@ -49,19 +50,7 @@ public class MyPaymentResponse {
 
     // ── 기본 변환 (orderItems 없음) ────────────────────────────
     public static MyPaymentResponse from(Payment p) {
-        return builder()
-                .paymentId(p.getPaymentId())
-                .targetType(p.getTargetType())
-                .targetId(p.getTargetId())
-                .totalPrice(p.getTotalPrice())
-                .capturedPrice(p.getCapturedPrice())
-                .paymentSt(p.getPaymentSt())
-                .provider(p.getProvider())
-                .merchantUid(p.getMerchantUid())
-                .providerPaymentId(p.getProviderPaymentId())
-                .paidAt(p.getPaidAt())
-                .orderItems(Collections.emptyList())
-                .build();
+        return from(p, null);
     }
 
     // ── 룸서비스 주문 포함 변환 ────────────────────────────────
@@ -72,6 +61,15 @@ public class MyPaymentResponse {
                         .map(OrderItemInfo::from)
                         .collect(Collectors.toList());
 
+        // createdAt: payment 생성시간 → 주문 생성시간 → 결제시간 순으로 fallback
+        LocalDateTime created = p.getCreatedAt();
+        if (created == null && order != null) {
+            created = order.getOrderCreatedAt();
+        }
+        if (created == null) {
+            created = p.getPaidAt();
+        }
+
         return builder()
                 .paymentId(p.getPaymentId())
                 .targetType(p.getTargetType())
@@ -83,6 +81,7 @@ public class MyPaymentResponse {
                 .merchantUid(p.getMerchantUid())
                 .providerPaymentId(p.getProviderPaymentId())
                 .paidAt(p.getPaidAt())
+                .createdAt(created)
                 .orderItems(items)
                 .build();
     }

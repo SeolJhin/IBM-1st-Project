@@ -4,6 +4,8 @@ import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SpaceReservationCreate from '../../reservation/pages/SpaceReservationCreate';
 import SpaceReservationList from '../../reservation/pages/SpaceReservationList';
+import TourReservationCreate from '../../reservation/pages/TourReservationCreate';
+import TourReservationList from '../../reservation/pages/TourReservationList';
 import Modal from '../../../shared/components/Modal/Modal';
 import styles from './ChatBot.module.css';
 import { useChat, speakText } from '../hooks/useChat';
@@ -348,6 +350,19 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
   var spaceInit = spaceInitState[0];
   var setSpaceInit = spaceInitState[1];
 
+  // ── 투어 예약 모달 상태 ────────────────────────────────────
+  var tourModalState = React.useState(false);
+  var tourModalOpen = tourModalState[0];
+  var setTourModalOpen = tourModalState[1];
+  var tourListModalState = React.useState(false);
+  var tourListModalOpen = tourListModalState[0];
+  var setTourListModalOpen = tourListModalState[1];
+
+  // ── 투어 자동선택 파라미터 ─────────────────────────────────
+  var tourInitState = React.useState(null); // { buildingId, roomId, date, startAt, endAt }
+  var tourInit = tourInitState[0];
+  var setTourInit = tourInitState[1];
+
   var unreadState = React.useState(false);
   var hasUnread = unreadState[0];
   var setHasUnread = unreadState[1];
@@ -449,24 +464,21 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
       setSpaceListModalOpen(true);
       return;
     }
-    // 투어 예약 → 예약 생성 페이지로 이동(사전선택 값만 전달)
+    // 투어 예약 → 모달로 열기
     if (action.type === 'tour_reserve') {
-      setOpen(false);
-      navigate(
-        buildTourCreateUrl({
-          buildingId: action.buildingId || null,
-          roomId: action.roomId || null,
-          date: action.date || null,
-          startAt: action.startAt || null,
-          endAt: action.endAt || null,
-        })
-      );
+      setTourInit({
+        buildingId: action.buildingId || null,
+        roomId: action.roomId || null,
+        date: action.date || null,
+        startAt: action.startAt || null,
+        endAt: action.endAt || null,
+      });
+      setTourModalOpen(true);
       return;
     }
-    // 투어 조회 → 목록 페이지로 이동
+    // 투어 조회 → 모달로 열기
     if (action.type === 'tour_list') {
-      setOpen(false);
-      navigate('/reservations/tour/list');
+      setTourListModalOpen(true);
       return;
     }
   }
@@ -822,6 +834,61 @@ export default function ChatBot({ user, geminiApiKey, useBackend }) {
           onGoCreate={function () {
             setSpaceListModalOpen(false);
             setSpaceModalOpen(true);
+          }}
+        />
+      </Modal>
+
+      {/* ── 투어 예약 생성 모달 ── */}
+      <Modal
+        open={tourModalOpen}
+        onClose={function () {
+          setTourModalOpen(false);
+          setTourInit(null);
+        }}
+        title="📅 방문 예약"
+        size="lg"
+      >
+        <TourReservationCreate
+          inlineMode
+          initialBuildingId={tourInit?.buildingId || null}
+          initialRoomId={tourInit?.roomId || ''}
+          initialDate={tourInit?.date || null}
+          initialSlotStartAt={tourInit?.startAt || null}
+          initialSlotEndAt={tourInit?.endAt || null}
+          onSuccess={function () {
+            setTourModalOpen(false);
+            setTourInit(null);
+            setTourListModalOpen(true);
+          }}
+          onClose={function () {
+            setTourModalOpen(false);
+            setTourInit(null);
+          }}
+          onGoList={function () {
+            setTourModalOpen(false);
+            setTourInit(null);
+            setTourListModalOpen(true);
+          }}
+        />
+      </Modal>
+
+      {/* ── 투어 예약 조회 모달 ── */}
+      <Modal
+        open={tourListModalOpen}
+        onClose={function () {
+          setTourListModalOpen(false);
+        }}
+        title="📋 방문 예약 조회"
+        size="lg"
+      >
+        <TourReservationList
+          inlineMode
+          onGoCreate={function () {
+            setTourListModalOpen(false);
+            setTourModalOpen(true);
+          }}
+          onClose={function () {
+            setTourListModalOpen(false);
           }}
         />
       </Modal>

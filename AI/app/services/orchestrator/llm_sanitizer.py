@@ -120,6 +120,14 @@ def clean_function_call_text(text: str) -> str:
     if re.match(r"^\s*```(?:sql)?\s*SELECT\b.*```\s*$", text, flags=re.DOTALL | re.IGNORECASE):
         text = ""
 
+    # __METADATA__, __METADADATA__ 등 내부 태그 제거 (LLM 오타 포함)
+    text = re.sub(r"__META\w*__\{.*?\}", "", text)
+
+    # ── LLM 오타 마커 정규화 ──────────────────────────────────────────────
+    # __BUTTON__, __BTTONS__, __BUTONS__, __BUTTONSS__ 등 → __BUTTONS__
+    text = re.sub(r"__B[UÜTTO]*N[STTON]*S?__(?=\s*\[)", "__BUTTONS__", text, flags=re.IGNORECASE)
+    # __METDATA__, __METADTA__ 등 잔여 → 이미 위에서 제거됨
+
     # ── 버튼 JSON 배열이 raw 텍스트로 노출된 경우 __BUTTONS__ 형식으로 변환 ──
     # 예: [{"label":"예약","url":"/book"}] → __BUTTONS__[{"label":"예약","url":"/book"}]
     # __BUTTONS__ 마커 없이 노출된 버튼 JSON만 변환 (이미 마커 있으면 스킵)

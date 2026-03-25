@@ -37,19 +37,9 @@ function getNotificationLabel(item) {
   return TARGET_LABEL[item?.target] ?? '알림';
 }
 
-function timeAgo(dateStr) {
-  if (!dateStr) return '';
-  let parsed;
-  if (Array.isArray(dateStr)) {
-    const [y, mo, d, h = 0, mi = 0, s = 0] = dateStr;
-    parsed = new Date(y, mo - 1, d, h, mi, s);
-  } else {
-    const str = String(dateStr);
-    parsed = str.includes('T') && !str.includes('Z') && !str.includes('+')
-      ? new Date(str + '+09:00')
-      : new Date(str);
-  }
-  const diff = Date.now() - parsed.getTime();
+function timeAgo(ms) {
+  if (!ms) return '';
+  const diff = Date.now() - Number(ms);
   if (isNaN(diff) || diff < 0) return '방금';
   const min = Math.floor(diff / 60000);
   if (min < 1) return '방금';
@@ -58,7 +48,7 @@ function timeAgo(dateStr) {
   if (h < 24) return `${h}시간 전`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}일 전`;
-  return parsed.toLocaleDateString('ko-KR');
+  return new Date(Number(ms)).toLocaleDateString('ko-KR');
 }
 
 function NotificationItem({ item, onRead, onNavigate }) {
@@ -83,7 +73,7 @@ function NotificationItem({ item, onRead, onNavigate }) {
       <div className={styles.itemLeft}>
         <span className={styles.typeBadge}>{getNotificationLabel(item)}</span>
         <p className={styles.message}>{localizeNotificationMessage(item)}</p>
-        <span className={styles.time}>{timeAgo(item.createdAt)}</span>
+        <span className={styles.time}>{timeAgo(item.createdAtMs)}</span>
       </div>
       <div className={styles.itemRight}>
         <span className={styles.dot} aria-label="읽지 않음" />

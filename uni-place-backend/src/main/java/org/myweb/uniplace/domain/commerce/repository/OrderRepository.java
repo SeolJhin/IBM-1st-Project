@@ -12,12 +12,11 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Integer> {
 
-    // ── 1단계: orderItems fetch (취소된 주문 제외) ──────────────────────────
+    // ── 1단계: orderItems fetch (모든 상태 표시) ──────────────────────────
     @Query("SELECT DISTINCT o FROM Order o " +
            "LEFT JOIN FETCH o.orderItems oi " +
            "LEFT JOIN FETCH oi.product " +
            "WHERE o.user.userId = :userId " +
-           "AND o.orderSt != org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus.cancelled " +
            "ORDER BY o.orderCreatedAt DESC")
     List<Order> findAllByUserIdWithItems(@Param("userId") String userId);
 
@@ -26,8 +25,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Query("SELECT DISTINCT o FROM Order o " +
            "LEFT JOIN FETCH o.roomServiceOrders rso " +
            "LEFT JOIN FETCH rso.room " +
-           "WHERE o.user.userId = :userId " +
-           "AND o.orderSt != org.myweb.uniplace.domain.commerce.domain.enums.OrderStatus.cancelled")
+           "WHERE o.user.userId = :userId")
     List<Order> findAllByUserIdWithRoomServices(@Param("userId") String userId);
 
     // ── 1단계: 주문 상세 orderItems fetch ────────────────────────────────────

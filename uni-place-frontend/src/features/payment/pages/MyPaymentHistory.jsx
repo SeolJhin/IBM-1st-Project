@@ -14,9 +14,10 @@ const TARGET_TYPE_LABEL = {
 
 const PAYMENT_ST_LABEL = {
   paid: '결제완료',
-  ready: '준비중',
+  ready: '결제대기',
   pending: '처리중',
   cancelled: '취소됨',
+  failed: '결제실패',
   disputed: '분쟁중',
 };
 
@@ -25,6 +26,7 @@ const PAYMENT_ST_COLOR = {
   ready: '#9a8c70',
   pending: '#d97706',
   cancelled: '#dc2626',
+  failed: '#e74c3c',
   disputed: '#7c3aed',
 };
 
@@ -64,10 +66,15 @@ function PaymentDetailModal({ payment, onClose, inlineMode }) {
     { label: '주문번호', value: payment.merchantUid ?? '-' },
     { label: 'PG 거래번호', value: payment.providerPaymentId ?? '-' },
     {
-      label: '결제일시',
+      label: payment.paymentSt === 'paid' ? '결제일시'
+           : payment.paymentSt === 'cancelled' ? '취소일시'
+           : payment.paymentSt === 'failed' ? '실패일시'
+           : '요청일시',
       value: payment.paidAt
         ? new Date(payment.paidAt).toLocaleString('ko-KR')
-        : '-',
+        : payment.createdAt
+          ? new Date(payment.createdAt).toLocaleString('ko-KR')
+          : '-',
     },
   ];
 
@@ -357,8 +364,10 @@ export default function MyPaymentHistory({ inlineMode = false }) {
                   </span>
                   <span className={styles.itemDate}>
                     {p.paidAt
-                      ? new Date(p.paidAt).toLocaleDateString('ko-KR')
-                      : '날짜없음'}
+                      ? new Date(p.paidAt).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                      : p.createdAt
+                        ? new Date(p.createdAt).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        : ''}
                   </span>
                 </div>
                 <div className={styles.itemRight}>
