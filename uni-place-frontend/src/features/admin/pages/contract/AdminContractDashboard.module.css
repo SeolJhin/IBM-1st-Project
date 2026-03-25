@@ -1,33 +1,38 @@
+/* AdminContractDashboard.module.css  ·  VIVADE Edition */
+
 .grid {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   justify-content: space-between;
 }
 
-/* 카드 */
 .card {
   flex: 1;
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(31, 35, 40, 0.12);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: #fafaf7;
+  border: 1px solid #e8e2d6;
+  border-top: 2px solid #b8945a;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+.card:hover {
+  box-shadow: 0 4px 14px rgba(184, 148, 90, 0.12);
+  transition: box-shadow 0.18s;
 }
 
 .value {
-  font-size: 14px;
-  color: #888;
-  margin-bottom: 20px;
+  font-size: 13px;
+  color: #9a9080;
+  margin-bottom: 16px;
 }
-
-.value p {
-  margin-bottom: 10px;
-}
+.value p { margin-bottom: 8px; }
 
 .title {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1a1a1a;
   margin-bottom: 10px;
+  letter-spacing: 0.02em;
 }
 
 .donutWrap {
@@ -52,37 +57,31 @@
   align-items: center;
   gap: 4px;
 }
-
 .donutCenter strong {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
+  color: #1a1a1a;
 }
-
 .donutCenter span {
   margin-top: 2px;
-  font-size: 12px;
-  color: #777;
+  font-size: 11px;
+  color: #9a9080;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .label {
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: #9a9080;
   margin-bottom: 10px;
 }
 
 .card h2 {
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 800;
+  color: #1a1a1a;
+  letter-spacing: -0.02em;
 }
 
-.card:hover {
-  transform: translateY(-2px);
-  transition: 0.2s;
-}
-
-.divider {
-  height: 1px;
-  background: rgba(0, 0, 0, 0.1);
-  margin: 12px 0;
-}
+.divider { height: 1px; background: #e8e2d6; margin: 12px 0; }

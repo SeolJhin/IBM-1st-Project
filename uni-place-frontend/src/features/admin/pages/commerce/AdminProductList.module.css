@@ -118,15 +118,31 @@
 }
 
 .btnPrimary {
-  background: #b8945a;
-  color: #fff;
-  border-color: #b8945a;
+  background: rgba(184, 148, 90, 0.18);
+  color: #7c5d18;
+  border-color: rgba(184, 148, 90, 0.55);
   font-weight: 700;
-  border-radius: 0;
 }
 
 .btnPrimary:hover:not(:disabled) {
-  background: #a07840;
+  background: rgba(184, 148, 90, 0.3);
+}
+
+.refreshBtn {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(202, 162, 90, 0.5);
+  background: rgba(202, 162, 90, 0.22);
+  color: #1f2328;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(202, 162, 90, 0.2);
+}
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .btnSm {

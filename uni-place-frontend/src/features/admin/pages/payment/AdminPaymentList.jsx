@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { adminApi } from '../../api/adminApi';
 import ErrorActionNotice from '../../../../shared/components/ErrorActionNotice/ErrorActionNotice';
@@ -973,7 +974,7 @@ export default function AdminPaymentList() {
       )}
 
       {/* 환불 모달 분기: 주문이면 상품별, 아니면 일반 */}
-      {refundTarget && isOrderPayment(refundTarget) && (
+      {refundTarget && isOrderPayment(refundTarget) && createPortal(
         <OrderRefundModal
           payment={refundTarget}
           userName={
@@ -986,9 +987,10 @@ export default function AdminPaymentList() {
             setRefundTarget(null);
             load();
           }}
-        />
+        />,
+        document.body
       )}
-      {refundTarget && !isOrderPayment(refundTarget) && (
+      {refundTarget && !isOrderPayment(refundTarget) && createPortal(
         <GeneralRefundModal
           payment={refundTarget}
           userName={
@@ -1001,7 +1003,8 @@ export default function AdminPaymentList() {
             setRefundTarget(null);
             load();
           }}
-        />
+        />,
+        document.body
       )}
     </section>
   );

@@ -1,47 +1,27 @@
-.wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+/* AdminRoomServiceDashboard.module.css  ·  VIVADE Edition */
 
-.topRow {
-  display: flex;
-  gap: 16px;
-}
+.wrap { display: flex; flex-direction: column; gap: 16px; }
+
+.topRow { display: flex; gap: 12px; }
 
 .card {
   flex: 1;
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(31, 36, 48, 0.12);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: #fafaf7;
+  border: 1px solid #e8e2d6;
+  border-top: 2px solid #b8945a;
+  padding: 18px;
 }
-
-.card h3 {
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 12px;
-}
-
+.card h3 { font-size: 14px; font-weight: 800; color: #1a1a1a; margin-bottom: 12px; }
 .card:hover {
-  transform: translateY(-2px);
-  transition: 0.2s;
+  box-shadow: 0 4px 14px rgba(184, 148, 90, 0.12);
+  transition: box-shadow 0.18s;
 }
+.card p { font-size: 13px; color: #9a9080; margin-bottom: 8px; }
 
-.cardSmall {
-  flex: 1;
-}
+.cardSmall { flex: 1; }
+.cardLarge { flex: 3; }
 
-.cardLarge {
-  flex: 3;
-}
-
-.chartHeader {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
+.chartHeader { display: flex; justify-content: space-between; margin-bottom: 12px; }
 
 .barChart {
   display: flex;
@@ -50,49 +30,27 @@
   height: 120px;
 }
 
-.barItem {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+.barItem { display: flex; flex-direction: column; align-items: center; }
+.bar     { width: 14px; background: #b8945a; }
 
-.bar {
-  width: 14px;
-  background: #5b5bd6;
-  border-radius: 6px;
-}
+.chartSvg { width: 100%; height: 220px; }
 
-.chartSvg {
-  width: 100%;
-  height: 220px;
-}
-
-.filterGroup {
-  display: flex;
-  gap: 6px;
-}
-
+.filterGroup { display: flex; gap: 6px; }
 .filterGroup button {
-  border: 1px solid rgba(31, 36, 48, 0.2);
+  border: 1px solid #e8e2d6;
   background: #fff;
-  border-radius: 6px;
-  padding: 6px 12px;
+  padding: 4px 12px;
   cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
 }
+.filterGroup button:hover { background: #f5f0e8; }
 
 .activeBtn {
-  background: #5b5bd6;
-  color: #b7791f;
-  font-weight: 700;
+  background: rgba(184, 148, 90, 0.16) !important;
+  color: #7c5d18 !important;
+  border-color: #b8945a !important;
+  font-weight: 700 !important;
 }
 
-.card p {
-  font-size: 13px;
-  color: #888;
-  margin-bottom: 8px;
-}
-
-.lowStock {
-  color: red;
-  font-weight: 600;
-}
+.lowStock { color: #dc2626; font-weight: 600; }

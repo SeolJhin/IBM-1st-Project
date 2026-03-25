@@ -21,6 +21,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
+          env:
+            - name: TZ
+              value: "Asia/Seoul"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Duser.timezone=Asia/Seoul"
           envFrom:
             - configMapRef:
                 name: backend-config
