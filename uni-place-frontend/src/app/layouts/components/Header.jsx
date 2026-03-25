@@ -28,7 +28,7 @@ function IconUser() {
   );
 }
 
-/* 관리자 — 방패/보안 (원래 아이콘) */
+/* 관리자 — 대시보드 (좌상단 길게·우하단 길게 대각 비대칭, 선 only) */
 function IconAdmin() {
   return (
     <svg
@@ -37,11 +37,15 @@ function IconAdmin() {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.4"
+      strokeWidth="1.6"
       strokeLinecap="round"
       strokeLinejoin="round"
+      aria-hidden="true"
     >
-      <path d="M12 2l8 4v6c0 5-4 9-8 10C8 21 4 17 4 12V6l8-4z" />
+      <rect x="2" y="2" width="9" height="10.5" rx="1.8" />
+      <rect x="2" y="15" width="9" height="7" rx="1.8" />
+      <rect x="14.5" y="2" width="9" height="7" rx="1.8" />
+      <rect x="14.5" y="11.5" width="9" height="10.5" rx="1.8" />
     </svg>
   );
 }
@@ -264,7 +268,7 @@ export default function Header() {
           {/* 마이페이지 / 관리자 아이콘 — 로그인 상태일 때만 */}
           {!loading && user && (
             <button
-              className={styles.iconCircle}
+              className={isAdmin ? styles.iconCircleAdmin : styles.iconCircle}
               type="button"
               onClick={() => navigate(isAdmin ? '/admin' : '/me')}
               aria-label={isAdmin ? '관리자 페이지' : '마이페이지'}

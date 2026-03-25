@@ -80,6 +80,21 @@
   box-shadow: 0 8px 18px rgba(202, 162, 90, 0.2);
 }
 
+.btnEdit {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(202, 162, 90, 0.5);
+  background: rgba(202, 162, 90, 0.18);
+  color: #1f2328;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btnEdit:hover {
+  background: rgba(202, 162, 90, 0.3);
+}
+
 .filterRow {
   display: flex;
   flex-wrap: wrap;

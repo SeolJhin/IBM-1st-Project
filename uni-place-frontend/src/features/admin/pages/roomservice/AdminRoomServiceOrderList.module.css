@@ -72,23 +72,22 @@
 
 .btn {
   height: 36px;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: #1a1a1a;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 35, 40, 0.18);
+  background: rgba(255, 255, 255, 0.65);
+  color: #1f2328;
   font-size: 13px;
-  font-weight: 700;
-  padding: 0 14px;
+  font-weight: 800;
+  padding: 0 12px;
   cursor: pointer;
-  transition: background 0.15s;
 }
-.btn:hover { background: #f5f0e8; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btnPrimary {
-  border-color: rgba(184, 148, 90, 0.5);
-  background: rgba(184, 148, 90, 0.14);
+  border-color: rgba(202, 162, 90, 0.5);
+  background: rgba(202, 162, 90, 0.22);
+  box-shadow: 0 8px 18px rgba(202, 162, 90, 0.2);
 }
-.btnPrimary:hover { background: rgba(184, 148, 90, 0.28); }
 
 .errorBox {
   border: 1px solid rgba(220, 38, 38, 0.3);
