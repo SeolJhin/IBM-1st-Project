@@ -219,7 +219,7 @@ severity 기준:
         ],
         "generationConfig": {
             "temperature": 0.1,      # 낮을수록 일관된 응답 (0.0~1.0)
-            "maxOutputTokens": 1024,
+            "maxOutputTokens": 4096,
         },
     }
 
@@ -245,6 +245,14 @@ severity 기준:
             if clean_text.startswith("json"):
                 clean_text = clean_text[4:]
         clean_text = clean_text.strip()
+        # 잘린 JSON 방어: 닫는 괄호 보완
+        if clean_text.count('{') > clean_text.count('}'):
+            clean_text += '}' * (clean_text.count('{') - clean_text.count('}'))
+        if clean_text.count('[') > clean_text.count(']'):
+            clean_text += ']' * (clean_text.count('[') - clean_text.count(']'))
+        # trailing comma 제거
+        import re as _re_json
+        clean_text = _re_json.sub(r',\s*([}\]])', r'\1', clean_text)
 
         parsed = json.loads(clean_text)
 
