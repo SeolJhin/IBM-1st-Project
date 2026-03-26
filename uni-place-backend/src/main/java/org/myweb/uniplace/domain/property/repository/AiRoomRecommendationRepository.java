@@ -25,6 +25,7 @@ public interface AiRoomRecommendationRepository
                  from AiRoomRecommendation a2
                )
          order by a.rankNo asc
+         limit 3
     """)
     List<AiRoomRecommendation> findLatestTop3();
 }
