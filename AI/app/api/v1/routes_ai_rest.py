@@ -258,6 +258,11 @@ def complaint_priority(payload: Dict[str, Any] = Body(...)):
         return {"importance": "medium", "ai_reason": ""}
 
 
+import hashlib, json, time as _time
+
+_recommend_cache: Dict[str, Any] = {}   # { cache_key: (result, expire_ts) }
+_RECOMMEND_TTL = 30                      # 30초 내 동일 요청은 캐시 반환
+
 @router.post("/operations/room-recommendation")
 def room_recommendation(payload: Dict[str, Any] = Body(...)):
     try:
@@ -269,7 +274,23 @@ def room_recommendation(payload: Dict[str, Any] = Body(...)):
         if not rooms:
             return []
 
+        # 중복 요청 방어: room_id 목록 + user_query 로 캐시 키 생성
+        cache_key = hashlib.md5(
+            json.dumps(
+                {"ids": sorted(r.get("room_id", 0) for r in rooms),
+                 "q": payload.get("user_query", "")},
+                sort_keys=True,
+            ).encode()
+        ).hexdigest()
+
+        cached = _recommend_cache.get(cache_key)
+        if cached and _time.time() < cached[1]:
+            logger.info("[ROOM_RECOMMEND] 중복 요청 감지 → 캐시 결과 반환")
+            return cached[0]
+
         result = recommend_rooms(payload)
+        _recommend_cache[cache_key] = (result, _time.time() + _RECOMMEND_TTL)
+
         logger.info(f"[ROOM_RECOMMEND] Top3 결과: {result}")
         return result
 
