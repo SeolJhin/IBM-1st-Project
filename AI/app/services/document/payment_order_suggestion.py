@@ -12,7 +12,7 @@ def suggest_order_from_payment(req: AiRequest) -> tuple[str, dict[str, Any]]:
     month = str(req.get_slot("month") or req.get_slot("billing_month") or "N/A")
     items = _load_items(req.get_slot("items"))
     if not items:
-        return "No payment/order base data was provided.", {"suggestions": [], "month": month}
+        return "결제/주문 기반 데이터가 없습니다.", {"suggestions": [], "month": month}
 
     candidates: list[dict[str, Any]] = []
     for item in items:
@@ -49,7 +49,7 @@ def suggest_order_from_payment(req: AiRequest) -> tuple[str, dict[str, Any]]:
         )
 
     if not candidates:
-        return "No purchase suggestion was generated from payment data.", {"suggestions": [], "month": month}
+        return "발주 추천할 품목이 없습니다. 모든 상품의 재고가 충분합니다.", {"suggestions": [], "month": month}
 
     candidates.sort(key=lambda x: (-x["priority"], x["prod_stock"]))
     top = candidates[:5]
