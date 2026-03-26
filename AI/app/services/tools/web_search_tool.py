@@ -163,13 +163,18 @@ def execute_web_search(query: str, topic: str = "general") -> dict[str, Any]:
 
         max_results = getattr(settings, "tavily_max_results", 5)
 
+        # 검색어 정제 — "부동산"만 있으면 포탈만 나오므로 구체화
+        if "부동산" in query and len(query) > 5:
+            query = query.replace("부동산 계약서", "임대차 계약서")
+            query = query.replace("부동산계약서", "임대차계약서")
+
         with DDGS() as ddgs:
             if topic == "news":
                 raw = list(ddgs.news(query, max_results=max_results))
                 results = [
                     {
                         "title":   r.get("title", ""),
-                        "url":     r.get("url", ""),
+                        "url":     r.get("href") or r.get("url", ""),
                         "content": r.get("body", "")[:500],
                     }
                     for r in raw
@@ -179,7 +184,7 @@ def execute_web_search(query: str, topic: str = "general") -> dict[str, Any]:
                 results = [
                     {
                         "title":   r.get("title", ""),
-                        "url":     r.get("url", ""),
+                        "url":     r.get("href") or r.get("url", ""),
                         "content": r.get("body", "")[:500],
                     }
                     for r in raw
