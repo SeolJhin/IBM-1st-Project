@@ -155,6 +155,13 @@ export default function NotificationList({ inlineMode = false }) {
 
       {error && <p className={styles.errorMsg}>{error}</p>}
 
+      {loading && items.length === 0 && (
+        <div className={styles.loadingWrap}>
+          <span className={styles.spinner} />
+          <p style={{ marginTop: 8, fontSize: 13, color: '#9a8c70' }}>알림을 불러오는 중...</p>
+        </div>
+      )}
+
       {!loading && items.length === 0 && !error && (
         <div className={styles.empty}>
           <span className={styles.emptyIcon}>🔔</span>
@@ -162,20 +169,22 @@ export default function NotificationList({ inlineMode = false }) {
         </div>
       )}
 
-      <div className={styles.list}>
-        {items.map((item) => (
-          <NotificationItem
-            key={item.notificationId}
-            item={item}
-            onRead={markRead}
-            onNavigate={navigate}
-          />
-        ))}
-      </div>
+      {items.length > 0 && (
+        <div className={styles.list}>
+          {items.map((item) => (
+            <NotificationItem
+              key={item.notificationId}
+              item={item}
+              onRead={markRead}
+              onNavigate={navigate}
+            />
+          ))}
+        </div>
+      )}
 
       <div ref={sentinelRef} className={styles.sentinel} />
 
-      {loading && (
+      {loading && items.length > 0 && (
         <div className={styles.loadingWrap}>
           <span className={styles.spinner} />
         </div>

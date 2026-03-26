@@ -38,8 +38,8 @@ export default function AdminServiceHub() {
 
       if (!suggestions.length) {
         const answer = suggestData?.data?.answer || suggestData?.answer || '';
-        console.log('[발주서] suggest 응답:', JSON.stringify(suggestData, null, 2));
-        alert(answer || '발주 제안할 품목이 없습니다.');
+        const msg = answer && !/^No /i.test(answer) ? answer : '발주 추천할 품목이 없습니다. 모든 상품의 재고가 충분합니다.';
+        alert(msg);
         return;
       }
 

@@ -427,9 +427,9 @@ export default function Checkout({
 
             <div
               className={styles.fieldRow}
-              style={{ alignItems: 'flex-start' }}
+              style={{ alignItems: 'stretch' }}
             >
-              <label className={styles.label} style={{ paddingTop: 10 }}>
+              <label className={styles.label} style={{ display: 'flex', alignItems: 'center' }}>
                 기타 요청사항
               </label>
               <textarea
