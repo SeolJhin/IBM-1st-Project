@@ -28,6 +28,7 @@ public class AdminContractSummaryResponse {
     private LocalDate contractEnd;
     private String lessorNm;
     private String tenantUserId;
+    private String tenantNm;
     private ContractStatus contractStatus;
     private Integer contractPdfFileId;
     private String contractPdfFileName;
@@ -60,8 +61,9 @@ public class AdminContractSummaryResponse {
                 .roomNo(r != null ? r.getRoomNo() : null)
                 .contractStart(c.getContractStart())
                 .contractEnd(c.getContractEnd())
-                .lessorNm(c.getLessorNm())
+                .lessorNm(b != null ? b.getBuildingLessorNm() : null)
                 .tenantUserId(c.getUser() != null ? c.getUser().getUserId() : null)
+                .tenantNm(c.getUser() != null ? c.getUser().getUserNm() : null)
                 .contractStatus(c.getContractSt())
                 .contractPdfFileId(pdfId)
                 .contractPdfFileName(pdfFileName)
