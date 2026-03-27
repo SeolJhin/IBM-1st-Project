@@ -392,7 +392,7 @@ export default function AdminContractList() {
                     <div>{c.roomNo ?? '-'}호</div>
                   </td>
 
-                  <td className={styles.tdName}>{c.tenantUserId ?? '-'}</td>
+                  <td className={styles.tdName}>{c.tenantNm ?? c.tenantUserId ?? '-'}</td>
                   <td>{c.lessorNm ?? '-'}</td>
 
                   <td className={styles.tdDate}>
