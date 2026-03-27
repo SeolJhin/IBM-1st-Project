@@ -22,9 +22,67 @@
   padding: 92px 0 0 0;
 }
 
+/* ── 프로필 카드 ── */
+.profileCard {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--primary);
+  padding: 20px 18px;
+  margin-bottom: 12px;
+}
+.avatarWrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.profileName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2d2416;
+}
+.profileEmail {
+  font-size: 11px;
+  color: #9a8c70;
+  margin-top: 2px;
+}
+.profileStats {
+  display: flex;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.profileStat {
+  flex: 1;
+  text-align: center;
+}
+.profileStatVal {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.profileStatLbl {
+  font-size: 10px;
+  color: #9a8c70;
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+}
+
 .sideBox {
-  /* margin-left: 260px; ← 완전 제거 */
-  width: 100%; /* sidebar 너비를 그대로 채움 */
+  width: 100%;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--border);
   border-top: 3px solid var(--primary);
