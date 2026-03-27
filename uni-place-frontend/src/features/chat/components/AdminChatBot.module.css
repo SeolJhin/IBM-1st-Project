@@ -326,7 +326,7 @@
   line-height: 1.6;
   word-break: break-word;
   white-space: pre-wrap;
-  font-weight: 300;
+  font-weight: 400;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 .bubbleTime {
@@ -1021,4 +1021,33 @@
   .listingsGrid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── 마크다운 테이블 ────────────────────────────────────────── */
+.mdTableWrap {
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.mdTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.mdTable th {
+  background: rgba(58, 90, 138, 0.08);
+  color: #4a6080;
+  padding: 6px 10px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 2px solid #c4d0e0;
+}
+.mdTable td {
+  padding: 5px 10px;
+  text-align: center;
+  border-bottom: 1px solid rgba(58, 90, 138, 0.1);
+  color: #2a3a58;
+}
+.mdTable tr:hover td {
+  background: rgba(58, 90, 138, 0.05);
 }

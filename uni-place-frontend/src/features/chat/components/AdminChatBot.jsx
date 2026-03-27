@@ -542,6 +542,52 @@ function AdminActionButtons({ buttons }) {
   );
 }
 
+// ── 마크다운 테이블 파싱 ──────────────────────────────────────────────────────
+function parseMarkdownTable(lines) {
+  if (lines.length < 2) return null;
+  const headerCells = lines[0].split('|').map((c) => c.trim()).filter(Boolean);
+  if (headerCells.length < 2) return null;
+  // 두 번째 줄이 구분선(---|---|...)인지 확인
+  const sep = lines[1].trim();
+  if (!/^\|?[\s-:|]+\|?$/.test(sep)) return null;
+  const rows = lines.slice(2).map((line) =>
+    line.split('|').map((c) => c.trim()).filter(Boolean)
+  );
+  return { headerCells, rows };
+}
+
+function renderTextWithTables(text) {
+  const lines = text.split('\n');
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length) {
+    // 마크다운 테이블 시작 감지: | 로 시작하는 연속 줄
+    if (lines[i].trim().startsWith('|')) {
+      const tableLines = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+      const parsed = parseMarkdownTable(tableLines);
+      if (parsed) {
+        blocks.push({ type: 'table', ...parsed });
+      } else {
+        // 테이블 파싱 실패 시 일반 텍스트로
+        blocks.push({ type: 'text', content: tableLines.join('\n') });
+      }
+    } else {
+      // 일반 텍스트 줄 수집
+      const textLines = [];
+      while (i < lines.length && !lines[i].trim().startsWith('|')) {
+        textLines.push(lines[i]);
+        i++;
+      }
+      blocks.push({ type: 'text', content: textLines.join('\n') });
+    }
+  }
+  return blocks;
+}
+
 function AdminMessageBubble({ msg }) {
   if (msg.role === 'user') {
     return (
@@ -554,6 +600,7 @@ function AdminMessageBubble({ msg }) {
     msg.content,
     'PRICE_REPORT'
   );
+  const blocks = cleanText ? renderTextWithTables(cleanText) : [];
   return (
     <div className={styles.rowAssistant}>
       <div className={styles.bubbleAvatar}>
@@ -571,14 +618,41 @@ function AdminMessageBubble({ msg }) {
         </svg>
       </div>
       <div style={{ maxWidth: '92%', minWidth: 0 }}>
-        {cleanText && (
+        {blocks.length > 0 && (
           <div className={styles.bubbleAssistant}>
-            {cleanText.split('\n').map((line, i, arr) => (
-              <React.Fragment key={i}>
-                {line}
-                {i < arr.length - 1 && <br />}
-              </React.Fragment>
-            ))}
+            {blocks.map((block, bi) =>
+              block.type === 'table' ? (
+                <div key={bi} className={styles.mdTableWrap}>
+                  <table className={styles.mdTable}>
+                    <thead>
+                      <tr>
+                        {block.headerCells.map((h, hi) => (
+                          <th key={hi}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {block.rows.map((row, ri) => (
+                        <tr key={ri}>
+                          {block.headerCells.map((_, ci) => (
+                            <td key={ci}>{row[ci] || ''}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <React.Fragment key={bi}>
+                  {block.content.split('\n').map((line, li, arr) => (
+                    <React.Fragment key={li}>
+                      {line}
+                      {li < arr.length - 1 && <br />}
+                    </React.Fragment>
+                  ))}
+                </React.Fragment>
+              )
+            )}
           </div>
         )}
         {report && <PriceReportCard report={report} />}
