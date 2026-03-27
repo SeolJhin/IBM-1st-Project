@@ -310,13 +310,16 @@ def _parse_result(raw: str, rooms: list[dict], user_query: str = "") -> list[dic
             result = json.loads(match.group())
             if isinstance(result, list) and len(result) >= 1:
                 valid_ids = {r["room_id"] for r in rooms}
+                seen_ids = set()
                 validated = []
-                for item in result[:3]:
-                    if item.get("room_id") not in valid_ids:
+                for item in result:
+                    rid = item.get("room_id")
+                    if rid not in valid_ids or rid in seen_ids:
                         continue
+                    seen_ids.add(rid)
                     validated.append({
-                        "room_id": int(item["room_id"]),
-                        "rank":    int(item.get("rank", len(validated) + 1)),
+                        "room_id": int(rid),
+                        "rank":    len(validated) + 1,
                         "reason":  str(item.get("reason", "AI 분석 완료")),
                         "score":   float(item.get("score", 0.7)),
                     })

@@ -8,7 +8,7 @@
 //   - 예시 쿼리 칩 클릭으로 빠른 입력 지원
 // ──────────────────────────────────────────────────────────────────────────────
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { propertyApi } from '../../features/property/api/propertyApi';
 import { toApiImageUrl } from '../../features/file/api/fileApi';
@@ -189,7 +189,16 @@ export function AiTop3Section() {
   };
 
   // 표시할 아이템: 개인화 쿼리 있으면 queryItems, 없으면 defaultItems
-  const displayItems = isPersonalized ? queryItems : defaultItems;
+  // 중복 roomId 제거 + 최대 3개
+  const displayItems = useMemo(() => {
+    const raw = isPersonalized ? queryItems : defaultItems;
+    const seen = new Set();
+    return raw.filter((item) => {
+      if (seen.has(item.roomId)) return false;
+      seen.add(item.roomId);
+      return true;
+    }).slice(0, 3);
+  }, [isPersonalized, queryItems, defaultItems]);
   const displayError = isPersonalized ? queryError : defaultError;
   const displayLoading = isPersonalized ? queryLoading : defaultLoading;
 
